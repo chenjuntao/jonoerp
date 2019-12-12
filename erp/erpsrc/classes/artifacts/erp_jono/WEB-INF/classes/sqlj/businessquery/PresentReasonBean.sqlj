@@ -1,0 +1,142 @@
+ 
+package logic.businessquery;
+
+import sqlj.runtime.*;
+import sqlj.runtime.ref.*;
+import java.sql.*;
+import oracle.sql.*;
+import oracle.sqlj.runtime.*;
+import oracle.jdbc.driver.*;
+import java.util.*;
+import java.text.SimpleDateFormat;
+import java.text.ParseException;
+import logic.pool.ConnectionPool;
+import logic.*;
+import com.tanry.framework.acl.*;
+import pojo.businessquery.PresentReason;
+
+public class PresentReasonBean extends ConnectionPool
+{
+	#sql public static iterator PresentReasonIterator(
+			float presentAmount,
+			float presentPrice,
+			String presentWhy,
+			String shopC,
+			String shopN
+			);
+	
+	#sql public static iterator PresentReasonSumIterator(float presentAmount,float presentPrice);
+	
+	public PresentReasonBean()
+	{
+	}
+	
+	public PresentReason presentReasonSum(String startDate,String endDate,String shopC)
+			throws NoPrivilegeException,SQLException,NoConnection	{
+		
+		PresentReason presentReason = new PresentReason();
+		DefaultContext myCtx = getDefaultContext();
+		PresentReasonSumIterator presentReasonSumIterator = null;
+		if (myCtx != null)
+		{
+			#sql [myCtx] presentReasonSumIterator = {
+			SELECT
+			    CASE
+			        WHEN SUM(presentAmount)IS NULL
+			        THEN 0
+			        ELSE SUM(presentAmount)
+			    END presentAmount ,
+			    CASE
+			        WHEN SUM(presentPrice)IS NULL
+			        THEN 0
+			        ELSE SUM(presentPrice)
+			    END presentPrice
+				FROM
+				    (
+				        SELECT
+				            b.cBranch_C       shopC,
+				            b.cBranch_N       shopN,
+				            SUM( bs.nQty)     presentAmount ,
+				            SUM(bs.nAmt )     presentPrice,
+				            bs.sRetSendRemark presentWhy
+				        FROM
+				            :{Com_("d_t_food_bill")} b
+				        LEFT JOIN
+				            :{Com_("d_t_food_bills")} bs
+				        ON
+				            b.cBill_C = bs.cBill_C
+				        WHERE
+				            b.cBranch_C LIKE :shopC
+				        AND bs.eRetSendFlag = '赠送'
+				        AND DBUSINESS >=TO_Date( :startDate, 'yyyy-MM-dd')
+				        AND DBUSINESS <= TO_Date(:endDate, 'yyyy-MM-dd')
+				        GROUP BY
+				            b.cBranch_C,
+				            b.cBranch_N ,
+				            bs.sRetSendRemark) t};
+			
+			while(presentReasonSumIterator.next()) {
+				presentReason.presentAmount = presentReasonSumIterator.presentAmount();
+				presentReason.presentPrice = presentReasonSumIterator.presentPrice();
+			}
+			presentReasonSumIterator.close();
+		}
+		else
+		{
+			throw new NoConnection();
+		}
+		closeDefaultContext(myCtx);
+		return presentReason;
+	}
+	
+	public List<PresentReason> presentReason(String startDate,String endDate,String shopC)
+			throws NoPrivilegeException,SQLException,NoConnection	{
+		
+		List<PresentReason> result = new ArrayList<PresentReason>();
+		DefaultContext myCtx = getDefaultContext();
+		PresentReasonIterator presentReasonIterator = null;
+		if (myCtx != null)
+		{
+			#sql [myCtx] presentReasonIterator = {
+			SELECT
+				    b.cBranch_C       shopC,
+				    b.cBranch_N       shopN,
+				    SUM( bs.nQty)     presentAmount ,
+				    SUM(bs.nAmt )     presentPrice,
+				    bs.sRetSendRemark presentWhy
+				FROM
+		            :{Com_("d_t_food_bill")} b
+		        LEFT JOIN
+		            :{Com_("d_t_food_bills")} bs
+				ON
+				    b.cBill_C = bs.cBill_C
+				WHERE
+				    b.cBranch_C LIKE :shopC
+				AND bs.eRetSendFlag = '赠送'
+				AND DBUSINESS >=TO_Date( :startDate, 'yyyy-MM-dd')
+				AND DBUSINESS <= TO_Date(:endDate, 'yyyy-MM-dd')
+				GROUP BY
+				    b.cBranch_C,
+				    b.cBranch_N ,
+				    bs.sRetSendRemark};
+			
+			while(presentReasonIterator.next()) {
+				PresentReason presentReason = new PresentReason();
+				presentReason.presentAmount = presentReasonIterator.presentAmount();
+				presentReason.presentPrice = presentReasonIterator.presentPrice();
+				presentReason.presentWhy = presentReasonIterator.presentWhy();
+				presentReason.shopC = presentReasonIterator.shopC();
+				presentReason.shopN = presentReasonIterator.shopN();
+				result.add(presentReason);
+			}
+			presentReasonIterator.close();
+		}
+		else
+		{
+			throw new NoConnection();
+		}
+		closeDefaultContext(myCtx);
+		return result;
+	}
+	
+}

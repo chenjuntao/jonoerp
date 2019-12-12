@@ -1,0 +1,20 @@
+.dgrid-cell {
+	width: 85px;
+	vertical-align: middle;
+}
+
+.field-itemName {
+	width: 150px;
+}
+
+.field-itemCategory {
+	width: 110px;
+}
+
+.field-itemDimension {
+	width: 60px;
+}
+
+.field-batch {
+	width: 160px;
+}

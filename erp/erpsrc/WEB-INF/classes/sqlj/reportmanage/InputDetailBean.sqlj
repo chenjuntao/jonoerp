@@ -1,0 +1,687 @@
+package logic.reportmanage;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import java.util.Map;
+import java.util.HashMap;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import sqlj.runtime.ref.DefaultContext;
+
+import com.tanry.business.form.FormConstant;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.TextUtil;
+import com.tanry.framework.acl.NoPrivilegeException;
+
+public class InputDetailBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(InputDetailBean.class);
+	
+    #sql private iterator HeaderIter(
+    		String form_id,
+    		String form_ref_id,
+			String item_id,
+			String item_name,
+			String provider_id,
+            String provider,
+			String item_dimension,
+			String item_specification,
+			String item_category,
+			Double order_count,
+			Double receive_count,
+			Double different_count,
+			Double item_unit_price,
+			Double pay_amt,
+			Double receive_price,
+			Double receive_amt,
+			Double different_amt,
+			String category_name,
+			Date input_time,
+			Date audit_time,
+			String storage_id,
+			String storage,
+			String input_department_id,
+			String input_department,
+			String status);
+    
+    #sql private iterator SumIter(
+			Double order_count,
+			Double receive_count,
+			Double different_count,
+			Double pay_amt,
+			Double receive_amt,
+			Double different_amt);
+    
+    #sql private iterator SumIRIter(
+			Double order_counts,
+			Double receive_counts,
+			Double different_counts,
+			Double pay_amts,
+			Double receive_amts,
+			Double different_amts,
+			Double return_counts,
+			Double return_pay_amts);
+	
+	public Map getColmunType(){
+		Map map  = new HashMap();
+		map.put("form_id", "String");
+		map.put("form_ref_id", "String");
+		map.put("form_ref_id2", "String");
+		map.put("item_id", "String");
+		map.put("item_name", "String");
+		map.put("provider_id", "String");
+		map.put("provider", "String");
+		map.put("item_dimension", "String");
+		map.put("item_specification", "String");
+		map.put("item_category", "String");
+		map.put("order_count", "Number");
+		map.put("receive_count", "Number");
+		map.put("different_count", "Number");
+		map.put("item_unit_price", "Number");
+		map.put("pay_amt", "Number");
+		map.put("receive_price", "Number");
+		map.put("receive_amt", "Number");
+		map.put("different_amt", "Number");
+		map.put("pay_amt", "Number");
+		map.put("category_name", "String");
+		map.put("storage_id", "String");
+		map.put("storage", "String");
+		map.put("input_department_id", "String");
+		map.put("input_department", "String");
+		map.put("input_time", "Date");
+		map.put("audit_time", "Date");
+		
+		map.put("form_ids", "String");
+		map.put("form_ref_ids", "String");
+		map.put("item_ids", "String");
+		map.put("item_names", "String");
+		map.put("providers", "String");
+		map.put("provider_ids", "String");
+		map.put("item_dimensions", "String");
+		map.put("item_specifications", "String");
+		map.put("item_categorys", "String");
+		map.put("order_counts", "Number");
+		map.put("receive_counts", "Number");
+		map.put("different_counts", "Number");
+		map.put("item_unit_prices", "Number");
+		map.put("pay_amts", "Number");
+		map.put("receive_prices", "Number");
+		map.put("receive_amts", "Number");
+		map.put("different_amts", "Number");
+		map.put("pay_amts", "Number");
+		map.put("category_names", "String");
+		map.put("storage_ids", "String");
+		map.put("storages", "String");
+		map.put("input_department_ids", "String");
+		map.put("input_departments", "String");
+		map.put("return_counts", "Number");
+		map.put("return_pay_amts", "Number");
+		map.put("input_times", "Date");
+		map.put("audit_times", "Date");
+		
+		return map;
+	}
+	
+	public Map getColmunPrefix(){
+		Map map  = new HashMap();
+		map.put("form_id", "d");
+		map.put("form_ref_id", "h");
+		map.put("item_id", "d");
+		map.put("item_name", "d");
+		map.put("provider_id", "h");
+		map.put("provider", "h");
+		map.put("item_dimension", "d");
+		map.put("item_specification", "d");
+		map.put("item_category", "d");
+		map.put("order_count", "d");
+		map.put("receive_count", "d");
+		map.put("different_count", "d");
+		map.put("item_unit_price", "d");
+		map.put("pay_amt", "d");
+		map.put("receive_price",  "d");
+		map.put("receive_amt",  "d");
+		map.put("different_amt",  "d");
+		map.put("status", "s");
+		map.put("input_time", "h");
+		map.put("audit_time", "h");
+		map.put("storage_id", "h");
+		map.put("storage", "h");
+		map.put("input_department_id", "h");
+		map.put("input_department", "h");
+		map.put("category_name", "c");
+		
+		map.put("form_ids", "r");
+		map.put("form_ref_ids", "r");
+		map.put("item_ids", "r");
+		map.put("item_names", "r");
+		map.put("provider_ids", "r");
+		map.put("providers", "r");
+		map.put("item_dimensions", "r");
+		map.put("item_specifications", "r");
+		map.put("item_categorys", "r");
+		map.put("order_counts", "r");
+		map.put("receive_counts", "r");
+		map.put("different_counts", "r");
+		map.put("item_unit_prices", "r");
+		map.put("pay_amts", "r");
+		map.put("receive_prices",  "r");
+		map.put("receive_amts",  "r");
+		map.put("different_amts",  "r");
+		map.put("statuss", "r");
+		map.put("input_times", "r");
+		map.put("audit_times", "r");
+		map.put("storage_ids", "r");
+		map.put("storages", "r");
+		map.put("input_department_ids", "r");
+		map.put("input_departments", "r");
+		map.put("category_names", "r");
+		
+		return map;
+	}
+	
+	
+	public int count(String queryStr, String sortStr)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		
+		DefaultContext myCtx = getDefaultContext();
+		int total = 0;
+		#sql [myCtx] {
+		SELECT
+		    COUNT(*)
+		INTO
+		    :total
+		FROM
+		    :{Com_("D_T1_INPUT_HEADER")} h
+		INNER JOIN
+		    :{Com_("D_T0_FORM_STATUS")} s
+		ON
+		    h.FORM_ID = s.FORM_ID
+		AND s.IS_CURRENT = 1
+		INNER JOIN
+		    :{Com_("D_T2_BRANCH")} b
+		ON
+		    h.INPUT_DEPARTMENT_ID = b.BRANCH_ID
+		INNER JOIN
+		    :{Com_("D_T1_INPUT_DETAIL")} d
+		ON
+		    h.form_id = d.form_id
+		LEFT JOIN
+		    :{Com_("D_T2_ITEM_CATEGORY")} c
+		ON
+		    d.ITEM_CATEGORY = c.CATEGORY_ID
+		WHERE
+		    1 = 1
+		AND s.STATUS = '已审核' :{queryStr :: ''} :{sortStr :: ''}};
+		closeDefaultContext(myCtx);
+		return total;
+	}
+	
+	
+	public List<Map> query(int startRow, int endRow,String queryStr,String sortStr)  
+			throws NoPrivilegeException,SQLException,NoConnection {
+		
+		DefaultContext myCtx = getDefaultContext();
+		HeaderIter headerIter = null;
+		#sql [myCtx] headerIter = {
+			SELECT
+			    *
+			    FROM
+			        (
+			            SELECT
+			                t.*,
+			                ROWNUM rowNumber
+			            FROM 
+			                (SELECT
+			                	    d.FORM_ID,
+			                	    h.FORM_REF_ID,
+			                	    d.ITEM_ID,
+			                	    d.ITEM_NAME,
+			                	    d.ITEM_DIMENSION,
+			                	    d.ITEM_SPECIFICATION,
+			                	    d.ITEM_CATEGORY,
+			                	    NVL(d.ORDER_COUNT,0)     ORDER_COUNT,
+			                	    NVL(d.RECEIVE_COUNT,0)   RECEIVE_COUNT,
+			                	    NVL(d.DIFFERENT_COUNT,0) DIFFERENT_COUNT,
+			                	    d.ITEM_UNIT_PRICE,
+			                	    NVL(d.PAY_AMT,0) PAY_AMT,
+			                	    d.RECEIVE_PRICE,
+			                	    ROUND(NVL(d.RECEIVE_AMT,0),2)           RECEIVE_AMT,
+			                	    ROUND(d.PAY_AMT-NVL(d.RECEIVE_AMT,0),2) DIFFERENT_AMT,
+			                	    h.input_time,
+			                	    h.audit_time,
+			                	    h.storage_id,
+			                	    h.storage,
+			                	    h.PROVIDER_ID,
+			                	    h.PROVIDER,
+			                	    h.input_department_id,
+			                	    h.input_department,
+			                	    c.CATEGORY_NAME,
+			                	    '已审核' status
+			                	FROM
+			                	    :{Com_("D_T1_INPUT_HEADER")} h
+			                	INNER JOIN
+			                	    :{Com_("D_T2_BRANCH")} b
+			                	ON
+			                	    h.INPUT_DEPARTMENT_ID = b.BRANCH_ID
+			                	INNER JOIN
+			                	    :{Com_("D_T1_INPUT_DETAIL")} d
+			                	ON
+			                	    h.form_id = d.form_id
+			                	LEFT JOIN
+			                	    :{Com_("D_T2_ITEM_CATEGORY")} c
+			                	ON
+			                	    d.ITEM_CATEGORY = c.CATEGORY_ID
+			                	WHERE
+			                	    1 = 1
+			                	AND h.AUDIT_TIME IS NOT NULL :{queryStr :: ''} :{sortStr :: ''}) t
+			            WHERE
+			                ROWNUM < :endRow)
+			    WHERE
+			        rowNumber >= :startRow};
+		List<Map> headerLst = processIter(headerIter);
+		headerIter.close();
+		closeDefaultContext(myCtx);
+		return headerLst;
+	}
+	
+	public Map sum( String queryStr,String sortStr) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		
+		DefaultContext myCtx = getDefaultContext();
+		SumIter sumIter = null;
+		
+		#sql [myCtx] sumIter = {
+			SELECT
+				SUM(nvl(d.ORDER_COUNT,0))     ORDER_COUNT,
+			    SUM(nvl(d.RECEIVE_COUNT,0))   RECEIVE_COUNT,
+			    SUM(nvl(d.DIFFERENT_COUNT,0)) DIFFERENT_COUNT,
+			    SUM(nvl(d.PAY_AMT,0))         PAY_AMT,
+	            SUM(nvl(d.RECEIVE_AMT,0))   RECEIVE_AMT,
+	            SUM(d.PAY_AMT-d.RECEIVE_AMT)   DIFFERENT_AMT
+        	FROM
+        	    :{Com_("D_T1_INPUT_HEADER")} h
+        	INNER JOIN
+        	    :{Com_("D_T0_FORM_STATUS")} s
+        	ON
+        	    h.FORM_ID = s.FORM_ID
+        	AND s.IS_CURRENT = 1
+        	INNER JOIN
+        	    :{Com_("D_T2_BRANCH")} b
+        	ON
+        	    h.INPUT_DEPARTMENT_ID = b.BRANCH_ID
+        	INNER JOIN
+        	    :{Com_("D_T1_INPUT_DETAIL")} d
+        	ON
+        	    h.form_id = d.form_id
+        	LEFT JOIN
+        	    :{Com_("D_T2_ITEM_CATEGORY")} c
+        	ON
+        	    d.ITEM_CATEGORY = c.CATEGORY_ID
+        	WHERE
+        	    1 = 1
+        	AND s.STATUS = '已审核' :{queryStr :: ''} :{sortStr :: ''}};
+		
+		closeDefaultContext(myCtx);
+		
+		Map sumMap = processSumIter(sumIter);
+		sumIter.close();
+		
+		return sumMap;
+	}
+	
+	public Map sumIR( String queryStr,String sortStr) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		
+		DefaultContext myCtx = getDefaultContext();
+		SumIRIter sumIter = null;
+		
+		#sql [myCtx] sumIter = {
+			SELECT
+				*
+			FROM (
+				SELECT
+				    SUM(nvl(d.ORDER_COUNT,0))     ORDER_COUNTs,
+				    SUM(nvl(d.RECEIVE_COUNT,0))   RECEIVE_COUNTs,
+				    SUM(nvl(d.DIFFERENT_COUNT,0)) DIFFERENT_COUNTs,
+				    SUM(nvl(d.PAY_AMT,0))         PAY_AMTs,
+		            SUM(nvl(d.RECEIVE_AMT,0))   RECEIVE_AMTs,
+		            SUM(d.PAY_AMT-d.RECEIVE_AMT)   DIFFERENT_AMTs,
+		            SUM(NVL(R.return_count,0)) return_counts,
+		            SUM(NVL(R.return_pay_amt,0)) return_pay_amts,
+                    D.form_id form_ids,
+                    R.FORM_ID form_ref_ids,
+                    RH.RETURN_TIME,
+        		    D.ITEM_ID item_ids,
+        		    D.ITEM_CATEGORY item_categorys,
+        		    H.input_time input_times,
+            	    H.audit_time audit_times,
+            	    H.storage_id storage_ids,
+            	    H.PROVIDER_ID provider_ids,
+            	    H.input_department_id input_department_ids
+		        FROM 
+				:{Com_("D_T1_INPUT_DETAIL")} D
+				LEFT JOIN 
+				:{Com_("D_T1_INPUT_HEADER")} H 
+				ON 
+					H.FORM_ID = D.FORM_ID 
+				inner JOIN
+				:{Com_("D_T0_FORM_STATUS")} S 
+				ON
+					D.FORM_ID = S.FORM_ID
+				 LEFT JOIN
+				 :{Com_("D_T1_RETURN_GOODS_HEADER")} RH
+		        ON
+		            rh.FORM_REF_ID=d.FORM_ID
+				FULL JOIN 
+				:{Com_("D_T1_RETURN_GOODS_DETAIL")} R
+				ON 
+					D.FORM_ID = R.FORM_REF_ID AND D.ITEM_ID = R.ITEM_ID 
+				WHERE
+					1 =1 AND S.IS_CURRENT = '1' 
+					AND H.FORM_TYPE in ('MANUAL','PURCHASE') 
+					AND s.STATUS = '已审核'
+				GROUP BY
+                D.form_id ,
+                R.FORM_ID ,
+                RH.RETURN_TIME,
+    		    D.ITEM_ID ,
+    		    D.ITEM_CATEGORY ,
+    		    H.input_time ,
+        	    H.audit_time ,
+        	    H.storage_id ,
+        	    H.PROVIDER_ID ,
+        	    H.input_department_id 
+			) r
+			WHERE
+			    1 = 1
+				:{queryStr :: ''}
+				};
+		
+		closeDefaultContext(myCtx);
+		
+		Map sumMap = new HashMap();
+		while(sumIter.next()) {
+			sumMap.put("order_counts", sumIter.order_counts());
+			sumMap.put("receive_counts", sumIter.receive_counts());
+			sumMap.put("different_counts", sumIter.different_counts());
+			sumMap.put("pay_amts", sumIter.pay_amts());
+			sumMap.put("receive_amts", sumIter.receive_amts());
+			sumMap.put("different_amts", sumIter.different_amts());
+			sumMap.put("return_counts", sumIter.return_counts());
+			sumMap.put("return_pay_amts", sumIter.return_pay_amts());
+		}
+		sumIter.close();
+		
+		return sumMap;
+	}
+	
+	#sql private iterator irIter(
+    		String form_ids,
+    		String form_ref_ids,
+			String item_ids,
+			String item_names,
+			String provider_ids,
+            String providers,
+			String item_dimensions,
+			String item_specifications,
+			String item_categorys,
+			Double order_counts,
+			Double receive_counts,
+			Double different_counts,
+			Double item_unit_prices,
+			Double pay_amts,
+			Double receive_prices,
+			Double receive_amts,
+			Double different_amts,
+			Date input_times,
+			Date audit_times,
+			String storage_ids,
+			String storages,
+			String input_department_ids,
+			String input_departments,
+			Double return_counts,
+			Double return_pay_amts,
+			String return_reasons);
+	public List<Map> queryIR(int startRow, int endRow,String queryStr,String sortStr)  
+			throws NoPrivilegeException,SQLException,NoConnection {
+		
+		DefaultContext myCtx = getDefaultContext();
+		irIter headerIter = null;
+		#sql [myCtx] headerIter = {
+			SELECT
+			    *
+			    FROM
+			        (
+			            SELECT
+			                t.*,
+			                ROWNUM rowNumber
+			            FROM 
+			                (
+			                	SELECT * FROM(
+				                	SELECT
+				                		D.FORM_ID form_ids,
+				                		R.FORM_ID form_ref_ids,
+				                		RH.RETURN_TIME,
+			                		    D.ITEM_ID item_ids,
+			                		    D.ITEM_NAME item_names,
+			                		    D.ITEM_DIMENSION item_dimensions,
+			                		    D.ITEM_SPECIFICATION item_specifications,
+			                		    D.ITEM_CATEGORY item_categorys, 
+			                		    nvl(D.ORDER_COUNT,0) ORDER_COUNTs,
+			                		    nvl(D.RECEIVE_COUNT,0) RECEIVE_COUNTs,
+			                		    nvl(D.DIFFERENT_COUNT,0) DIFFERENT_COUNTs,
+			                		    D.ITEM_UNIT_PRICE item_unit_prices,
+			                		    nvl(D.PAY_AMT,0) PAY_AMTs,
+			                		    D.RECEIVE_PRICE receive_prices,
+				                	    ROUND(NVL(D.RECEIVE_AMT,0),2) RECEIVE_AMTs,
+				                	    ROUND(D.PAY_AMT-NVL(D.RECEIVE_AMT,0),2) DIFFERENT_AMTs,
+				                	    H.input_time input_times,
+				                	    H.audit_time audit_times,
+				                	    H.storage_id storage_ids,
+				                	    H.storage storages,
+				                	    H.PROVIDER_ID provider_ids,
+				                	    H.PROVIDER providers,
+				                	    H.input_department_id input_department_ids,
+				                	    H.input_department input_departments,
+				                	    NVL(R.RETURN_COUNT,0) return_counts,
+				                	    NVL(R.RETURN_PAY_AMT,0) return_pay_amts,
+				                	    R.RETURN_REASON return_reasons
+				                	FROM 
+				        			:{Com_("D_T1_INPUT_DETAIL")} D
+				        			LEFT JOIN 
+				        			:{Com_("D_T1_INPUT_HEADER")} H 
+				        			ON 
+				        				H.FORM_ID = D.FORM_ID 
+				        			inner JOIN
+				        			:{Com_("D_T0_FORM_STATUS")} S 
+				        			ON
+				        				D.FORM_ID = S.FORM_ID
+	        						 LEFT JOIN
+	        						 :{Com_("D_T1_RETURN_GOODS_HEADER")} RH
+	        				        ON
+	        				            rh.FORM_REF_ID=d.FORM_ID
+				        			FULL JOIN 
+				        			:{Com_("D_T1_RETURN_GOODS_DETAIL")} R
+				        			ON 
+				        				D.FORM_ID = R.FORM_REF_ID 
+				        				AND D.ITEM_ID = R.ITEM_ID 
+				        			WHERE
+				        				1 =1 AND S.IS_CURRENT = '1' 
+				        				AND H.FORM_TYPE in ('MANUAL','PURCHASE') 
+				        				AND s.STATUS = '已审核'
+			                 ) r
+			                 where
+			        				1=1 :{queryStr :: ''}
+			        				:{sortStr :: ''}) t
+			            WHERE
+			                ROWNUM < :endRow)
+			    WHERE
+			        rowNumber >= :startRow};
+		
+		List<Map> headerLst = new ArrayList<Map>();
+		
+		while(headerIter.next()) {
+			Map header = new HashMap();
+			header.put("form_ids", headerIter.form_ids());
+			header.put("form_ref_ids", headerIter.form_ref_ids());
+			header.put("item_ids", headerIter.item_ids());
+			header.put("item_names", headerIter.item_names());
+			header.put("provider_ids", headerIter.provider_ids());
+			header.put("providers", headerIter.providers());
+			header.put("item_dimensions", headerIter.item_dimensions());
+			header.put("item_specifications", headerIter.item_specifications());
+			header.put("item_categorys", headerIter.item_categorys());
+			header.put("order_counts", headerIter.order_counts());
+			header.put("receive_counts", headerIter.receive_counts());
+			header.put("different_counts", headerIter.different_counts());
+			header.put("item_unit_prices", headerIter.item_unit_prices());
+			header.put("pay_amts", headerIter.pay_amts());
+			header.put("receive_prices", headerIter.receive_prices());
+			header.put("receive_amts", headerIter.receive_amts());
+			header.put("different_amts", headerIter.different_amts());
+			header.put("input_times", headerIter.input_times());
+			header.put("audit_times", headerIter.audit_times());
+			header.put("storage_ids", headerIter.storage_ids());
+			header.put("storages", headerIter.storages());
+			header.put("input_department_ids", headerIter.input_department_ids());
+			header.put("input_departments","["+headerIter.input_department_ids()+"]"+ headerIter.input_departments());
+			header.put("return_counts",headerIter.return_counts());
+			header.put("return_pay_amts",headerIter.return_pay_amts());
+			header.put("return_reasons",headerIter.return_reasons());
+			headerLst.add(header);
+		}
+		
+		headerIter.close();
+		closeDefaultContext(myCtx);
+		return headerLst;
+	}
+	
+	#sql private iterator numIter(int num)
+	public int countInputReturn(String condition)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		int num = 0;
+		numIter iter = null;
+		#sql [myCtx] iter ={
+			SELECT count(*) num FROM (
+				SELECT
+					D.FORM_ID form_ids,
+	        		R.FORM_ID form_ref_ids,
+	        		RH.RETURN_TIME,
+	    		    D.ITEM_ID item_ids,
+	    		    D.ITEM_NAME item_names,
+	    		    D.ITEM_DIMENSION item_dimensions,
+	    		    D.ITEM_SPECIFICATION item_specifications,
+	    		    D.ITEM_CATEGORY item_categorys, 
+	    		    nvl(D.ORDER_COUNT,0) ORDER_COUNTs,
+	    		    nvl(D.RECEIVE_COUNT,0) RECEIVE_COUNTs,
+	    		    nvl(D.DIFFERENT_COUNT,0) DIFFERENT_COUNTs,
+	    		    D.ITEM_UNIT_PRICE item_unit_prices,
+	    		    nvl(D.PAY_AMT,0) PAY_AMTs,
+	    		    D.RECEIVE_PRICE receive_prices,
+	        	    ROUND(NVL(D.RECEIVE_AMT,0),2) RECEIVE_AMTs,
+	        	    ROUND(D.PAY_AMT-NVL(D.RECEIVE_AMT,0),2) DIFFERENT_AMTs,
+	        	    H.input_time input_times,
+	        	    H.audit_time audit_times,
+	        	    H.storage_id storage_ids,
+	        	    H.storage storages,
+	        	    H.PROVIDER_ID provider_ids,
+	        	    H.PROVIDER providers,
+	        	    H.input_department_id input_department_ids,
+	        	    H.input_department input_departments,
+	        	    NVL(R.RETURN_COUNT,0) return_counts,
+	        	    NVL(R.RETURN_PAY_AMT,0) return_pay_amts,
+	        	    R.RETURN_REASON return_reasons
+				FROM 
+				:{Com_("D_T1_INPUT_DETAIL")} d
+				LEFT JOIN 
+				:{Com_("D_T1_INPUT_HEADER")} h 
+				ON 
+					D.FORM_ID = H.FORM_ID 
+				inner JOIN
+	        	:{Com_("D_T0_FORM_STATUS")} S 
+	        	ON
+	        		D.FORM_ID = S.FORM_ID
+				 LEFT JOIN
+				 :{Com_("D_T1_RETURN_GOODS_HEADER")} RH
+		        ON
+		            rh.FORM_REF_ID=d.FORM_ID
+				FULL JOIN 
+				:{Com_("D_T1_RETURN_GOODS_DETAIL")} R 
+				ON 
+					D.FORM_ID = R.FORM_REF_ID AND D.ITEM_ID = R.ITEM_ID 
+				where
+					1 =1 AND S.IS_CURRENT = '1' 
+	        		AND H.FORM_TYPE in ('MANUAL','PURCHASE')  
+					AND s.STATUS = '已审核'
+	        	) r
+	        WHERE
+        		1=1 :{condition :: ''}
+		};
+		while (iter.next()){
+			num = iter.num();
+		}
+		closeDefaultContext(myCtx);
+		iter.close();
+		return num;
+	}
+	
+	private Map processSumIter(SumIter sumIter) 
+			throws SQLException {
+		Map sumMap = new HashMap();
+		
+		while(sumIter.next()) {
+			sumMap.put("order_count", sumIter.order_count());
+			sumMap.put("receive_count", sumIter.receive_count());
+			sumMap.put("different_count", sumIter.different_count());
+			sumMap.put("pay_amt", sumIter.pay_amt());
+			sumMap.put("receive_amt", sumIter.receive_amt());
+			sumMap.put("different_amt", sumIter.different_amt());
+		}
+			
+		return sumMap;
+	}
+
+	private List<Map> processIter(HeaderIter headerIter) 
+			throws SQLException {
+		List<Map> headerLst = new ArrayList<Map>();
+		
+		while(headerIter.next()) {
+			Map header = new HashMap();
+			header.put("form_id", headerIter.form_id());
+			header.put("form_ref_id", headerIter.form_ref_id());
+			header.put("item_id", headerIter.item_id());
+			header.put("item_name", headerIter.item_name());
+			header.put("provider_id", headerIter.provider_id());
+			header.put("provider", headerIter.provider());
+			header.put("item_dimension", headerIter.item_dimension());
+			header.put("item_specification", headerIter.item_specification());
+			header.put("item_category", headerIter.item_category());
+			header.put("order_count", headerIter.order_count());
+			header.put("receive_count", headerIter.receive_count());
+			header.put("different_count", headerIter.different_count());
+			header.put("item_unit_price", headerIter.item_unit_price());
+			header.put("pay_amt", headerIter.pay_amt());
+			header.put("receive_price", headerIter.receive_price());
+			header.put("receive_amt", headerIter.receive_amt());
+			header.put("different_amt", headerIter.different_amt());
+			header.put("input_time", headerIter.input_time());
+			header.put("audit_time", headerIter.audit_time());
+			header.put("status", headerIter.status());
+			header.put("category_name", headerIter.category_name());
+			header.put("storage_id", headerIter.storage_id());
+			header.put("storage", headerIter.storage());
+			header.put("input_department_id", headerIter.input_department_id());
+			header.put("input_department","["+headerIter.input_department_id()+"]"+ headerIter.input_department());
+			headerLst.add(header);
+		}
+		return headerLst;
+	}
+}

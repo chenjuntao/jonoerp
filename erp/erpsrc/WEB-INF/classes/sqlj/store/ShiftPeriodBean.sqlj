@@ -1,0 +1,89 @@
+ 
+package logic.store;
+
+import sqlj.runtime.*;
+import sqlj.runtime.ref.*;
+import java.sql.*;
+import oracle.sql.*;
+import oracle.sqlj.runtime.*;
+import oracle.jdbc.driver.*;
+import java.util.*;
+import java.text.SimpleDateFormat;
+import java.text.ParseException;
+import logic.pool.ConnectionPool;
+import logic.*;
+import com.tanry.framework.acl.*;
+
+//获取班次和市别信息
+public class ShiftPeriodBean extends ConnectionPool
+{
+	private String strDateFormat = "yyyy-MM-dd"; //设置日期格式
+
+	#sql public static iterator ShiftIterator(String cShift_N);
+	
+	#sql public static iterator PeriodIterator(String cPeriod_N);
+
+	public ShiftPeriodBean()
+	{
+	}
+	
+	public List<Map> getPeriod() throws NoPrivilegeException,SQLException,NoConnection	{
+		
+		List<Map> result = new ArrayList<Map>();
+		DefaultContext myCtx = getDefaultContext();
+		PeriodIterator periodIterator = null;
+		if (myCtx != null)
+		{
+			#sql [myCtx] periodIterator = {
+					SELECT DISTINCT cPeriod_N 
+					FROM :{Com_("D_T_FOOD_BILL")} b
+					ORDER BY b.CPERIOD_N
+			};
+			
+			while(periodIterator.next())
+			{
+				Map<String, Object> map = new HashMap<String, Object>();
+				map.put("code",periodIterator.cPeriod_N());
+				map.put("name",periodIterator.cPeriod_N());
+				result.add(map);
+			}
+			periodIterator.close();
+		}
+		else
+		{
+			throw new NoConnection();
+		}
+		closeDefaultContext(myCtx);
+		return result;
+	}
+
+	public List<Map> getShift() throws NoPrivilegeException,SQLException,NoConnection	{
+		
+		List<Map> result = new ArrayList<Map>();
+		DefaultContext myCtx = getDefaultContext();
+		ShiftIterator shiftIterator = null;
+		if (myCtx != null)
+		{
+			#sql [myCtx] shiftIterator = {
+					SELECT DISTINCT cShift_N 
+					FROM :{Com_("D_T_FOOD_BILL")} b 
+					ORDER BY b.cShift_N };
+			while(shiftIterator.next())
+			{
+				Map<String, Object> map = new HashMap<String, Object>();
+				map.put("code",shiftIterator.cShift_N());
+				map.put("name",shiftIterator.cShift_N());
+				result.add(map);
+			}
+			shiftIterator.close();
+		}
+		else
+		{
+			throw new NoConnection();
+		}
+		closeDefaultContext(myCtx);
+		return result;
+	}
+
+	
+}

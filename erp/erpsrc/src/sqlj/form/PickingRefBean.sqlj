@@ -1,0 +1,172 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on Thu Apr 23 11:21:45 CST 2015 by lyz
+ * Last edited on Thu Apr 23 11:21:45 CST 2015 by lyz
+ * 
+ * comment: 捡货单表明细对应配送单的关系
+ */
+package logic.form;
+
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import pojo.form.PickingRef;
+import sqlj.runtime.ref.DefaultContext;
+
+import com.tanry.framework.acl.NoPrivilegeException;
+import com.tanry.framework.util.constant.PriceType;
+
+public class PickingRefBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(PickingRefBean.class);
+	
+	public int saveEntity(PickingRef ref)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		String formId = ref.getFormId();
+		String formRefId = ref.getFormRefId();
+		String itemId = ref.getItemId();
+		String branchId = ref.getBranchId();
+		Double itemCount = ref.getItemCount();
+
+		#sql [myCtx] {
+			INSERT INTO :{Com_("D_T1_PICKING_REF")} 
+				(FORM_ID, FORM_REF_ID, ITEM_ID, BRANCH_ID, ITEM_COUNT) 
+			VALUES (:formId, :formRefId, :itemId, :branchId, :itemCount)
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public int updateEntity(PickingRef ref)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		String formId = ref.getFormId();
+		String formRefId = ref.getFormRefId();
+		String itemId = ref.getItemId();
+		String branchId = ref.getBranchId();
+
+		#sql [myCtx] {
+			UPDATE
+			:{Com_("D_T1_PICKING_REF")}
+			SET
+				FORM_ID = :formId,
+				FORM_REF_ID = :formRefId,
+				ITEM_ID = :itemId,
+				BRANCH_ID = :branchId
+			WHERE 
+				FORM_ID = :formId
+			AND ITEM_ID = :itemId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+
+	public int updateCount(PickingRef ref)
+			throws NoPrivilegeException, SQLException, NoConnection {
+			DefaultContext myCtx = getDefaultContext();
+
+			String formId = ref.getFormId();
+			String itemId = ref.getItemId();
+			String branchId = ref.getBranchId();
+			Double itemCount = ref.getItemCount();
+			
+			#sql [myCtx] {
+				UPDATE
+				:{Com_("D_T1_PICKING_REF")}
+				SET
+					ITEM_COUNT = :itemCount
+				WHERE 
+				FORM_ID = :formId
+			AND ITEM_ID = :itemId
+			AND BRANCH_ID = :branchId
+			};
+			closeDefaultContext(myCtx);
+			
+			return 1;
+		}
+	
+	public int deleteByForm(String formId)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		#sql [myCtx] {
+			DELETE
+			FROM
+			:{Com_("D_T1_PICKING_REF")}
+			WHERE
+				FORM_ID = :formId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+
+	#sql private iterator RefIter(String form_id, String form_ref_id, String item_id, 
+			String branch_id, Double item_count, Double item_price, Double delivery_factor);
+	
+	public List<PickingRef> query(String formId)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		String priceType = PriceType.BENCHMARK;
+		
+		DefaultContext myCtx = getDefaultContext();
+		RefIter refIter = null;
+		#sql [myCtx] refIter = {
+			SELECT
+			    d.*,
+			    p.ITEM_PRICE,
+			    sd.PACKAGING_FACTOR DELIVERY_FACTOR
+			FROM
+			    :{Com_("D_T1_PICKING_REF")} d
+			LEFT JOIN
+			    :{Com_("D_T1_SHIPPING_DETAIL")} sd
+			ON
+			    d.FORM_REF_ID = sd.FORM_ID AND d.ITEM_ID = sd.ITEM_ID
+			LEFT JOIN
+			    :{Com_("D_T2_ITEM_PRICE")} p
+			ON
+			    p.ITEM_ID = d.ITEM_ID
+			AND p.IS_CURRENT =1
+			AND p.PRICE_TYPE = :priceType
+			WHERE
+			    d.FORM_ID = :formId
+			ORDER BY
+			    d.ITEM_ID};
+		List<PickingRef> refLst = processIter(refIter);
+		refIter.close();
+		closeDefaultContext(myCtx);
+		return refLst;
+	}
+
+	private List<PickingRef> processIter(RefIter refIter) 
+			throws SQLException {
+		List<PickingRef> refLst = new ArrayList<PickingRef>();
+		while(refIter.next()) {
+			PickingRef ref = new PickingRef();
+			ref.setFormId(refIter.form_id());
+			ref.setFormRefId(refIter.form_ref_id());
+			ref.setItemId(refIter.item_id());
+			ref.setBranchId(refIter.branch_id());
+			ref.setItemCount(refIter.item_count());
+			ref.setItemPrice(refIter.item_price());
+			ref.setDeliveryFactor(refIter.delivery_factor());
+			refLst.add(ref);
+		}
+		return refLst;
+	}
+}

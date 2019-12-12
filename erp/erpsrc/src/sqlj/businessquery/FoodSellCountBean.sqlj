@@ -1,0 +1,304 @@
+ 
+package logic.businessquery;
+
+import sqlj.runtime.*;
+import sqlj.runtime.ref.*;
+import java.sql.*;
+import oracle.sql.*;
+import oracle.sqlj.runtime.*;
+import oracle.jdbc.driver.*;
+import java.util.*;
+import java.text.SimpleDateFormat;
+import java.text.ParseException;
+import logic.pool.ConnectionPool;
+import logic.*;
+import com.tanry.framework.acl.*;
+import pojo.businessquery.FoodSellCount;
+
+public class FoodSellCountBean extends ConnectionPool
+{
+	#sql public static iterator FoodSellCountIterator(
+			String categoryId,
+			String categoryN,
+			int qty,
+			float amt,
+			float afterAmt,
+			String shopC,
+			String shopN);
+	
+	#sql public static iterator SumIterator(
+			int qty,
+			float amt,
+			float afterAmt);
+	
+	public FoodSellCountBean()
+	{
+	}
+	
+	public FoodSellCount bigCategorySum(String startDate,String endDate,String shopC)
+			throws NoPrivilegeException,SQLException,NoConnection	{
+		
+		FoodSellCount foodSellCount = new FoodSellCount();
+		DefaultContext myCtx = getDefaultContext();
+		SumIterator sumIterator = null;
+		if (myCtx != null)
+		{
+			#sql [myCtx] sumIterator = {SELECT
+				    SUM(qty)      qty,
+				    SUM(amt)      amt,
+				    SUM(afterAmt) afterAmt
+				FROM
+				    (
+				        SELECT
+				            bs.cLitCls_c                categoryId,
+				            bs.cLitCls_N                categoryN,
+				            SUM(nQty)                   qty,
+				            SUM(nAmt)                   amt,
+				            SUM(nAmt) - SUM(bs.nDisAmt) afterAmt,
+				            cBranch_C                   shopC,
+				            cBranch_N                   shopN
+				        FROM
+				            :{Com_("d_t_food_bills")} bs
+				        LEFT JOIN
+				            :{Com_("d_t_food_bill")} b
+				        ON
+				            b.CBILL_C = bs.CBILL_C
+				        WHERE
+				            DBUSINESS >= to_date(:startDate, 'yyyy-mm-dd')
+				        AND DBUSINESS <= to_date(:endDate, 'yyyy-mm-dd')
+				        AND b.CBRANCH_C LIKE :shopC
+				        AND bs.cLitCls_c IS NOT NULL
+				        AND bs.cLitCls_N <> '套餐'
+				        GROUP BY
+				            bs.cLitCls_c ,
+				            bs.cLitCls_N ,
+				            b.cBranch_C,
+				            b.cBranch_N ) t};
+			
+			while(sumIterator.next()) {
+
+				try {
+					foodSellCount.qty = sumIterator.qty();
+				} catch (Exception e) {
+					foodSellCount.qty = 0;
+				}
+				
+				try {
+					foodSellCount.amt = sumIterator.amt();
+				} catch (Exception e) {
+					foodSellCount.amt = 0;
+				}
+
+				try {
+					foodSellCount.afterAmt = sumIterator.afterAmt();
+				} catch (Exception e) {
+					foodSellCount.afterAmt = 0;
+				}
+				
+			}
+			sumIterator.close();
+		}
+		else
+		{
+			throw new NoConnection();
+		}
+		closeDefaultContext(myCtx);
+		return foodSellCount;
+	}
+	
+	public FoodSellCount littleCategorySum(String startDate,String endDate,String shopC)
+			throws NoPrivilegeException,SQLException,NoConnection	{
+		
+		FoodSellCount foodSellCount = new FoodSellCount();
+		DefaultContext myCtx = getDefaultContext();
+		SumIterator sumIterator = null;
+		if (myCtx != null)
+		{
+			#sql [myCtx] sumIterator = {
+				SELECT
+				    SUM(qty)      qty,
+				    SUM(amt)      amt,
+				    SUM(afterAmt) afterAmt
+				FROM
+				    (
+				        SELECT
+				            bs.cLitCls_C                categoryId,
+				            bs.cLitCls_N                categoryN,
+				            SUM(nQty)                   qty,
+				            SUM(nAmt)                   amt,
+				            SUM(nAmt) - SUM(bs.nDisAmt) afterAmt,
+				            cBranch_C                   shopC,
+				            cBranch_N                   shopN
+				        FROM
+				            :{Com_("d_t_food_bills")} bs
+				        LEFT JOIN
+				            :{Com_("d_t_food_bill")} b
+				        ON
+				            b.CBILL_C = bs.CBILL_C
+				        WHERE
+				            DBUSINESS >= to_date(:startDate, 'yyyy-mm-dd')
+				        AND DBUSINESS <= to_date(:endDate, 'yyyy-mm-dd')
+				        AND b.CBRANCH_C LIKE :shopC
+				        AND bs.cLitCls_C IS NOT NULL
+				        AND bs.cLitCls_N <> '套餐'
+				        GROUP BY
+				            bs.cLitCls_C,
+				            bs.cLitCls_N ,
+				            b.cBranch_C,
+				            b.cBranch_N) t};
+			
+			while(sumIterator.next()) {
+
+				try {
+					foodSellCount.qty = sumIterator.qty();
+				} catch (Exception e) {
+					foodSellCount.qty = 0;
+				}
+				
+				try {
+					foodSellCount.amt = sumIterator.amt();
+				} catch (Exception e) {
+					foodSellCount.amt = 0;
+				}
+
+				try {
+					foodSellCount.afterAmt = sumIterator.afterAmt();
+				} catch (Exception e) {
+					foodSellCount.afterAmt = 0;
+				}
+				
+			}
+			sumIterator.close();
+		}
+		else
+		{
+			throw new NoConnection();
+		}
+		closeDefaultContext(myCtx);
+		return foodSellCount;
+	}
+	
+	
+	public List<FoodSellCount> bigCategory(String startDate,String endDate,String shopC)
+			throws NoPrivilegeException,SQLException,NoConnection	{
+		
+		List<FoodSellCount> result = new ArrayList<FoodSellCount>();
+		DefaultContext myCtx = getDefaultContext();
+		FoodSellCountIterator foodSellCountIterator = null;
+		if (myCtx != null)
+		{
+			#sql [myCtx] foodSellCountIterator = {
+					SELECT
+				    bs.cLitCls_c                categoryId,
+				    bs.cLitCls_N                categoryN,
+				    SUM(nQty)                   qty,
+				    SUM(nAmt)                   amt,
+				    SUM(nAmt) - SUM(bs.nDisAmt) afterAmt,
+				    cBranch_C                   shopC,
+				    cBranch_N                   shopN
+				FROM
+				    :{Com_("d_t_food_bills")} bs
+				LEFT JOIN
+				    :{Com_("d_t_food_bill")} b
+				ON
+				    b.CBILL_C = bs.CBILL_C
+				WHERE
+				    DBUSINESS >= to_date(:startDate, 'yyyy-mm-dd')
+					AND DBUSINESS <= to_date(:endDate, 'yyyy-mm-dd')
+					AND b.CBRANCH_C LIKE :shopC
+					AND bs.cLitCls_C IS NOT NULL
+					AND bs.cLitCls_N <> '套餐'
+				GROUP BY
+				    bs.cLitCls_c ,
+				    bs.cLitCls_N ,
+				    b.cBranch_C,
+				    b.cBranch_N
+				ORDER BY
+				    bs.cLitCls_C ,
+				    b.CBRANCH_C
+			};
+			
+			while(foodSellCountIterator.next()) {
+				FoodSellCount foodSellCount = new FoodSellCount();
+				foodSellCount.categoryId = foodSellCountIterator.categoryId();
+				foodSellCount.categoryN = foodSellCountIterator.categoryN();
+				foodSellCount.qty = foodSellCountIterator.qty();
+				foodSellCount.amt = foodSellCountIterator.amt();
+				foodSellCount.afterAmt = foodSellCountIterator.afterAmt();
+				foodSellCount.shopC = foodSellCountIterator.shopC();
+				foodSellCount.shopN = foodSellCountIterator.shopN();
+				
+				result.add(foodSellCount);
+			}
+			foodSellCountIterator.close();
+		}
+		else
+		{
+			throw new NoConnection();
+		}
+		closeDefaultContext(myCtx);
+		return result;
+	}
+	
+	public List<FoodSellCount> littleCategory(String startDate,String endDate,String shopC)
+			throws NoPrivilegeException,SQLException,NoConnection	{
+		
+		List<FoodSellCount> result = new ArrayList<FoodSellCount>();
+		DefaultContext myCtx = getDefaultContext();
+		FoodSellCountIterator foodSellCountIterator = null;
+		if (myCtx != null)
+		{
+			#sql [myCtx] foodSellCountIterator = {
+				SELECT
+				    bs.cLitCls_C                categoryId,
+				    bs.cLitCls_N                categoryN,
+				    SUM(nQty)                   qty,
+				    SUM(nAmt)                   amt,
+				    SUM(nAmt) - SUM(bs.nDisAmt) afterAmt,
+				    cBranch_C                   shopC,
+				    cBranch_N                   shopN
+				FROM
+				    :{Com_("d_t_food_bills")} bs
+				LEFT JOIN
+				    :{Com_("d_t_food_bill")} b
+				ON
+				    b.CBILL_C = bs.CBILL_C
+				WHERE
+				
+					DBUSINESS >= to_date(:startDate, 'yyyy-mm-dd')
+					AND DBUSINESS <= to_date(:endDate, 'yyyy-mm-dd')
+					AND b.CBRANCH_C LIKE :shopC
+					AND bs.cLitCls_C IS NOT NULL
+					AND bs.cLitCls_N <> '套餐'
+				GROUP BY
+				    bs.cLitCls_C,
+				    bs.cLitCls_N ,
+				    b.cBranch_C,
+				    b.cBranch_N
+				ORDER BY
+				    bs.cLitCls_C,
+				    b.CBRANCH_C};
+			
+			while(foodSellCountIterator.next()) {
+				FoodSellCount foodSellCount = new FoodSellCount();
+				foodSellCount.categoryId = foodSellCountIterator.categoryId();
+				foodSellCount.categoryN = foodSellCountIterator.categoryN();
+				foodSellCount.qty = foodSellCountIterator.qty();
+				foodSellCount.amt = foodSellCountIterator.amt();
+				foodSellCount.afterAmt = foodSellCountIterator.afterAmt();
+				foodSellCount.shopC = foodSellCountIterator.shopC();
+				foodSellCount.shopN = foodSellCountIterator.shopN();
+				
+				result.add(foodSellCount);
+			}
+			foodSellCountIterator.close();
+		}
+		else
+		{
+			throw new NoConnection();
+		}
+		closeDefaultContext(myCtx);
+		return result;
+	}
+	
+}

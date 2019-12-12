@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE struts PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN"
+    "http://struts.apache.org/dtds/struts-2.0.dtd">
+
+<struts>
+	<package name="restaurant_option" namespace="/restaurant/option" extends="trust-default">
+		<action name="mainView" class="action.restaurant.option.OptionAction">  
+			<result name="success">/jsp/restaurant/option/main.jsp</result>
+		</action>
+		
+		<action name="loadTree" method="loadTree" class="action.restaurant.option.OptionAction">
+			<result type="json" />
+		</action>
+		
+		<action name="queryBranchTree" method="queryBranchTree" class="action.restaurant.option.OptionAction">
+			<result type="json" />
+		</action>
+		
+		<action name="saveData" method="saveData" class="action.restaurant.option.OptionAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="restaurant_option_restaurant" namespace="/restaurant/option/restaurant" extends="trust-default">
+		<action name="mainView" class="action.restaurant.option.OptionAction">  
+			<result name="success">/jsp/restaurant/option/restaurant/main.jsp</result>
+		</action>
+	</package>
+	
+</struts>
+

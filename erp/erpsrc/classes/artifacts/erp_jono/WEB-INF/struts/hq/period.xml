@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE struts PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN"
+    "http://struts.apache.org/dtds/struts-2.0.dtd">
+
+<struts>
+	<package name="hq_period_factory" namespace="/hq/period/factory" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.hq.config.period.ProductionCycleAction">
+			<result name="success">/jsp/hq/config/period/factory/main.jsp</result>
+		</action>
+		
+		<action name="doQuery" method="doQuery" class="com.tanry.business.module.hq.config.period.ProductionCycleAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doSave" method="doSave" class="com.tanry.business.module.hq.config.period.ProductionCycleAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="hq_period_supplier" namespace="/hq/period/supplier" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.hq.config.period.SupplyCycleAction">
+			<result name="success">/jsp/hq/config/period/supplier/main.jsp</result>
+		</action>
+		
+		<action name="doQuery" method="doQuery" class="com.tanry.business.module.hq.config.period.SupplyCycleAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doSave" method="doSave" class="com.tanry.business.module.hq.config.period.SupplyCycleAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="hq_period_stock" namespace="/hq/period/stock" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.hq.config.period.SupplyCycleAction">
+			<result name="success">/jsp/hq/config/period/stock/main.jsp</result>
+		</action>
+	</package>
+</struts>
+

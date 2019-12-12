@@ -1,0 +1,64 @@
+#dataGrid {
+	position: absolute;
+	right: 0;
+	top: 62px;
+	bottom: 0px;
+	width: 100%;
+	height: auto; /* override default height: 30em; in dgrid.css */
+}
+
+th[role="columnheader"] {
+	text-align: center;
+}
+
+.field-rownumber, .field-businessDate, .field-branchId, .field-operate {
+	text-align: center;
+}
+
+.field-rownumber {
+	width: 40px;
+}
+
+.field-businessDate {
+	width: 80px;
+}
+
+.field-branchType {
+	width: 100px;
+}
+
+.field-branchId {
+	width: 70px;
+}
+
+.field-branchName {
+	width: 150px;
+}
+
+.field-queryCode {
+	width: 100px;
+}
+
+.field-branchAddress {
+	width: 200px;
+}
+
+.field-contactMan {
+	width: 100px;
+}
+
+.field-telephone, .field-fax {
+	width: 110px;
+}
+
+.field-email, .field-remark {
+	width: 150px;
+}
+
+.field-floorCount {
+	width: 50px;
+}
+
+.field-operate {
+	width: 50px;
+}

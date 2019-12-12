@@ -1,0 +1,91 @@
+.createGrid {
+	width: 100%;
+	height: 150px; /* override default height: 30em; in dgrid.css */
+}
+
+.editGrid {
+	position: absolute;
+	right: 0;
+	top: 152px;
+	bottom: 0px;
+	width: 100%;
+	height: auto;
+}
+
+.checkGrid {
+	position: absolute;
+	right: 0;
+	top: 122px;
+	bottom: 0px;
+	width: 100%;
+	height: auto;
+}
+
+.auditGrid {
+	position: absolute;
+	right: 0;
+	top: 152px;
+	bottom: 0px;
+	width: 100%;
+	height: auto;
+}
+
+.queryGrid {
+	position: absolute;
+	right: 0;
+	top: 60px;
+	bottom: 0px;
+	width: 100%;
+	height: auto; /* override default height: 30em; in dgrid.css */
+}
+
+th[role="columnheader"] {
+	text-align: center;
+}
+
+.dgrid-cell {
+	/* 	width: 80px; make all the columns 80px wide */
+	vertical-align: middle;
+}
+
+.field-rownumber, .field-itemId, .field-itemDimension, .field-itemStatus {
+	text-align: center;
+}
+
+.field-rownumber {
+	width: 40px;
+}
+
+.field-itemId, .field-itemCategory, .field-itemSpecification {
+	width: 80px;
+}
+
+.field-itemName {
+	width: 180px;
+}
+
+.field-itemDimension {
+	width: 60px;
+}
+
+.field-inventory, .field-checkCount, .field-theoryCount,
+	.field-diffCount {
+	width: 70px;
+}
+
+.field-expiredTime {
+	width: 90px;
+}
+
+.field-itemStatus {
+	width: 90px;
+}
+
+.field-none {
+	/* 	width: 60px; */
+	
+}
+
+.grid-number {
+	text-align: right;
+}

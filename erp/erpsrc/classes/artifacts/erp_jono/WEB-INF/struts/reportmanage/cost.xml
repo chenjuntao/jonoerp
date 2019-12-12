@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE struts PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN"
+    "http://struts.apache.org/dtds/struts-2.0.dtd">
+
+<struts>
+<!-- 餐厅 -->
+	<package name="reportmanage_restaurant_cost" namespace="/reportmanage/restaurant/cost" extends="trust-default">
+		<action name="mainView" class="action.restaurant.cost.RestaurantCostAction">
+			<result name="success">/jsp/restaurant/reportmanage/cost/main.jsp</result>
+		</action>
+		
+		<action name="doQuery" method="doQuery" class="action.restaurant.cost.RestaurantCostAction">
+			<result type="json" />
+		</action>
+		
+		<action name="export" method="export" class="action.restaurant.cost.RestaurantCostAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+<!-- 	中央工厂 -->
+	<package name="reportmanage_cf_cost" namespace="/reportmanage/cf/cost" extends="trust-default">
+		<action name="mainView" class="action.centralfactory.cost.CentralfactoryCostAction">
+			<result name="success">/jsp/centralfactory/reportmanage/cost/main.jsp</result>
+		</action>
+		
+		<action name="doQuery" method="doQuery" class="action.centralfactory.cost.CentralfactoryCostAction">
+			<result type="json" />
+		</action>
+		
+		<action name="export" method="export" class="action.centralfactory.cost.CentralfactoryCostAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="reportmanage_cf_produce" namespace="/reportmanage/cf/produce/analysis" extends="trust-default">
+		<action name="mainView" class="action.reportmanage.ReportManageAction">
+			<result name="success">/jsp/centralfactory/reportmanage/produce/analysis/main.jsp</result>
+		</action>
+		
+		<action name="doQuery" method="doQuery" class="action.reportmanage.ReportManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="export" method="export" class="action.reportmanage.ReportManageAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+<!-- 	物流中心 -->
+	<package name="reportmanage_lc_cost" namespace="/reportmanage/lc/cost" extends="trust-default">
+		<action name="mainView" class="action.lc.cost.LcCostAction">
+			<result name="success">/jsp/lc/reportmanage/cost/main.jsp</result>
+		</action>
+		
+		<action name="doQuery" method="doQuery" class="action.lc.cost.LcCostAction">
+			<result type="json" />
+		</action>
+		
+		<action name="export" method="export" class="action.lc.cost.LcCostAction">
+			<result type="json" />
+		</action>
+	</package>
+</struts>
+

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE struts PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN"
+    "http://struts.apache.org/dtds/struts-2.0.dtd">
+
+<struts>
+
+	<package name="businessquery_shoppayment" namespace="/businessquery/shoppayment" extends="trust-default">
+		<action name="mainView" class="action.businessquery.ShopPaymentAction">
+			<result name="success">/jsp/businessquery/shoppayment/main.jsp</result>
+		</action>
+
+		<action name="getData" method="getData" class="action.businessquery.ShopPaymentAction">
+			<result type="json" />
+		</action>
+		
+		<action name="getDataByDay" method="getDataByDay" class="action.businessquery.ShopPaymentAction">
+			<result type="json" />
+		</action>
+		
+		<action name="getColumn" method="getColumn" class="action.businessquery.ShopPaymentAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="bq_shoppayment_export" namespace="/bq/shoppayment/export" extends="trust-default">
+		<action name="doQuery" method="doQuery" class="action.businessquery.export.ShopPaymentExportAction">
+			<result type="json" />
+		</action>
+		
+		<action name="byDay" method="byDay" class="action.businessquery.export.ShopPaymentExportAction">
+			<result type="json" />
+		</action>
+	</package>
+</struts>
+

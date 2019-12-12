@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE struts PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN"
+    "http://struts.apache.org/dtds/struts-2.0.dtd">
+
+<struts>
+	<package name="outer_statement" namespace="/outer/orderstatement" extends="trust-default">
+		<action name="mainView" class="action.outorder.OuterStatementAction">
+			<result name="success">/jsp/outerorder/statement/create/main.jsp</result>
+		</action>
+		
+		<action name="createView" method="createView" class="action.outorder.OuterStatementAction">
+			<result name="success">/jsp/outerorder/statement/create/create.jsp</result>
+		</action>
+		
+		<action name="doInQuery" method="doInQuery" class="action.outorder.OuterStatementAction">
+			<result type="json" />
+		</action>
+		
+		<action name="createBill" method="createBill" class="action.outorder.OuterStatementAction">
+			<interceptor-ref name="defaultStack" />
+			<interceptor-ref name="token" />
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="outer_statement_manage" namespace="/outer/orderstatement/manage" extends="trust-default">
+		<action name="mainView" class="action.outorder.OuterStatementManageAction">
+			<result name="success">/jsp/outerorder/statement/manage/main.jsp</result>
+		</action>
+		
+		<action name="doQuery" method="doQuery" class="action.outorder.OuterStatementManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="queryInBySForm" method="queryInBySForm" class="action.outorder.OuterStatementManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="operate" method="operate" class="action.outorder.OuterStatementManageAction">
+			<result name="success">/jsp/outerorder/statement/manage/operate.jsp</result>
+		</action>
+		
+		<action name="scanView" method="operate" class="action.outorder.OuterStatementManageAction">
+			<result name="success">/jsp/outerorder/statement/manage/scan.jsp</result>
+		</action>
+	</package>
+	
+	<package name="outer_statement_process" namespace="/outer/orderstatement/process" extends="trust-default">
+		<action name="mainView" class="action.outorder.OuterStatementManageAction">
+			<result name="success">/jsp/outerorder/statement/process/main.jsp</result>
+		</action>
+		
+		<action name="doQuery" method="doQuery" class="action.outorder.OuterStatementManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="checkView" method="scanView" class="action.restaurant.shipping.ShippingManageAction">
+			<result name="success">/jsp/outerorder/statement/process/check.jsp</result>
+		</action>
+		
+		<action name="operate" method="operate" class="action.outorder.OuterStatementManageAction">
+			<result name="success">/jsp/outerorder/statement/process/operate.jsp</result>
+		</action>
+	</package>
+</struts>
+

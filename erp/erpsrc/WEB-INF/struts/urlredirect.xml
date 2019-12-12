@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE struts PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN"
+    "http://struts.apache.org/dtds/struts-2.0.dtd">
+
+<struts>
+	<package name="url-redirect" namespace="/" extends="struts-default">
+		<action name="m" class="com.opensymphony.xwork2.ActionSupport">
+			<result name="success">/mobile/index.jsp</result>
+		</action>
+	</package>
+	
+	<package name="menu-transfer" namespace="/trans" extends="json-default">
+		<action name="export" method="transfer" class="action.common.MenuTransferAction">
+			<result type="json" />
+		</action>
+	</package>
+</struts>
+

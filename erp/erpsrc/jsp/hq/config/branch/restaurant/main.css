@@ -1,0 +1,65 @@
+#dataGrid {
+	position: absolute;
+	right: 0;
+	top: 32px;
+	bottom: 0px;
+	width: 100%;
+	height: auto; /* override default height: 30em; in dgrid.css */
+}
+
+th[role="columnheader"] {
+	text-align: center;
+}
+
+.field-rownumber, .field-regionName, .field-branchId, .field-enabled,
+	.field-operate {
+	text-align: center;
+}
+
+.dgrid-column-set-0 {
+	width: 335px;
+}
+
+.field-rownumber {
+	width: 40px;
+}
+
+.field-regionName {
+	width: 70px;
+}
+
+.field-branchType {
+	width: 100px;
+}
+
+.field-branchId, .field-enabled {
+	width: 70px;
+}
+
+.field-branchName {
+	width: 150px;
+}
+
+.field-queryCode {
+	width: 100px;
+}
+
+.field-branchAddress {
+	width: 250px;
+}
+
+.field-telephone, .field-fax {
+	width: 110px;
+}
+
+.field-email, .field-remark {
+	width: 150px;
+}
+
+.field-floorCount {
+	width: 50px;
+}
+
+.field-operate {
+	width: 50px;
+}

@@ -1,0 +1,37 @@
+#dataGrid {
+	position: absolute;
+	right: 0;
+	top: 120px;
+	bottom: 0;
+	width: 100%;
+	height: auto; /* override default height: 30em; in dgrid.css */
+}
+
+th[role="columnheader"] {
+	text-align: center;
+}
+
+.dgrid-cell {
+	/* 	width: 80px; make all the columns 80px wide */
+	vertical-align: middle;
+}
+
+.field-rownumber, .field-step, .field-operate {
+	text-align: center;
+}
+
+.field-rownumber {
+	width: 40px;
+}
+
+.field-step {
+	width: 40px;
+}
+
+.field-stepOperation, .field-stepNote {
+	width: 180px;
+}
+
+.field-operate {
+	width: 60px;
+}

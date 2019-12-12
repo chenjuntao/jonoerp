@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="GBK" ?>
+<!--
+	作者：黄杰
+	描述：权限和角色的配置文件
+	
+ 	god是系统的伪帐号，其内容为god帐号的口令，god是系统的超级管理员
+ 	其它节点为系统的角色权限定义
+-->
+
+<role>
+    <administrator description="系统管理员">
+	<privilege>logic.command.DuplexControlLogic.shutdown</privilege>
+	<privilege>logic.command.DuplexControlLogic.cutout</privilege>
+	<privilege>logic.command.DuplexControlLogic.stop</privilege>
+	<privilege>logic.command.DuplexControlLogic.switchpb</privilege>
+	<privilege>logic.command.DuplexControlLogic.killall</privilege>
+	<privilege>logic.command.DuplexControlLogic.startup</privilege>
+	<privilege>logic.command.DuplexControlLogic.cutin</privilege>
+	<privilege>logic.command.DuplexControlLogic.start</privilege>
+	<!-- <privilege>logic.setting.UserRoleBean</privilege> -->
+	<privilege>logic.setting</privilege>
+	<privilege>logic.bussinessmonitor.MonitorDataLogic.getCommunicateInfo</privilege>
+	<privilege>logic.command.QueryCommandLogic.queryComCommand</privilege>
+	<privilege>logic.command.QueryCommandLogic.queryMainCommand</privilege>
+	<privilege>logic.command.QueryCommandLogic.queryReceiptCommand</privilege>
+	<privilege>logic.command.QueryCommandLogic2.queryComCommand</privilege>
+	<privilege>logic.command.QueryCommandLogic2.queryMainCommand</privilege>
+	<privilege>logic.command.QueryCommandLogic2.queryReceiptCommand</privilege>
+	<privilege>logic.bussinessquery.userinfoquery.UserArchivesInfoBean</privilege>
+	<privilege>logic.bussinessquery.userinfoquery.UserRegeBaseInfoBean</privilege>
+	<include>operator</include>
+    </administrator>
+    <operator description="操作员">
+	<include>normal</include>
+    </operator>
+    <normal description="普通用户">
+	<privilege>logic</privilege>
+	<privilege>constant</privilege>
+	<privilege>action</privilege>
+    </normal>
+</role>

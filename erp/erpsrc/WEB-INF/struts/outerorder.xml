@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE struts PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN"
+    "http://struts.apache.org/dtds/struts-2.0.dtd">
+
+<struts>
+	<package name="outerorder_create" namespace="/outerorder/create" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.outerorder.action.CreateBillAction">
+			<result name="success">/jsp/outerorder/create/main.jsp</result>
+		</action>
+		
+		<action name="editView" method="editView" class="com.tanry.business.module.outerorder.action.CreateBillAction">
+			<result name="success">/jsp/outerorder/create/edit.jsp</result>
+		</action>
+		
+		<action name="checkView" method="checkView" class="com.tanry.business.module.outerorder.action.CreateBillAction">
+			<result name="success">/jsp/outerorder/create/check.jsp</result>
+		</action>
+		
+		<action name="doQuery" method="doQuery" class="com.tanry.business.module.outerorder.action.CreateBillAction">
+			<result type="json" />
+		</action>
+		
+		<action name="queryAddress" method="queryAddress" class="com.tanry.business.module.outerorder.action.CreateBillAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doSave" method="doSave" class="com.tanry.business.module.outerorder.action.CreateBillAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="outerorder_manage" namespace="/outerorder/manage" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.outerorder.action.BillManageAction">
+			<result name="success">/jsp/outerorder/manage/main.jsp</result>
+		</action>
+		
+		<action name="editView" method="editView" class="com.tanry.business.module.outerorder.action.BillManageAction">
+			<result name="success">/jsp/outerorder/manage/edit.jsp</result>
+		</action>
+		
+		<action name="scanView" method="scanView" class="com.tanry.business.module.outerorder.action.BillManageAction">
+			<result name="success">/jsp/outerorder/manage/scan.jsp</result>
+		</action>
+		
+		<action name="doQuery" method="doQuery" class="com.tanry.business.module.outerorder.action.BillManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="queryDetail" method="queryDetail" class="com.tanry.business.module.outerorder.action.BillManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doSave" method="doSave" class="com.tanry.business.module.outerorder.action.BillManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doDelete" method="doDelete" class="com.tanry.business.module.outerorder.action.BillManageAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="outerorder_audit" namespace="/outerorder/audit" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.outerorder.action.BillManageAction">
+			<result name="success">/jsp/outerorder/audit/main.jsp</result>
+		</action>
+		
+		<action name="auditView" method="auditView" class="com.tanry.business.module.outerorder.action.BillManageAction">
+			<result name="success">/jsp/outerorder/audit/audit.jsp</result>
+		</action>
+		
+		<action name="doAudit" method="doAudit" class="com.tanry.business.module.outerorder.action.BillManageAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="outerorder_template" namespace="/outerorder/template" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.outerorder.action.TemplateManageAction">
+			<result name="success">/jsp/outerorder/template/main.jsp</result>
+		</action>
+		
+		<action name="addView" method="addView" class="com.tanry.business.module.outerorder.action.TemplateManageAction">
+			<result name="success">/jsp/outerorder/template/add.jsp</result>
+		</action>
+		
+		<action name="editView" method="editView" class="com.tanry.business.module.outerorder.action.TemplateManageAction">
+			<result name="success">/jsp/outerorder/template/edit.jsp</result>
+		</action>
+	</package>
+	
+	<package name="outerorder_handle" namespace="/outerorder/handle" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.outerorder.action.HandleAction">
+			<result name="success">/jsp/outerorder/handle/main.jsp</result>
+		</action>
+		
+		<action name="query" method="query" class="com.tanry.business.module.outerorder.action.HandleAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doOperate" method="doOperate" class="com.tanry.business.module.outerorder.action.HandleAction">
+			<result type="json" />
+		</action>
+		
+		<action name="operate" method="operate" class="com.tanry.business.module.outerorder.action.HandleAction">
+			<result name="success">/jsp/outerorder/handle/operate.jsp</result>
+		</action>
+		
+		<action name="scanView" method="scanView" class="com.tanry.business.module.outerorder.action.HandleAction">
+			<result name="success">/jsp/outerorder/handle/scan.jsp</result>
+		</action>
+	</package>
+</struts>
+

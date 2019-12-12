@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE struts PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN"
+    "http://struts.apache.org/dtds/struts-2.0.dtd">
+
+<struts>
+	<package name="hq_sample_manage" namespace="/hq/sample/manage" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.hq.sample.SampleInfoAction">
+			<result name="success">/jsp/hq/sample/manage/main.jsp</result>
+		</action>
+		
+		<action name="createView" method="createView" class="com.tanry.business.module.hq.sample.SampleInfoAction">
+			<result name="success">/jsp/hq/sample/manage/edit.jsp</result>
+		</action>
+		
+		<action name="editView" method="editView" class="com.tanry.business.module.hq.sample.SampleInfoAction">
+			<result name="success">/jsp/hq/sample/manage/edit.jsp</result>
+		</action>
+		
+		<action name="uploadView" class="com.tanry.business.module.hq.sample.SampleInfoAction">
+			<result name="success">/jsp/hq/sample/manage/upload.jsp</result>
+		</action>
+		
+		<action name="doQuery" method="doQuery" class="com.tanry.business.module.hq.sample.SampleInfoAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doSave" method="doSave" class="com.tanry.business.module.hq.sample.SampleInfoAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doDelete" method="doDelete" class="com.tanry.business.module.hq.sample.SampleInfoAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doUpload" method="doUpload" class="com.tanry.business.module.hq.sample.SampleInfoAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="hq_sample_audit" namespace="/hq/sample/audit" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.hq.sample.SampleInfoAction">
+			<result name="success">/jsp/hq/sample/audit/main.jsp</result>
+		</action>
+		
+		<action name="doAudit" method="doAudit" class="com.tanry.business.module.hq.sample.SampleInfoAction">
+			<result type="json" />
+		</action>
+	</package>
+</struts>
+

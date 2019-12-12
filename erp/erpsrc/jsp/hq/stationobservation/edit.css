@@ -1,0 +1,21 @@
+
+#costCardGrid {
+	height:auto;
+}
+
+th[role="columnheader"] {
+	text-align: center;
+}
+
+.field-itemId{
+	text-align: center ;
+}
+
+.field-itemCount{
+	text-align: right;
+}
+
+.field-itemId,.field-itemName,.field-itemCount{
+	width: 40px ;
+}
+

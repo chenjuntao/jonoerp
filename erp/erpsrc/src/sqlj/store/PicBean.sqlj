@@ -1,0 +1,114 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on Oct 23, 2014 by liyzh
+ * Last edited on Oct 23, 2014 by liyzh
+ * 
+ * 说明： 图片表
+ */
+package logic.store;
+
+import java.sql.SQLException;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import sqlj.runtime.ref.DefaultContext;
+import com.tanry.framework.acl.NoPrivilegeException;
+
+public class PicBean extends ConnectionPool {
+	
+	public static Logger log = Logger.getLogger(PicBean.class);
+	
+	public int saveEntity(String picId, byte[] picData)
+			throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		#sql [myCtx] {
+			INSERT INTO :{Com_("D_T2_PICS")}
+		(PIC_ID, PIC_BLOB) VALUES (:picId, :picData)
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public int deleteEntity(String picId)
+			throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		#sql [myCtx] {
+			DELETE
+			FROM
+			:{Com_("D_T2_PICS")}
+			WHERE
+				PIC_ID = :picId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public byte[] getPicData(String picId)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		byte[] picData = null;
+		DefaultContext myCtx = getDefaultContext();
+		try {
+			#sql [myCtx] {
+				SELECT 
+					p.PIC_BLOB into :picData 
+				FROM
+				:{Com_("D_T2_PICS")} p
+				WHERE
+			    	p.PIC_ID = :picId
+			};
+		} catch (SQLException e) {
+			log.error("picId ： " + picId + ", picData : " + picData);
+			log.error("Error running the query: " + e);
+			String sqlState = e.getSQLState();
+			log.error("SQL state = " + sqlState);
+			e.printStackTrace();
+		}
+		closeDefaultContext(myCtx);
+		
+		return picData;
+	}
+	
+	/**
+	 * 根据出品ID获取相应的图片数据
+	 */
+	public byte[] getMaterialPic(String itemId)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		byte[] picData = null;
+		DefaultContext myCtx = getDefaultContext();
+		try {
+			#sql [myCtx] {
+				SELECT 
+					p.PIC_BLOB into :picData 
+				FROM
+				:{Com_("D_T2_ITEM_META")} m
+				LEFT JOIN
+				:{Com_("D_T2_PICS")} p
+				ON
+				    p.PIC_ID = m.ITEM_PIC
+				WHERE
+				    m.ITEM_ID = :itemId
+			};
+		} catch (SQLException e) {
+			log.error("itemId ： " + itemId + ", picData : " + picData);
+			log.error("Error running the query: " + e);
+			String sqlState = e.getSQLState();
+			log.error("SQL state = " + sqlState);
+			e.printStackTrace();
+		}
+		closeDefaultContext(myCtx);
+		
+		return picData;
+	}
+}

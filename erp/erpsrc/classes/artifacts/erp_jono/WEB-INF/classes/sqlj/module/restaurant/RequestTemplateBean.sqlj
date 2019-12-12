@@ -1,0 +1,232 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on Oct 29, 2014 by liyzh
+ * Last edited on Oct 29, 2014 by liyzh
+ * 
+ * 说明： 餐厅要货模板查询
+ */
+package logic.module.restaurant;
+
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
+
+import pojo.form.TemplateMeta;
+import vo.restaurant.RequestItemVO;
+import sqlj.runtime.ref.DefaultContext;
+
+import com.tanry.business.form.FormConstant;
+import com.tanry.framework.util.TextUtil;
+import com.tanry.framework.acl.NoPrivilegeException;
+
+public class RequestTemplateBean extends ConnectionPool {
+	
+	public static Logger log = Logger.getLogger(RequestTemplateBean.class);
+	
+	#sql private iterator MetaIter(String template_id,
+			String template_name,
+			String template_type,
+			String branch_id,
+			String category_id,
+			String template_note, Integer arrive_period);
+	
+	
+	private String formQuery(String branchId, String regionId, int arrivePeriod) {
+		String query = " 1=1";
+		if (!"-1".equals(branchId)) {
+			query = query + " AND m.BRANCH_ID = '" + branchId + "'";
+		}
+		if (!"-1".equals(regionId)) {
+			query = query + " AND m.delivery_region = '" + regionId + "'";
+		}
+		if (arrivePeriod != -1) {
+			query = query + " AND m.arrive_period = " + arrivePeriod;
+		}
+		return query;
+	}
+	
+	public List<TemplateMeta> query(String branchId, String regionId, String templateType, String itemName, int arrivePeriod)  
+			throws NoPrivilegeException,SQLException,NoConnection {
+		if (!TextUtil.isEmpty(itemName)) {
+			return queryByItem(branchId, regionId, templateType, itemName, arrivePeriod);
+		}
+		String query = formQuery(branchId, regionId, arrivePeriod);
+		DefaultContext myCtx = getDefaultContext();
+		MetaIter metaIter = null;
+		#sql [myCtx] metaIter = {
+			SELECT
+			    *
+			FROM
+			:{Com_("D_T1_TEMPLATE_META")} m
+			WHERE
+				:{query :: 1=1} 
+			AND m.TEMPLATE_TYPE = :templateType 
+			order by  m.TEMPLATE_ID desc
+		};
+		List<TemplateMeta> metaLst = processIter(myCtx, metaIter);
+		metaIter.close();
+		closeDefaultContext(myCtx);
+		return metaLst;
+	}
+
+	/**
+	 * 根据原料名称或编码筛选模板
+	 */
+	public List<TemplateMeta> queryByItem(String branchId, String regionId, String templateType, String itemName, int arrivePeriod)   
+			throws NoPrivilegeException,SQLException,NoConnection {
+		String query = formQuery(branchId, regionId, arrivePeriod);
+		itemName = "%" + itemName + "%";
+		DefaultContext myCtx = getDefaultContext();
+		MetaIter metaIter = null;
+		#sql [myCtx] metaIter = {
+			SELECT
+			    m.TEMPLATE_ID,
+			    m.TEMPLATE_NAME,
+			    m.TEMPLATE_TYPE,
+			    m.BRANCH_ID,
+			    m.CATEGORY_ID,
+			    m.TEMPLATE_NOTE,
+			    m.ARRIVE_PERIOD
+			FROM
+				:{Com_("D_T1_TEMPLATE_META")} m,
+			    :{Com_("D_T1_TEMPLATE_ITEM")} i,
+			    :{Com_("D_T2_ITEM_META")} im
+			WHERE
+	            m.TEMPLATE_ID = i.TEMPLATE_ID
+	        AND im.item_id = i.ITEM_ID
+	        AND :{query :: 1=1}
+	        AND m.TEMPLATE_TYPE = :templateType
+	        AND (
+	                i.ITEM_ID LIKE :itemName
+	            OR  im.ITEM_NAME LIKE :itemName)
+			GROUP BY
+			    m.TEMPLATE_ID,
+			    m.TEMPLATE_NAME,
+			    m.TEMPLATE_TYPE,
+			    m.BRANCH_ID,
+			    m.CATEGORY_ID,
+			    m.TEMPLATE_NOTE,
+			    m.ARRIVE_PERIOD
+		};
+		List<TemplateMeta> metaLst = processIter(myCtx, metaIter);
+		metaIter.close();
+		closeDefaultContext(myCtx);
+		return metaLst;
+	}
+	
+	private List<TemplateMeta> processIter(DefaultContext myCtx, MetaIter metaIter) 
+			throws NoPrivilegeException,SQLException, NoConnection {
+		List<TemplateMeta> metaLst = new ArrayList<TemplateMeta>();
+		while(metaIter.next()) {
+			TemplateMeta meta = new TemplateMeta();
+			meta.setTemplateId(metaIter.template_id());
+			meta.setTemplateName(metaIter.template_name());
+			meta.setTemplateType(metaIter.template_type());
+			meta.setBranchId(metaIter.branch_id());
+			String cateIds = metaIter.category_id();
+			meta.setCategoryId(cateIds);
+			String cateName = queryName(myCtx, cateIds);
+			meta.setCategoryName(cateName);
+			meta.setTemplateNote(metaIter.template_note());
+			meta.setArrivePeriod(metaIter.arrive_period());
+			metaLst.add(meta);
+		}
+		return metaLst;
+	}
+	
+	#sql private iterator ItemIter(String template_id,
+			String item_id,
+			Integer item_order,
+			String item_name,
+			String item_category,
+			String item_dimension,
+			String item_specification, Double item_price);
+	
+	/**
+	 * 根据模板ID获取相应的原料信息，价格等
+	 */
+	public List<RequestItemVO> queryItem(String templateId, String priceType)   
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		ItemIter itemIter = null;
+		#sql [myCtx] itemIter = {
+			SELECT
+			    i.TEMPLATE_ID,
+			    i.ITEM_ORDER,
+			    m.ITEM_ID,
+			    m.ITEM_NAME,
+			    m.CATEGORY_ID AS item_category,
+			    m.ITEM_DIMENSION,
+			    m.ITEM_SPECIFICATION,
+			    p.ITEM_PRICE
+			FROM
+			:{Com_("D_T1_TEMPLATE_ITEM")} i
+			INNER JOIN
+			:{Com_("D_T2_ITEM_META")} m
+			ON
+			    m.ITEM_ID = i.ITEM_ID
+			LEFT JOIN
+			:{Com_("D_T2_ITEM_PRICE")} p
+			ON
+			    p.ITEM_ID = m.ITEM_ID
+			AND p.PRICE_TYPE = :priceType
+			WHERE
+			    i.TEMPLATE_ID = :templateId
+			ORDER BY
+			    i.ITEM_ORDER
+		};
+		List<RequestItemVO> itemLst = new ArrayList<RequestItemVO>();
+		while(itemIter.next()) {
+			RequestItemVO item = new RequestItemVO();
+			item.setTemplateId(itemIter.template_id());
+			item.setItemId(itemIter.item_id());
+			item.setItemOrder(itemIter.item_order());
+			item.setItemName(itemIter.item_name());
+			String cateId = itemIter.item_category();
+			item.setItemCategory(cateId);
+			item.setItemDimension(itemIter.item_dimension());
+			item.setItemSpecification(itemIter.item_specification());
+			item.setItemPrice(itemIter.item_price());
+			itemLst.add(item);
+		}
+		itemIter.close();
+		closeDefaultContext(myCtx);
+		return itemLst;
+	}
+	
+	#sql private iterator CateNameIter(String category_name);
+	
+	private String queryName(DefaultContext myCtx, String cateIds) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		String query = " CATEGORY_ID IN ('" + cateIds.replaceAll(",", "','") + "') ";
+		
+		CateNameIter nameIter = null;
+		#sql [myCtx] nameIter = {
+			SELECT
+				CATEGORY_NAME
+			FROM
+			:{Com_("D_T2_ITEM_CATEGORY")}
+			WHERE
+				:{query :: 1=1}
+		};
+		List<String> nameLst = new ArrayList<String>();
+		while(nameIter.next()) {
+			String categoryName = nameIter.category_name();
+			nameLst.add(categoryName);
+		}
+		nameIter.close();
+		
+		return StringUtils.join(nameLst, ",");
+	}
+}

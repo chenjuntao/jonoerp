@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE struts PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN"
+    "http://struts.apache.org/dtds/struts-2.0.dtd">
+
+<struts>
+		
+	<package name="pay_shop_bill" namespace="/jsp/businessquery" extends="trust-default">
+		<action name="payShopBillList" method="listBillByPay" class="action.businessquery.BillAction">
+			<result name="success">/jsp/businessquery/paymentquery/paymentBillList.jsp</result>
+		</action>
+		
+		<action name="pagePaymentBillList" method="listBillByPay" class="action.businessquery.BillAction">
+			<result name="success">/jsp/businessquery/paymentquery/pagePaymentBillList.jsp</result>
+		</action>
+	</package>
+
+	<package name="businessquery_paymentquery" namespace="/businessquery/paymentquery" extends="trust-default">
+		<action name="mainView" class="action.businessquery.PaymentQueryAction">
+			<result name="success">/jsp/businessquery/paymentquery/main.jsp</result>
+		</action>
+		
+		<action name="mobileView" class="action.businessquery.PaymentQueryAction">
+			<result name="success">/mobile/module/businessquery/paymentquery/main.jsp</result>
+		</action>
+		
+		<action name="doQuery" method="doQuery" class="action.businessquery.PaymentQueryAction">
+			<result name="success">/jsp/businessquery/paymentquery/result.jsp</result>
+			<result name="mobile">/mobile/module/businessquery/paymentquery/result.jsp</result>
+		</action>
+		
+		<action name="queryByDay" method="queryByDay" class="action.businessquery.PaymentQueryAction">
+			<result name="success">/jsp/businessquery/paymentquery/dayresult.jsp</result>
+			<result name="mobile">/mobile/module/businessquery/paymentquery/dayresult.jsp</result>
+		</action>
+		
+		<action name="doShopPayQuery" method="doShopPayQuery" class="action.businessquery.PaymentQueryAction">
+			<result name="success">/jsp/businessquery/paymentquery/oneShopPayQuery.jsp</result>
+		</action>
+	</package>
+	
+	<package name="bq_payment_export" namespace="/bq/payment/export" extends="trust-default">
+		<action name="doQuery" method="doQuery" class="action.businessquery.export.PaymentAction">
+			<result type="json" />
+		</action>
+		
+		<action name="byDay" method="byDay" class="action.businessquery.export.PaymentAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doOneShopQuery" method="doOneShopQuery" class="action.businessquery.export.PaymentAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="bq_payment_bill_export" namespace="/bq/paymentbill/export" extends="trust-default">
+		<action name="listBillByPay" method="listBillByPay" class="action.businessquery.export.BillInfoExportAction">
+			<result type="json" />
+		</action>
+	</package>
+</struts>
+

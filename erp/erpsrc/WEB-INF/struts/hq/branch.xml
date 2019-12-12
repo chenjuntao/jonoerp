@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE struts PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN"
+    "http://struts.apache.org/dtds/struts-2.0.dtd">
+
+<struts>
+	<package name="hq_branch_r" namespace="/hq/branch/r" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.hq.config.branch.BranchManageAction">
+			<result name="success">/jsp/hq/config/branch/restaurant/main.jsp</result>
+		</action>
+		
+		<action name="editView" method="editView" class="com.tanry.business.module.hq.config.branch.BranchManageAction">
+			<result name="success">/jsp/hq/config/branch/restaurant/edit.jsp</result>
+		</action>
+		
+		<action name="addView" method="editView" class="com.tanry.business.module.hq.config.branch.BranchManageAction">
+			<result name="success">/jsp/hq/config/branch/restaurant/add.jsp</result>
+		</action>
+		
+		<action name="checkBranchId" method="checkBranchId" class="com.tanry.business.module.hq.config.branch.BranchManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="queryRestaurant" method="queryRestaurant" class="com.tanry.business.module.hq.config.branch.BranchManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="treeQuery" method="treeQuery" class="com.tanry.business.module.hq.config.branch.BranchManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="saveRestaurant" method="saveRestaurant" class="com.tanry.business.module.hq.config.branch.BranchManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="containitems" method="containitems" class="com.tanry.business.module.hq.config.branch.BranchManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="containitemsWithBranch" method="containitemsWithBranch" class="com.tanry.business.module.hq.config.branch.BranchManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doEnable" method="doEnable" class="com.tanry.business.module.hq.config.branch.BranchManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doDisable" method="doDisable" class="com.tanry.business.module.hq.config.branch.BranchManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doDisableWithSupplier" method="doDisableWithSupplier" class="com.tanry.business.module.hq.config.branch.BranchManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doDelete" method="deleteRestaurant" class="com.tanry.business.module.hq.config.branch.BranchManageAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="hq_branch_l" namespace="/hq/branch/l" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.hq.config.branch.BranchManageAction">
+			<result name="success">/jsp/hq/config/branch/logistics/main.jsp</result>
+		</action>
+		
+		<action name="editView" method="editView" class="com.tanry.business.module.hq.config.branch.BranchManageAction">
+			<result name="success">/jsp/hq/config/branch/logistics/edit.jsp</result>
+		</action>
+		
+		<action name="doSave" method="doSave" class="com.tanry.business.module.hq.config.branch.BranchManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doDelete" method="doDelete" class="com.tanry.business.module.hq.config.branch.BranchManageAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="hq_branch_outer" namespace="/hq/branch/o" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.hq.config.branch.BranchManageAction">
+			<result name="success">/jsp/hq/config/branch/outer/main.jsp</result>
+		</action>
+		
+		<action name="editView" method="editView" class="com.tanry.business.module.hq.config.branch.BranchManageAction">
+			<result name="success">/jsp/hq/config/branch/outer/edit.jsp</result>
+		</action>
+	</package>
+	
+	<package name="hq_branch_f" namespace="/hq/branch/f" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.hq.config.branch.BranchManageAction">
+			<result name="success">/jsp/hq/config/branch/factory/main.jsp</result>
+		</action>
+	</package>
+	
+	<package name="hq_branch_s" namespace="/hq/branch/s" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.hq.config.branch.BranchManageAction">
+			<result name="success">/jsp/hq/config/branch/supplier/main.jsp</result>
+		</action>
+	</package>
+	
+	<package name="hq_branch_a" namespace="/hq/branch/a" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.hq.config.branch.BranchManageAction">
+			<result name="success">/jsp/hq/settle/businessDate/query/main.jsp</result>
+		</action>
+		<action name="queryAll" method="queryAll" class="com.tanry.business.module.hq.config.branch.BranchManageAction">
+			<result type="json" />
+		</action>
+	</package>
+</struts>
+

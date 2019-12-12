@@ -1,0 +1,346 @@
+package logic.reportmanage;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import sqlj.runtime.ref.DefaultContext;
+import com.tanry.business.form.FormConstant;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.TextUtil;
+import com.tanry.framework.util.constant.BillStatus;
+import com.tanry.framework.acl.NoPrivilegeException;
+
+public class PriceChangeBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(PriceChangeBean.class);
+	
+	#sql private iterator HeaderIter(
+			String item_id,
+			String item_name,
+			String adjust_type,
+			Date effect_time,
+			Double old_price,
+			Double new_price
+		);
+	
+	#sql private iterator PriceIter(
+	    	Double price
+	);
+	
+	#sql private iterator EffectTimeIter(
+		   Date effect_time
+	);
+	
+	public Double getStartPrice(String itemId,String adjustType,java.util.Date startDate, java.util.Date endDate)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		Date sDate = SqlDateUtil.getSqlDate(startDate);
+		Date eDate = SqlDateUtil.getSqlDate(endDate);
+		
+		DefaultContext myCtx = getDefaultContext();
+		Double startPrice = null;
+		
+		PriceIter priceIter = null;
+		#sql [myCtx] priceIter = {
+		SELECT
+			OLD_PRICE price
+		    FROM
+		        (
+		            WITH
+		                a AS
+		                (
+		                    SELECT DISTINCT
+		                        h.EFFECT_TIME
+		                    FROM
+		                    :{Com_("D_T1_PRICE_ADJUST_HEADER")} h
+		                    LEFT JOIN
+		                    :{Com_("D_T1_PRICE_ADJUST_DETAIL")} d
+		                    ON
+		                        h.FORM_ID = d.FORM_ID
+		                    LEFT JOIN
+		                    :{Com_("D_T0_FORM_STATUS")} s
+		                    ON
+		                        h.FORM_ID = s.FORM_ID
+		                    AND s.IS_CURRENT = 1
+		                    WHERE
+		                        h.ADJUST_TYPE =:adjustType
+                    		AND (h.EFFECT_TIME >= :sDate or :sDate is null)
+	            			AND (h.EFFECT_TIME <= :eDate or :eDate is null)
+		                    AND d.ITEM_ID = :itemId
+		                    AND s.STATUS = '已审核'
+		                    ORDER BY
+		                        h.EFFECT_TIME
+		                )
+		                ,
+		                b AS
+		                (
+		                    SELECT
+		                        d.ITEM_ID,
+		                        '[' || d.ITEM_ID || ']' ||d.ITEM_NAME ITEM_NAME,
+		                        h.EFFECT_TIME,
+		                        d.OLD_PRICE ,
+		                        d.NEW_PRICE
+		                    FROM
+		                    :{Com_("D_T1_PRICE_ADJUST_HEADER")} h
+		                    LEFT JOIN
+		                    :{Com_("D_T1_PRICE_ADJUST_DETAIL")} d
+		                    ON
+		                        h.FORM_ID = d.FORM_ID
+		                    LEFT JOIN
+		                    :{Com_("D_T2_ITEM_META")} im
+		                    ON
+		                        d.ITEM_ID = im.ITEM_ID
+		                    LEFT JOIN
+		                    :{Com_("D_T0_FORM_STATUS")} s
+		                    ON
+		                        h.FORM_ID = s.FORM_ID
+		                    AND s.IS_CURRENT = 1
+		                    WHERE
+		                        d.ITEM_ID = :itemId
+		                    AND h.ADJUST_TYPE = :adjustType
+                    		AND (h.EFFECT_TIME >= :sDate or :sDate is null)
+		            	    AND (h.EFFECT_TIME <= :eDate or :eDate is null)
+		                    AND s.STATUS = '已审核'
+		                    ORDER BY
+		                        h.EFFECT_TIME
+		                )
+		            SELECT
+		                b.OLD_PRICE 
+		            FROM
+		                a
+		            LEFT JOIN
+		                b
+		            ON
+		                a.EFFECT_TIME = b.EFFECT_TIME
+		            WHERE
+		            	OLD_PRICE IS NOT NULL
+		            ORDER BY
+		                b.EFFECT_TIME ) a
+		    WHERE
+		        rownum=1};
+		        
+        if(priceIter.next()){
+        	startPrice = priceIter.price();
+		}        
+		        
+		closeDefaultContext(myCtx);
+		return startPrice;
+	}
+	
+	public Double getEndPrice(String itemId,String adjustType,java.util.Date startDate, java.util.Date endDate)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		Date sDate = SqlDateUtil.getSqlDate(startDate);
+		Date eDate = SqlDateUtil.getSqlDate(endDate);
+		
+		DefaultContext myCtx = getDefaultContext();
+		Double endPrice = null;
+		
+		PriceIter priceIter = null;
+		#sql [myCtx] priceIter = {
+		SELECT 
+			NEW_PRICE  price
+		    FROM
+		        (
+		            WITH
+		                a AS
+		                (
+		                    SELECT DISTINCT
+		                        h.EFFECT_TIME
+		                    FROM
+		                    :{Com_("D_T1_PRICE_ADJUST_HEADER")} h
+		                    LEFT JOIN
+		                    :{Com_("D_T1_PRICE_ADJUST_DETAIL")} d
+		                    ON
+		                        h.FORM_ID = d.FORM_ID
+		                    LEFT JOIN
+		                    :{Com_("D_T0_FORM_STATUS")} s
+		                    ON
+		                        h.FORM_ID = s.FORM_ID
+		                    AND s.IS_CURRENT = 1
+		                    WHERE
+		                        h.ADJUST_TYPE =:adjustType
+                    		AND (h.EFFECT_TIME >= :sDate or :sDate is null)
+	                	    AND (h.EFFECT_TIME <= :eDate or :eDate is null)
+		                    AND d.ITEM_ID = :itemId
+		                    AND s.STATUS = '已审核'
+		                    ORDER BY
+		                        h.EFFECT_TIME
+		                )
+		                ,
+		                b AS
+		                (
+		                    SELECT
+		                        d.ITEM_ID,
+		                        '[' || d.ITEM_ID || ']' ||d.ITEM_NAME ITEM_NAME,
+		                        h.EFFECT_TIME,
+		                        d.OLD_PRICE ,
+		                        d.NEW_PRICE
+		                    FROM
+		                    :{Com_("D_T1_PRICE_ADJUST_HEADER")} h
+		                    LEFT JOIN
+		                    :{Com_("D_T1_PRICE_ADJUST_DETAIL")} d
+		                    ON
+		                        h.FORM_ID = d.FORM_ID
+		                    LEFT JOIN
+		                    :{Com_("D_T2_ITEM_META")} im
+		                    ON
+		                        d.ITEM_ID = im.ITEM_ID
+		                    LEFT JOIN
+		                    :{Com_("D_T0_FORM_STATUS")} s
+		                    ON
+		                        h.FORM_ID = s.FORM_ID
+		                    AND s.IS_CURRENT = 1
+		                    WHERE
+		                        d.ITEM_ID = :itemId
+                    		AND (h.EFFECT_TIME >= :sDate or :sDate is null)
+	                	    AND (h.EFFECT_TIME <= :eDate or :eDate is null)
+		                    AND h.ADJUST_TYPE = :adjustType
+		                    AND s.STATUS = '已审核'
+		                    ORDER BY
+		                        h.EFFECT_TIME
+		                )
+		            SELECT
+		                b.NEW_PRICE
+		            FROM
+		                a
+		            LEFT JOIN
+		                b
+		            ON
+		                a.EFFECT_TIME = b.EFFECT_TIME
+		            WHERE
+		            	NEW_PRICE IS NOT NULL
+		            ORDER BY
+		                b.EFFECT_TIME desc) a
+		    WHERE
+		        rownum=1};
+		
+		if(priceIter.next()){
+			endPrice = priceIter.price();
+		}
+		
+		closeDefaultContext(myCtx);
+					
+		return endPrice;
+	}
+	
+	public List<Map> query(String itemId,java.util.Date startDate, java.util.Date endDate)  
+			throws NoPrivilegeException,SQLException,NoConnection {
+		
+		Date sDate = SqlDateUtil.getSqlDate(startDate);
+		Date eDate = SqlDateUtil.getSqlDate(endDate);
+		
+		DefaultContext myCtx = getDefaultContext();
+		HeaderIter headerIter = null;
+		#sql [myCtx] headerIter = {
+			SELECT
+			    d.ITEM_ID,
+			    '[' || d.ITEM_ID || ']' ||d.ITEM_NAME ITEM_NAME,
+			    h.adjust_type,
+			    h.EFFECT_TIME,
+			    d.OLD_PRICE ,
+			    d.NEW_PRICE
+			FROM
+			:{Com_("D_T1_PRICE_ADJUST_HEADER")} h
+			LEFT JOIN
+			:{Com_("D_T1_PRICE_ADJUST_DETAIL")} d
+			ON
+			    h.FORM_ID = d.FORM_ID
+			LEFT JOIN
+			:{Com_("D_T2_ITEM_META")} im
+			ON
+			    d.ITEM_ID = im.ITEM_ID
+			LEFT JOIN
+			:{Com_("D_T0_FORM_STATUS")} s
+			ON
+			    h.FORM_ID = s.FORM_ID
+			AND s.IS_CURRENT = 1
+			WHERE
+			    d.ITEM_ID = :itemId
+    		AND (h.EFFECT_TIME >= :sDate or :sDate is null)
+		    AND (h.EFFECT_TIME <= :eDate or :eDate is null)
+			AND s.STATUS = '已审核'
+			ORDER BY
+			    h.EFFECT_TIME};
+		List<Map> headerLst = processIter(headerIter);
+		headerIter.close();
+		closeDefaultContext(myCtx);
+		return headerLst;
+	}
+	
+	public List<Map> getEffectTime(String itemId,String adjustType)  
+			throws NoPrivilegeException,SQLException,NoConnection {
+		
+		DefaultContext myCtx = getDefaultContext();
+		EffectTimeIter effectTimeIter = null;
+		#sql [myCtx] effectTimeIter = {
+			SELECT DISTINCT
+			    	h.EFFECT_TIME
+			    FROM
+			    :{Com_("D_T1_PRICE_ADJUST_HEADER")} h
+			    LEFT JOIN
+			    :{Com_("D_T1_PRICE_ADJUST_DETAIL")} d
+			    ON
+			        h.FORM_ID = d.FORM_ID
+			    LEFT JOIN
+			    :{Com_("D_T0_FORM_STATUS")} s
+			    ON
+			        h.FORM_ID = s.FORM_ID
+			    AND s.IS_CURRENT = 1
+			    WHERE
+			        d.ITEM_ID = :itemId
+			    AND s.STATUS = '已审核'
+			    AND h.ADJUST_TYPE IN ('BENCHMARK',
+			                          'JOIN',
+			                          'RETAIL',
+			                          'WHOLESALE',
+			                          'PURCHASE')
+			    ORDER BY
+			        h.EFFECT_TIME};
+		List<Map> headerLst = processEffectTimeIter(effectTimeIter);
+		effectTimeIter.close();
+		closeDefaultContext(myCtx);
+		return headerLst;
+	}
+	
+	
+	private List<Map> processEffectTimeIter(EffectTimeIter effectTimeIter) 
+			throws SQLException {
+		List<Map> headerLst = new ArrayList<Map>();
+		
+		int index = 1;
+		while(effectTimeIter.next()) {
+			Map header = new HashMap();
+			header.put("index", index);
+			header.put("effect_time", effectTimeIter.effect_time());
+			headerLst.add(header);
+			index++;
+		}
+		return headerLst;
+	}
+	
+	private List<Map> processIter(HeaderIter headerIter) 
+			throws SQLException {
+		List<Map> headerLst = new ArrayList<Map>();
+		
+		while(headerIter.next()) {
+			Map header = new HashMap();
+			header.put("item_id", headerIter.item_id());
+			header.put("item_name", headerIter.item_name());
+			header.put("adjust_type", headerIter.adjust_type());
+			header.put("effect_time", headerIter.effect_time());
+			header.put("old_price", headerIter.old_price());
+			header.put("new_price", headerIter.new_price());
+			
+			headerLst.add(header);
+		}
+		return headerLst;
+	}
+}

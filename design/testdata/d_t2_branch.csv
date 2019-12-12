@@ -1,0 +1,13 @@
+编号,名称,助记码,地址,联系人,电子邮箱,联系电话,传真,类型,备注
+00,金牛角王总部,JNJWZB,长沙市,欧总,zb@jono.com,0731-82920966,,RESTAURANT,总部
+01,侯家塘店,HJTD,长沙市,,hjtd@jono.com,,,RESTAURANT,餐厅
+02,株洲店,ZZD,株洲市,,zzd@jono.com,,,RESTAURANT,餐厅
+03,衡阳店,HYD,衡阳市,,hyd@jono.com,,,RESTAURANT,餐厅
+100,长沙物流中心,CSWLZX,长沙县,黄经理,cswlzx@jono.com,,,LOGISTICSCENTER,物流中心
+200,长沙中央工厂,CSZYGC,长沙县,廖厂长,cszygc@jono.com,,,CENTRALFACTORY,中央工厂
+1001,绿达农产品有限公司,ZSLDNCPYXGS,雨花区,郑怀德,zhd@163.com,,,SUPPLIER,主营蔬菜类
+1002,森泰食品商行,ZSSTXQSTSPSH,天心区,张中华,zzh@sina.com,,,SUPPLIER,主营食品类
+1003,金康粮油有限公司,HNJKLYYXGS,长沙县,田志新,tzx@126.com,,,SUPPLIER,主营粮油类
+1004,长岳冻货经营部,ZYSGJYB,望城县,陈志辉,czh@tom.com,,,SUPPLIER,主营冻货类
+10001,黄花机场订货方,HHJCDHF,长沙黄花机场,,,,,OUTERORDER,黄花机场订货方
+10002,株洲外部订货方,ZZWBDHF,株洲火车站,,,,,OUTERORDER,株洲外部订货方

@@ -1,0 +1,79 @@
+/**
+ * Copyright (c) 2015
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on December 31, 2015 by liyzh
+ * Last edited on December 31, 2015 by liyzh
+ * 
+ * 说明： 查询采购调价单相关信息
+ */
+package logic.module.hq;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import sqlj.runtime.ref.DefaultContext;
+
+import com.tanry.framework.acl.NoPrivilegeException;
+import com.tanry.framework.util.SqlDateUtil;
+
+public class PriceAdjustQueryBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(PriceAdjustQueryBean.class);
+
+	#sql private iterator ItemIter(String supplier_id, String item_id, String item_name,
+			Double new_price,String adjust_type);
+	
+	//根据调价类型和生效日期查询调价的具体明细
+	public List<Map> queryItem(String adjustType, java.util.Date effectTime) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		Date sTime = SqlDateUtil.getSqlDate(effectTime);
+		
+		DefaultContext myCtx = getDefaultContext();
+		String thetype = adjustType + "%";
+		ItemIter itemIter = null;
+		#sql [myCtx] itemIter = {
+			SELECT
+			    h.SUPPLIER_ID,
+			    d.ITEM_ID,
+			    d.ITEM_NAME,
+			    d.NEW_PRICE,
+			    h.ADJUST_TYPE
+			FROM
+			:{Com_("D_T1_PRICE_ADJUST_HEADER")} h
+			INNER JOIN
+			:{Com_("D_T1_PRICE_ADJUST_DETAIL")} d
+			ON
+			    d.FORM_ID = h.FORM_ID
+			WHERE
+			    h.ADJUST_TYPE LIKE  :thetype
+			AND h.EFFECT_TIME = :sTime
+		};
+		List<Map> itemLst = new ArrayList<Map>();
+		while(itemIter.next()) {
+			Map<String, Object> item = new HashMap<String, Object>();
+			item.put("supplierId", itemIter.supplier_id());
+			item.put("itemId", itemIter.item_id());
+			item.put("itemName", itemIter.item_name());
+			item.put("newPrice", itemIter.new_price());
+			item.put("priceType", itemIter.adjust_type());
+			itemLst.add(item);
+		}
+		itemIter.close();
+		
+		closeDefaultContext(myCtx);
+		return itemLst;
+	}
+}

@@ -1,0 +1,99 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on Dec 15, 2014 by liyzh
+ * Last edited on Dec 15, 2014 by liyzh
+ * 
+ * 说明： 物流中心采购直配订单（大小单据关联）表
+ */
+package logic.form;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import pojo.form.PurchasingMapping;
+import sqlj.runtime.ref.DefaultContext;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.TextUtil;
+import com.tanry.framework.acl.NoPrivilegeException;
+
+public class PurchasingMappingBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(PurchasingMappingBean.class);
+	
+	/**
+	 * 保存
+	 */
+	public int saveEntity(PurchasingMapping mapping)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		String bigFormId = mapping.getBigFormId();
+		String smallFormId = mapping.getSmallFormId();
+
+		#sql [myCtx] {
+			INSERT INTO :{Com_("D_T1_PURCHASING_MAPPING")}
+				(BIG_FORM_ID, SMALL_FORM_ID) 
+			VALUES (:bigFormId, :smallFormId)
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	#sql public static iterator SmallIdIter(String small_form_id);
+		
+	public List<String> querySmallFormId(String bigFormId) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		SmallIdIter smallIdIter = null;
+		#sql [myCtx] smallIdIter = {
+			SELECT
+				SMALL_FORM_ID
+			FROM
+			:{Com_("D_T1_PURCHASING_MAPPING")}
+			WHERE
+				BIG_FORM_ID = :bigFormId
+		};
+
+		List<String> formIdLst = new ArrayList<String>();
+		while (smallIdIter.next()) {
+			formIdLst.add(smallIdIter.small_form_id());
+		}
+		smallIdIter.close();
+		closeDefaultContext(myCtx);
+		return formIdLst;
+	}
+	
+	public int deleteEntity(String formId)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		#sql [myCtx] {
+			DELETE
+			FROM
+			:{Com_("D_T1_PURCHASING_MAPPING")}
+			WHERE
+				BIG_FORM_ID = :formId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	
+}

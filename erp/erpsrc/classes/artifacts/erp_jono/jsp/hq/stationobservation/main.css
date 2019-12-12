@@ -1,0 +1,106 @@
+
+html, body {
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
+    padding: 0;
+}
+
+#appLayout {
+    height: 100%;
+}
+#leftCol {
+    width: 14em;
+}
+#rightCol {
+    width: 200px;
+}
+
+.claro .demoLayout .edgePanel {
+    background-color: #d0e9fc;
+}
+
+#costCardGrid {
+	position: absolute;
+	left: 0;
+	top: 60px;
+	bottom: 0;
+	width: 99%;
+	height: auto; /* override default height: 30em; in dgrid.css */
+}
+
+#observationGrid {
+	position: absolute;
+	left: 0;
+	top: 60px;
+	bottom: 0;
+	width: 99%;
+	height: auto; /* override default height: 30em; in dgrid.css */
+}
+
+.createGrid {
+	position: absolute;
+	right: 0;
+	top: 92px;
+	bottom: 0;
+	width: 100%;
+	height: auto; /* override default height: 30em; in dgrid.css */
+}
+
+.editGrid {
+	position: absolute;
+	right: 0;
+	top: 62px;
+	bottom: 0;
+	width: 100%;
+	height: auto; /* override default height: 30em; in dgrid.css */
+}
+
+
+.dgrid-column-set-0 {
+	width: 250px;
+}
+
+th[role="columnheader"] {
+	text-align: center;
+}
+
+.field-form_id,.field-all_pay_amt,.field-status,.field-index,.field-receive_time,.field-score{
+	text-align: center !important;
+}
+
+.field-all_pay_amt,.field-status,.field-score{
+	width: 60px ;
+}
+
+.field-index{
+	width: 40px ;
+}
+
+.field-status {
+	width: 140px ;
+}
+
+.field-audit_time,.field-receive_time,.field-part_name {
+	width: 80px ;
+}
+
+.field-form_id {
+	width: 180px ;
+}
+
+.field-step_note {
+	width: 450px ;
+}
+
+ .field-requester,.field-operate,.field-step_operation{
+	width: 120px ;
+}
+
+.field-provider,.field-form_note{
+	width: 120px ;
+}
+
+.field-buyer_name,.field-max_pay_item{
+	width: 150px ;
+}

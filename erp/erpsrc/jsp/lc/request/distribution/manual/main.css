@@ -1,0 +1,57 @@
+#dataGrid {
+	position: absolute;
+	right: 0;
+	top: 32px;
+	bottom: 0px;
+	width: 100%;
+	height: auto;
+}
+
+th[role="columnheader"] {
+	text-align: center;
+}
+
+.dgrid-cell {
+	/* 	width: 80px; make all the columns 80px wide */
+	vertical-align: middle;
+	width: 90px;
+}
+
+.dgrid-column-set-0 {
+	width: 330px;
+}
+
+
+.field-rownumber, .field-itemId, .field-itemDimension, .field-itemStatus
+	{
+	text-align: center;
+}
+
+.field-rownumber ,.field-none{
+	width: 60px;
+}
+
+.field-itemId, .field-itemCategory, .field-itemSpecification {
+	width: 80px;
+}
+
+.field-itemName {
+	width: 180px;
+}
+
+.field-itemDimension {
+	width: 60px;
+}
+
+.field-packagingFactor, .field-itemUnitPrice, .field-shippingCount, .field-payAmt {
+	width: 70px;
+	text-align: right;
+}
+
+.field-packagingUnit, .field-packagingCount {
+	width: 60px;
+}
+.grid-number {
+	width: 100px;
+	text-align: right !important;
+}

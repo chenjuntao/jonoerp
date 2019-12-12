@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE struts PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN"
+    "http://struts.apache.org/dtds/struts-2.0.dtd">
+
+<struts>
+	<package name="setting_permission" namespace="/setting/permission/user" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.hq.config.brand.BrandManageAction">
+			<result name="success">/jsp/setting/permission/user/main.jsp</result>
+		</action>
+		
+		<action name="menuView" class="com.tanry.business.module.setting.user.action.UserPermissionAction">
+			<result name="success">/jsp/setting/permission/user/menu.jsp</result>
+		</action>
+		
+		<action name="queryUserTree" method="queryUserTree" class="com.tanry.business.module.setting.user.action.UserPermissionAction">
+			<result type="json" />
+		</action>
+		
+		<action name="queryMenuTree" method="queryMenuTree" class="com.tanry.business.module.setting.user.action.UserPermissionAction">
+			<result type="json" />
+		</action>
+		
+		<action name="savePermission" method="savePermission" class="com.tanry.business.module.setting.user.action.UserPermissionAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="setting_permission_role" namespace="/setting/permission/role" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.hq.config.brand.BrandManageAction">
+			<result name="success">/jsp/setting/permission/role/main.jsp</result>
+		</action>
+		
+		<action name="queryRoleTree" method="queryRoleTree" class="com.tanry.business.module.setting.user.action.UserPermissionAction">
+			<result type="json" />
+		</action>
+	</package>
+</struts>
+

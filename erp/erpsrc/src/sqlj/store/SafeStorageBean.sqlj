@@ -1,0 +1,156 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on Thu Dec 04 17:27:23 CST 2014 by pw
+ * Last edited on Thu Dec 04 17:27:23 CST 2014 by pw
+ * 
+ * comment: 仓库安全库存量
+ */
+package logic.store;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import pojo.store.SafeStorage;
+import sqlj.runtime.ref.DefaultContext;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.TextUtil;
+import com.tanry.framework.acl.NoPrivilegeException;
+
+public class SafeStorageBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(SafeStorageBean.class);
+	
+	#sql private iterator HeaderIter(String storage_id, String item_id, Double item_safe_count);
+	
+	public int saveEntity(SafeStorage header)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		String storageId = header.getStorageId();
+		String itemId = header.getItemId();
+		Double itemSafeCount = header.getItemSafeCount();
+
+		#sql [myCtx] {
+			INSERT INTO :{Com_("D_T2_SAFE_STORAGE")} 
+				(STORAGE_ID, ITEM_ID, ITEM_SAFE_COUNT) 
+			VALUES (:storageId, :itemId, :itemSafeCount)
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+
+	public int count(java.util.Date startDate, java.util.Date endDate, String branchId, String queryType)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		String query = formQuery(branchId, queryType);
+		Date sDate = SqlDateUtil.getSqlDate(startDate);
+		Date eDate = SqlDateUtil.getSqlDate(endDate);
+		
+		DefaultContext myCtx = getDefaultContext();
+		int total = 0;
+		#sql [myCtx] {
+			SELECT
+			    count(*) into :total
+			FROM
+			:{Com_("D_T2_SAFE_STORAGE")} h
+			LEFT JOIN
+			:{Com_("D_T0_FORM_STATUS")} s
+			ON
+			    s.FORM_ID = h.FORM_ID
+			AND s.IS_CURRENT = 1
+			WHERE
+				:{query ::}
+			AND (h.AUDIT_TIME >= :sDate or :sDate is null)
+			AND (h.AUDIT_TIME <= :eDate or :eDate is null)
+		};
+		closeDefaultContext(myCtx);
+		return total;
+	}
+	
+	private String formQuery(String branchId, String queryType) {
+		String query = " 1=1";
+		if (!"-1".equals(branchId)) {
+			query = query + " AND h.REQUESTER_ID = '" + branchId + "'";
+		}
+		if ("unaudit".equals(queryType)) { // 获取未处理记录
+			query = query + " AND NVL( s.STATUS, 'null') = '未处理'"; 
+		}
+		return query;
+	}
+	
+	public List<SafeStorage> query(java.util.Date startDate, java.util.Date endDate, String branchId, String queryType, int startRow, int endRow) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		String query = formQuery(branchId, queryType);
+		Date sDate = SqlDateUtil.getSqlDate(startDate);
+		Date eDate = SqlDateUtil.getSqlDate(endDate);
+		
+		DefaultContext myCtx = getDefaultContext();
+		HeaderIter headerIter = null;
+		#sql [myCtx] headerIter = {
+			SELECT
+			    *
+			FROM
+			:{Com_("D_T2_SAFE_STORAGE")} h
+			LEFT JOIN
+			:{Com_("D_T0_FORM_STATUS")} s
+			ON
+			    s.FORM_ID = h.FORM_ID
+			AND s.IS_CURRENT = 1
+			WHERE
+				:{query ::}
+			AND (h.AUDIT_TIME >= :sDate or :sDate is null)
+			AND (h.AUDIT_TIME <= :eDate or :eDate is null)
+		};
+		List<SafeStorage> headerLst = processIter(headerIter);
+		headerIter.close();
+		closeDefaultContext(myCtx);
+		return headerLst;
+	}
+	
+	public SafeStorage query(String storageId,String itemId) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		HeaderIter headerIter = null;
+		#sql [myCtx] headerIter = {
+			SELECT
+			    *
+			    FROM
+			    :{Com_("D_T2_SAFE_STORAGE")} s
+			    WHERE
+			        s.STORAGE_ID = :storageId
+			    AND s.ITEM_ID = :itemId};
+		List<SafeStorage> headerLst = processIter(headerIter);
+		headerIter.close();
+		closeDefaultContext(myCtx);
+		if (headerLst !=null && !headerLst.isEmpty()) {
+			return headerLst.get(0);
+		}
+		return null;
+	}
+	
+	private List<SafeStorage> processIter(HeaderIter headerIter) 
+			throws SQLException {
+		List<SafeStorage> headerLst = new ArrayList<SafeStorage>();
+		while(headerIter.next()) {
+			SafeStorage header = new SafeStorage();
+			header.setStorageId(headerIter.storage_id());
+			header.setItemId(headerIter.item_id());
+			header.setItemSafeCount(headerIter.item_safe_count());
+			headerLst.add(header);
+		}
+		return headerLst;
+	}
+}

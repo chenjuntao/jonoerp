@@ -1,0 +1,167 @@
+package logic.module.outer;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import pojo.form.TransferHeader;
+import sqlj.runtime.ref.DefaultContext;
+
+import java.util.HashMap;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.TextUtil;
+import com.tanry.framework.acl.NoPrivilegeException;
+
+public class OutOrderScanBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(OutOrderScanBean.class);
+	
+	#sql private iterator HeaderIter(
+			String form_id, 
+			String buyer_name, 
+			String provider, 
+			Date receive_time,
+			Date audit_time, 
+			String max_pay_item, 
+			Double all_pay_amt, 
+			String status,
+			String form_note
+		);
+	
+	private String formQuery(String branch_lc,String branch_out,String status) {
+		String query = " 1=1";
+		
+		if (!TextUtil.isEmpty(branch_lc)) {
+			query = query + " AND h.PROVIDER_ID = '" + branch_lc+ "'";
+		}
+		
+		if (!TextUtil.isEmpty(branch_out)) {
+			query = query + " AND h.BUYER_ID = '" + branch_out+ "'";
+		}
+		
+		if (!TextUtil.isEmpty(status)) {
+			query = query + " AND s.status = '"+ status + "'";
+		}
+		
+		return query;
+	}
+	
+	public int count(java.util.Date startDate, java.util.Date endDate,String branch_lc,String branch_out,String status) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		Date sDate = SqlDateUtil.getSqlDate(startDate);
+		Date eDate = SqlDateUtil.getSqlDate(endDate);
+		
+		String query = formQuery(branch_lc,branch_out,status);
+		
+		DefaultContext myCtx = getDefaultContext();
+		int total = 0;
+		#sql [myCtx] {
+        SELECT
+        	count(*) into :total
+        FROM
+        :{Com_("D_T1_REQUEST_HEADER")} h
+        LEFT JOIN
+        :{Com_("D_T0_FORM_STATUS")} s
+        ON
+            h.FORM_ID = s.FORM_ID
+        WHERE
+        :{query ::}
+        AND (h.AUDIT_TIME >= :sDate or :sDate is null)
+		AND (h.AUDIT_TIME <= :eDate or :eDate is null)
+        AND  s.IS_CURRENT = 1
+        AND h.FORM_TYPE = 'outer'};
+		closeDefaultContext(myCtx);
+		return total;
+	}
+	
+	
+	public List<Map> query(java.util.Date startDate, java.util.Date endDate,String branch_lc,String branch_out,String status,int startRow,int endRow) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		Date sDate = SqlDateUtil.getSqlDate(startDate);
+		Date eDate = SqlDateUtil.getSqlDate(endDate);
+		
+		String query = formQuery(branch_lc,branch_out,status);
+		
+		DefaultContext myCtx = getDefaultContext();
+		HeaderIter headerIter = null;
+		#sql [myCtx] headerIter = {
+			SELECT
+			    *
+			    FROM
+			        (
+			            SELECT
+			                t.*,
+			                ROWNUM rowNumber
+			            FROM
+			                (
+			                    SELECT
+			                        h.FORM_ID,
+			                        h.BUYER_NAME,
+			                        h.BUYER_ADDRESS,
+			                        h.PROVIDER,
+			                        h.RECEIVE_TIME,
+			                        h.AUDIT_TIME,
+			                        h.FORM_NOTE,
+			                        h.ALL_PAY_AMT,
+			                        h.MAX_PAY_ITEM,
+			                        CASE
+		                            WHEN (
+		                                    SELECT
+		                                        COUNT(*)
+		                                    FROM
+		                                    :{Com_("D_T0_FORM_STATUS")} s
+		                                    WHERE
+		                                        s.STATUS = '已查看'
+		                                    AND s.FORM_ID = h.FORM_ID) > 0
+		                            THEN 'Y'
+		                            ELSE 'N'
+		                        END status
+			                    FROM
+			                    :{Com_("D_T1_REQUEST_HEADER")} h
+			                    LEFT JOIN
+			                    :{Com_("D_T0_FORM_STATUS")} s
+			                    ON
+			                        h.FORM_ID = s.FORM_ID
+			                    WHERE
+			                    :{query ::}
+			                    AND (h.AUDIT_TIME >= :sDate or :sDate is null)
+			        			AND (h.AUDIT_TIME <= :eDate or :eDate is null)
+			                    AND  s.IS_CURRENT = 1
+			                    AND h.FORM_TYPE = 'outer') t
+			            WHERE
+			                ROWNUM < :endRow)
+			    WHERE
+			        rowNumber >= :startRow};
+		List<Map> headerLst = processIter(headerIter);
+		headerIter.close();
+		closeDefaultContext(myCtx);
+		return headerLst;
+	}
+	
+	
+	private List<Map> processIter(HeaderIter headerIter) 
+			throws SQLException {
+		List<Map> headerLst = new ArrayList<Map>();
+		while(headerIter.next()) {
+			Map header = new HashMap();
+			header.put("form_id", headerIter.form_id());
+			header.put("buyer_name", headerIter.buyer_name());
+			header.put("provider", headerIter.provider());
+			header.put("receive_time", headerIter.receive_time());
+			header.put("audit_time", headerIter.audit_time());
+			header.put("max_pay_item", headerIter.max_pay_item());
+			header.put("all_pay_amt", headerIter.all_pay_amt());
+			header.put("status", headerIter.status());
+			header.put("form_note", headerIter.form_note());
+			headerLst.add(header);
+		}
+		return headerLst;
+	}
+}

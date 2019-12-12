@@ -1,0 +1,239 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on Apr 23, 2015 by liyzh
+ * Last edited on Apr 23, 2015 by liyzh
+ * 
+ * 说明： 中央工厂对物流中心采购单的处理（汇总生成计划单、出库）
+ */
+package logic.module.cf;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import pojo.form.PurchasingHeader;
+import sqlj.runtime.ref.DefaultContext;
+
+import com.tanry.framework.acl.NoPrivilegeException;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.constant.BranchCode;
+
+public class PurchaseQueryBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(PurchaseQueryBean.class);
+
+	#sql private iterator HeaderIter(String form_id, String form_ref_id, String delivery_type,
+			String provider_id,
+			String provider,
+			String requester_id,
+			String requester,
+			String receiver_id,
+			String receiver,
+			String receive_address,
+			Date receive_time,
+			String form_maker_id,
+			String form_maker,
+			Date form_time,
+			String auditor_id,
+			String auditor,
+			Date audit_time,
+			String form_note,
+			String storage_id,
+			String storage,
+			Double all_pay_amt,
+			String max_pay_item);
+	
+	/**
+	 * 中央工厂对物流中心采购单的处理（汇总生成计划单、出库）
+	 */
+	public List<PurchasingHeader> query(String cfCode, java.util.Date startDate, java.util.Date endDate, String queryType)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		Date sDate = SqlDateUtil.getSqlDate(startDate);
+		Date eDate = SqlDateUtil.getSqlDate(endDate);
+		
+		String query = "";
+		if ("unsummary".equals(queryType)) { // 获取未审核记录
+			query = query + " NVL(h.PLAN_STATUS, 'null') != '已汇总'";
+		} else if ("un_out".equals(queryType)) {
+			query = query + " NVL(h.OUT_STATUS, 'null') != '已出库'";
+		}
+		
+		HeaderIter headerIter = null;
+		#sql [myCtx] headerIter = {
+			SELECT
+				h.*
+		    FROM
+		    :{Com_("D_T1_PURCHASING_HEADER")} h
+		    LEFT JOIN
+		    :{Com_("D_T0_FORM_STATUS")} s
+		    ON
+		        h.FORM_ID = s.FORM_ID
+		    AND IS_CURRENT = '1'
+		    WHERE
+		    --	h.REQUESTER_ID = :lcCode
+		    h.PROVIDER_ID = :cfCode
+		    AND s.STATUS = '已审核'
+		    AND :{query :: 1=1}
+		    AND (h.AUDIT_TIME >= :sDate or :sDate is null)
+			AND (h.AUDIT_TIME <= :eDate or :eDate is null)
+		    ORDER BY
+		        h.FORM_ID
+		};
+		List<PurchasingHeader> headerLst = processIter(headerIter);
+		headerIter.close();
+		closeDefaultContext(myCtx);
+		return headerLst;
+	}
+
+	public List<PurchasingHeader> queryUnOrder(String cfCode,String itemName, java.util.Date startDate, java.util.Date endDate)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		itemName = "%" + itemName + "%";
+		
+		Date sDate = SqlDateUtil.getSqlDate(startDate);
+		Date eDate = SqlDateUtil.getSqlDate(endDate);
+		
+		HeaderIter headerIter = null;
+		#sql [myCtx] headerIter = {
+				WITH
+			    DELIVERY AS --已出货数
+			    (
+			        SELECT DISTINCT
+			            sh.FORM_REF_ID FORM_ID,
+			            sd.ITEM_ID,
+			            sd.ITEM_NAME,
+			            NVL(SUM(sd.DELIVERY_COUNT),0) DELIVERY_COUNT
+			        FROM
+			        :{Com_("D_T1_SHIPPING_HEADER")} sh
+			        INNER JOIN
+			        :{Com_("D_T1_SHIPPING_DETAIL")} sd
+			        ON
+			            sd.FORM_ID = sh.FORM_ID
+			        AND sh.PROVIDER_ID='F00'
+	        		INNER JOIN
+        			:{Com_("D_T0_FORM_STATUS")} s
+        			ON
+        				sh.FORM_ID = s.FORM_ID
+        			AND IS_CURRENT = '1' 
+            		AND s.STATUS = '已审核'
+			        GROUP BY
+			            (sh.FORM_REF_ID, sd.ITEM_ID,sd.ITEM_NAME)
+			    )
+			    ,
+			    RECEIVE AS --已入库数
+			    (
+			        SELECT DISTINCT
+			            d.FORM_ID,
+			            d.ITEM_ID,
+			            d.ITEM_NAME,
+			            NVL(SUM(id.RECEIVE_COUNT),0) RECEIVE_COUNT
+			        FROM
+			        :{Com_("D_T1_PURCHASING_DETAIL")} d
+			        INNER JOIN
+			        :{Com_("D_T1_COLLECT_REF_FORM")} f
+			        ON
+			            f.REF_FORM_ID=d.FORM_ID
+			        AND d.ITEM_ID = f.ITEM_ID
+			        INNER JOIN
+			        :{Com_("D_T1_ARRENGMENT_DETAIL")} ad
+			        ON
+			            f.COLLECT_FORM_ID=ad.FORM_ID
+			        AND ad.ITEM_ID =f.ITEM_ID
+			        INNER JOIN
+			        :{Com_("D_T1_INPUT_HEADER")} ih
+			        ON
+			            ih.FORM_REF_ID=ad.WORK_ORDER_ID
+			        INNER JOIN
+			        :{Com_("D_T1_INPUT_DETAIL")} id
+			        ON
+			            id.FORM_ID = ih.FORM_ID
+            		INNER JOIN
+        			:{Com_("D_T0_FORM_STATUS")} s
+        			ON
+        			    ih.FORM_ID = s.FORM_ID
+        			AND IS_CURRENT = '1' 
+            		AND s.STATUS = '已审核'
+			        GROUP BY
+			            ( d.FORM_ID, d.ITEM_ID ,d.ITEM_NAME)
+			    )
+			SELECT DISTINCT
+			    h.*
+			FROM
+			:{Com_("D_T1_PURCHASING_HEADER")} h
+			INNER JOIN
+			    RECEIVE r
+			ON
+			    r.FORM_ID=h.FORM_ID
+			LEFT JOIN
+			    DELIVERY d
+			ON
+			    r.ITEM_ID =d.ITEM_ID
+			AND d.FORM_ID=r.form_id
+			INNER JOIN
+			:{Com_("D_T0_FORM_STATUS")} s
+			ON
+			    h.FORM_ID = s.FORM_ID
+			AND IS_CURRENT = '1' 
+			WHERE
+			    --	h.REQUESTER_ID = :lcCode
+			    h.PROVIDER_ID = :cfCode
+    		AND s.STATUS = '已审核'
+			AND NVL(d.DELIVERY_COUNT,0) <NVL(r.RECEIVE_COUNT,0)
+			AND (
+                    r.ITEM_ID LIKE :itemName
+                OR  r.ITEM_NAME LIKE :itemName)
+		    AND (h.AUDIT_TIME >= :sDate or :sDate is null)
+			AND (h.AUDIT_TIME <= :eDate or :eDate is null)
+		    ORDER BY
+		        h.FORM_ID	
+		};
+		List<PurchasingHeader> headerLst = processIter(headerIter);
+		headerIter.close();
+		closeDefaultContext(myCtx);
+		return headerLst;
+	}
+
+	private List<PurchasingHeader> processIter(HeaderIter headerIter) 
+			throws SQLException {
+		List<PurchasingHeader> headerLst = new ArrayList<PurchasingHeader>();
+		while(headerIter.next()) {
+			PurchasingHeader header = new PurchasingHeader();
+			header.setFormId(headerIter.form_id());
+			header.setDeliveryType(headerIter.delivery_type());
+			header.setProviderId(headerIter.provider_id());
+			header.setProvider(headerIter.provider());
+			header.setRequesterId(headerIter.requester_id());
+			header.setRequester(headerIter.requester());
+			header.setReceiverId(headerIter.receiver_id());
+			header.setReceiver(headerIter.receiver());
+			header.setReceiveAddress(headerIter.receive_address());
+			header.setReceiveTime(SqlDateUtil.getUtilDate(headerIter.receive_time()));
+			header.setFormMakerId(headerIter.form_maker_id());
+			header.setFormMaker(headerIter.form_maker());
+			header.setFormTime(SqlDateUtil.getUtilDate(headerIter.form_time()));
+			header.setAuditorId(headerIter.auditor_id());
+			header.setAuditor(headerIter.auditor());
+			header.setAuditTime(SqlDateUtil.getUtilDate(headerIter.audit_time()));
+			header.setFormNote(headerIter.form_note());
+			header.setStorage(headerIter.storage());
+			header.setStorageId(headerIter.storage_id());
+			header.setAllPayAmt(headerIter.all_pay_amt());
+			header.setMaxPayItem(headerIter.max_pay_item());
+			headerLst.add(header);
+		}
+		return headerLst;
+	}
+}

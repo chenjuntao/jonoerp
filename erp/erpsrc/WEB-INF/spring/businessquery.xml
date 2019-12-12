@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:aop = "http://www.springframework.org/schema/aop"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+	http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+	http://www.springframework.org/schema/aop 
+	http://www.springframework.org/schema/aop/spring-aop-2.5.xsd"
+	default-autowire="byName">
+
+    <bean id="shopBean" class="logic.businessquery.ShopBean" />
+    <bean id="tableBean" class="logic.businessquery.TableBean" />
+    <bean id="billBean" class="logic.businessquery.BillBean" />
+    <bean id="foodBean" class="logic.businessquery.FoodBean" />
+    <bean id="peopleBean" class="logic.businessquery.PeopleBean" />
+    <bean id="shopPayBean" class="logic.businessquery.ShopPayBean" />
+	<bean id="foodAmtTTCNYBean" class="logic.businessquery.FoodAmtTTCNYBean" />
+	<bean id="foodCategoryBean" class="logic.businessquery.FoodCategoryBean" />
+	
+	<bean id="foodRawMaterialBean" class="logic.businessquery.FoodRawMaterialBean" />
+	
+	<bean id="shopPaymentBean" class="logic.businessquery.ShopPaymentBean" />
+	<bean id="periodBusinessBean" class="logic.businessquery.PeriodBusinessBean" />
+	
+	<bean id="returnReasonBean" class="logic.businessquery.ReturnReasonBean" />
+	<bean id="presentReasonBean" class="logic.businessquery.PresentReasonBean" />
+	<bean id="discountReasonBean" class="logic.businessquery.DiscountReasonBean" />
+	<bean id="billPayDetailBean" class="logic.businessquery.BillPayDetailBean" />
+	
+	<bean id="businessCountBean" class="logic.businessquery.BusinessCountBean" />
+	
+	<bean id="foodSellCountBean" class="logic.businessquery.FoodSellCountBean" />
+	<bean id="foodSummaryBean" class="logic.businessquery.FoodSummaryBean" />
+	<bean id="incomeDetailBean" class="logic.businessquery.IncomeDetailBean" />
+	
+	<bean id="PeoplePayBean" class="logic.businessquery.PeoplePayBean" />
+</beans>
+

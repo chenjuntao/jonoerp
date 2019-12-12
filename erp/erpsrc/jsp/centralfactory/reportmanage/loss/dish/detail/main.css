@@ -1,0 +1,134 @@
+#dataGrid {
+	position: absolute;
+    top: 35px;
+    bottom: 0px;
+    width: 100%;
+    height: auto;
+}
+
+.gridxSortNode{
+    text-align: center !important; 
+}
+
+
+td[role="columnheader"] {
+	text-align: center !important; 
+}
+
+td[colid="rownumber"] {
+	text-align: center !important; 
+	min-width: 50px  !important; 
+	max-width: 50px  !important; 
+}
+
+td[colid="form_id"] {
+	text-align: center !important; 
+	min-width: 160px  !important; 
+}
+
+td[colid="loss_time"] {
+	text-align: center !important; 
+	min-width: 80px  !important; 
+}
+
+td[colid="audit_time"] {
+	text-align: center !important; 
+	min-width: 80px  !important; 
+}
+
+td[colid="item_id"] {
+	text-align: center !important; 
+	min-width: 80px  !important; 
+}
+
+td[colid="item_id2"] {
+	text-align: center !important; 
+	min-width: 80px  !important; 
+}
+
+td[colid="loss_branch_id"] {
+	text-align: center !important; 
+	min-width: 80px  !important; 
+}
+
+td[colid="loss_branch"] {
+	min-width: 120px  !important; 
+}
+
+td[colid="storage_id"] {
+	text-align: center !important; 
+	min-width: 80px  !important; 
+}
+
+td[colid="storage"] {
+	min-width: 120px  !important; 
+}
+
+
+td[colid="item_name"] {
+	min-width: 100px  !important; 
+}
+
+td[colid="item_name2"] {
+	min-width: 100px  !important; 
+}
+
+
+td[colid="item_dimension"] {
+	text-align: center !important; 
+	min-width: 50px  !important; 
+	max-width: 50px  !important; 
+}
+
+td[colid="item_specification"] {
+	min-width: 100px  !important; 
+}
+
+td[colid="item_count"] {
+	text-align: right !important; 
+	min-width: 100px  !important; 
+}
+
+td[colid="item_count2"] {
+	text-align: right !important; 
+	min-width: 100px  !important; 
+}
+
+td[colid="order_count"] {
+	text-align: right !important; 
+	min-width: 80px  !important; 
+}
+
+td[colid="unit_price"] {
+	text-align: right !important; 
+	min-width: 80px  !important; 
+}
+
+td[colid="storage_count"] {
+	text-align: right !important; 
+	min-width: 80px  !important; 
+}
+
+td[colid="pay_amt"] {
+	text-align: right !important; 
+	min-width: 80px  !important; 
+}
+
+td[colid="loss_type"] {
+	text-align: center !important; 
+	min-width: 80px  !important; 
+}
+
+td[colid="item_type"] {
+	min-width: 80px  !important; 
+}
+
+td[colid="status"] {
+	text-align: center !important; 
+	min-width: 80px  !important; 
+}
+
+td[colid="reason"] {
+	min-width: 120px  !important; 
+}
+

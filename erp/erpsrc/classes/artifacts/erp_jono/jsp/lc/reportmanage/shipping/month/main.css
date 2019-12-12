@@ -1,0 +1,162 @@
+#dataGrid {
+	position: absolute;
+	width: 100%;
+	height: 86%;
+}
+
+td[role="columnheader"] {
+	text-align: center !important; 
+}
+
+.gridxSortNode {
+	text-align: center !important;
+}
+
+td[colid="rownumber"] {
+	text-align: center !important; 
+	min-width: 50px  !important; 
+	max-width: 50px  !important; 
+}
+
+td[colid="form_id"] {
+	text-align: center !important; 
+	min-width: 150px  !important; 
+}
+
+td[colid="form_ref_id"] {
+	text-align: center !important; 
+	min-width: 150px  !important; 
+}
+
+td[colid="form_time"] {
+	text-align: center !important; 
+	min-width: 80px  !important; 
+}
+
+td[colid="input_time"] {
+	text-align: center !important; 
+	min-width: 80px  !important; 
+}
+
+td[colid="provider"] {
+	text-align: center !important; 
+	min-width: 80px  !important; 
+}
+
+td[colid="out_storage"] {
+	min-width: 150px  !important; 
+}
+
+td[colid="requester"] {
+	min-width: 150px  !important; 
+}
+
+td[colid="audit_time"] {
+	text-align: center !important; 
+	min-width: 80px  !important; 
+}
+
+td[colid="item_id"] {
+	text-align: center !important; 
+	min-width: 80px  !important; 
+}
+
+
+td[colid="category_name"] {
+	min-width: 100px  !important; 
+}
+
+td[colid="item_name"] {
+	min-width: 100px  !important; 
+}
+
+td[colid="item_category"] {
+	text-align: center !important; 
+	min-width: 80px  !important; 
+}
+
+td[colid="item_dimension"] {
+	text-align: center !important; 
+	min-width: 50px  !important; 
+	max-width: 50px  !important; 
+}
+
+td[colid="item_specification"] {
+	min-width: 100px  !important; 
+}
+
+td[colid="inventory"] {
+	text-align: right !important; 
+	min-width: 80px  !important; 
+}
+
+td[colid="order_count"] {
+	text-align: right !important; 
+	min-width: 80px  !important; 
+}
+
+td[colid="packaging_factor"] {
+	text-align: right !important; 
+	min-width: 70px  !important; 
+}
+
+td[colid="packaging_unit"] {
+	text-align: center !important; 
+	min-width: 70px  !important; 
+}
+
+td[colid="different_count"] {
+	text-align: right !important; 
+	min-width: 80px  !important; 
+}
+
+td[colid="packaging_count"] {
+	text-align: right !important; 
+	min-width: 80px  !important; 
+}
+
+td[colid="apply_count"] {
+	text-align: right !important; 
+	min-width: 110px  !important; 
+}
+
+td[colid="actual_count"] {
+	text-align: right !important; 
+	min-width: 110px  !important; 
+}
+
+td[colid="item_unit_price"] {
+	text-align: right !important; 
+	min-width: 100px  !important; 
+}
+
+td[colid="pay_amt"] {
+	text-align: right !important; 
+	min-width: 80px  !important; 
+}
+
+td[colid="receive_count"] {
+	text-align: right !important; 
+	min-width: 80px  !important; 
+}
+
+td[colid="request_count"] {
+	text-align: right !important; 
+	min-width: 80px  !important; 
+}
+
+td[colid="shipping_count"] {
+	text-align: right !important; 
+	min-width: 80px  !important; 
+}
+
+td[colid="delivery_count"] {
+	text-align: right !important; 
+	min-width: 80px  !important; 
+}
+
+td[colid="different_reason"] {
+	min-width: 120px  !important; 
+}
+
+

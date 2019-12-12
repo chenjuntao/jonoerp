@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE struts PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN"
+    "http://struts.apache.org/dtds/struts-2.0.dtd">
+
+<struts>
+	<package name="hq_acscan" namespace="/hq/acscan" extends="trust-default">
+		<action name="mainView" class="action.supplier.AcscanAction">
+			<result name="success">/jsp/hq/accountscan/main.jsp</result>
+		</action>
+		
+		<action name="operate" method="operate" class="action.supplier.AcscanAction">
+			<result name="success">/jsp/hq/accountscan/operate.jsp</result>
+		</action>
+		
+		
+		<action name="doConfirm" method="doConfirm" class="action.supplier.AcscanAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doQuery" method="doQuery" class="action.supplier.AcscanAction">
+			<result type="json" />
+		</action>
+		
+		<action name="queryInBySForm" method="queryInBySForm" class="action.supplier.AcscanAction">
+			<result type="json" />
+		</action>
+	</package>
+</struts>
+

@@ -1,0 +1,86 @@
+#dataGrid {
+	position: absolute;
+	right: 0;
+	top: 110px;
+	bottom: 0;
+	width: 100%;
+	height: auto; /* override default height: 30em; in dgrid.css */
+}
+
+th[role="columnheader"] {
+	text-align: center;
+}
+
+.dgrid-cell {
+	/* 	width: 80px; make all the columns 80px wide */
+	vertical-align: middle;
+	width: 90px;
+}
+
+.dgrid-column-set-0 {
+	width: 230px;
+}
+
+.field-maxPayItem,.field-formTimeActual {
+	width: 160px;
+}
+
+.field-requester {
+	width: 130px;
+}
+
+.field-formRefId {
+	width: 110px;
+}
+
+.field-isAddForm {
+	width: 80px;
+}
+
+.field-requestAddress {
+	width: 250px;
+}
+
+.field-rownumber, .field-formId, .field-formType, .field-formTime,.field-formTimeActual,
+	.field-formMaker, .field-receiveTime, .field-formStatus,.field-print,.field-printTimes,
+	.field-pickStatus, .field-inputStatus, .field-scan, .field-operate ,.field-onStatus,.field-isAddForm{
+	text-align: center;
+}
+
+.field-rownumber {
+	width: 40px;
+}
+
+.field-formId {
+	width: 140px;
+}
+
+.field-formType {
+	width: 90px;
+}
+
+.field-buyerName {
+	width: 100px;
+}
+
+.field-print,.field-scan {
+	width: 60px;
+}
+
+.field-operate,.field-formMaker {
+	width: 120px;
+}
+
+.field-itemDimension,.field-printTimes {
+	width: 60px;
+}
+
+.field-allPayAmt {
+	width: 80px;
+	text-align: right;
+}
+
+.field-none {
+	/* 	width: 60px; */
+	
+}

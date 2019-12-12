@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE struts PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN"
+    "http://struts.apache.org/dtds/struts-2.0.dtd">
+
+<struts>
+	<package name="restaurant_billConditionsCount" namespace="/restaurant/billConditionsCount" extends="trust-default">
+		<action name="freeBillInfo" method="freeBillInfo" class="action.restaurant.BillConditionsCountAction">
+			<result type="json" />
+		</action>
+		
+		<action name="discountInfo" method="discountInfo" class="action.restaurant.BillConditionsCountAction">
+			<result type="json" />
+		</action>
+		
+		<action name="presentInfo" method="presentInfo" class="action.restaurant.BillConditionsCountAction">
+			<result type="json" />
+		</action>
+		
+		<action name="returnInfo" method="returnInfo" class="action.restaurant.BillConditionsCountAction">
+			<result type="json" />
+		</action>
+
+		<action name="mainView" class="action.restaurant.BillConditionsCountAction">
+			<result name="success">/jsp/restaurant/billConditionsCount/main.jsp</result>
+		</action>
+	</package>
+	
+	<package name="bq_freeBillCount_export" namespace="/bq/freeBillCount/export" extends="trust-default">
+		<action name="export" method="export" class="action.businessquery.export.FreeBillCountExportAction">
+			<result type="json" />
+		</action>
+	</package>
+</struts>
+

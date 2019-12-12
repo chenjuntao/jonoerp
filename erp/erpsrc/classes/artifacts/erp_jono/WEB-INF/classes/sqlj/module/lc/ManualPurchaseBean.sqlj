@@ -1,0 +1,321 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on Dec 19, 2014 by liyzh
+ * Last edited on Dec 19, 2014 by liyzh
+ * 
+ * 说明： 物流中心手动生成采购单
+ */
+package logic.module.lc;
+
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import sqlj.runtime.ref.DefaultContext;
+
+import com.tanry.framework.acl.NoPrivilegeException;
+import com.tanry.framework.util.constant.BranchCode;
+import com.tanry.framework.util.constant.ItemType;
+
+public class ManualPurchaseBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(ManualPurchaseBean.class);
+	
+	#sql private iterator DetailIter(String provider_id, String provider,
+			String item_id, String item_name, String item_dimension,
+			String item_specification, String category_id, Double item_unit_price, Double receive_price);
+	
+	public List<Map> queryMaterial(String lcCode, String categoryId)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		DetailIter detailIter = null;
+		#sql [myCtx] detailIter = {
+			SELECT
+			    m.*,
+			    s.SUPPLIER_ID AS PROVIDER_ID,
+			    b.BRANCH_NAME AS PROVIDER,
+			    p.ITEM_PRICE  AS ITEM_UNIT_PRICE,
+			    p2.ITEM_PRICE AS RECEIVE_PRICE
+			FROM
+				:{Com_("D_T2_ITEM_META")} m
+			LEFT JOIN
+				:{Com_("D_T2_SUPPLIER_BRANCH_ITEM")} s
+			ON
+			    s.BRANCH_ID = :lcCode
+			AND s.ITEM_ID = m.ITEM_ID
+			AND s.PRIORITY = 0
+			LEFT JOIN
+				:{Com_("D_T2_BRANCH")} b
+			ON
+			    b.BRANCH_ID = s.SUPPLIER_ID
+			LEFT JOIN
+				:{Com_("D_T2_ITEM_PRICE")} p
+			ON
+			    p.ITEM_ID = m.ITEM_ID
+			AND p.PRICE_TYPE = 'BENCHMARK'
+			AND p.IS_CURRENT = 1
+			LEFT JOIN
+				:{Com_("D_T2_ITEM_PRICE")} p2
+			ON
+			    p2.ITEM_ID = m.ITEM_ID
+			AND p2.PRICE_TYPE = 'PURCHASE'
+			AND p2.IS_CURRENT = 1
+			WHERE
+			    m.CATEGORY_ID = :categoryId AND m.ENABLED = 1
+			ORDER BY
+			    s.SUPPLIER_ID,
+			    m.ITEM_ID
+		};
+		List<Map> detailLst = processDetailIter(detailIter);
+		detailIter.close();
+		closeDefaultContext(myCtx);
+		return detailLst;
+	}
+	
+	public List<Map> queryItem(String lcCode, String itemName)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		itemName = "%" + itemName + "%";
+		String query = " (ITEM_TYPE = '" + ItemType.RAW + "' OR  ITEM_TYPE = '" + ItemType.SEMIS + "')";
+		DefaultContext myCtx = getDefaultContext();
+		DetailIter detailIter = null;
+		#sql [myCtx] detailIter = {
+			SELECT
+			    m.*,
+			    s.SUPPLIER_ID AS PROVIDER_ID,
+			    b.BRANCH_NAME AS PROVIDER,
+			    p.ITEM_PRICE  AS ITEM_UNIT_PRICE,
+			    p2.ITEM_PRICE AS RECEIVE_PRICE
+			FROM
+			:{Com_("D_T2_ITEM_META")} m
+			LEFT JOIN
+			:{Com_("D_T2_SUPPLIER_BRANCH_ITEM")} s
+			ON
+			    s.BRANCH_ID = :lcCode
+			AND s.ITEM_ID = m.ITEM_ID
+			AND s.PRIORITY=0
+			LEFT JOIN
+			:{Com_("D_T2_BRANCH")} b
+			ON
+			    b.BRANCH_ID = s.SUPPLIER_ID
+			LEFT JOIN
+			:{Com_("D_T2_ITEM_PRICE")} p
+			ON
+			    p.ITEM_ID = m.ITEM_ID
+			AND p.PRICE_TYPE = 'BENCHMARK'
+			AND p.IS_CURRENT = 1
+			LEFT JOIN
+			:{Com_("D_T2_ITEM_PRICE")} p2
+			ON
+			    p2.ITEM_ID = m.ITEM_ID
+			AND p2.PRICE_TYPE = 'PURCHASE'
+			AND p2.IS_CURRENT = 1
+			WHERE
+					:{query :: 1=1} AND m.ENABLED = 1
+	            AND (
+	                    m.ITEM_ID LIKE :itemName
+	                OR  m.ITEM_NAME LIKE :itemName)
+			ORDER BY
+			    s.SUPPLIER_ID,
+			    m.ITEM_ID
+		};
+		List<Map> detailLst = processDetailIter(detailIter);
+		detailIter.close();
+		closeDefaultContext(myCtx);
+		return detailLst;
+	}
+	
+	public List<Map> queryBySupplier(String lcCode, String supplierId,String itemName)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		itemName = "%" + itemName + "%";
+		String query = " (ITEM_TYPE = '" + ItemType.RAW + "' OR  ITEM_TYPE = '" + ItemType.SEMIS + "')";
+		DefaultContext myCtx = getDefaultContext();
+		DetailIter detailIter = null;
+		#sql [myCtx] detailIter = {
+			SELECT
+			    m.*,
+			    s.SUPPLIER_ID AS PROVIDER_ID,
+			    b.BRANCH_NAME AS PROVIDER,
+			    p.ITEM_PRICE  AS ITEM_UNIT_PRICE,
+			    NVL(p2.ITEM_PRICE, p3.ITEM_PRICE) AS RECEIVE_PRICE
+			FROM
+			:{Com_("D_T2_ITEM_META")} m
+			INNER JOIN
+			:{Com_("D_T2_SUPPLIER_BRANCH_ITEM")} s
+			ON
+			    s.BRANCH_ID = :lcCode
+    		And s.SUPPLIER_ID = :supplierId
+			AND s.ITEM_ID = m.ITEM_ID
+			LEFT JOIN
+			:{Com_("D_T2_BRANCH")} b
+			ON
+			    b.BRANCH_ID = :supplierId
+			LEFT JOIN
+			:{Com_("D_T2_ITEM_PRICE")} p
+			ON
+			    p.ITEM_ID = m.ITEM_ID
+			AND p.PRICE_TYPE = 'BENCHMARK'
+			AND p.IS_CURRENT = 1
+			LEFT JOIN
+			:{Com_("D_T2_ITEM_PRICE")} p2
+			ON
+			    p2.ITEM_ID = m.ITEM_ID
+	    	AND	p2.PRICE_TYPE = 'SUPPLIER'
+			AND p2.SUPPLIER_ID = :supplierId
+			AND p2.IS_CURRENT = 1
+			LEFT JOIN
+			:{Com_("D_T2_ITEM_PRICE")} p3
+			ON
+			    p3.ITEM_ID = m.ITEM_ID
+			AND p3.PRICE_TYPE = 'PURCHASE'
+			AND p3.IS_CURRENT = 1
+			WHERE
+					:{query :: 1=1}
+	            AND (
+	                    m.ITEM_ID LIKE :itemName
+	                OR  m.ITEM_NAME LIKE :itemName)
+			ORDER BY
+			    s.SUPPLIER_ID,
+			    m.ITEM_ID
+		};
+		List<Map> detailLst = processDetailIter(detailIter);
+		detailIter.close();
+		closeDefaultContext(myCtx);
+		return detailLst;
+	}
+	
+	public List<Map> queryCFItem(String lcCode, String itemName)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		itemName = "%" + itemName + "%";
+		String query = "ITEM_TYPE = '" + ItemType.RAW + "'";
+		DefaultContext myCtx = getDefaultContext();
+		DetailIter detailIter = null;
+		#sql [myCtx] detailIter = {
+			SELECT
+			    m.*,
+			    s.SUPPLIER_ID AS PROVIDER_ID,
+			    b.BRANCH_NAME AS PROVIDER,
+			    p.ITEM_PRICE  AS ITEM_UNIT_PRICE,
+			    p2.ITEM_PRICE AS RECEIVE_PRICE
+			FROM
+			:{Com_("D_T2_ITEM_META")} m
+			LEFT JOIN
+			:{Com_("D_T2_SUPPLIER_BRANCH_ITEM")} s
+			ON
+			    s.BRANCH_ID = :lcCode
+			AND s.ITEM_ID = m.ITEM_ID
+			AND s.PRIORITY = 0
+			LEFT JOIN
+			:{Com_("D_T2_BRANCH")} b
+			ON
+			    b.BRANCH_ID = s.SUPPLIER_ID
+			LEFT JOIN
+			:{Com_("D_T2_ITEM_PRICE")} p
+			ON
+			    p.ITEM_ID = m.ITEM_ID
+			AND p.PRICE_TYPE = 'BENCHMARK'
+			AND p.IS_CURRENT = 1
+			LEFT JOIN
+			:{Com_("D_T2_ITEM_PRICE")} p2
+			ON
+			    p2.ITEM_ID = m.ITEM_ID
+			AND p2.PRICE_TYPE = 'PURCHASE'
+			AND p2.IS_CURRENT = 1
+			WHERE
+					:{query :: 1=1}
+	            AND (
+	                    m.ITEM_ID LIKE :itemName
+	                OR  m.ITEM_NAME LIKE :itemName)
+			ORDER BY
+			    s.SUPPLIER_ID,
+			    m.ITEM_ID
+		};
+		List<Map> detailLst = processDetailIter(detailIter);
+		detailIter.close();
+		closeDefaultContext(myCtx);
+		return detailLst;
+	}
+	
+	public List<Map> queryCFItem(String lcCode,String supplierId, String itemName)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		itemName = "%" + itemName + "%";
+		String query = "ITEM_TYPE = '" + ItemType.RAW + "'";
+		DefaultContext myCtx = getDefaultContext();
+		DetailIter detailIter = null;
+		#sql [myCtx] detailIter = {
+			SELECT
+			    m.*,
+			    s.SUPPLIER_ID AS PROVIDER_ID,
+			    b.BRANCH_NAME AS PROVIDER,
+			    p.ITEM_PRICE  AS ITEM_UNIT_PRICE,
+			    p2.ITEM_PRICE AS RECEIVE_PRICE
+			FROM
+			:{Com_("D_T2_ITEM_META")} m
+			INNER JOIN
+			:{Com_("D_T2_SUPPLIER_BRANCH_ITEM")} s
+			ON
+			    s.BRANCH_ID = :lcCode
+		    AND s.SUPPLIER_ID =:supplierId
+			AND s.ITEM_ID = m.ITEM_ID
+			AND s.PRIORITY = 0
+			LEFT JOIN
+			:{Com_("D_T2_BRANCH")} b
+			ON
+			    b.BRANCH_ID = :supplierId
+			LEFT JOIN
+			:{Com_("D_T2_ITEM_PRICE")} p
+			ON
+			    p.ITEM_ID = m.ITEM_ID
+			AND p.PRICE_TYPE = 'BENCHMARK'
+			AND p.IS_CURRENT = 1
+			LEFT JOIN
+			:{Com_("D_T2_ITEM_PRICE")} p2
+			ON
+			    p2.ITEM_ID = m.ITEM_ID
+			AND p2.PRICE_TYPE = 'PURCHASE'
+			AND p2.IS_CURRENT = 1
+			WHERE
+					:{query :: 1=1}
+	            AND (
+	                    m.ITEM_ID LIKE :itemName
+	                OR  m.ITEM_NAME LIKE :itemName)
+			ORDER BY
+			    s.SUPPLIER_ID,
+			    m.ITEM_ID
+		};
+		List<Map> detailLst = processDetailIter(detailIter);
+		detailIter.close();
+		closeDefaultContext(myCtx);
+		return detailLst;
+	}
+
+	private List<Map> processDetailIter(DetailIter detailIter) 
+			throws SQLException {
+		List<Map> detailLst = new ArrayList<Map>();
+		while(detailIter.next()) {
+			Map<String, Object> detail = new HashMap<String, Object>();
+			detail.put("providerId", detailIter.provider_id());
+			detail.put("provider", detailIter.provider());
+			detail.put("itemId", detailIter.item_id());
+			detail.put("itemName", detailIter.item_name());
+			detail.put("itemCategory", detailIter.category_id());
+			detail.put("itemDimension", detailIter.item_dimension());
+			detail.put("itemSpecification", detailIter.item_specification());
+			detail.put("itemUnitPrice", detailIter.item_unit_price());
+			detail.put("receivePrice", detailIter.receive_price());
+			detailLst.add(detail);
+		}
+		return detailLst;
+	}
+}

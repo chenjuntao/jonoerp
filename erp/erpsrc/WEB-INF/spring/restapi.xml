@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:aop = "http://www.springframework.org/schema/aop"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+	http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+	http://www.springframework.org/schema/aop 
+	http://www.springframework.org/schema/aop/spring-aop-2.5.xsd"
+	default-autowire="byName" default-lazy-init="true">
+	
+	<bean id="companyBean" class="logic.restapi.CompanyBean" />
+
+	<bean id="restApiLogBean" class="logic.restapi.RestApiLogBean" />
+	<bean id="restApiErrMsgBean" class="logic.restapi.RestApiErrMsgBean" />
+	<bean id="restApiErrJsonBean" class="logic.restapi.RestApiErrJsonBean" />
+	<bean id="weightBean" class="logic.restapi.WeightBean" />
+	
+	<bean id="restUtil" class="service.restapi.util.RestApiLog" />
+	
+	<bean id="restaurantService" class="service.restapi.RestaurantService"/>
+	<bean id="billService" class="service.restapi.BillService" />
+	<bean id="billsService" class="service.restapi.BillsService" />
+	<bean id="payService" class="service.restapi.PayService" />
+	<bean id="foodService" class="service.restapi.FoodService" />
+	<bean id="foodCategoryService" class="service.restapi.FoodCategoryService" />
+	<bean id="foodPriceService" class="service.restapi.FoodPriceService" />
+	<bean id="uploadWeightService" class="service.restapi.UploadWeightService" />
+</beans>
+

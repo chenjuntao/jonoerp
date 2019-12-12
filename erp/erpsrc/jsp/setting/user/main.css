@@ -1,0 +1,68 @@
+#groupTree {
+	position: absolute;
+	left: 0;
+	top: 32px;
+	bottom: 0px;
+	width: 30%;
+	height: auto; /* override default height: 30em; in dgrid.css */
+}
+
+#dataGrid {
+	position: absolute;
+	right: 0;
+	top: 32px;
+	bottom: 0px;
+	width: 70%;
+	height: auto; /* override default height: 30em; in dgrid.css */
+}
+
+#commandTable {
+	position: absolute;
+	bottom: 0;
+	width: 100%;
+}
+
+th[role="columnheader"] {
+	text-align: center;
+}
+
+th.edit-note {
+	color: red;
+}
+
+.dgrid-cell {
+	/* 	width: 80px; make all the columns 80px wide */
+	vertical-align: middle;
+}
+
+.field-rownumber, .field-userId, .field-gender, .field-operate {
+	text-align: center;
+}
+
+.field-rownumber {
+	width: 40px;
+}
+
+.field-userId {
+	width: 70px;
+}
+
+.field-userName,.field-roleName {
+	width: 120px;
+}
+
+.field-email {
+	width: 150px;
+}
+
+.field-telephone {
+	width: 90px;
+}
+
+.field-gender {
+	width: 80px;
+}
+
+.field-operate {
+	width: 80px;
+}

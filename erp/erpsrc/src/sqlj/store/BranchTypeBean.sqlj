@@ -1,0 +1,201 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on Tue Apr 28 10:42:27 CST 2015 by lyz
+ * Last edited on Tue Apr 28 10:42:27 CST 2015 by lyz
+ * 
+ * comment: 部门类型表(暂定七大类)
+ */
+package logic.store;
+
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import pojo.store.BranchType;
+import sqlj.runtime.ref.DefaultContext;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.TextUtil;
+import com.tanry.framework.acl.NoPrivilegeException;
+
+public class BranchTypeBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(BranchTypeBean.class);
+	
+	#sql private iterator BranchTypeIter(String type_id, String type_name, String description);
+	
+	public int saveEntity(BranchType branchType)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		String typeId = branchType.getTypeId();
+		String typeName = branchType.getTypeName();
+		String description = branchType.getDescription();
+
+		#sql [myCtx] {
+			INSERT INTO :{Com_("D_T2_BRANCH_TYPE")} 
+				(TYPE_ID, TYPE_NAME, DESCRIPTION) 
+			VALUES (:typeId, :typeName, :description)
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public int updateEntity(BranchType branchType)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		String typeId = branchType.getTypeId();
+		String typeName = branchType.getTypeName();
+		String description = branchType.getDescription();
+
+		#sql [myCtx] {
+			UPDATE
+			:{Com_("D_T2_BRANCH_TYPE")}
+			SET
+				TYPE_ID = :typeId,
+				TYPE_NAME = :typeName,
+				DESCRIPTION = :description
+			WHERE 
+				TYPE_ID = :typeId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+
+	public List<BranchType> query()
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		BranchTypeIter branchTypeIter = null;
+		#sql [myCtx] branchTypeIter = {
+			SELECT
+			    *
+			FROM
+			:{Com_("D_T2_BRANCH_TYPE")}
+			ORDER BY
+				TYPE_ID
+		};
+		List<BranchType> branchTypeLst = processIter(branchTypeIter);
+		branchTypeIter.close();
+		closeDefaultContext(myCtx);
+		return branchTypeLst;
+	}
+
+	private List<BranchType> processIter(BranchTypeIter branchTypeIter) 
+			throws SQLException {
+		List<BranchType> branchTypeLst = new ArrayList<BranchType>();
+		while(branchTypeIter.next()) {
+			BranchType branchType = new BranchType();
+			branchType.setTypeId(branchTypeIter.type_id());
+			branchType.setTypeName(branchTypeIter.type_name());
+			branchType.setDescription(branchTypeIter.description());
+			branchTypeLst.add(branchType);
+		}
+		return branchTypeLst;
+	}
+
+	#sql private iterator NodeIter(String id, String name, String parent, String type);
+	
+	public List<Map> queryDeptTree() 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		NodeIter nodeIter = null;
+		#sql [myCtx] nodeIter = {
+			SELECT
+			    TYPE_ID   AS id ,
+			    TYPE_NAME AS name,
+			    'root'    AS parent,
+			    'btype'    AS type
+			FROM
+				:{Com_("D_T2_BRANCH_TYPE")}
+			UNION ALL
+			SELECT
+			    b.BRANCH_ID   AS id ,
+			    '['||b.BRANCH_ID||']'||b.BRANCH_NAME AS name,
+			    b.BRANCH_TYPE AS parent,
+			    'branch'      AS type
+			FROM
+				:{Com_("D_T2_BRANCH")} b 
+			WHERE 
+				b.ENABLED = 1 order by 1
+		};
+		List<Map> nodeLst = new ArrayList<Map>();
+		while(nodeIter.next()) {
+			Map<String, String> node = new HashMap<String, String>();
+			node.put("id", nodeIter.id());
+			node.put("name", nodeIter.name());
+			node.put("parent", nodeIter.parent());
+			node.put("type", nodeIter.type());
+			nodeLst.add(node);
+		}
+		nodeIter.close();
+		closeDefaultContext(myCtx);
+		return nodeLst;
+	}
+
+	#sql private iterator RoleNodeIter(String id, String name, String parent, String type, String is_leaf);
+	
+	public List<Map> queryRoleTree() 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		RoleNodeIter nodeIter = null;
+		#sql [myCtx] nodeIter = {
+			WITH
+			    roles AS
+			    (
+			        SELECT
+			            TYPE_ID   AS id ,
+			            TYPE_NAME AS name,
+			            'root'    AS parent,
+			            'btype'   AS type
+			        FROM
+			        :{Com_("D_T2_BRANCH_TYPE")}
+			        UNION ALL
+			        SELECT
+			            r.ROLE_ID     AS id ,
+			            r.ROLE_NAME   AS name,
+			            r.BRANCH_TYPE AS parent,
+			            'role'        AS type
+			        FROM
+			        :{Com_("D_T0_ROLE")} r
+			    )
+			SELECT
+			    ID,
+			    NAME,
+			    PARENT,
+			    TYPE,
+			    CONNECT_BY_ROOT NAME "ROOT",
+			    CONNECT_BY_ISLEAF    is_leaf,
+			    LEVEL,
+			    SYS_CONNECT_BY_PATH(ID, '/') "PATH"
+			FROM
+			    roles u START WITH PARENT = 'root' CONNECT BY PRIOR ID = PARENT
+		};
+		List<Map> nodeLst = new ArrayList<Map>();
+		while(nodeIter.next()) {
+			Map<String, String> node = new HashMap<String, String>();
+			node.put("id", nodeIter.id());
+			node.put("name", nodeIter.name());
+			node.put("parent", nodeIter.parent());
+			node.put("type", nodeIter.type());
+			node.put("isLeaf", nodeIter.is_leaf());
+			nodeLst.add(node);
+		}
+		nodeIter.close();
+		closeDefaultContext(myCtx);
+		return nodeLst;
+	}
+}

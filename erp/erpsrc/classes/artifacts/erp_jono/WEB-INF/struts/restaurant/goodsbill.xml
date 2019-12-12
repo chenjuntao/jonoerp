@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE struts PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN"
+    "http://struts.apache.org/dtds/struts-2.0.dtd">
+
+<struts>
+	<package name="restaurant_goodsbill_create" namespace="/restaurant/goodsbill/create" extends="trust-default">
+		<action name="mainView" class="action.restaurant.goodsbill.CreateBillAction">
+			<result name="success">/jsp/restaurant/goodsbill/create/main.jsp</result>
+		</action>
+		
+		<action name="addmainView" class="action.restaurant.goodsbill.CreateBillAction">
+			<result name="success">/jsp/restaurant/goodsbill/addcreate/main.jsp</result>
+		</action>
+		
+		<action name="commitView" method="commitView" class="action.restaurant.goodsbill.CreateBillAction">
+			<result name="success">/jsp/restaurant/goodsbill/create/commit.jsp</result>
+			<result name="input" type="json" />
+		</action>
+		
+		<action name="doCommit" method="doCommit" class="action.restaurant.goodsbill.CreateBillAction">
+			<interceptor-ref name="defaultStack" />
+			<interceptor-ref name="token" />
+			<result type="json" />
+		</action>
+		
+		<action name="calcSuggest" method="calcSuggest" class="action.restaurant.goodsbill.CreateBillAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doImport" method="doImport" class="action.restaurant.goodsbill.CreateBillAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="restaurant_goodsbill_template" namespace="/restaurant/goodsbill/template" extends="trust-default">
+		<action name="mainView" class="action.restaurant.goodsbill.TemplateManageAction">
+			<result name="success">/jsp/restaurant/goodsbill/template/main.jsp</result>
+		</action>
+		
+		<action name="addView" method="addView" class="action.restaurant.goodsbill.TemplateManageAction">
+			<result name="success">/jsp/restaurant/goodsbill/template/add.jsp</result>
+		</action>
+		
+		<action name="editView" method="editView" class="action.restaurant.goodsbill.TemplateManageAction">
+			<result name="success">/jsp/restaurant/goodsbill/template/edit.jsp</result>
+		</action>
+		
+		<action name="scanView" method="editView" class="action.restaurant.goodsbill.TemplateManageAction">
+			<result name="success">/jsp/restaurant/goodsbill/template/scan.jsp</result>
+		</action>
+		
+		<action name="copyView" method="copyView" class="action.restaurant.goodsbill.TemplateManageAction">
+			<result name="success">/jsp/restaurant/goodsbill/template/copy.jsp</result>
+		</action>
+		
+		<action name="pickModelView" method="pickModelView" class="action.restaurant.goodsbill.TemplateManageAction">
+			<result name="success">/jsp/restaurant/goodsbill/template/pickmodel.jsp</result>
+		</action>
+		
+		<action name="saveModelView" method="saveModelView" class="action.restaurant.goodsbill.TemplateManageAction">
+			<result name="success">/jsp/restaurant/goodsbill/template/savemodel.jsp</result>
+		</action>
+		
+		<action name="doQuery" method="doQuery" class="action.restaurant.goodsbill.TemplateManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="queryItem" method="queryItem" class="action.restaurant.goodsbill.TemplateManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doCopy" method="doCopy" class="action.restaurant.goodsbill.TemplateManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doImport" method="doImport" class="action.restaurant.goodsbill.TemplateManageAction">
+			<result type="json" />
+		</action>
+	</package>
+
+	<package name="restaurant_goodsbill_selmaterial" namespace="/restaurant/goodsbill/selmaterial" extends="trust-default">
+		<action name="mainView" class="action.restaurant.goodsbill.SelMaterialAction">
+			<result name="success">/jsp/restaurant/goodsbill/selmaterial/main.jsp</result>
+		</action>
+		
+		<action name="doQuery" method="doQuery" class="action.restaurant.goodsbill.SelMaterialAction">
+			<result type="json" />
+		</action>
+		
+		<action name="queryItem" method="queryItem" class="action.restaurant.goodsbill.SelMaterialAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="restaurant_goodsbill_confirm" namespace="/restaurant/goodsbill/confirm" extends="trust-default">
+		<action name="mainView" class="action.restaurant.goodsbill.ConfirmBillAction">
+			<result name="success">/jsp/restaurant/goodsbill/confirm/main.jsp</result>
+		</action>
+		
+		<action name="auditView" method="auditView" class="action.restaurant.goodsbill.ConfirmBillAction">
+			<result name="success">/jsp/restaurant/goodsbill/confirm/audit.jsp</result>
+		</action>
+		
+		<action name="doAudit" method="doAudit" class="action.restaurant.goodsbill.ConfirmBillAction">
+			<interceptor-ref name="defaultStack" />
+			<interceptor-ref name="token" />
+			<result type="json" />
+		</action>
+		
+		<action name="auditById" method="auditById" class="action.restaurant.goodsbill.ConfirmBillAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="restaurant_goodsbill_query" namespace="/restaurant/goodsbill/query" extends="trust-default">
+		<action name="mainView" class="action.restaurant.goodsbill.BillManageAction">
+			<result name="success">/jsp/restaurant/goodsbill/query/main.jsp</result>
+		</action>
+		
+		<action name="editView" method="editView" class="action.restaurant.goodsbill.BillManageAction">
+			<result name="success">/jsp/restaurant/goodsbill/query/edit.jsp</result>
+		</action>
+		
+		<action name="scanView" method="scanView" class="action.restaurant.goodsbill.BillManageAction">
+			<result name="success">/jsp/restaurant/goodsbill/query/scan.jsp</result>
+		</action>
+		
+		<action name="doQuery" method="doQuery" class="action.restaurant.goodsbill.BillManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="getCurrentStatus" method="getCurrentStatus" class="action.restaurant.goodsbill.BillManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="queryDetail" method="queryDetail" class="action.restaurant.goodsbill.BillManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doSave" method="doSave" class="action.restaurant.goodsbill.BillManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doDelete" method="doDelete" class="action.restaurant.goodsbill.BillManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doInvalid" method="doInvalid" class="action.restaurant.goodsbill.BillManageAction">
+			<result type="json" />
+		</action>
+	</package>
+</struts>
+

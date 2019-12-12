@@ -1,0 +1,171 @@
+package logic.reportmanage;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import java.util.Map;
+import java.util.HashMap;
+
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
+
+import pojo.store.Branch;
+import sqlj.runtime.ref.DefaultContext;
+
+import com.tanry.business.module.setting.user.pojo.UserToBranch;
+import com.tanry.framework.acl.NoPrivilegeException;
+
+public class UserBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(UserBean.class);
+	
+	#sql public static iterator HeaderIter(
+			String user_id, 
+			String user_name, 
+			String role_name,
+			String email,	
+			String telephone,
+			String gender,
+			String branch_id,
+			String branch_name
+		);
+	
+	public Map getColmunType(){
+		Map map  = new HashMap();
+		map.put("user_id", "String");
+		map.put("user_name", "String");
+		map.put("role_name", "String");
+		map.put("email", "String");
+		map.put("telephone", "String");
+		map.put("gender", "String");
+		map.put("branch_id", "String");
+		map.put("branch_name", "String"); 
+		
+		return map;
+	}
+	
+	public Map getColmunPrefix(){
+		Map map  = new HashMap();
+		map.put("user_id", "u");
+		map.put("user_name", "u");
+		map.put("role_name", "tr");
+		map.put("email", "u");
+		map.put("telephone", "u");
+		map.put("gender", "u");
+		map.put("branch_id", "ub");
+		map.put("branch_name", "b"); 
+		return map;
+	}
+	
+	public int count(String queryStr, String sortStr)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		
+		DefaultContext myCtx = getDefaultContext();
+		int total = 0;
+		#sql [myCtx] {
+		SELECT
+		    COUNT(*)
+		INTO
+		    :total
+		FROM
+		    :{Com_("D_T2_USER")} u
+		INNER JOIN
+		    :{Com_("D_T0_USERTOBRANCH")} ub
+		ON
+		    ub.USER_ID = u.USER_ID
+		INNER JOIN
+		    :{Com_("D_T2_BRANCH")} b
+		ON
+		    ub.BRANCH_ID = b.BRANCH_ID
+		LEFT JOIN
+		    :{Com_("D_T0_USERTOROLE")} ut
+		ON
+		    u.USER_ID = ut.USER_ID
+		LEFT JOIN
+		    :{Com_("D_T0_ROLE")} tr
+		ON
+		    ut.ROLE_ID = tr.ROLE_ID
+		WHERE
+		    1 = 1 :{queryStr :: ''}};
+		closeDefaultContext(myCtx);
+		return total;
+	}
+	
+	
+	public List<Map> query(int startRow, int endRow,String queryStr,  String sortStr)  
+			throws NoPrivilegeException,SQLException,NoConnection {
+		
+		DefaultContext myCtx = getDefaultContext();
+		HeaderIter headerIter = null;
+		#sql [myCtx] headerIter = {
+			SELECT
+			    *
+			    FROM
+			        (
+			            SELECT
+			                t.*,
+			                ROWNUM rowNumber
+			            FROM
+			                (
+			                    SELECT
+			                        u.*,
+			                        ub.BRANCH_ID,
+			                        b.BRANCH_NAME,
+			                        tr.ROLE_NAME
+			                    FROM
+			                        :{Com_("D_T2_USER")} u
+			                    INNER JOIN
+			                        :{Com_("D_T0_USERTOBRANCH")} ub
+			                    ON
+			                        ub.USER_ID = u.USER_ID
+			                    INNER JOIN
+			                        :{Com_("D_T2_BRANCH")} b
+			                    ON
+			                        ub.BRANCH_ID = b.BRANCH_ID
+			                    LEFT JOIN
+			                        :{Com_("D_T0_USERTOROLE")} ut
+			                    ON
+			                        u.USER_ID = ut.USER_ID
+			                    LEFT JOIN
+			                        :{Com_("D_T0_ROLE")} tr
+			                    ON
+			                        ut.ROLE_ID = tr.ROLE_ID
+			                    WHERE
+			                        1 = 1 :{queryStr :: ''} :{sortStr :: ''}) t
+			            WHERE
+			                ROWNUM < :endRow)
+			    WHERE
+			        rowNumber >= :startRow};
+		List<Map> headerLst = processIter(headerIter);
+		headerIter.close();
+		closeDefaultContext(myCtx);
+		return headerLst;
+	}
+
+	
+	private List<Map> processIter(HeaderIter headerIter) 
+			throws SQLException {
+		List<Map> headerLst = new ArrayList<Map>();
+		
+		while(headerIter.next()) {
+			Map header = new HashMap();
+			header.put("user_id", headerIter.user_id());
+			header.put("user_name", headerIter.user_name());
+			header.put("role_name", headerIter.role_name());
+			header.put("email", headerIter.email());
+			header.put("telephone", headerIter.telephone());
+			header.put("gender", headerIter.gender());
+			header.put("branch_id", headerIter.branch_id());
+			header.put("branch_name", headerIter.branch_name());
+			
+			headerLst.add(header);
+		}
+		return headerLst;
+	}
+}

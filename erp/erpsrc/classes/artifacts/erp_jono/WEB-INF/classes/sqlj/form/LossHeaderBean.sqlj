@@ -1,0 +1,474 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on Sep 17, 2014 by cjt
+ * Last edited on Sep 17, 2014 by cjt
+ * 
+ * 说明： 餐厅报损单表明细
+ */
+package logic.form;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import pojo.form.LossHeader;
+import sqlj.runtime.ref.DefaultContext;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.TextUtil;
+import com.tanry.framework.acl.NoPrivilegeException;
+
+public class LossHeaderBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(LossHeaderBean.class);
+	
+	#sql private iterator HeaderIter(
+				String form_id, 
+				String loss_type, 
+				String loss_branch_id,
+				String loss_branch,
+				String storage_id,
+				String storage,
+				String loss_man_id,
+				String loss_man,
+				Date loss_time, 
+				String auditor_id,
+				String auditor,
+				Date audit_time,
+				String processor_id, 
+				String processor, 
+				Date process_time,
+				String form_note,
+				Double all_pay_amt, 
+				String max_pay_item,
+				String formStatus,
+				Date audit_time_actual	
+			);
+	
+	public int saveEntity(LossHeader header)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		String formId = header.getFormId();
+		String lossType = header.getLossType();
+		String lossBranchId = header.getLossBranchId();
+		String lossBranch = header.getLossBranch();
+		String storageId = header.getStorageId();
+		String storage = header.getStorage();
+		String lossManId = header.getLossManId();
+		String lossMan = header.getLossMan();
+		Date lossTime = SqlDateUtil.getSqlDate(header.getLossTime());
+		String auditorId = header.getAuditorId();
+		String auditor = header.getAuditor();
+		Date auditTime = SqlDateUtil.getSqlDate(header.getAuditTime());
+		String processorId = header.getProcessorId();
+		String processor = header.getProcessor();
+		Date processTime = SqlDateUtil.getSqlDate(header.getProcessTime());
+		String formNote = header.getFormNote();
+		Double allPayAmt = header.getAllPayAmt();
+		String maxPayItem = header.getMaxPayItem();
+
+		#sql [myCtx] {
+			INSERT INTO :{Com_("D_T1_LOSS_HEADER")}
+				(FORM_ID, LOSS_TYPE, LOSS_BRANCH_ID, LOSS_BRANCH, STORAGE_ID, STORAGE, LOSS_MAN_ID, LOSS_MAN, LOSS_TIME, AUDITOR_ID, AUDITOR, AUDIT_TIME, PROCESSOR_ID, PROCESSOR, PROCESS_TIME, FORM_NOTE, ALL_PAY_AMT, MAX_PAY_ITEM) 
+			VALUES (:formId, :lossType, :lossBranchId, :lossBranch, :storageId, :storage, :lossManId, :lossMan, :lossTime, :auditorId, :auditor, :auditTime, :processorId, :processor, :processTime, :formNote, :allPayAmt, :maxPayItem)
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public int updateEntity(LossHeader header)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		String formId = header.getFormId();
+		Double allPayAmt = header.getAllPayAmt();
+		String maxPayItem = header.getMaxPayItem();
+
+		#sql [myCtx] {
+			UPDATE
+			:{Com_("D_T1_LOSS_HEADER")}
+			SET
+			    ALL_PAY_AMT = :allPayAmt,
+			    MAX_PAY_ITEM = :maxPayItem
+			WHERE 
+				FORM_ID = :formId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+
+	public int deleteEntity(String formId)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		#sql [myCtx] {
+			DELETE
+			FROM
+			:{Com_("D_T1_LOSS_HEADER")}
+			WHERE
+				FORM_ID = :formId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	/**
+	 * 餐厅要货单审核
+	 */
+	public int audit(String formId, String autidorId, String autidor, java.util.Date auditTime)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		Date auditTimeActual = SqlDateUtil.getSqlDate(new java.util.Date());
+		Date sAuditTime = SqlDateUtil.getSqlDate(auditTime);
+		#sql [myCtx] {
+			UPDATE
+			:{Com_("D_T1_LOSS_HEADER")}
+			SET
+				AUDITOR_ID = :autidorId,
+				AUDITOR = :autidor,
+				AUDIT_TIME = :sAuditTime,
+				AUDIT_TIME_ACTUAL =:auditTimeActual
+			WHERE 
+				FORM_ID = :formId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	/**
+	 * 餐厅要货单处理
+	 */
+	public int process(String formId, String processorId, String processor, java.util.Date processTime)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		Date sProcessTime = SqlDateUtil.getSqlDate(processTime);
+		#sql [myCtx] {
+			UPDATE
+			:{Com_("D_T1_LOSS_HEADER")}
+			SET
+				PROCESSOR_ID = :processorId,
+				PROCESSOR = :processor,
+				PROCESS_TIME = :sProcessTime
+			WHERE 
+				FORM_ID = :formId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	private String formQuery(String branchId,String storageId, String lossType, String status)
+	{
+		String query = " 1=1";
+		
+		//门店ID
+		if (!TextUtil.isEmpty(branchId)) {
+			query += " AND h.LOSS_BRANCH_ID = '" + branchId + "'";
+		}
+		
+		//仓库ID
+		if (!TextUtil.isEmpty(storageId)) {
+			query += " AND h.STORAGE_ID = '" + storageId + "'";
+		}
+		
+		if (!TextUtil.isEmpty(lossType)) {
+			query += " AND h.LOSS_TYPE = '" + lossType + "'";
+		}
+		
+		if (!TextUtil.isEmpty(status)) {
+			if ("ap".equals(status)) {//audit&process 
+				query += " AND ( NVL( s.STATUS, 'null') = '未审核' "
+						+ "OR NVL( s.STATUS, 'null') = '未处理')";
+			} else {
+				query += " AND NVL( s.STATUS, 'null') = '" + status + "'";
+			}
+		}
+		return query;
+	}
+
+	public int countAll(java.util.Date startDate, java.util.Date endDate, 
+			String branchId, String storageId,String lossType,String branchType) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		String query = formQuery(branchId,storageId, lossType, "");
+		Date sDate = SqlDateUtil.getSqlDate(startDate);
+		Date eDate = SqlDateUtil.getSqlDate(endDate);
+		
+		DefaultContext myCtx = getDefaultContext();
+		int total = 0;
+		
+		#sql [myCtx] {
+		SELECT
+		    COUNT(*)
+		INTO
+		    :total
+	    FROM
+	    :{Com_("D_T1_LOSS_HEADER")} h
+	    LEFT JOIN
+	    :{Com_("D_T2_BRANCH")} b
+	    ON
+	        h.LOSS_BRANCH_ID = b.BRANCH_ID
+		WHERE
+		    :{query ::}
+		AND b.BRANCH_TYPE = :branchType
+		AND (
+		        h.LOSS_TIME >= :sDate
+		    OR  :sDate IS NULL)
+		AND (
+		        h.LOSS_TIME <= :eDate
+		    OR  :eDate IS NULL)};
+		closeDefaultContext(myCtx);
+		return total;
+	}
+	
+	/**
+	 * 合计
+	 */
+	public double sum(java.util.Date startDate, java.util.Date endDate, 
+			String branchId,String storageId,String lossType,String branchType) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		
+		String query = formQuery(branchId,storageId, lossType, "");
+		Date sDate = SqlDateUtil.getSqlDate(startDate);
+		Date eDate = SqlDateUtil.getSqlDate(endDate);
+		
+		double allPayAmt = 0;
+		
+		DefaultContext myCtx = getDefaultContext();
+		#sql [myCtx] {
+		SELECT
+		    SUM(h.ALL_PAY_AMT)
+		INTO
+		    :allPayAmt
+	    FROM
+	    :{Com_("D_T1_LOSS_HEADER")} h
+	    LEFT JOIN
+	    :{Com_("D_T2_BRANCH")} b
+	    ON
+	        h.LOSS_BRANCH_ID = b.BRANCH_ID
+		WHERE
+		    :{query ::}
+		AND b.BRANCH_TYPE = :branchType
+		AND (
+		        h.LOSS_TIME >= :sDate
+		    OR  :sDate IS NULL)
+		AND (
+		        h.LOSS_TIME <= :eDate
+		    OR  :eDate IS NULL)};
+		
+		closeDefaultContext(myCtx);
+		return allPayAmt;
+	}
+	
+	/**
+	 * branchId 门店ID
+	 * storageId 仓库ID
+	 * branchType 门店类型
+	 */
+	public List<LossHeader> queryAll(java.util.Date startDate, java.util.Date endDate, 
+			String branchId,String storageId, String lossType,String branchType,int startRow,int endRow) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		String query = formQuery(branchId,storageId,lossType, "");
+		Date sDate = SqlDateUtil.getSqlDate(startDate);
+		Date eDate = SqlDateUtil.getSqlDate(endDate);
+		
+		DefaultContext myCtx = getDefaultContext();
+		HeaderIter headerIter = null;
+		#sql [myCtx] headerIter = {
+		SELECT
+			    *
+			    FROM
+			        (
+			            SELECT
+			                t.*,
+			                ROWNUM rowNumber
+			            FROM
+			                (SELECT
+			                	    h.*,
+			                	    s.STATUS formStatus
+			                	FROM
+			                	:{Com_("D_T1_LOSS_HEADER")} h
+			                	INNER JOIN
+			                	:{Com_("D_T0_FORM_STATUS")} s
+			                	ON
+			                	    h.FORM_ID = s.FORM_ID
+			                	AND s.IS_CURRENT = 1
+			                	LEFT JOIN
+			                	:{Com_("D_T2_BRANCH")} b
+			                	ON
+			                	    h.LOSS_BRANCH_ID = b.BRANCH_ID
+			                	WHERE
+			                	    :{query ::}
+			                	AND b.BRANCH_TYPE = :branchType
+			                	AND (
+			                	        h.LOSS_TIME >= :sDate
+			                	    OR  :sDate IS NULL)
+			                	AND (
+			                	        h.LOSS_TIME <= :eDate
+			                	    OR  :eDate IS NULL)
+			                	ORDER BY
+			                	    h.FORM_ID DESC) t
+			            WHERE
+			                ROWNUM < :endRow)
+			    WHERE
+			        rowNumber >= :startRow};
+		List<LossHeader> headerLst = processIter(headerIter);
+		headerIter.close();
+		closeDefaultContext(myCtx);
+		return headerLst;
+	}
+
+	/**
+	 * 根据状态获取报损单总数
+	 */
+	public int countByStatus(java.util.Date startDate, java.util.Date endDate, 
+			String branchId,String storageId, String lossType, String status,String branchType) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		String query = formQuery(branchId,storageId, lossType, status);
+		Date sDate = SqlDateUtil.getSqlDate(startDate);
+		Date eDate = SqlDateUtil.getSqlDate(endDate);
+		
+		DefaultContext myCtx = getDefaultContext();
+		int total = 0;
+		#sql [myCtx] {
+		SELECT
+		    COUNT(*)
+		INTO
+		    :total
+		FROM
+		:{Com_("D_T1_LOSS_HEADER")} h
+		LEFT JOIN
+		:{Com_("D_T0_FORM_STATUS")} s
+		ON
+		    s.FORM_ID = h.FORM_ID
+		LEFT JOIN
+		:{Com_("d_t2_branch")} b
+		ON
+		    h.LOSS_BRANCH_ID = b.BRANCH_ID
+		WHERE
+		    :{query ::}
+		AND s.IS_CURRENT = 1
+	    AND b.BRANCH_TYPE = :branchType
+		AND (
+		        h.LOSS_TIME >= :sDate
+		    OR  :sDate IS NULL)
+		AND (
+		        h.LOSS_TIME <= :eDate
+		    OR  :eDate IS NULL)};
+		closeDefaultContext(myCtx);
+		return total;
+	}
+
+	/**
+	 * 根据状态获取报损单列表
+	 */
+	public List<LossHeader> queryByStatus(java.util.Date startDate, java.util.Date endDate, 
+			String branchId,String storageId, String lossType, String status,String branchType) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		String query = formQuery(branchId,storageId, lossType, status);
+		Date sDate = SqlDateUtil.getSqlDate(startDate);
+		Date eDate = SqlDateUtil.getSqlDate(endDate);
+		
+		DefaultContext myCtx = getDefaultContext();
+		HeaderIter headerIter = null;
+		#sql [myCtx] headerIter = {
+		SELECT
+			   h.*,s.STATUS formStatus
+			FROM
+			:{Com_("D_T1_LOSS_HEADER")} h
+			LEFT JOIN
+			:{Com_("D_T0_FORM_STATUS")} s
+			ON
+			    s.FORM_ID = h.FORM_ID
+			LEFT JOIN
+			:{Com_("d_t2_branch")} b
+			ON
+			    h.LOSS_BRANCH_ID = b.BRANCH_ID
+			WHERE
+			    :{query ::}
+			AND s.IS_CURRENT = 1
+		    AND b.BRANCH_TYPE = :branchType
+			AND (
+			        h.LOSS_TIME >= :sDate
+			    OR  :sDate IS NULL)
+			AND (
+			        h.LOSS_TIME <= :eDate
+			    OR  :eDate IS NULL) order by h.form_id desc};
+		List<LossHeader> headerLst = processIter(headerIter);
+		headerIter.close();
+		closeDefaultContext(myCtx);
+		return headerLst;
+	}
+
+	public LossHeader queryById(String formId) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		HeaderIter headerIter = null;
+		#sql [myCtx] headerIter = {
+			SELECT
+			    h.*,
+			    s.STATUS formStatus
+			FROM
+			    :{Com_("D_T1_LOSS_HEADER")} h
+			LEFT JOIN
+			    :{Com_("D_T0_FORM_STATUS")} s
+			ON
+			    h.FORM_ID = s.FORM_ID
+			AND s.IS_CURRENT = 1
+			WHERE
+			    h.FORM_ID = :formId};
+		List<LossHeader> headerLst = processIter(headerIter);
+		headerIter.close();
+		closeDefaultContext(myCtx);
+		if (headerLst !=null && !headerLst.isEmpty()) {
+			return headerLst.get(0);
+		}
+		return null;
+	}
+	
+	private List<LossHeader> processIter(HeaderIter headerIter) 
+			throws SQLException {
+		List<LossHeader> headerLst = new ArrayList<LossHeader>();
+		while(headerIter.next()) {
+			LossHeader header = new LossHeader();
+			header.setFormId(headerIter.form_id());
+			header.setLossType(headerIter.loss_type());
+			header.setLossBranchId(headerIter.loss_branch_id());
+			header.setLossBranch(headerIter.loss_branch());
+			header.setStorageId(headerIter.storage_id());
+			header.setStorage(headerIter.storage());
+			header.setLossManId(headerIter.loss_man_id());
+			header.setLossMan(headerIter.loss_man());
+			header.setLossTime(SqlDateUtil.getUtilDate(headerIter.loss_time()));
+			header.setAuditorId(headerIter.auditor_id());
+			header.setAuditor(headerIter.auditor());
+			header.setAuditTime(SqlDateUtil.getUtilDate(headerIter.audit_time()));
+			header.setProcessorId(headerIter.processor_id());
+			header.setProcessor(headerIter.processor());
+			header.setProcessTime(SqlDateUtil.getUtilDate(headerIter.process_time()));
+			header.setFormNote(headerIter.form_note());
+			header.setAllPayAmt(headerIter.all_pay_amt());
+			header.setMaxPayItem(headerIter.max_pay_item());
+			header.setFormStatus(headerIter.formStatus());
+			header.setAuditTimeActual(SqlDateUtil.getUtilDate(headerIter.audit_time_actual()));
+			headerLst.add(header);
+		}
+		return headerLst;
+	}
+}

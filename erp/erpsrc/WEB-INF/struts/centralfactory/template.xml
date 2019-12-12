@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE struts PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN"
+    "http://struts.apache.org/dtds/struts-2.0.dtd">
+
+<struts>
+	<package name="centralfactory_productionDemand_template_create" namespace="/centralfactory/productionDemand/template/create" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.lc.request.action.TemplateAction">
+			<result name="success">/jsp/centralfactory/productionDemand/template/main.jsp</result>
+		</action>
+		
+		<action name="addView" method="addView" class="com.tanry.business.module.lc.request.action.TemplateAction">
+			<result name="success">/jsp/centralfactory/productionDemand/template/add.jsp</result>
+		</action>
+		
+		<action name="pickModelView" method="pickModelView" class="com.tanry.business.module.lc.request.action.TemplateAction">
+			<result name="success">/jsp/centralfactory/productionDemand/template/pickmodel.jsp</result>
+		</action>
+	</package>
+</struts>
+

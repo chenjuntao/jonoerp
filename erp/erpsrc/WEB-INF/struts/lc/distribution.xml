@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE struts PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN"
+    "http://struts.apache.org/dtds/struts-2.0.dtd">
+
+<struts>
+	<package name="lc_distribution" namespace="/lc/distribution/diffhandle" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.lc.distribution.DiffHandleAction">
+			<result name="success">/jsp/lc/distribution/diffhandle/main.jsp</result>
+		</action>
+		
+		<action name="handleView" method="scanView" class="action.restaurant.shipping.ShippingManageAction">
+			<result name="success">/jsp/lc/distribution/diffhandle/handle.jsp</result>
+		</action>
+		
+		<action name="doQuery" method="doQuery" class="com.tanry.business.module.lc.distribution.DiffHandleAction">
+			<result type="json" />
+		</action>
+		
+		<action name="queryDetail" method="queryDetail" class="com.tanry.business.module.lc.distribution.DiffHandleAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doHandle" method="doHandle" class="com.tanry.business.module.lc.distribution.DiffHandleAction">
+		    <interceptor-ref name="defaultStack" />
+			<interceptor-ref name="token" />
+			<result type="json" />
+		</action>
+	</package>
+</struts>
+

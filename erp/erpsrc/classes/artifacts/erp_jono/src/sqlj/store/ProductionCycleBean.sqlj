@@ -1,0 +1,240 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on Wed Nov 05 16:09:04 CST 2014 by pw
+ * Last edited on Wed Nov 05 16:09:04 CST 2014 by pw
+ * 
+ * comment: 半成品/成品生产周期表
+ */
+package logic.store;
+
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import pojo.store.ProductionCycle;
+import sqlj.runtime.ref.DefaultContext;
+
+import com.tanry.framework.acl.NoPrivilegeException;
+import com.tanry.framework.util.constant.BranchCode;
+
+public class ProductionCycleBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(ProductionCycleBean.class);
+	
+	public int saveEntity(ProductionCycle detail)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		String branchId = detail.getBranchId();
+		String itemId = detail.getItemId();
+		Double productionCycle = detail.getProductionCycle();
+
+		#sql [myCtx] {
+			INSERT INTO :{Com_("D_T2_PRODUCTION_CYCLE")} 
+				(BRANCH_ID, ITEM_ID, PRODUCTION_CYCLE) 
+			VALUES (:branchId, :itemId, :productionCycle)
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+
+	public int deleteEntity(String itemId)
+			throws NoPrivilegeException, SQLException, NoConnection {
+			DefaultContext myCtx = getDefaultContext();
+
+			#sql [myCtx] {
+				DELETE
+				FROM
+				:{Com_("D_T2_PRODUCTION_CYCLE")}
+				WHERE
+					ITEM_ID = :itemId
+			};
+			closeDefaultContext(myCtx);
+			
+			return 1;
+		}
+	
+	public int updateEntity(ProductionCycle pcycle)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		String branchId = pcycle.getBranchId();
+		String itemId = pcycle.getItemId();
+		Double productionCycle = pcycle.getProductionCycle();
+
+		#sql [myCtx] {
+			UPDATE
+			:{Com_("D_T2_PRODUCTION_CYCLE")}
+			SET
+				PRODUCTION_CYCLE = :productionCycle
+			WHERE 
+				BRANCH_ID = :branchId
+			AND	ITEM_ID = :itemId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+
+	#sql public static iterator ItemIter(String item_id, 
+			String item_name, 
+			String item_type, 
+			String category_id, 
+			String item_dimension, 
+			String query_code,
+			String item_specification, 
+			Double production_cycle,
+			Double inventorys_cycle);
+	
+	public List<Map> queryItem(String cfCode, String itemName)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		itemName = "%" + itemName + "%";
+		
+		DefaultContext myCtx = getDefaultContext();
+		ItemIter itemIter = null;
+		#sql [myCtx] itemIter = {
+			SELECT
+			    m.*,
+			    NVL(p.PRODUCTION_CYCLE,0) PRODUCTION_CYCLE,
+			    NVL(s.INVENTORYS_CYCLE,0) INVENTORYS_CYCLE
+			FROM
+			:{Com_("D_T2_ITEM_META")} m
+			LEFT JOIN
+			:{Com_("D_T2_PRODUCTION_CYCLE")} p
+			ON
+			    m.ITEM_ID = p.ITEM_ID
+    		LEFT JOIN
+    		:{Com_("D_T2_SUPPLY_CYCLE")} s
+			ON
+			    m.ITEM_ID = s.ITEM_ID
+			AND s.BRANCH_ID = :cfCode
+			WHERE
+			    p.BRANCH_ID = :cfCode
+			AND (
+			        m.ITEM_ID LIKE :itemName
+			    OR  m.ITEM_NAME LIKE :itemName)
+			ORDER BY
+			    m.ITEM_ID};
+		List<Map> itemLst = processIter(itemIter);
+		itemIter.close();
+		closeDefaultContext(myCtx);
+		return itemLst;
+	}
+	
+	#sql public static iterator ItemId(String item_id, 
+			String branch_id, Integer production_cycle);
+	
+	public List<Map> queryById(String itemid)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		ItemId itemId = null;
+		#sql [myCtx] itemId = {
+			SELECT
+			    p.*
+			    FROM
+			    :{Com_("D_T2_PRODUCTION_CYCLE")} p
+			WHERE
+				p.ITEM_ID = :itemid
+			ORDER BY
+			    p.ITEM_ID
+		};
+		List<Map> itemLst = processId(itemId);
+		itemId.close();
+		closeDefaultContext(myCtx);
+		return itemLst;
+	}
+	
+	public List<Map> queryItemByCate(String cfCode, String cateId) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		ItemIter itemIter = null;
+		#sql [myCtx] itemIter = {
+			SELECT
+			    m.*,
+			    NVL(p.PRODUCTION_CYCLE,0) PRODUCTION_CYCLE,
+			    NVL(s.INVENTORYS_CYCLE,0) INVENTORYS_CYCLE
+			FROM
+			:{Com_("D_T2_ITEM_META")} m
+			LEFT JOIN
+			:{Com_("D_T2_PRODUCTION_CYCLE")} p
+			ON
+			    m.ITEM_ID = p.ITEM_ID
+			AND p.BRANCH_ID = :cfCode
+			LEFT JOIN
+			:{Com_("D_T2_SUPPLY_CYCLE")} s
+			ON
+			    m.ITEM_ID = s.ITEM_ID
+			AND s.BRANCH_ID = :cfCode
+			WHERE
+			    m.CATEGORY_ID = :cateId
+			ORDER BY
+			    m.ITEM_ID};
+		List<Map> itemLst = processIter(itemIter);
+		itemIter.close();
+		closeDefaultContext(myCtx);
+		return itemLst;
+	}
+	
+	public Integer queryCycle(String cfCode, String itemId)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		Integer cycle = null;
+		#sql [myCtx] {
+			SELECT
+			    h.PRODUCTION_CYCLE
+			INTO
+			    :cycle
+			FROM
+			:{Com_("D_T2_PRODUCTION_CYCLE")} p
+			WHERE
+			    ITEM_ID = :itemId
+			AND p.BRANCH_ID = :cfCode
+		};
+		closeDefaultContext(myCtx);
+		return cycle;
+	}
+
+	private List<Map> processIter(ItemIter itemIter) 
+			throws SQLException {
+		List<Map> itemLst = new ArrayList<Map>();
+		while(itemIter.next()) {
+			Map<String, Object> item = new HashMap<String, Object>();
+			item.put("itemId", itemIter.item_id());
+			item.put("itemName", itemIter.item_name());
+			item.put("queryCode", itemIter.query_code());
+			item.put("categoryId", itemIter.category_id());
+			item.put("itemDimension", itemIter.item_dimension());
+			item.put("itemSpecification", itemIter.item_specification());
+			item.put("pcycle", itemIter.production_cycle());
+			item.put("inventorysCycle", itemIter.inventorys_cycle());
+			itemLst.add(item);
+		}
+		return itemLst;
+	}
+	
+	private List<Map> processId(ItemId itemId) 
+			throws SQLException {
+		List<Map> itemLst = new ArrayList<Map>();
+		while(itemId.next()) {
+			Map<String, Object> item = new HashMap<String, Object>();
+			item.put("itemId", itemId.item_id());
+			item.put("branchId", itemId.branch_id());
+			item.put("pcycle", itemId.production_cycle());
+			itemLst.add(item);
+		}
+		return itemLst;
+	}
+}

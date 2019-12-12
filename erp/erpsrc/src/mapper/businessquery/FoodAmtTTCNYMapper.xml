@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"   
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">  
+
+<mapper namespace="mapper.businessquery.FoodAmtTTCNYMapper">  
+
+<resultMap id="foodAmtTTCNYResultMap" type="pojo.businessquery.FoodAmtTTCNY">
+		<id property="foodId" column="cFood_C" />
+		<result property="foodName" column="cFood_N" />
+		<result property="foodUnit" column="sUnit" />
+		<result property="foodNum" column="nQty" />
+		<result property="amtTTCNY" column="amtTTCNY" />
+</resultMap>
+
+<select id="getSum" resultType="object">
+	SELECT 
+		sum(npayamt)
+	FROM ${com}.d_t_food_bill
+	WHERE cbranch_c like #{shopC}
+	AND dbusiness &gt;= #{startTime}
+	AND dbusiness &lt;= #{endTime}
+</select>
+
+<select id="listFoodAmtTTCNY" resultMap="foodAmtTTCNYResultMap">
+	SELECT
+		c.cFood_C ,
+		c.cFood_N,
+		c.sUnit,
+		ROUND(SUM(c.nQty),2) nQty,
+		CASE
+			WHEN (#{theSum} = 0)
+			THEN 0
+			ELSE ROUND(SUM(c.nQty) * 10000/ #{theSum},2)
+			END amtTTCNY
+	FROM
+		${com}.d_t_food_bills c
+	LEFT JOIN
+		${com}.d_t_food_bill a
+	ON
+		a.cBill_C = c.cBill_C
+	WHERE
+		1 = 1
+<if test="categoryId != null">
+	AND	c.cLitCls_C = #{categoryId}
+</if>
+<if test="shopC != null">
+	AND a.cbranch_c like #{shopC}
+</if>
+<if test="startTime != null">
+	AND a.DBUSINESS &gt;= #{startTime}
+</if>
+<if test="endTime != null">
+	AND a.DBUSINESS &gt;= #{endTime}
+</if>
+	GROUP BY
+		c.cFood_C,
+		c.cFood_N,
+		c.sUnit
+	ORDER BY
+		1
+</select>
+</mapper>

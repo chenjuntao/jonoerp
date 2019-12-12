@@ -1,0 +1,90 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on Aug 27, 2014 by liyzh
+ * Last edited on Aug 27, 2014 by liyzh
+ * 
+ * 说明：供应商基本信息表
+ */
+package logic.store;
+
+import java.sql.SQLException;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import sqlj.runtime.ref.DefaultContext;
+import com.tanry.framework.acl.NoPrivilegeException;
+
+public class SupplierBean extends ConnectionPool {
+	
+	public static Logger log = Logger.getLogger(SupplierBean.class);
+	
+	/**
+	 * 根据原材料ID获取相应的主供应商信息
+	 */
+	public String getSupplier(String itemId)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		String supplier = null;
+		DefaultContext myCtx = getDefaultContext();
+		try {
+			#sql [myCtx] {
+				SELECT
+				    s.BRANCH_NAME into :supplier
+				FROM
+					:{Com_("D_T2_BRANCH")} s,
+					:{Com_("D_T2_SUPPLIER_BRANCH_ITEM")} i
+				WHERE
+				    i.SUPPLIER_ID = s.BRANCH_ID
+				AND i.ITEM_ID = :itemId
+				AND i.PRIORITY = 0
+			};
+		} catch (SQLException e) {
+			log.error("get main supplier for itemId : " + itemId);
+			log.error("Error running the query: " + e);
+			String sqlState = e.getSQLState();
+			log.error("SQL state = " + sqlState);
+			e.printStackTrace();
+		}
+		closeDefaultContext(myCtx);
+		
+		return supplier;
+	}
+	
+	/**
+	 * 根据原材料ID获取相应的主供应商信息id
+	 */
+	public String getSupplierId(String itemId)
+			throws NoPrivilegeException, SQLException, NoConnection {
+		String supplierId = null;
+		DefaultContext myCtx = getDefaultContext();
+		try {
+			#sql [myCtx] {
+				SELECT
+					s.SUPPLIER_ID into :supplierId
+				FROM
+					:{Com_("D_T2_SUPPLIER")} s,
+					:{Com_("D_T2_SUPPLIER_BRANCH_ITEM")} i
+				WHERE
+					i.SUPPLIER_ID = s.SUPPLIER_ID
+				AND i.ITEM_ID = :itemId
+				AND i.PRIORITY = 0
+			};
+		} catch (SQLException e) {
+			log.error("get main supplier for itemId : " + itemId);
+			log.error("Error running the query: " + e);
+			String sqlState = e.getSQLState();
+			log.error("SQL state = " + sqlState);
+			e.printStackTrace();
+		}
+		closeDefaultContext(myCtx);
+		
+		return supplierId;
+	}
+}

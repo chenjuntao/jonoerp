@@ -1,0 +1,153 @@
+ 
+package logic.businessquery;
+
+import sqlj.runtime.*;
+import sqlj.runtime.ref.*;
+import java.sql.*;
+import oracle.sql.*;
+import oracle.sqlj.runtime.*;
+import oracle.jdbc.driver.*;
+import java.util.*;
+import java.text.SimpleDateFormat;
+import java.text.ParseException;
+import logic.pool.ConnectionPool;
+import logic.*;
+import com.tanry.framework.acl.*;
+import pojo.businessquery.DiscountReason;
+
+import pojo.businessquery.FreeBill;
+
+public class DiscountReasonBean extends ConnectionPool
+{
+	#sql public static iterator DiscountReasonIterator(
+			String shopC,
+			String shopN,
+			float foodAmt,
+			float disAmt,
+			float payAmt,
+			String disWhy);
+	
+	#sql public static iterator DiscountReasonSumIterator(
+			float foodAmt,
+			float disAmt,
+			float payAmt);
+	
+	public DiscountReasonBean()
+	{
+	}
+	
+	public DiscountReason discountReasonSum(String startDate,String endDate,String shopC)
+			throws NoPrivilegeException,SQLException,NoConnection	{
+		
+		DiscountReason discountReason = new DiscountReason();
+		DefaultContext myCtx = getDefaultContext();
+		DiscountReasonSumIterator discountReasonSumIterator = null;
+		if (myCtx != null)
+		{
+			#sql [myCtx] discountReasonSumIterator = {
+			SELECT
+				    SUM(foodAmt)    foodAmt,
+				    SUM(disAmt)     disAmt,
+				    SUM(payAmt)     payAmt
+				FROM
+				    (
+				        SELECT
+				            cBranch_C        shopC,
+				            cBranch_N        shopN,
+				            SUM(nFoodAmt)    foodAmt,
+				            b.CDISCURWHY     disWhy,
+				            SUM(nDisAmt)     disAmt,
+				            SUM(nPayAmt)     payAmt
+				        FROM
+				            :{Com_("d_t_food_bill")} b
+				        WHERE
+				            b.cBranch_C LIKE :shopC
+				        AND nDisAmt > 0
+				        AND DBUSINESS >= TO_Date(:startDate, 'yyyy-MM-dd')
+				        AND DBUSINESS <= TO_Date(:endDate, 'yyyy-MM-dd')
+				        GROUP BY
+				            cBranch_C,
+				            cBranch_N,
+				            b.CDISCURWHY) t};
+			
+			while(discountReasonSumIterator.next()) {
+				try {
+					discountReason.foodAmt = discountReasonSumIterator.foodAmt();
+				} catch (Exception e) {
+					discountReason.foodAmt = 0;
+				}
+			
+				try {
+					discountReason.disAmt = discountReasonSumIterator.disAmt();
+				} catch (Exception e) {
+					discountReason.disAmt = 0;
+				}
+			
+				try {
+					discountReason.payAmt = discountReasonSumIterator.payAmt();
+				} catch (Exception e) {
+					discountReason.payAmt = 0;
+				}
+				
+			}
+			discountReasonSumIterator.close();
+		}
+		else
+		{
+			throw new NoConnection();
+		}
+		closeDefaultContext(myCtx);
+		return discountReason;
+	}
+	
+	public List<DiscountReason> discountReason(String startDate,String endDate,String shopC)
+			throws NoPrivilegeException,SQLException,NoConnection	{
+		
+		List<DiscountReason> result = new ArrayList<DiscountReason>();
+		DefaultContext myCtx = getDefaultContext();
+		DiscountReasonIterator discountReasonIterator = null;
+		if (myCtx != null)
+		{
+			#sql [myCtx] discountReasonIterator = {
+			SELECT
+				    cBranch_C        shopC,
+				    cBranch_N        shopN,
+				    SUM(nFoodAmt)    foodAmt,
+				    b.CDISCURWHY     disWhy,
+				    SUM(nDisAmt)     disAmt,
+				    SUM(nPayAmt)     payAmt
+				FROM
+				    :{Com_("d_t_food_bill")} b
+				WHERE
+				    b.cBranch_C LIKE :shopC
+				AND nDisAmt > 0
+				AND DBUSINESS >= TO_Date( :startDate, 'yyyy-MM-dd')
+				AND DBUSINESS <= TO_Date( :endDate, 'yyyy-MM-dd')
+				GROUP BY
+				    cBranch_C,
+				    cBranch_N,
+				    b.CDISCURWHY
+		    };
+			
+			while(discountReasonIterator.next()) {
+				DiscountReason discountReason = new DiscountReason();
+				discountReason.shopC = discountReasonIterator.shopC();
+				discountReason.shopN = discountReasonIterator.shopN();
+				discountReason.foodAmt = discountReasonIterator.foodAmt();
+				discountReason.disAmt = discountReasonIterator.disAmt();
+				discountReason.payAmt = discountReasonIterator.payAmt();
+				discountReason.disWhy = discountReasonIterator.disWhy();
+				
+				result.add(discountReason);
+			}
+			discountReasonIterator.close();
+		}
+		else
+		{
+			throw new NoConnection();
+		}
+		closeDefaultContext(myCtx);
+		return result;
+	}
+	
+}

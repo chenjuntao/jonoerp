@@ -1,0 +1,77 @@
+#dataGrid {
+	position: absolute;
+	right: 0;
+	top: 30px;
+	bottom: 0;
+	width: 100%;
+	height: auto; /* override default height: 30em; in dgrid.css */
+}
+
+th[role="columnheader"] {
+	text-align: center;
+}
+
+.dgrid-cell {
+	/* 	width: 80px; make all the columns 80px wide */
+	vertical-align: middle;
+}
+
+.field-rownumber, .field-itemId, .field-formTime, .field-formMaker,
+	.field-receiveTime, .field-formStatus, .field-scan, .field-operate {
+	text-align: center;
+}
+
+.field-rownumber {
+	width: 60px;
+}
+
+
+.dgrid-column-set-0 {
+	width: 790px;
+}
+
+.field-boxType {
+	text-align: center;
+	width: 90px;
+}
+
+.field-shelfName {
+	width: 80px;
+}
+
+.field-categoryName {
+	width: 90px;
+}
+
+.field-itemId {
+	width: 80px;
+}
+
+.field-itemName {
+	width: 150px;
+}
+
+.field-itemCategory {
+	width: 90px;
+}
+
+.field-itemDimension {
+	width: 60px;
+}
+
+.field-deliveryUnit {
+	width: 60px;
+}
+
+.field-unitVolume {
+	width: 60px;
+}
+
+.field-itemSpecification {
+	width: 80px;
+}
+
+.grid-number {
+	width: 80px;
+	text-align: right;
+}

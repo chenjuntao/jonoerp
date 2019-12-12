@@ -1,0 +1,15 @@
+@CHARSET "utf-8";
+
+.tagTitle {
+	margin: 10px;
+	font-weight: bold;
+	font-size: 15px;
+}
+
+#tagArea span {
+	margin: 5px;
+	border: 1px solid #fa3;
+	padding: 5px 10px;
+	border: 1px solid #fa3;
+	cursor: pointer;
+}

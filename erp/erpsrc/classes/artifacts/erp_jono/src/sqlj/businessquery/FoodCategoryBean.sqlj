@@ -1,0 +1,176 @@
+/**查询食品分类的营业信息列表
+ *read food by category business info list
+ *by cjt
+ *first created on 2014.7.21
+ *last edited on 2014.7.21
+ *
+ *edited by pengwei on 2014/7/30
+ */
+
+package logic.businessquery;
+
+import java.math.BigDecimal;
+import sqlj.runtime.*;
+import sqlj.runtime.ref.*;
+import java.sql.*;
+import oracle.sql.*;
+import oracle.sqlj.runtime.*;
+import oracle.jdbc.driver.*;
+import java.util.*;
+import java.text.SimpleDateFormat;
+import java.text.ParseException;
+import logic.pool.ConnectionPool;
+import logic.*;
+import com.tanry.framework.acl.*;
+import pojo.businessquery.FoodCategory;
+
+public class FoodCategoryBean extends ConnectionPool
+{
+	private String strDateFormat = "yyyy-MM-dd";//设置日期格式
+	
+	#sql public static iterator CategoryIterator(
+			int nQty,String 
+			SUB_CATEGORY_ID,
+			String SUB_CATEGORY_NAME, 
+			String CATEGORY_NAME); 
+
+	#sql public static iterator RawCategoryIterator(
+			String CATEGORY_ID,
+			String CATEGORY_NAME, 
+			String parent_name);
+	
+     //查询某个时间段某个门店的营业额，by cjt.
+	public BigDecimal getAmt(String shopC, String startDate, String endDate)
+	throws NoPrivilegeException,SQLException,NoConnection{
+		DefaultContext myCtx = getDefaultContext();
+		BigDecimal amt = BigDecimal.ZERO;
+		Object amtObj = null;
+		if (myCtx != null) {
+			//查询该时间段内某餐厅总营业额
+			String shopCStr = shopC + "%";
+			#sql [myCtx] {
+				SELECT sum(npayamt) INTO :amtObj
+				FROM :{Com_("d_t_food_bill")}
+				WHERE cbranch_c like :shopCStr
+  				AND dbusiness >= to_date(:startDate, :strDateFormat)
+  				AND dbusiness <= to_date(:endDate, :strDateFormat)
+			};
+			if (amtObj != null) {
+				amt = (BigDecimal)amtObj;
+			}
+			amt = amt.setScale(2, BigDecimal.ROUND_HALF_UP);
+		}
+		closeDefaultContext(myCtx);
+		return amt;
+	}
+
+	public List<FoodCategory> listCategory(String shopC, String startTime, String endTime)
+		throws NoPrivilegeException,SQLException,NoConnection
+	{
+		List<FoodCategory> categories = new ArrayList<FoodCategory>();
+		DefaultContext myCtx = getDefaultContext();
+		CategoryIterator categoryIterator = null;
+		String shopCStr = shopC + "%";
+		if (myCtx != null)
+		{
+			//查询所有类别的出品数量
+			#sql [myCtx] categoryIterator = { 
+				SELECT
+				    SUM(b.nQty)     nQty,
+				    c.CATEGORY_ID   SUB_CATEGORY_ID,
+				    c.CATEGORY_NAME SUB_CATEGORY_NAME,
+				    d.CATEGORY_NAME CATEGORY_NAME
+				FROM
+					:{Com_("d_t_food_bill")} a
+				LEFT JOIN
+				    :{Com_("d_t_food_bills")} b
+				ON
+				    a.cBill_C = b.cBill_C
+				LEFT JOIN
+					:{Com_("d_t2_item_category")} c
+				ON
+				    b.cLitCls_C = c.CATEGORY_ID
+				LEFT JOIN
+					:{Com_("d_t2_item_category")} d
+				ON
+				    c.PARENT_ID = d.CATEGORY_ID
+				WHERE
+				 	c.ITEM_TYPE = 'PRODUCT'
+			    AND a.cbranch_c like :shopCStr
+				AND a.DBUSINESS >= to_date(:startTime, :strDateFormat)
+				AND a.DBUSINESS <= to_date(:endTime, :strDateFormat)
+				GROUP BY
+				    c.CATEGORY_ID,
+				    c.CATEGORY_NAME,
+				    d.CATEGORY_NAME
+				ORDER BY
+				    c.CATEGORY_ID};
+			try {
+				while (categoryIterator.next()) {
+					FoodCategory category = new FoodCategory();
+					if(categoryIterator.SUB_CATEGORY_ID()!= null){
+						category.foodCount = categoryIterator.nQty();
+						category.subCategoryId = categoryIterator.SUB_CATEGORY_ID();
+						category.subCategoryName = categoryIterator.SUB_CATEGORY_NAME();
+						category.categoryName = categoryIterator.CATEGORY_NAME();
+						categories.add(category);
+					}
+				}
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+			categoryIterator.close();
+		}
+		else
+        {
+            throw new NoConnection();
+        }
+		closeDefaultContext(myCtx);
+		return categories;
+	}
+	
+	public List<FoodCategory> listRawCategory()
+			throws NoPrivilegeException,SQLException,NoConnection
+	{
+		List<FoodCategory> categories = new ArrayList<FoodCategory>();
+		DefaultContext myCtx = getDefaultContext();
+		RawCategoryIterator rawCategoryIterator = null;
+		if (myCtx != null)
+		{
+			//先将所有的类别列出来
+			#sql [myCtx] rawCategoryIterator = {
+				SELECT
+				    c.CATEGORY_ID,
+				    c.CATEGORY_NAME,
+				    cp.CATEGORY_NAME AS parent_name
+				FROM
+					:{Com_("d_t2_item_category")} c,
+					:{Com_("d_t2_item_category")} cp
+				WHERE
+				    trim(c.PARENT_ID) = trim(cp.CATEGORY_ID)
+				AND c.PARENT_ID LIKE '020%'
+				GROUP BY
+				    c.CATEGORY_ID,
+				    c.CATEGORY_NAME ,
+				    cp.CATEGORY_NAME
+				ORDER BY
+				    c.CATEGORY_ID
+			};
+			
+			while(rawCategoryIterator.next()){
+				FoodCategory category = new FoodCategory();
+				category.subCategoryId = rawCategoryIterator.CATEGORY_ID();
+				category.subCategoryName = rawCategoryIterator.CATEGORY_NAME();
+				category.categoryName = rawCategoryIterator.parent_name();
+				categories.add(category);
+			}
+			rawCategoryIterator.close();
+		}
+		else
+        {
+            throw new NoConnection();
+        }
+		closeDefaultContext(myCtx);
+		return categories;
+	}
+}

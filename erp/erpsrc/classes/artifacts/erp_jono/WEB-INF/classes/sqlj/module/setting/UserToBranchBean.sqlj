@@ -1,0 +1,307 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on Mon May 04 16:43:58 CST 2015 by lyz
+ * Last edited on Mon May 04 16:43:58 CST 2015 by lyz
+ * 
+ * comment: 系统用户与部门关联表
+ */
+package logic.module.setting;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
+
+import pojo.store.Branch;
+import sqlj.runtime.ref.DefaultContext;
+
+import com.tanry.business.module.setting.user.pojo.UserToBranch;
+import com.tanry.framework.acl.NoPrivilegeException;
+
+public class UserToBranchBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(UserToBranchBean.class);
+	
+	#sql private iterator RelationIter(String id, String is_primary, Integer weight, String user_id, String branch_id);
+	
+	public int saveEntity(UserToBranch relation)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		String id = relation.getId();
+		String isPrimary = relation.getIsPrimary();
+		Integer weight = relation.getWeight();
+		String userId = relation.getUserId();
+		String branchId = relation.getBranchId();
+
+		#sql [myCtx] {
+			INSERT INTO :{Com_("D_T0_USERTOBRANCH")} 
+				(ID, IS_PRIMARY, WEIGHT, USER_ID, BRANCH_ID) 
+			VALUES (:id, :isPrimary, :weight, :userId, :branchId)
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public int updateEntity(UserToBranch relation)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		String id = relation.getId();
+		String isPrimary = relation.getIsPrimary();
+		Integer weight = relation.getWeight();
+		String userId = relation.getUserId();
+		String branchId = relation.getBranchId();
+
+		#sql [myCtx] {
+			UPDATE
+			:{Com_("D_T0_USERTOBRANCH")}
+			SET
+				ID = :id,
+				IS_PRIMARY = :isPrimary,
+				WEIGHT = :weight,
+				USER_ID = :userId,
+				BRANCH_ID = :branchId
+			WHERE 
+		    	USER_ID = :userId
+			AND BRANCH_ID = :branchId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public int deleteEntity(String userId, List<String> branchIdLst)
+			throws NoPrivilegeException, SQLException, NoConnection {
+		String query = " BRANCH_ID IN ('" + StringUtils.join(branchIdLst, "','") + "') ";
+		
+		DefaultContext myCtx = getDefaultContext();
+		#sql [myCtx] {
+			DELETE 
+			FROM
+			:{Com_("D_T0_USERTOBRANCH")}
+			WHERE
+				USER_ID = :userId
+			AND	:{query :: 1=1}
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	/**
+	 * 检测一个用户是否同时属于多个部门
+	 */
+	public boolean isMulti(String userId)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		int count = 0;
+		#sql [myCtx] {
+		SELECT
+		    COUNT(*)
+		INTO
+		    :count
+		FROM
+		    :{Com_("D_T0_USERTOBRANCH")} u
+		INNER JOIN
+			:{Com_("D_T2_BRANCH")} b 
+		ON
+		    u.BRANCH_ID = b.BRANCH_ID
+		AND b.ENABLED = 1
+		WHERE
+		    u.USER_ID = :userId};
+		closeDefaultContext(myCtx);
+		
+		if (count > 1) {
+			return true;
+		}
+		return false;
+	}
+	
+	#sql public static iterator BranchIter(String branch_id, String branch_name, 
+		String query_code,	String branch_type);
+	
+	/**
+	 * 查询一个用户所在的部门列表
+	 */
+	public List<Branch> queryBranch(String userId)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		BranchIter branchIter = null;
+		#sql [myCtx] branchIter = {
+			SELECT
+			    b.BRANCH_ID,
+			    '['||b.BRANCH_ID||']'||b.BRANCH_NAME BRANCH_NAME,
+			    b.QUERY_CODE,
+			    b.BRANCH_TYPE
+			FROM
+				:{Com_("D_T0_USERTOBRANCH")} u2b
+			INNER JOIN
+				:{Com_("D_T2_BRANCH")} b
+			ON
+			    b.BRANCH_ID = u2b.BRANCH_ID
+			WHERE
+			    u2b.USER_ID = :userId and b.ENABLED = 1
+			ORDER BY
+			    u2b.IS_PRIMARY,b.BRANCH_ID
+		};
+		List<Branch> branchLst = new ArrayList<Branch>();
+		while(branchIter.next()) {
+			Branch branch = new Branch();
+			branch.setBranchId(branchIter.branch_id());
+			branch.setBranchName(branchIter.branch_name());
+			branch.setQueryCode(branchIter.query_code());
+			branch.setBranchType(branchIter.branch_type());
+			branchLst.add(branch);
+		}
+		branchIter.close();
+		closeDefaultContext(myCtx);
+		return branchLst;
+	}
+	
+	public List<UserToBranch> GetAllUserToBranchs() 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		List<UserToBranch> result = new ArrayList<UserToBranch>();
+		DefaultContext myCtx = getDefaultContext();
+		RelationIter relationIter = null;
+		#sql [myCtx] relationIter = {
+			SELECT
+		    	b.*,
+			    '' BRANCH_ID,
+			    '' BRANCH_NAME
+			FROM
+			:{Com_("D_T0_USERTOBRANCH")} b
+		};
+
+		List<UserToBranch> userLst = processIter(relationIter);
+		relationIter.close();
+		closeDefaultContext(myCtx);
+		return userLst;
+	}
+	
+	#sql private iterator UBIter(String user_id, String branch_id);
+	public List<UserToBranch> listUserToBranch() 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		List<UserToBranch> result = new ArrayList<UserToBranch>();
+		DefaultContext myCtx = getDefaultContext();
+		UBIter relationIter = null;
+		#sql [myCtx] relationIter = {
+			SELECT
+		    	b.*
+			FROM
+			:{Com_("D_T0_USERTOBRANCH")} b
+		};
+
+		List<UserToBranch> userLst = new ArrayList();
+		try {
+			while(relationIter.next()) {
+				UserToBranch userToBranch = new UserToBranch();
+				userToBranch.setUserId(relationIter.user_id());
+				userToBranch.setBranchId(relationIter.branch_id());
+				userLst.add(userToBranch);
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		relationIter.close();
+		closeDefaultContext(myCtx);
+		return userLst;
+	}
+	
+	private List<UserToBranch> processIter(RelationIter relationIter) 
+			throws SQLException {
+		List<UserToBranch> relationLst = new ArrayList<UserToBranch>();
+		while(relationIter.next()) {
+			UserToBranch relation = new UserToBranch();
+			relation.setId(relationIter.id());
+			relation.setIsPrimary(relationIter.is_primary());
+			relation.setWeight(relationIter.weight());
+			relation.setUserId(relationIter.user_id());
+			relation.setBranchId(relationIter.branch_id());
+			relationLst.add(relation);
+		}
+		return relationLst;
+	}
+	
+	#sql private iterator UserIter(String id, String name, String parent, String type, String is_leaf);
+	/**
+	 * 查询所有用户，按部门类型组织成树形结构
+	 */
+	public List<Map> queryUser() 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		UserIter userIter = null;
+		#sql [myCtx] userIter = {
+			WITH
+			    users AS
+			    (
+					SELECT
+					    TYPE_ID   AS id ,
+					    TYPE_NAME AS name,
+					    'root'    AS parent,
+					    'btype'    AS type
+					FROM
+					:{Com_("D_T2_BRANCH_TYPE")}
+					UNION ALL
+					SELECT
+					    b.BRANCH_ID   AS id ,
+					    b.BRANCH_NAME AS name,
+					    b.BRANCH_TYPE AS parent,
+					    'branch'      AS type
+					FROM
+					:{Com_("D_T2_BRANCH")} b
+			        UNION ALL
+			        SELECT
+				        u.USER_ID     AS id ,
+				        u.USER_NAME   AS name,
+				        u2b.BRANCH_ID AS parent,
+				        'user'        AS type
+				    FROM
+				    :{Com_("D_T2_USER")} u
+				    INNER JOIN
+				    :{Com_("D_T0_USERTOBRANCH")} u2b
+				    ON
+				        u2b.USER_ID = u.USER_ID
+			    )
+			SELECT
+			    ID,
+			    NAME,
+			    PARENT,
+			    TYPE,
+			    CONNECT_BY_ROOT NAME "ROOT",
+			    CONNECT_BY_ISLEAF    is_leaf,
+			    LEVEL,
+			    SYS_CONNECT_BY_PATH(ID, '/') "PATH"
+			FROM
+			    users u START WITH PARENT = 'root' CONNECT BY PRIOR ID = PARENT
+		};
+		List<Map> userLst = new ArrayList<Map>();
+		while(userIter.next()) {
+			Map<String, String> node = new HashMap<String, String>();
+			node.put("id", userIter.id());
+			node.put("name", userIter.name());
+			node.put("parent", userIter.parent());
+			node.put("type", userIter.type());
+			node.put("isLeaf", userIter.is_leaf());
+			userLst.add(node);
+		}
+		userIter.close();
+		closeDefaultContext(myCtx);
+		return userLst;
+	}
+}

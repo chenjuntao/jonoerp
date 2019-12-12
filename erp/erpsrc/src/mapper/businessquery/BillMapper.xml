@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"   
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">  
+
+<mapper namespace="mapper.businessquery.BillMapper">  
+
+<!-- pojo对象与数据列映射 -->
+<resultMap id="billResultMap" type="pojo.businessquery.Bill">
+  <id property="billC" column="cBill_C" />
+  <result property="dBusiness" column="DBUSINESS"/>
+  <result property="period" column="cPeriod_N"/>
+  <result property="shift" column="cShift_N"/>
+  <result property="guestNum" column="iGuestNum"/>
+  <result property="billTime" column="dtBillTime"/>
+  <result property="settleTime" column="dtSettleTime"/>
+  <result property="shopName" column="cBranch_N"/>
+  <result property="shopC" column="cBranch_C"/>
+  <result property="table" column="cTable_N"/>
+  <result property="createMan" column="cCreateMan"/>
+  <result property="settleMan" column="cSettleMan"/>
+  <result property="foodAmt" column="nFoodAmt"/>
+  <result property="roundAmt" column="nRoundAmt"/>
+  <result property="presentAmt" column="nPresentAmt"/>
+  <result property="oughtAmt" column="nOughtAmt"/>
+  <result property="payAmt" column="nPayAmt"/>
+  <result property="disAmt" column="nDisAmt"/>
+  <result property="disCurMan" column="cDisManCur_n"/>
+  <result property="disCurWhy" column="cDisCurWhy"/>
+  <result property="vipC" column="cVip_c"/>
+  <result property="vipN" column="cVip_n"/>
+  <result property="remark" column="sRemark"/>
+</resultMap>
+
+<!-- 根据门店编号和台位编号获取门店名字和台位名字 -->
+<select id="getBillBean" resultMap="billResultMap">
+	select cBranch_C, CBRANCH_N, CTABLE_N
+	from ${com}.d_t_food_bill
+	where cBranch_C = #{shopC}
+	and cTable_N = #{tableN}
+	limit 0,1
+</select>
+
+<!-- 指定门店的指定台位的单据数量 -->
+<select id="billCountByST" resultType="int">
+	select count(*) from ${com}.d_t_food_bill
+	where DBUSINESS &gt;= #{startTime}
+	and DBUSINESS &lt;= #{endTime}
+	and cBranch_C = #{shopC} 
+	and cTable_N = #{tableN}
+</select>
+
+<!-- 指定门店的指定台位的单据列表 -->
+<select id="listBillByST" resultMap="billResultMap">
+	select * from ${com}.d_t_food_bill
+	where DBUSINESS &gt;= #{startTime}
+	and DBUSINESS &lt;= #{endTime}
+	and cBranch_C = #{shopC} 
+	and cTable_N = #{tableN}
+	limit #{startRow}, #{pageNum}
+</select>
+
+<!-- 指定开台人和指定结账人等的账单数量 -->
+<select id="billCountByMan" resultType="int">
+	select count(*) from ${com}.d_t_food_bill
+	where DBUSINESS &gt;= #{startTime}
+	and DBUSINESS &lt;= #{endTime}
+	<if test="createMan != null">  
+        and cCreateMan like #{createMan}  
+    </if>
+	<if test="settleMan != null">  
+        and cSettleMan = #{settleMan}  
+    </if>
+    <if test="disManCur_N != null">
+        and cDisManCur_n = #{disManCur_N}  
+    </if>
+</select>
+
+<!-- 指定开台人和指定结账人等的账单列表(枚举用法如下) -->
+<!-- <if test="tN == @com.tanry.framework.util.enums.testEnum@en0">   -->
+<select id="listBillByMan" resultMap="billResultMap">
+	select * from ${com}.d_t_food_bill
+	where DBUSINESS &gt;= #{startTime}
+	and DBUSINESS &lt;= #{endTime}
+	<if test="createMan != null">  
+        and cCreateMan like #{createMan}  
+    </if>
+	<if test="settleMan != null">  
+        and cSettleMan = #{settleMan}  
+    </if>
+    <if test="disManCur_N != null">
+        and cDisManCur_n = #{disManCur_N}  
+    </if>
+	limit #{startRow}, #{pageNum}
+</select>
+
+<!-- 指定门店的指定付款类型的单据数量 -->
+<select id="billCountByPay" resultType="int">
+	select count(*) 
+	from ${com}.d_t_food_bill a, 
+		 ${com}.d_t_bill_pay b
+	where a.cBill_C = b.cBill_C
+	and DBUSINESS &gt;= #{startTime}
+	and DBUSINESS &lt;= #{endTime}
+	and a.cBranch_C = #{shopC} 
+	and b.cPay_C = #{payType}
+</select>
+
+<!-- 指定门店的指定付款类型的单据列表 -->
+<select id="listBillByPay" resultMap="billResultMap">
+	select a.*
+	from ${com}.d_t_food_bill a, 
+		 ${com}.d_t_bill_pay b
+	where a.cBill_C = b.cBill_C
+	and DBUSINESS &gt;= #{startTime}
+	and DBUSINESS &lt;= #{endTime}
+	and a.cBranch_C = #{shopC} 
+	and b.cPay_C = #{payType}
+	limit #{startRow}, #{pageNum}
+</select>
+
+<!-- 根据指定的单据号查询指定的单据信息 -->
+<select id="listBillById" resultMap="billResultMap">
+	select * from ${com}.d_t_food_bill
+	where cBill_C = #{id} 
+	limit 0,1
+</select>
+
+<!-- 指定门店的指定台位的单据数量,使用like关键字，参数要加上% -->
+<select id="listBillBylikeCodeCount" resultType="int">
+	select count(*) 
+	from ${com}.d_t_food_bill
+	where cBill_C like #{billC} 
+	and cBranch_C like #{shopC}
+	and DBUSINESS &gt;= #{startDate}
+	and DBUSINESS &lt;= #{endDate}
+</select>
+
+<!-- 指定门店的指定单据的单据信息,使用like关键字，参数要加上% -->
+<select id="listBillBylikeCode" resultMap="billResultMap">
+	select *
+	from ${com}.d_t_food_bill
+	where cBill_C like #{billC} 
+	and cBranch_C like #{shopC}
+	and DBUSINESS &gt;= #{startDate}
+	and DBUSINESS &lt;= #{endDate}
+	order by DBUSINESS DESC, dtBillTime DESC
+	limit #{startRow}, #{pageNum}
+</select>
+	
+</mapper>

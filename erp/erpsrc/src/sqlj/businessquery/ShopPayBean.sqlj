@@ -1,0 +1,391 @@
+//===============================================
+//
+// Copyright (c) 2014
+// Tanry Electronic Technology Co., Ltd.
+// ChangSha, China
+//
+// All Rights Reserved.
+//
+// First created on 2014.7.7 by cjt
+// Last edited on 2014.8.7 by cjt
+//
+// Comments:read shop pay type list.
+// 说明：查询各个门店的付款方式列表。
+//
+//===============================================
+package logic.businessquery;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+import sqlj.runtime.ref.DefaultContext;
+import com.tanry.framework.util.DateTimeUtil;
+import com.tanry.framework.acl.NoPrivilegeException;
+import pojo.businessquery.ShopPay;
+
+public class ShopPayBean extends ConnectionPool
+{
+	private String strDateFormat = "yyyy-MM-dd";//设置日期格式
+	
+	#sql public static iterator ShopIterator(String cBranch_C, String cBranch_N, Double sumPayAmt); 
+	#sql public static iterator PayIterator(String cBranch_C, String cPay_N, String cPay_C, Double payTypeAmt); 
+	#sql public static iterator DateIterator(String settletime);
+	#sql public static iterator PayBillIterator(String CPAY_N, String CPAY_C,Double payTypeAmt); 
+	#sql public static iterator PayNameIterator(String CPAY_N); 
+	#sql public static iterator PayByDayIterator(String shopC,String shopName, String payName, String payCode, Double payAmt,String businessDate); 
+	
+	public ShopPayBean()
+	{
+	}
+	
+	public List<Map> getBillPay(String CBILL_C)
+	throws	NoPrivilegeException,SQLException,NoConnection	
+	{
+		List<Map> payBillLists = new ArrayList<Map>();
+		
+		DefaultContext myCtx = getDefaultContext();
+		PayBillIterator payBillIterator = null;
+		
+		if (myCtx != null){
+			#sql [myCtx]  payBillIterator = {
+			SELECT
+			    pay.CPAY_C,
+			    pay.CPAY_N,
+			    pay.CBILL_C,
+			    ROUND(SUM(pay.nPayAmt) ,2) payTypeAmt
+			FROM
+			    :{Com_("d_t_bill_pay")} pay
+			WHERE
+			    pay.CBILL_C = :CBILL_C
+			GROUP BY
+			    pay.CPAY_C,
+			    pay.CPAY_N,
+			    pay.CBILL_C
+			};
+			
+				while(payBillIterator.next()){
+					Map temp = new TreeMap();
+					temp.put("CBILL_C", CBILL_C);
+					temp.put("CPAY_N", payBillIterator.CPAY_N());
+					temp.put("CPAY_C", payBillIterator.CPAY_C());
+					temp.put("payTypeAmt", payBillIterator.payTypeAmt());
+					payBillLists.add(temp);
+				}
+				payBillIterator.close();
+		}
+		else
+        {
+            throw new NoConnection();
+        }
+		closeDefaultContext(myCtx);
+		return payBillLists;
+	}
+	
+	public List<ShopPay> byDay(String startTime, String endTime)
+			throws NoPrivilegeException,SQLException,NoConnection	{
+			
+			List<ShopPay> shops = new ArrayList<ShopPay>();
+			DefaultContext myCtx = getDefaultContext();
+			PayByDayIterator payByDayIterator = null;
+			if (myCtx != null)		{
+				#sql [myCtx] payByDayIterator = {SELECT
+					    TO_CHAR(a.DBUSINESS, 'yyyy-MM-dd') businessDate,
+					    a.cBranch_C                        shopC,
+					    a.CBRANCH_N                        shopName,
+					    b.cPay_C                           payCode,
+					    b.cPay_N                           payName,
+					    SUM(b.nPayAmt)                     payAmt
+					FROM
+					    :{Com_("d_t_food_bill")} a,
+					    :{Com_("d_t_bill_pay")} b
+					WHERE
+					    a.cBill_C = b.cBill_C
+					AND TO_CHAR(a.DBUSINESS, 'yyyy-MM-dd') IN
+					    (
+					        SELECT
+					            TO_CHAR(DBUSINESS, 'yyyy-MM-dd')
+					        FROM
+					            :{Com_("d_t_food_bill")} d
+					        WHERE
+					            DBUSINESS >= to_date(:startTime, 'yyyy-mm-dd')
+					        AND DBUSINESS <= to_date(:endTime, 'yyyy-mm-dd')
+					        GROUP BY
+					            TO_CHAR(DBUSINESS, 'yyyy-MM-dd') )
+					GROUP BY
+					    TO_CHAR(a.DBUSINESS, 'yyyy-MM-dd'),
+					    a.cBranch_C,
+					    a.CBRANCH_N,
+					    b.cPay_C,
+					    b.cPay_N
+					ORDER BY
+					    TO_CHAR(a.DBUSINESS, 'yyyy-MM-dd'),
+					    a.cBranch_C};
+				
+				while(payByDayIterator.next()){
+					ShopPay shopPay = new ShopPay();
+					shopPay.dbusinessDate = payByDayIterator.businessDate();
+					shopPay.shopC = payByDayIterator.shopC();
+					shopPay.shopName = payByDayIterator.shopName();
+					shopPay.payCode = payByDayIterator.payCode();
+					shopPay.payName = payByDayIterator.payName();
+					shopPay.payAmt = payByDayIterator.payAmt();
+					shops.add(shopPay);
+				}
+				payByDayIterator.close();
+
+			}
+			else{
+	            throw new NoConnection();
+	        }
+			
+			closeDefaultContext(myCtx);
+			return shops;
+		}
+	
+	public List<ShopPay> listOneShopPay(String startTime, String endTime,String shopC)
+			throws NoPrivilegeException,SQLException,NoConnection
+		{
+			List<ShopPay> shops = new ArrayList<ShopPay>();
+			DefaultContext myCtx = getDefaultContext();
+			ShopIterator shopIterator = null;
+			if (myCtx != null)
+			{
+				int billCount = 0;
+				//查询当前日期范围内是否有数据
+				#sql [myCtx] {select count(cBill_C) into :billCount 
+							from :{Com_("d_t_food_bill")}
+							where DBUSINESS >= to_date(:startTime, :strDateFormat)
+							and DBUSINESS <= to_date(:endTime, :strDateFormat)};
+				//如果当前日期范围内有数据才继续查询，如果无数据则直接返回
+				if (billCount > 0) 
+				{
+					//查询所有的门店列表及其付款金额
+					#sql [myCtx] shopIterator = {select cBranch_C, cBranch_N, sum(nPayAmt) sumPayAmt
+												from :{Com_("d_t_food_bill")}
+												where DBUSINESS >= to_date(:startTime, :strDateFormat)
+												and DBUSINESS <= to_date(:endTime, :strDateFormat)
+												and cBranch_C = :shopC
+												group by cBranch_C, cBranch_N 
+												order by cBranch_C};
+					while(shopIterator.next())
+					{
+						ShopPay shop = new ShopPay();
+						shop.shopC = shopIterator.cBranch_C();
+						shop.shopName = shopIterator.cBranch_N();
+						shop.payAmt = shopIterator.sumPayAmt();
+						shops.add(shop);
+					}
+					shopIterator.close();
+
+					//查询每个门店的分类付款方式下的付款金额
+					PayIterator payIterator = null;
+					#sql [myCtx] payIterator = {select a.cBranch_C, b.cPay_C,b.cPay_N, sum(b.nPayAmt) payTypeAmt
+												from :{Com_("d_t_food_bill")} a, :{Com_("d_t_bill_pay")} b 
+												where a.cBill_C = b.cBill_C 
+												and a.DBUSINESS >= to_date(:startTime, :strDateFormat)
+												and a.DBUSINESS <= to_date(:endTime, :strDateFormat)
+												group by a.cBranch_C,b.cPay_C, b.cPay_N};
+					while(payIterator.next())
+					{
+						for (int i=0; i<shops.size(); i++) 
+						{
+							ShopPay shop = shops.get(i);
+							if (shop.shopC.equals(payIterator.cBranch_C()))
+							{
+								shop.pay.put(payIterator.cPay_C()+"separator"+payIterator.cPay_N(), payIterator.payTypeAmt());
+								break;
+							}
+						}
+					}
+					payIterator.close();
+				}
+			}
+			else
+	        {
+	            throw new NoConnection();
+	        }
+			closeDefaultContext(myCtx);
+			return shops;
+		}
+
+	public List<ShopPay> listShopPay(String startTime, String endTime)
+		throws NoPrivilegeException,SQLException,NoConnection
+	{
+		List<ShopPay> shops = new ArrayList<ShopPay>();
+		DefaultContext myCtx = getDefaultContext();
+		ShopIterator shopIterator = null;
+		if (myCtx != null)
+		{
+			int billCount = 0;
+			//查询当前日期范围内是否有数据
+			#sql [myCtx] {select count(cBill_C) into :billCount 
+						from :{Com_("d_t_food_bill")}
+						where DBUSINESS >= to_date(:startTime, :strDateFormat)
+						and DBUSINESS <= to_date(:endTime, :strDateFormat)};
+			//如果当前日期范围内有数据才继续查询，如果无数据则直接返回
+			if (billCount > 0) 
+			{
+				//查询所有的门店列表及其付款金额
+				#sql [myCtx] shopIterator = {select cBranch_C, cBranch_N, sum(nPayAmt) sumPayAmt
+											from :{Com_("d_t_food_bill")}
+											where DBUSINESS >= to_date(:startTime, :strDateFormat)
+											and DBUSINESS <= to_date(:endTime, :strDateFormat)
+											group by cBranch_C, cBranch_N 
+											order by cBranch_C};
+				while(shopIterator.next())
+				{
+					ShopPay shop = new ShopPay();
+					shop.shopC = shopIterator.cBranch_C();
+					shop.shopName = shopIterator.cBranch_N();
+					shop.payAmt = shopIterator.sumPayAmt();
+					shops.add(shop);
+				}
+				shopIterator.close();
+
+				//查询每个门店的分类付款方式下的付款金额
+				PayIterator payIterator = null;
+				#sql [myCtx] payIterator = {select a.cBranch_C, b.cPay_C,b.cPay_N, sum(b.nPayAmt) payTypeAmt
+											from :{Com_("d_t_food_bill")} a, :{Com_("d_t_bill_pay")} b 
+											where a.cBill_C = b.cBill_C 
+											and a.DBUSINESS >= to_date(:startTime, :strDateFormat)
+											and a.DBUSINESS <= to_date(:endTime, :strDateFormat)
+											group by a.cBranch_C,b.cPay_C, b.cPay_N};
+				while(payIterator.next())
+				{
+					for (int i=0; i<shops.size(); i++) 
+					{
+						ShopPay shop = shops.get(i);
+						if (shop.shopC.equals(payIterator.cBranch_C()))
+						{
+							shop.pay.put(payIterator.cPay_C()+"separator"+payIterator.cPay_N(), payIterator.payTypeAmt());
+							break;
+						}
+					}
+				}
+				payIterator.close();
+			}
+		}
+		else
+        {
+            throw new NoConnection();
+        }
+		closeDefaultContext(myCtx);
+		return shops;
+	}
+
+	/**
+	 * 按天查询分页，得到总的不相同的天数
+	 */
+	public int countByDay(Date startTime, Date endTime)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		int total = 0;
+		DefaultContext myCtx = getDefaultContext();
+		if (myCtx != null) {
+			#sql [myCtx] {
+				SELECT count(DISTINCT
+                    TO_CHAR(DBUSINESS, 'yyyy-MM-dd') ) into :total
+                FROM
+                    :{Com_("d_t_food_bill")} b
+                WHERE
+                    DBUSINESS >= :startTime
+                AND DBUSINESS <= :endTime
+                ORDER BY
+                    TO_CHAR(DBUSINESS, 'yyyy-MM-dd')
+			};
+		} else {
+            throw new NoConnection();
+        }
+		closeDefaultContext(myCtx);
+		
+		return total;
+	}
+	
+	public String getPayName(String payC)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		String payName ="";
+		
+		DefaultContext myCtx = getDefaultContext();
+		PayNameIterator payNameIterator = null;
+		
+		if (myCtx != null){
+			#sql [myCtx]   payNameIterator = {
+					SELECT p.CPAY_N  
+					from :{Com_("d_t_bill_pay")} p 
+					WHERE p.CPAY_C = :payC 
+					and rownum = 1};
+			
+				while(payNameIterator.next()){
+					payName = payNameIterator.CPAY_N();
+				}
+				payNameIterator.close();
+		}
+		else
+        {
+            throw new NoConnection();
+        }
+		closeDefaultContext(myCtx);
+		return payName;
+	}
+
+	/**
+	 * 按天查询分页，得到数据库中实际的开始日期和结束日期
+	 */
+	public Map<String, List> listShopPayByDay(Date startTime, Date endTime, int startRow, int endRow)
+		throws NoPrivilegeException,SQLException,NoConnection {
+		Map<String, List> result = new HashMap<String, List>();
+		DateIterator dateIterator = null;
+		List<String> dateLst = new ArrayList<String>();
+		DefaultContext myCtx = getDefaultContext();
+		if (myCtx != null) {
+			#sql [myCtx] dateIterator = {
+				SELECT
+				    *
+				FROM
+				    (
+				        SELECT
+				            t.*,
+				            ROWNUM rn
+				        FROM
+				            (
+				                SELECT DISTINCT
+				                    TO_CHAR(DBUSINESS, 'yyyy-MM-dd') settletime
+				                FROM
+				                    :{Com_("d_t_food_bill")} b
+				                WHERE
+				                    DBUSINESS >= :startTime
+				                AND DBUSINESS <= :endTime
+				                ORDER BY
+				                    TO_CHAR(DBUSINESS, 'yyyy-MM-dd') ) t
+				        WHERE
+				            rownum <= :endRow )
+				WHERE
+				    rn >= :startRow	
+			};
+			while(dateIterator.next()) {
+				dateLst.add(dateIterator.settletime());
+			}
+			dateIterator.close();
+
+			//将开始和结束日期之间的每天都列出来进行按天查询
+			for (int i = 0; i < dateLst.size(); i++) {
+				String date = dateLst.get(i);
+				List shopList = listShopPay(date, date); 
+				if(shopList.size()>0) {
+					result.put(date, shopList);
+				}
+			}
+		} else {
+            throw new NoConnection();
+        }
+		myCtx.close();
+		
+		return result;
+	}
+}

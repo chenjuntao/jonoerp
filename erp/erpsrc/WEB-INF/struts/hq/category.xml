@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE struts PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN"
+    "http://struts.apache.org/dtds/struts-2.0.dtd">
+
+<struts>
+	<package name="hq_category_raw" namespace="/hq/category/raw" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.hq.config.category.CategoryManageAction">
+			<result name="success">/jsp/hq/config/category/raw/main.jsp</result>
+		</action>
+		
+		<action name="addView" method="editView" class="com.tanry.business.module.hq.config.category.CategoryManageAction">
+			<result name="success">/jsp/hq/config/category/raw/add.jsp</result>
+		</action>
+		
+		<action name="checkCateId" method="checkCateId" class="com.tanry.business.module.hq.config.category.CategoryManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="deletable" method="deletable" class="com.tanry.business.module.hq.config.category.CategoryManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="deleteCate" method="deleteCate" class="com.tanry.business.module.hq.config.category.CategoryManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="saveCate" method="saveCate" class="com.tanry.business.module.hq.config.category.CategoryManageAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="hq_category_product" namespace="/hq/category/product" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.hq.config.category.CategoryManageAction">
+			<result name="success">/jsp/hq/config/category/product/main.jsp</result>
+		</action>
+		
+		<action name="queryCate" method="queryProductCate" class="com.tanry.business.module.hq.config.category.CategoryManageAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="hq_category_semis" namespace="/hq/category/semis" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.hq.config.category.CategoryManageAction">
+			<result name="success">/jsp/hq/config/category/semis/main.jsp</result>
+		</action>
+	</package>
+</struts>
+

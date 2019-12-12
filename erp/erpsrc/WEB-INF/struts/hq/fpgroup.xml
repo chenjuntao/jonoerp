@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE struts PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN"
+    "http://struts.apache.org/dtds/struts-2.0.dtd">
+
+<struts>
+	<package name="hq_price_fgroup_lc" namespace="/hq/fpgroup/lc" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.hq.config.price.FranchiseePGroupAction">
+			<result name="success">/jsp/hq/config/fpgroup/lc/main.jsp</result>
+		</action>
+		
+		<action name="editView" method="editView" class="com.tanry.business.module.hq.config.price.FranchiseePGroupAction">
+			<result name="success">/jsp/hq/config/fpgroup/lc/edit.jsp</result>
+		</action>
+		
+		<action name="checkGroupId" method="checkGroupId" class="com.tanry.business.module.hq.config.price.FranchiseePGroupAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doQuery" method="doQuery" class="com.tanry.business.module.hq.config.price.FranchiseePGroupAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doSave" method="doSave" class="com.tanry.business.module.hq.config.price.FranchiseePGroupAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doDelete" method="doDelete" class="com.tanry.business.module.hq.config.price.FranchiseePGroupAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="hq_price_fgroup" namespace="/hq/fpgroup/brand" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.hq.config.price.FranchiseePGroupAction">
+			<result>/jsp/hq/config/fpgroup/brand/main.jsp</result>
+		</action>
+		
+		<action name="editView" method="editView" class="com.tanry.business.module.hq.config.price.FranchiseePGroupAction">
+			<result name="success">/jsp/hq/config/fpgroup/brand/edit.jsp</result>
+		</action>
+		
+		<action name="branchView" class="com.tanry.business.module.hq.config.price.FranchiseePGroupAction">
+			<result name="success">/jsp/hq/config/fpgroup/brand/selbranch/main.jsp</result>
+		</action>
+		
+		<action name="queryBranch" method="queryBranch" class="com.tanry.business.module.hq.config.price.FranchiseePGroupAction">
+			<result type="json" />
+		</action>
+		
+		<action name="setBranch" method="setBranch" class="com.tanry.business.module.hq.config.price.FranchiseePGroupAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="hq_price_fgroup_setprice" namespace="/hq/fpgroup/brand/setprice" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.hq.config.price.FranchiseePGroupAction">
+			<result name="success">/jsp/hq/config/fpgroup/brand/setprice/main.jsp</result>
+		</action>
+		
+		<action name="queryProduct" method="queryProduct" class="com.tanry.business.module.hq.config.price.FranchiseePGroupAction">
+			<result type="json" />
+		</action>
+		
+		<action name="queryExport" method="queryExport" class="com.tanry.business.module.hq.config.price.FranchiseePGroupAction">
+			<result type="json" />
+		</action>
+		
+		<action name="savePrice" method="savePrice" class="com.tanry.business.module.hq.config.price.FranchiseePGroupAction">
+			<result type="json" />
+		</action>
+	</package>
+</struts>
+

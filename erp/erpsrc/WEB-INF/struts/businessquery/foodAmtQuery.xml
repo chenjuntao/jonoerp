@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE struts PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN"
+    "http://struts.apache.org/dtds/struts-2.0.dtd">
+
+<struts>
+	<package name="businessquery_foodAmtQuery" namespace="/businessquery/foodAmtQuery" extends="trust-default">
+		<action name="mainView" class="action.businessquery.FoodAmtQueryAction">
+			<result name="success">/jsp/businessquery/foodAmtQuery/main.jsp</result>
+		</action>
+		
+		<action name="doCategoryQuery" method="doCategoryQuery" class="action.businessquery.FoodAmtQueryAction">
+			<result name="success">/jsp/businessquery/foodAmtQuery/result.jsp</result>
+		</action>
+		
+		<action name="doDetailCategoryQuery" method="doDetailCategoryQuery" class="action.businessquery.FoodAmtQueryAction">
+			<result name="success">/jsp/businessquery/foodAmtQuery/detailResult.jsp</result>
+		</action>
+		
+		<action name="dofoodRawMaterialQuery" method="dofoodRawMaterialQuery" class="action.businessquery.FoodAmtQueryAction">
+			<result name="success">/jsp/businessquery/foodAmtQuery/rawMaterial.jsp</result>
+		</action>
+	</package>
+</struts>
+

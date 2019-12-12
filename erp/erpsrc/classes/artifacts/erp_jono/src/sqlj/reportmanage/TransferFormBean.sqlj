@@ -1,0 +1,231 @@
+package logic.reportmanage;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import sqlj.runtime.ref.DefaultContext;
+import com.tanry.business.form.FormConstant;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.TextUtil;
+import com.tanry.framework.util.constant.BillStatus;
+import com.tanry.framework.acl.NoPrivilegeException;
+
+public class TransferFormBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(TransferFormBean.class);
+	
+	#sql private iterator HeaderIter(
+			String form_id, 
+			Date form_time,
+			Date confirm_time,
+			String from_maker,
+			String confirmer,
+			String in_branch,
+			String in_storage,
+			String out_branch,
+			String out_storage,
+			Double all_pay_amt, 
+			String max_pay_item, 
+			String form_note, 
+			String status);
+	
+	#sql private iterator SumIter(
+			Double all_pay_amt);
+	
+	public Map getColmunType(){
+		Map map  = new HashMap();
+		map.put("form_id", "String");
+		map.put("form_time", "Date"); 
+		map.put("confirm_time", "Date"); 
+		map.put("from_maker", "String");
+		map.put("confirmer", "String");
+		map.put("in_branch", "String");
+		map.put("in_storage", "String");
+		map.put("out_branch", "String");
+		map.put("out_storage", "String");
+		map.put("all_pay_amt", "Number"); 
+		map.put("max_pay_item", "String"); 
+		map.put("form_note", "String"); 
+		map.put("status", "String"); 
+		
+		return map;
+	}
+	
+	public Map getColmunPrefix(){
+		Map map  = new HashMap();
+		
+		map.put("form_id", "h");
+		map.put("form_time", "h"); 
+		map.put("confirm_time", "h"); 
+		map.put("from_maker", "h");
+		map.put("confirmer", "h");
+		map.put("in_branch", "h");
+		map.put("in_storage", "h");
+		map.put("out_branch", "h");
+		map.put("out_storage", "h");
+		map.put("all_pay_amt", "h"); 
+		map.put("max_pay_item", "h"); 
+		map.put("form_note", "h"); 
+		map.put("status", "h"); 
+		map.put("status", "s"); 
+		
+		return map;
+	}
+	
+	public int count(String queryStr,String sortStr)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		
+		DefaultContext myCtx = getDefaultContext();
+		int total = 0;
+		#sql [myCtx] {
+		SELECT
+    	   count(*) into :total
+    	FROM
+    	:{Com_("D_T1_TRANSFER_HEADER")} h
+	    LEFT JOIN
+	    :{Com_("D_T2_BRANCH")} b
+    	ON
+    	    h.IN_BRANCH_ID = b.BRANCH_ID
+    	JOIN
+    	:{Com_("D_T0_FORM_STATUS")} s
+    	ON
+    	    h.FORM_ID = s.FORM_ID
+    	AND s.IS_CURRENT = 1
+    	WHERE
+        	    1 = 1 :{queryStr :: ''} };
+		closeDefaultContext(myCtx);
+		return total;
+	}
+	
+	
+	public List<Map> query(int startRow, int endRow,String queryStr,String sortStr)  
+			throws NoPrivilegeException,SQLException,NoConnection {
+		
+		DefaultContext myCtx = getDefaultContext();
+		HeaderIter headerIter = null;
+		#sql [myCtx] headerIter = {
+			SELECT
+			    *
+			    FROM
+			        (
+			            SELECT
+			                t.*,
+			                ROWNUM rowNumber
+			            FROM
+			                (SELECT
+			                	    h.FORM_ID,
+			                	    h.IN_BRANCH,
+			                	    h.IN_STORAGE,
+			                	    h.OUT_BRANCH,
+			                	    h.OUT_STORAGE,
+			                	    h.FROM_MAKER,
+			                	    h.FORM_TIME,
+			                	    h.CONFIRMER_ID,
+			                	    h.CONFIRMER,
+			                	    h.CONFIRM_TIME,
+			                	    h.FORM_NOTE,
+			                	    h.ALL_PAY_AMT,
+			                	    h.MAX_PAY_ITEM,
+			                	    s.status
+			                	FROM
+			                	:{Com_("D_T1_TRANSFER_HEADER")} h
+		                	    LEFT JOIN
+		                	    :{Com_("D_T2_BRANCH")} b
+			                	ON
+			                	    h.IN_BRANCH_ID = b.BRANCH_ID
+			                	JOIN
+			                	:{Com_("D_T0_FORM_STATUS")} s
+			                	ON
+			                	    h.FORM_ID = s.FORM_ID
+			                	AND s.IS_CURRENT = 1
+			                	WHERE
+				                	    1 = 1 :{queryStr :: ''} :{sortStr :: ''}) t
+			            WHERE
+			                ROWNUM < :endRow)
+			    WHERE
+			        rowNumber >= :startRow};
+		List<Map> headerLst = processIter(headerIter);
+		headerIter.close();
+		closeDefaultContext(myCtx);
+		return headerLst;
+	}
+	
+	public Map sum( String queryStr,String sortStr) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		
+		DefaultContext myCtx = getDefaultContext();
+		
+		SumIter sumIter = null;
+		
+		#sql [myCtx] sumIter = {
+			SELECT
+        	    sum(nvl(h.all_pay_amt,0)) all_pay_amt
+        	FROM
+        	:{Com_("D_T1_TRANSFER_HEADER")} h
+    	    LEFT JOIN
+    	    :{Com_("D_T2_BRANCH")} b
+        	ON
+        	    h.IN_BRANCH_ID = b.BRANCH_ID
+        	JOIN
+        	:{Com_("D_T0_FORM_STATUS")} s
+        	ON
+        	    h.FORM_ID = s.FORM_ID
+        	AND s.IS_CURRENT = 1
+        	WHERE
+            	    1 = 1 :{queryStr :: ''} :{sortStr :: ''}};
+		
+		closeDefaultContext(myCtx);
+		
+		Map sumMap = processSumIter(sumIter);
+		sumIter.close();
+		
+		return sumMap;
+	}
+	
+	private Map processSumIter(SumIter sumIter) 
+			throws SQLException {
+		Map sumMap = new HashMap();
+		
+		while(sumIter.next()) {
+			sumMap.put("all_pay_amt", sumIter.all_pay_amt());
+		}
+			
+		return sumMap;
+	}
+	
+	private List<Map> processIter(HeaderIter headerIter) 
+			throws SQLException {
+		List<Map> headerLst = new ArrayList<Map>();
+		
+		while(headerIter.next()) {
+			Map header = new HashMap();
+			header.put("form_id", headerIter.form_id());
+			header.put("form_time", headerIter.form_time());
+			header.put("confirm_time", headerIter.confirm_time());
+			header.put("from_maker", headerIter.from_maker());
+			header.put("confirmer", headerIter.confirmer());
+			header.put("form_note", headerIter.form_note());
+			header.put("all_pay_amt", headerIter.all_pay_amt());
+			header.put("max_pay_item", headerIter.max_pay_item());
+			
+			header.put("in_branch", headerIter.in_branch());
+			header.put("in_storage", headerIter.in_storage());
+			header.put("out_branch", headerIter.out_branch());
+			header.put("out_storage", headerIter.out_storage());
+			header.put("status", headerIter.status());
+			
+			
+			headerLst.add(header);
+		}
+		return headerLst;
+	}
+}

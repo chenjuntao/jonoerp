@@ -1,0 +1,319 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on Tue Feb 03 18:04:35 CST 2015 by lyz
+ * Last edited on Tue Feb 03 18:04:35 CST 2015 by lyz
+ * 
+ * comment: 配送区域表
+ */
+package logic.store;
+
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import pojo.store.DeliveryRegion;
+import pojo.store.DeliveryRegionBranch;
+import sqlj.runtime.ref.DefaultContext;
+import com.tanry.framework.acl.NoPrivilegeException;
+
+public class DeliveryRegionBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(DeliveryRegionBean.class);
+	
+	//DeliveryRegionBranch相关--------------------------------------------------------
+	public int saveRegionBranch(DeliveryRegionBranch groupRelation)
+			throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		return saveRegionBranchImp(groupRelation, myCtx);
+	}
+	
+	public int saveRegionBranch(DeliveryRegionBranch groupRelation, String comId)
+			throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getComContext(comId);
+		return saveRegionBranchImp(groupRelation, myCtx);
+	}
+	
+	private int saveRegionBranchImp(DeliveryRegionBranch groupRelation, DefaultContext myCtx)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		
+		String regionId = groupRelation.getRegionId();
+		String branchId = groupRelation.getBranchId();
+
+		#sql [myCtx] {
+			MERGE INTO :{Com_("D_T2_DELIVERY_REGION_BRANCH")} USING dual 
+			ON (REGION_ID=:regionId AND BRANCH_ID=:branchId)
+			WHEN NOT MATCHED THEN INSERT (REGION_ID, BRANCH_ID) 
+			    VALUES (:regionId, :branchId)
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public int updateRegionBranch(String odlBranchId, DeliveryRegionBranch groupRelation)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		String regionId = groupRelation.getRegionId();
+		String branchId = groupRelation.getBranchId();
+		
+		#sql [myCtx] {
+			UPDATE
+			:{Com_("D_T2_DELIVERY_REGION_BRANCH")}
+			SET
+				REGION_ID = :regionId,
+				BRANCH_ID = :branchId
+			WHERE 
+				BRANCH_ID = :odlBranchId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+
+	public int deleteRegionBranch(String branchId)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		#sql [myCtx] {
+			DELETE
+			FROM
+			:{Com_("D_T2_DELIVERY_REGION_BRANCH")}
+			WHERE
+				BRANCH_ID = :branchId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	//DeliveryRegion相关---------------------------------------------------------------------
+	public int saveRegion(DeliveryRegion region)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		return saveRegionImp(region, myCtx);
+	}
+	public int saveRegion(DeliveryRegion region, String comId)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getComContext(comId);
+		return saveRegionImp(region, myCtx);
+	}
+	private int saveRegionImp(DeliveryRegion region, DefaultContext myCtx)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		
+		String regionId = region.getRegionId();
+		String regionName = region.getRegionName();
+		String branchId = region.getBranchId();
+		Integer deliveryCycle = region.getDeliveryCycle();
+
+		#sql [myCtx] {
+			INSERT INTO :{Com_("D_T2_DELIVERY_REGION")} 
+				(REGION_ID, REGION_NAME, BRANCH_ID, DELIVERY_CYCLE) 
+			VALUES (:regionId, :regionName, :branchId, :deliveryCycle)
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public int updateRegion(String oldRegionId, DeliveryRegion region)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		String regionId = region.getRegionId();
+		String regionName = region.getRegionName();
+		String branchId = region.getBranchId();
+		Integer deliveryCycle = region.getDeliveryCycle();
+
+		#sql [myCtx] {
+			UPDATE
+			:{Com_("D_T2_DELIVERY_REGION")}
+			SET
+				REGION_ID = :regionId,
+				REGION_NAME = :regionName,
+				BRANCH_ID = :branchId,
+				DELIVERY_CYCLE = :deliveryCycle
+			WHERE 
+				REGION_ID = :oldRegionId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+
+	public int deleteRegion(String regionId)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		#sql [myCtx] {
+			DELETE
+			FROM
+			:{Com_("D_T2_DELIVERY_REGION")}
+			WHERE
+				REGION_ID = :regionId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	/**
+	 * 启用/停用区域
+	 */
+	public int enableRegion(String regionId, Integer enabled)
+			throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		#sql [myCtx] {
+			UPDATE
+			:{Com_("D_T2_DELIVERY_REGION")}
+			SET
+			   	ENABLED = :enabled
+			WHERE
+				REGION_ID = :regionId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+
+	#sql private iterator RegionIter(
+			String region_id, 
+			String region_name, 
+			String branch_id, 
+			Integer delivery_cycle, 
+			Integer enabled);
+	
+	/**
+	 * 查询全部区域
+	 */
+	public List<DeliveryRegion> queryAllRegion() 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		RegionIter regionIter = null;
+		#sql [myCtx] regionIter = {
+			SELECT
+			    *
+			FROM
+			:{Com_("D_T2_DELIVERY_REGION")}
+			ORDER BY
+				REGION_ID
+		};
+		List<DeliveryRegion> regionLst = processIter(regionIter);
+		regionIter.close();
+		closeDefaultContext(myCtx);
+		return regionLst;
+	}
+
+	/**
+	 * 根据区域编码regionId查询区域
+	 */
+	public DeliveryRegion queryRegionById(String regionId) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		RegionIter regionIter = null;
+		#sql [myCtx] regionIter = {
+			SELECT
+			    *
+			FROM
+			:{Com_("D_T2_DELIVERY_REGION")} r
+			WHERE
+				r.REGION_ID = :regionId
+		};
+		List<DeliveryRegion> regionLst = processIter(regionIter);
+		regionIter.close();
+		closeDefaultContext(myCtx);
+		if (regionLst !=null && !regionLst.isEmpty()) {
+			return regionLst.get(0);
+		}
+		return null;
+	}
+	
+	/**
+	 * 根据区域所属的物流中心编码lcId查询该物流中心下的下所有区域
+	 */
+	public List<DeliveryRegion> queryRegionByLcId(String lcId) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		return queryRegionByLcIdImp(lcId, myCtx);
+	}
+	
+	public List<DeliveryRegion> queryRegionByLcId(String lcId, String comId) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getComContext(comId);
+		return queryRegionByLcIdImp(lcId, myCtx);
+	}
+	private List<DeliveryRegion> queryRegionByLcIdImp(String lcId, DefaultContext myCtx) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		
+		RegionIter regionIter = null;
+		#sql [myCtx] regionIter = {
+			SELECT
+			    *
+			FROM
+			:{Com_("D_T2_DELIVERY_REGION")} r
+			WHERE
+				r.BRANCH_ID = :lcId
+		};
+		List<DeliveryRegion> regionLst = processIter(regionIter);
+		regionIter.close();
+		closeDefaultContext(myCtx);
+		return regionLst;
+	}
+	
+	
+	/**
+	 *  根据餐厅Id获取其所属的区域
+	 */
+	public DeliveryRegion getRegionByBranch(String branchId) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		RegionIter regionIter = null;
+		#sql [myCtx] regionIter = {
+			SELECT
+			    r.*
+			FROM
+			:{Com_("D_T2_DELIVERY_REGION_BRANCH")} rb
+			INNER JOIN
+			:{Com_("D_T2_DELIVERY_REGION")} r
+			ON
+			    r.REGION_ID = rb.REGION_ID
+			WHERE
+			    rb.BRANCH_ID = :branchId
+		};
+		List<DeliveryRegion> regionLst = processIter(regionIter);
+		regionIter.close();
+		closeDefaultContext(myCtx);
+		if (regionLst !=null && !regionLst.isEmpty()) {
+			return regionLst.get(0);
+		}
+		return null;
+	}
+
+	private List<DeliveryRegion> processIter(RegionIter regionIter) throws SQLException {
+		List<DeliveryRegion> regionLst = new ArrayList<DeliveryRegion>();
+		while(regionIter.next()) {
+			DeliveryRegion region = new DeliveryRegion();
+			region.setRegionId(regionIter.region_id());
+			region.setRegionName(regionIter.region_name());
+			region.setBranchId(regionIter.branch_id());
+			region.setDeliveryCycle(regionIter.delivery_cycle());
+			region.setEnabled(regionIter.enabled());
+			regionLst.add(region);
+		}
+		return regionLst;
+	}
+	
+}

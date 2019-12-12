@@ -1,0 +1,359 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on Thu Jun 02 16:10:43 CST 2016 by pw
+ * Last edited on Thu Jun 02 16:10:43 CST 2016 by pw
+ * 
+ * comment: 标签明细表
+ */
+package logic.store;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import pojo.store.TagDetail;
+import sqlj.runtime.ref.DefaultContext;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.TextUtil;
+import com.tanry.framework.acl.NoPrivilegeException;
+
+public class TagDetailBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(TagDetailBean.class);
+	
+	#sql private iterator DetailIter(String tag_id, String code);
+	
+	#sql private iterator ItemsIter(String rownumber,String item_id, String item_name,String tags,String category_name);
+	
+	public int saveEntity(TagDetail detail)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		String tagId = detail.getTagId();
+		String code = detail.getCode();
+
+		#sql [myCtx] {
+			INSERT INTO :{Com_("D_T2_TAG_DETAIL")}   
+				(TAG_ID, CODE) 
+			VALUES (:tagId, :code)
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	
+	public int saveByCateIds(String cateIds,String tagIds,String bindTag)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		String query = " 1=1";
+		if(!TextUtil.isEmpty(cateIds)){
+			query += " AND m.CATEGORY_ID IN ('" + cateIds.replaceAll(",", "','") + "') ";
+		}
+		
+		String[] tagIdArr = tagIds.split(",");
+		
+		for (int i = 0; i < tagIdArr.length; i++) {
+			String tagId = tagIdArr[i];
+			
+			#sql [myCtx] {
+			DELETE
+				FROM
+				:{Com_("D_T2_TAG_DETAIL")} d2 
+			WHERE
+			    (
+			        d2.TAG_ID,d2.CODE) =
+			    (
+			        SELECT
+			            d.TAG_ID,
+			            d.CODE
+			        FROM
+			        	:{Com_("D_T2_TAG_DETAIL")} d 
+			        LEFT JOIN
+			        	:{Com_("D_T2_ITEM_META")} m 
+			        ON
+			            d.CODE = m.ITEM_ID
+			        WHERE
+					:{query :: 1=1}
+		        	AND d.TAG_ID = :tagId
+			        AND d2.TAG_ID = d.TAG_ID
+			        AND d2.CODE = d.CODE)};
+		}
+		
+		if("bind".equals(bindTag)){
+			for (int i = 0; i < tagIdArr.length; i++) {
+				String tagId = tagIdArr[i];
+				
+				#sql [myCtx] {
+					INSERT	INTO
+						:{Com_("D_T2_TAG_DETAIL")} d 
+					SELECT
+					    :tagId     tag_id,
+					    m.ITEM_ID code
+					FROM
+						:{Com_("D_T2_ITEM_META")} m 
+					WHERE
+					 	:{query :: 1=1}};
+			}
+		}
+		
+		
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public int saveByItemId(String itemId,String tagIds)
+			throws NoPrivilegeException, SQLException, NoConnection {
+			DefaultContext myCtx = getDefaultContext();
+			
+			#sql [myCtx] {
+				DELETE
+				FROM
+					:{Com_("D_T2_TAG_DETAIL")} 
+				WHERE
+					CODE = :itemId
+			};
+			
+			String[] tagIdArr = tagIds.split(",");
+			int length = tagIdArr.length;
+			
+			if(TextUtil.isEmpty(tagIds)){
+				length = 0;
+			}
+			
+			for (int i = 0; i < length; i++) {
+				String tagId = tagIdArr[i];
+				
+				#sql [myCtx] {
+				INSERT	INTO  :{Com_("D_T2_TAG_DETAIL")}  (TAG_ID,CODE)VALUES(:tagId,:itemId)};
+			}
+			
+			closeDefaultContext(myCtx);
+			
+			return 1;
+		}
+	
+
+	public int deleteByTagId(String tagIds)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		#sql [myCtx] {
+			DELETE
+			FROM
+				:{Com_("D_T2_TAG_DETAIL")} 
+			WHERE
+				TAG_ID = :tagIds
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	#sql private iterator TotalIter(Integer total);
+	
+	public int itemsCount(String itemCondition,String cateIds,String tagCondition,String itemCategoryType)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		Integer total = null;
+		itemCondition = "%" + itemCondition + "%";
+		
+		String query = " m.ITEM_TYPE IN ('" + itemCategoryType.replaceAll(",", "','") + "') ";;
+		if(!TextUtil.isEmpty(cateIds)){
+			query += " AND m.CATEGORY_ID IN ('" + cateIds.replaceAll(",", "','") + "') ";
+		}
+		
+		String query2 = "";
+		if(!TextUtil.isEmpty(tagCondition)){
+			query2 = " AND d.TAG_ID IN ('" + tagCondition.replaceAll(",", "','") + "') ";
+		}
+		
+		DefaultContext myCtx = getDefaultContext();
+		TotalIter totalIter = null;
+		#sql [myCtx] totalIter = {
+			WITH
+			    items AS
+			    (
+			        SELECT DISTINCT
+			            m.ITEM_ID,
+			            m.ITEM_NAME,
+			            c.CATEGORY_NAME
+			        FROM
+			            :{Com_("D_T2_ITEM_META")} m
+			        LEFT JOIN
+			            :{Com_("D_T2_ITEM_CATEGORY")} c
+			        ON
+			            m.CATEGORY_ID = c.CATEGORY_ID
+			        LEFT JOIN
+			            :{Com_("D_T2_TAG_DETAIL")} d
+			        ON
+			            m.ITEM_ID = d.CODE
+			        WHERE
+			            :{query :: 1=1}
+			        AND (
+			                m.ITEM_ID LIKE :itemCondition
+			            OR  m.ITEM_NAME LIKE :itemCondition) :{query2 :: 1=1}
+			    )
+			    ,
+			    a AS
+			    (
+			        SELECT
+			            i.*,
+			            listagg(h.TAG_NAME,',') within GROUP (ORDER BY h.TAG_ID) tags
+			        FROM
+			            items i
+			        LEFT JOIN
+			            :{Com_("D_T2_TAG_DETAIL")} d
+			        ON
+			            i.ITEM_ID = d.CODE
+			        LEFT JOIN
+			            :{Com_("D_T2_TAG_HEADER")} h
+			        ON
+			            h.TAG_ID = d.TAG_ID
+			        GROUP BY
+			            i.ITEM_ID,
+			            i.ITEM_NAME,
+			            i.CATEGORY_NAME
+			    )
+
+            SELECT
+                count(*)  total
+            FROM
+                a };
+		
+		if(totalIter.next()) {
+			total = totalIter.total();
+		}
+		
+		closeDefaultContext(myCtx);
+		
+		return total ==null?0:total;
+	}
+	
+	public List<Map> queryItems(String itemCondition,String cateIds,String tagCondition,String itemCategoryType,int startRow, int endRow)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		itemCondition = "%" + itemCondition + "%";
+		
+		String query = " m.ITEM_TYPE IN ('" + itemCategoryType.replaceAll(",", "','") + "') ";;
+		if(!TextUtil.isEmpty(cateIds)){
+			query += " AND m.CATEGORY_ID IN ('" + cateIds.replaceAll(",", "','") + "') ";
+		}
+		
+		String query2 = "";
+		if(!TextUtil.isEmpty(tagCondition)){
+			query2 = " AND d.TAG_ID IN ('" + tagCondition.replaceAll(",", "','") + "') ";
+		}
+		
+		DefaultContext myCtx = getDefaultContext();
+		ItemsIter itemsIter = null;
+		#sql [myCtx] itemsIter = {
+			WITH
+			    items AS
+			    (
+			        SELECT DISTINCT
+			            m.ITEM_ID,
+			            m.ITEM_NAME,
+			            c.CATEGORY_NAME
+			        FROM
+			            :{Com_("D_T2_ITEM_META")} m
+			        LEFT JOIN
+			            :{Com_("D_T2_ITEM_CATEGORY")} c
+			        ON
+			            m.CATEGORY_ID = c.CATEGORY_ID
+			        LEFT JOIN
+			            :{Com_("D_T2_TAG_DETAIL")} d
+			        ON
+			            m.ITEM_ID = d.CODE
+			        WHERE
+			            :{query :: 1=1}
+			        AND (
+			                m.ITEM_ID LIKE :itemCondition
+			            OR  m.ITEM_NAME LIKE :itemCondition) :{query2 :: 1=1}
+			    )
+			    ,
+			    a AS
+			    (
+			        SELECT
+			            i.*,
+			            listagg(h.TAG_NAME,',') within GROUP (ORDER BY h.TAG_ID) tags
+			        FROM
+			            items i
+			        LEFT JOIN
+			            :{Com_("D_T2_TAG_DETAIL")} d
+			        ON
+			            i.ITEM_ID = d.CODE
+			        LEFT JOIN
+			            :{Com_("D_T2_TAG_HEADER")} h
+			        ON
+			            h.TAG_ID = d.TAG_ID
+			        GROUP BY
+			            i.ITEM_ID,
+			            i.ITEM_NAME,
+			            i.CATEGORY_NAME
+			        ORDER BY
+			            1
+			    )
+			SELECT
+			    *
+			FROM
+			    (
+			        SELECT
+			            t.*,
+			            ROWNUM rowNumber
+			        FROM
+			            (
+			                SELECT
+			                    a.*
+			                FROM
+			                    a ) t
+			        WHERE
+			            ROWNUM < :endRow)
+			WHERE
+			    rowNumber >= :startRow};
+		List<Map> detailLst = processItemsIter(itemsIter);
+		itemsIter.close();
+		closeDefaultContext(myCtx);
+		return detailLst;
+	}
+
+	private List<TagDetail> processIter(DetailIter detailIter) 
+			throws SQLException {
+		List<TagDetail> detailLst = new ArrayList<TagDetail>();
+		while(detailIter.next()) {
+			TagDetail detail = new TagDetail();
+			detail.setTagId(detailIter.tag_id());
+			detail.setCode(detailIter.code());
+			detailLst.add(detail);
+		}
+		return detailLst;
+	}
+	
+	private List<Map> processItemsIter(ItemsIter itemsIter) 
+			throws SQLException {
+		List<Map> detailLst = new ArrayList<Map>();
+		while(itemsIter.next()) {
+			Map map  = new HashMap();
+			map.put("rownumber", itemsIter.rownumber());
+			map.put("item_id", itemsIter.item_id());
+			map.put("item_name", itemsIter.item_name());
+			map.put("category_name", itemsIter.category_name());
+			map.put("tags", itemsIter.tags());
+			detailLst.add(map);
+		}
+		return detailLst;
+	}
+}

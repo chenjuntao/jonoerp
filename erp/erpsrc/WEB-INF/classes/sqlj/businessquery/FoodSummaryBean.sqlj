@@ -1,0 +1,193 @@
+ 
+package logic.businessquery;
+
+import sqlj.runtime.*;
+import sqlj.runtime.ref.*;
+import java.sql.*;
+import oracle.sql.*;
+import oracle.sqlj.runtime.*;
+import oracle.jdbc.driver.*;
+import java.util.*;
+import java.text.SimpleDateFormat;
+import java.text.ParseException;
+import logic.pool.ConnectionPool;
+import logic.*;
+import com.tanry.framework.acl.*;
+import pojo.businessquery.FoodSummary;
+import com.tanry.framework.util.TextUtil;
+
+public class FoodSummaryBean extends ConnectionPool
+{
+	#sql public static iterator FoodSummaryIterator(
+			String foodC,
+			String foodN,
+			String unit,
+			float qty,
+			float pesentQty,
+			float returnQty);
+	
+	#sql public static iterator SumIterator(
+			float qty,
+			float pesentQty,
+			float returnQty);
+	
+	public FoodSummaryBean()
+	{
+	}
+	
+	public FoodSummary foodSummarySum(String startDate,String endDate,String shopC)
+			throws NoPrivilegeException,SQLException,NoConnection	{
+		String queryStr = "";
+		if(!TextUtil.isEmpty(shopC)){
+			queryStr =  "AND b.CBRANCH_C = '"+ shopC +"' ";
+		}
+		
+		FoodSummary foodSummary = new FoodSummary();
+		DefaultContext myCtx = getDefaultContext();
+		SumIterator sumIterator = null;
+		if (myCtx != null)
+		{
+			#sql [myCtx] sumIterator = {
+				SELECT
+				    SUM(qty)       qty ,
+				    SUM(pesentQty) pesentQty,
+				    SUM(returnQty) returnQty
+				FROM
+				    (
+				        SELECT
+				        	bs.CFOOD_C foodC,
+				            bs.cFood_N       foodN,
+				            sUnit            unit,
+				            SUM(nQty)        qty,
+				            SUM(
+				                CASE
+				                    WHEN bs.eRetSendFlag = '赠送'
+				                    THEN nQty
+				                    ELSE 0
+				                END) pesentQty,
+				            SUM(
+				                CASE
+				                    WHEN bs.eRetSendFlag = '退品'
+				                    THEN nQty
+				                    ELSE 0
+				                END) returnQty
+				        FROM
+				            :{Com_("d_t_food_bills")} bs
+				        LEFT JOIN
+				            :{Com_("d_t_food_bill")} b
+				        ON
+				            bs.cBill_C = b.cBill_C
+				        WHERE
+				            DBUSINESS >= to_date(:startDate, 'yyyy-mm-dd')
+				        AND DBUSINESS <= to_date(:endDate, 'yyyy-mm-dd')
+		        		:{queryStr :: }
+				        AND bs.eSuitFlag <> '套餐'
+				        GROUP BY
+				        	bs.CFOOD_C ,
+				            bs.cFood_N,
+				            sUnit ) t
+			};
+			
+			while(sumIterator.next()) {
+
+				try {
+					foodSummary.qty = sumIterator.qty();
+				} catch (Exception e) {
+					foodSummary.qty = 0;
+				}
+
+				try {
+					foodSummary.pesentQty = sumIterator.pesentQty();
+				} catch (Exception e) {
+					foodSummary.pesentQty = 0;
+				}
+				
+				try {
+					foodSummary.returnQty = sumIterator.returnQty();
+				} catch (Exception e) {
+					foodSummary.returnQty = 0;
+				}
+				
+			}
+			sumIterator.close();
+		}
+		else
+		{
+			throw new NoConnection();
+		}
+		closeDefaultContext(myCtx);
+		return foodSummary;
+	}
+	
+	
+	public List<FoodSummary> foodSummary(String startDate,String endDate,String shopC)
+			throws NoPrivilegeException,SQLException,NoConnection	{
+		String queryStr = "";
+		
+		List<FoodSummary> result = new ArrayList<FoodSummary>();
+		DefaultContext myCtx = getDefaultContext();
+		FoodSummaryIterator foodSummaryIterator = null;
+		
+		if(!TextUtil.isEmpty(shopC)){
+			queryStr =  "AND b.CBRANCH_C = '"+ shopC +"' ";
+		}
+		
+		if (myCtx != null)
+		{
+			#sql [myCtx] foodSummaryIterator = {
+				SELECT
+				    bs.CFOOD_C foodC,
+				    bs.cFood_N                foodN,
+				    sUnit                     unit,
+				    SUM(nQty)                 qty,
+				    SUM(
+				        CASE
+				            WHEN bs.eRetSendFlag = '赠送'
+				            THEN nQty
+				            ELSE 0
+				        END) pesentQty,
+				    SUM(
+				        CASE
+				            WHEN bs.eRetSendFlag = '退品'
+				            THEN nQty
+				            ELSE 0
+				        END) returnQty
+				FROM
+				    :{Com_("d_t_food_bills")} bs
+				LEFT JOIN
+				    :{Com_("d_t_food_bill")} b
+				ON
+				    bs.cBill_C = b.cBill_C
+				WHERE
+					DBUSINESS >= to_date(:startDate, 'yyyy-mm-dd')
+				AND DBUSINESS <= to_date(:endDate, 'yyyy-mm-dd')
+				:{queryStr :: }
+				AND bs.eSuitFlag <> '套餐'
+				GROUP BY
+					bs.CFOOD_C ,
+				    bs.cFood_N,
+				    sUnit
+				ORDER BY
+				   1};
+			
+			while(foodSummaryIterator.next()) {
+				FoodSummary foodSummary = new FoodSummary();
+				foodSummary.foodC = foodSummaryIterator.foodC();
+				foodSummary.foodN = foodSummaryIterator.foodN();
+				foodSummary.unit = foodSummaryIterator.unit();
+				foodSummary.qty = foodSummaryIterator.qty();
+				foodSummary.pesentQty = foodSummaryIterator.pesentQty();
+				foodSummary.returnQty = foodSummaryIterator.returnQty();
+				result.add(foodSummary);
+			}
+			foodSummaryIterator.close();
+		}
+		else
+		{
+			throw new NoConnection();
+		}
+		closeDefaultContext(myCtx);
+		return result;
+	}
+	
+}

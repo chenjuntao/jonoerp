@@ -1,0 +1,28 @@
+#dataGrid {
+	position: absolute;
+	right: 0;
+	top: 36px;
+	bottom: 0;
+	width: 100%;
+	height: auto; 
+}
+
+.dgrid-cell {
+	width: 100px;
+}
+
+th[role="columnheader"] {
+	text-align: center;
+}
+
+.dgrid-column-set-0 {
+	width: 360px;
+}
+
+.field-branchName {
+	width: 150px;
+}
+
+.field-totalPer {
+	width: 150px;
+}

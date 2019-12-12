@@ -1,0 +1,258 @@
+package logic.special;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import sqlj.runtime.ref.DefaultContext;
+import com.tanry.business.form.FormConstant;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.TextUtil;
+import com.tanry.framework.util.constant.BillStatus;
+import com.tanry.framework.acl.NoPrivilegeException;
+import com.tanry.framework.util.TextUtil;
+
+public class RequestBranchBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(RequestBranchBean.class);
+	
+	#sql private iterator HeaderIter(
+			String item_id,
+			String item_name,
+			String infos,
+			String item_dimension
+		);
+	
+	#sql private iterator BranchIter(
+			String branch_id,
+			String branch_name
+		);
+	
+	#sql private iterator TotalIter(
+			Integer totals
+		);
+	
+	public Integer count(String queryStr)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		TotalIter totalIter = null;
+		Integer total = null;
+		
+		#sql [myCtx] totalIter =  {
+		WITH
+    	    d AS
+    	    (
+    	        SELECT
+    	            d.ITEM_ID,
+    	            h.BUYER_ID,
+    	            SUM(d.ORDER_COUNT) ORDER_COUNT
+    	        FROM
+    	        :{Com_("D_T1_REQUEST_HEADER")} h
+    	        INNER JOIN
+    	        :{Com_("D_T0_FORM_STATUS")} s
+    	        ON
+    	            h.FORM_ID = s.FORM_ID
+    	        AND s.IS_CURRENT =1
+    	        AND s.STATUS = '已审核'
+    	        INNER JOIN
+    	        :{Com_("D_T1_REQUEST_DETAIL")} d
+    	        ON
+    	            h.FORM_ID = d.FORM_ID
+    	        WHERE
+    	        	1 = 1 :{queryStr :: ''}
+    	        GROUP BY
+    	            ROLLUP( d.ITEM_ID, h.BUYER_ID)
+    	    )
+    	    ,
+    	    r AS
+    	    (
+    	        SELECT
+    	            DECODE(ITEM_ID,NULL,'合计',ITEM_ID) ITEM_ID,
+    	            listagg('('||BUYER_ID||'|' || ORDER_COUNT ||')',',') within GROUP
+    	            (ORDER BY BUYER_ID) infos
+    	        FROM
+    	            (
+    	                SELECT
+    	                    d.ITEM_ID,
+    	                    d.BUYER_ID,
+    	                    b.BRANCH_NAME,
+    	                    d.ORDER_COUNT
+    	                FROM
+    	                    d
+    	                LEFT JOIN
+    	                :{Com_("D_T2_BRANCH")} b
+    	                ON
+    	                    d.BUYER_ID = b.BRANCH_ID
+    	                ORDER BY
+    	                    ITEM_ID)
+    	        GROUP BY
+    	            ITEM_ID
+    	    )
+		SELECT
+		  count(ITEM_ID) totals
+		FROM
+		    r
+	};
+    
+	if(totalIter.next()) {
+		total = totalIter.totals();
+	}
+	
+	total = total == null ? 0:total;
+    closeDefaultContext(myCtx);
+	return total;
+}
+	
+	public List<Map> query(String queryStr,int startRow,int endRow)  
+			throws NoPrivilegeException,SQLException,NoConnection {
+		
+		DefaultContext myCtx = getDefaultContext();
+		HeaderIter headerIter = null;
+		#sql [myCtx] headerIter = {
+			WITH
+        	    d AS
+        	    (
+        	        SELECT
+        	            d.ITEM_ID,
+        	            h.BUYER_ID,
+        	            SUM(d.ORDER_COUNT) ORDER_COUNT
+        	        FROM
+        	        :{Com_("D_T1_REQUEST_HEADER")} h
+        	        INNER JOIN
+        	        :{Com_("D_T0_FORM_STATUS")} s
+        	        ON
+        	            h.FORM_ID = s.FORM_ID
+        	        AND s.IS_CURRENT =1
+        	        AND s.STATUS = '已审核'
+        	        INNER JOIN
+        	        :{Com_("D_T1_REQUEST_DETAIL")} d
+        	        ON
+        	            h.FORM_ID = d.FORM_ID
+        	        WHERE
+        	        	1 = 1  :{queryStr :: ''}
+        	        GROUP BY
+        	            ROLLUP( d.ITEM_ID, h.BUYER_ID)
+        	    )
+        	    ,
+        	    r AS
+        	    (
+        	        SELECT
+        	            DECODE(ITEM_ID,NULL,'合计',ITEM_ID) ITEM_ID,
+        	            listagg('('||BUYER_ID||'|' || ORDER_COUNT ||')',',') within GROUP
+        	            (ORDER BY BUYER_ID) infos
+        	        FROM
+        	            (
+        	                SELECT
+        	                    d.ITEM_ID,
+        	                    d.BUYER_ID,
+        	                    b.BRANCH_NAME,
+        	                    d.ORDER_COUNT
+        	                FROM
+        	                    d
+        	                LEFT JOIN
+        	                :{Com_("D_T2_BRANCH")} b
+        	                ON
+        	                    d.BUYER_ID = b.BRANCH_ID
+        	                ORDER BY
+        	                    ITEM_ID)
+        	        GROUP BY
+        	            ITEM_ID
+        	    )
+        	SELECT
+        	    r.*,
+        	    m.ITEM_DIMENSION,
+        	    m.ITEM_NAME
+        	FROM
+        	    r
+        	LEFT JOIN
+        	:{Com_("D_T2_ITEM_META")} m
+        	ON
+        	    r.item_id = m.item_id};
+		List<Map> headerLst = processIter(headerIter);
+		headerIter.close();
+		closeDefaultContext(myCtx);
+		return headerLst;
+	}
+	
+	public List<Map> queryBranch(String queryStr)  
+			throws NoPrivilegeException,SQLException,NoConnection {
+		
+		DefaultContext myCtx = getDefaultContext();
+		BranchIter branchIter = null;
+		#sql [myCtx] branchIter = {
+			SELECT DISTINCT
+			    h.BUYER_ID BRANCH_ID,
+			    b.BRANCH_NAME
+			FROM
+			:{Com_("D_T1_REQUEST_HEADER")} h
+			INNER JOIN
+			:{Com_("D_T0_FORM_STATUS")} s
+			ON
+			    h.FORM_ID = s.FORM_ID
+			AND s.IS_CURRENT =1
+			AND s.STATUS = '已审核'
+			INNER JOIN
+				:{Com_("D_T1_REQUEST_DETAIL")} d 
+			ON
+			    h.FORM_ID = d.FORM_ID
+			LEFT JOIN
+			:{Com_("D_T2_BRANCH")} b
+			ON
+			    h.BUYER_ID = b.BRANCH_ID
+			WHERE
+				1 = 1  :{queryStr :: ''}
+			ORDER BY
+				BRANCH_ID DESC};
+		List<Map> branchLst = new ArrayList<Map>();
+		
+		while(branchIter.next()) {
+			Map header = new HashMap();
+			header.put("branch_id", branchIter.branch_id());
+			header.put("branch_name", branchIter.branch_name());
+			
+			branchLst.add(header);
+		}
+		
+		branchIter.close();
+		closeDefaultContext(myCtx);
+		return branchLst;
+	}
+	
+	private List<Map> processIter(HeaderIter headerIter) 
+			throws SQLException {
+		List<Map> headerLst = new ArrayList<Map>();
+		
+		while(headerIter.next()) {
+			Map header = new HashMap();
+			header.put("item_id", headerIter.item_id());
+			
+			String[] infos = headerIter.infos().toString().split(",");
+			for (int i = 0; i < infos.length; i++) {
+				String[] temp = infos[i].replace("(", "").replace(")", "").split("\\|");
+				
+				for (int j = 0; j < temp.length; j++) {
+					if(!TextUtil.isEmpty(temp[0])){
+						header.put(temp[0], temp[1]);
+					}else{
+						header.put("sum", temp[1]);
+					}
+				}
+			}
+			
+			header.put("item_dimension", headerIter.item_dimension());
+			header.put("item_name", headerIter.item_name());
+			
+			headerLst.add(header);
+		}
+		return headerLst;
+	}
+}

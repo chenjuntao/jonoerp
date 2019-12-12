@@ -1,0 +1,94 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on Jul 29, 2015 by liyzh
+ * Last edited on Jul 29, 2015 by liyzh
+ * 
+ * 说明： 保存操作日志等
+ */
+package logic.module.setting;
+
+import java.sql.Date;
+import java.sql.SQLException;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import sqlj.runtime.ref.DefaultContext;
+
+import com.tanry.framework.acl.NoPrivilegeException;
+import com.tanry.framework.log.pojo.ConnectionLog;
+import com.tanry.framework.log.pojo.OperateLog;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.TextUtil;
+
+public class OperateLogBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(OperateLogBean.class);
+	
+	public int saveEntity(OperateLog logItem)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		String id = TextUtil.uuid();
+		String menuId = logItem.getMenuId();
+		String menuName = logItem.getMenuName();
+		String url = logItem.getUrl();
+		
+		String businessId = logItem.getBusinessId();
+		
+		String operateType = logItem.getOperateType();
+		String title = logItem.getTitle();
+		String operateDesc = logItem.getOperateDesc();
+		
+		String operatorId = logItem.getOperatorId();
+		String operatorName = logItem.getOperatorName();
+		Date operateTime = SqlDateUtil.getSqlDate(logItem.getOperateTime());
+		
+		String branchId = logItem.getBranchId();
+
+		#sql [myCtx] {
+			INSERT INTO :{Com_("D_T0_OPERATELOG")} (ID, MENU_ID, MENU_NAME, URL, BUSINESS_ID, 
+				OPERATE_TYPE, TITLE, OPERATE_DESC, OPERATOR_ID, OPERATOR_NAME, OPERATE_TIME,BRANCH_ID) 
+			VALUES (:id, :menuId, :menuName, :url, :businessId, 
+				:operateType, :title, :operateDesc, :operatorId, :operatorName, :operateTime,:branchId)
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public int saveConnLog(ConnectionLog log)
+		throws NoPrivilegeException, SQLException {
+		DefaultContext myCtx = getDefaultContext();
+		
+		String id = TextUtil.uuid();
+		
+		String api = log.getApi();
+		String apiType = log.getApiType();
+		Long consumeTime = log.getConsumeTime();
+		Integer connInUse = log.getConnInUse();
+
+		String host = log.getHost();
+		
+		String operatorId = log.getOperatorId();
+		String operatorName = log.getOperatorName();
+		Date logTime = SqlDateUtil.getSqlDate(log.getLogTime());
+
+		#sql [myCtx] {
+			INSERT INTO :{Com_("D_T0_CONN_LOG")} (ID, API,  
+				API_TYPE, CONSUME_TIME, CONN_IN_USE, HOST, OPERATOR_ID, OPERATOR_NAME, LOG_TIME) 
+			VALUES (:id, :api,  
+				:apiType, :consumeTime, :connInUse, :host, :operatorId, :operatorName, :logTime)
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+}

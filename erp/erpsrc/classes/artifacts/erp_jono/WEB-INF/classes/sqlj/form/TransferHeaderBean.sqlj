@@ -1,0 +1,436 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on Thu Sep 18 15:26:39 CST 2014 by pw
+ * Last edited on Thu Sep 18 15:26:39 CST 2014 by pw
+ * 
+ * comment: 餐厅调拨单表头
+ */
+package logic.form;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import pojo.form.TransferHeader;
+import sqlj.runtime.ref.DefaultContext;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.TextUtil;
+import com.tanry.framework.acl.NoPrivilegeException;
+
+public class TransferHeaderBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(TransferHeaderBean.class);
+	
+	#sql private iterator HeaderIter(String form_id, String in_branch_id, String in_branch, String in_storage_id, String in_storage, String out_branch_id, String out_branch, String out_storage_id, String out_storage, String from_maker_id, String from_maker, Date form_time,Date form_time_actual, String auditor_id, String auditor, Date audit_time, String confirmer_id, String confirmer, Date confirm_time, String out_man_id, String out_man, Date out_time, Date audit_time_actual,String form_note, Double all_pay_amt, String max_pay_item);
+	
+	public int saveEntity(TransferHeader header)
+			throws NoPrivilegeException, SQLException, NoConnection {
+			DefaultContext myCtx = getDefaultContext();
+			
+			String formId = header.getFormId();
+			String inBranchId = header.getInBranchId();
+			String inBranch = header.getInBranch();
+			String inStorageId = header.getInStorageId();
+			String inStorage = header.getInStorage();
+			String outBranchId = header.getOutBranchId();
+			String outBranch = header.getOutBranch();
+			String outStorageId = header.getOutStorageId();
+			String outStorage = header.getOutStorage();
+			String fromMakerId = header.getFromMakerId();
+			String fromMaker = header.getFromMaker();
+			Date formTime = SqlDateUtil.getSqlDate(header.getFormTime());
+			Date formTimeActual = SqlDateUtil.getSqlDate(new java.util.Date());
+			String auditorId = header.getAuditorId();
+			String auditor = header.getAuditor();
+			Date auditTime = SqlDateUtil.getSqlDate(header.getAuditTime());
+			String confirmerId = header.getConfirmerId();
+			String confirmer = header.getConfirmer();
+			Date confirmTime = SqlDateUtil.getSqlDate(header.getConfirmTime());
+			String outManId = header.getOutManId();
+			String outMan = header.getOutMan();
+			Date outTime = SqlDateUtil.getSqlDate(header.getOutTime());
+			String formNote = header.getFormNote();
+			Double allPayAmt = header.getAllPayAmt();
+			String maxPayItem = header.getMaxPayItem();
+
+			#sql [myCtx] {
+				INSERT INTO :{Com_("D_T1_TRANSFER_HEADER")} 
+					(FORM_ID, IN_BRANCH_ID, IN_BRANCH, IN_STORAGE_ID, IN_STORAGE, OUT_BRANCH_ID, OUT_BRANCH, OUT_STORAGE_ID, OUT_STORAGE, FROM_MAKER_ID, FROM_MAKER, FORM_TIME, FORM_TIME_ACTUAL,
+							AUDITOR_ID, AUDITOR, AUDIT_TIME, CONFIRMER_ID, CONFIRMER, CONFIRM_TIME, OUT_MAN_ID, OUT_MAN, OUT_TIME, FORM_NOTE, ALL_PAY_AMT, MAX_PAY_ITEM) 
+				VALUES (:formId, :inBranchId, :inBranch, :inStorageId, :inStorage, :outBranchId, :outBranch, :outStorageId, :outStorage, :fromMakerId, :fromMaker, :formTime, :formTimeActual,
+						:auditorId, :auditor, :auditTime, :confirmerId, :confirmer, :confirmTime, :outManId, :outMan, :outTime, :formNote, :allPayAmt, :maxPayItem)
+			};
+			closeDefaultContext(myCtx);
+			
+			return 1;
+		}
+	
+	public int updateEntity(TransferHeader header)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		String formId = header.getFormId();
+		Double allPayAmt = header.getAllPayAmt();
+		String maxPayItem = header.getMaxPayItem();
+
+		#sql [myCtx] {
+			UPDATE
+			:{Com_("D_T1_TRANSFER_HEADER")}
+			SET
+				ALL_PAY_AMT = :allPayAmt,
+				MAX_PAY_ITEM = :maxPayItem
+			WHERE 
+				FORM_ID = :formId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+
+	public int deleteEntity(String formId)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		#sql [myCtx] {
+			DELETE
+			FROM
+			:{Com_("D_T1_TRANSFER_HEADER")}
+			WHERE
+				FORM_ID = :formId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	
+	//调拨单确认
+	public int confirm(String formId, String userId,String userName, java.util.Date confirmTime)
+			throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		Date sConfirmTime = SqlDateUtil.getSqlDate(confirmTime);
+		Date auditTimeActual = SqlDateUtil.getSqlDate(new java.util.Date());
+		#sql [myCtx] {
+			UPDATE
+			:{Com_("D_T1_TRANSFER_HEADER")}
+			SET
+			confirmer_id = :userId,
+			confirmer = :userName,
+			confirm_time = :sConfirmTime,
+			AUDIT_TIME_ACTUAL =:auditTimeActual
+			WHERE 
+			FORM_ID = :formId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	private String formQuery(String inBranchId,String inStorageId,String outBranchId,String outStorageId, String formStatus, String branchType) {
+		String query = " 1=1";
+		
+		StringBuilder group1 = new StringBuilder();
+		StringBuilder group2 = new StringBuilder();
+		
+		
+		if(!TextUtil.isEmpty(inBranchId) && !TextUtil.isEmpty(inStorageId)){
+			group1.append(" (  h.IN_BRANCH_ID = '" + inBranchId+ "' AND h.IN_STORAGE_ID = '" + inStorageId+ "') ");
+		}else{
+			if (!TextUtil.isEmpty(inBranchId)) {
+				group1.append("  (h.IN_BRANCH_ID = '" + inBranchId+ "') ");
+			}
+			
+			if (!TextUtil.isEmpty(inStorageId)) {
+				group1.append("  (h.IN_STORAGE_ID = '" + inStorageId+ "') ");
+			}
+		}
+		
+		if(!TextUtil.isEmpty(outBranchId) && !TextUtil.isEmpty(outStorageId)){
+			group2.append(" (  h.OUT_BRANCH_ID = '" + outBranchId+ "' AND h.OUT_STORAGE_ID = '" + outStorageId+ "') ");
+		}else{
+			if (!TextUtil.isEmpty(outBranchId)) {
+				group2.append("  (h.OUT_BRANCH_ID = '" + outBranchId+ "') ");
+			}
+			
+			if (!TextUtil.isEmpty(outStorageId)) {
+				group2.append("  (h.OUT_STORAGE_ID = '" + outStorageId+ "') ");
+			}
+		}
+		
+		if(!TextUtil.isEmpty(group1.toString()) && !TextUtil.isEmpty(group2.toString())){
+			query += " and (" + group1.toString() + " or " + group2.toString() + ") ";
+		}else{
+			if (!TextUtil.isEmpty(group1.toString())) {
+				query += " and " + group1.toString();
+			}
+			
+			if (!TextUtil.isEmpty(group2.toString())) {
+				query += " and " + group2.toString();
+			}
+		}
+		
+		if (!TextUtil.isEmpty(formStatus)) {
+			query = query + " AND NVL( s.STATUS, 'null') = '"+ formStatus + "'";
+		}
+		
+//		if (!TextUtil.isEmpty(branchType)) {
+//			query = query + " AND b.BRANCH_TYPE = '"+ branchType + "'";
+//		}
+		
+		return query;
+	}
+	
+	
+	public int count(java.util.Date startDate, java.util.Date endDate,String outBranchId,String outStorageId, String formStatus,String branchType) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		return count(startDate,endDate,"","",outBranchId,outStorageId,formStatus,branchType);
+	}
+	
+	public int count(java.util.Date startDate, java.util.Date endDate,String inBranchId,String inStorageId,String outBranchId,String outStorageId, String formStatus,String branchType) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		Date sDate = SqlDateUtil.getSqlDate(startDate);
+		Date eDate = SqlDateUtil.getSqlDate(endDate);
+		
+		String query = formQuery(inBranchId,inStorageId,outBranchId,outStorageId,formStatus,branchType);
+		
+		DefaultContext myCtx = getDefaultContext();
+		int total = 0;
+		#sql [myCtx] {
+			SELECT
+				count(*) into :total
+			FROM
+				:{Com_("D_T1_TRANSFER_HEADER")} h
+			LEFT JOIN
+				:{Com_("D_T0_FORM_STATUS")} s
+		    ON
+		        s.FORM_ID = h.FORM_ID
+		    WHERE
+		    	:{query ::}
+			AND s.IS_CURRENT = 1
+    	    AND (h.FORM_TIME >= :sDate or h.FORM_TIME >= :sDate or :sDate is null)
+        	AND (h.FORM_TIME <= :eDate or h.FORM_TIME <= :eDate or :eDate is null)
+		};
+		closeDefaultContext(myCtx);
+		return total;
+	}
+	
+	
+	public List<TransferHeader> query(java.util.Date startDate, java.util.Date endDate,String outBranchId,String outStorageId, String formStatus,String branchType) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		return query(startDate,endDate,"","",outBranchId,outStorageId,formStatus,branchType,0, Integer.MAX_VALUE);
+	}
+	
+	public List<TransferHeader> queryBill(java.util.Date startDate, java.util.Date endDate,String inBranchId,String inStorageId,String outBranchId,String outStorageId, String formStatus,String branchType,int startRow,int endRow) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		Date sDate = SqlDateUtil.getSqlDate(startDate);
+		Date eDate = SqlDateUtil.getSqlDate(endDate);
+		
+		String query = formQuery(inBranchId,inStorageId,outBranchId,outStorageId,formStatus,branchType);
+		
+		DefaultContext myCtx = getDefaultContext();
+		HeaderIter headerIter = null;
+		#sql [myCtx] headerIter = {
+		SELECT
+			    *
+			    FROM
+			        (
+			            SELECT
+			                t.*,
+			                ROWNUM rowNumber
+			            FROM
+			                (SELECT
+			                	    h.*
+			                	    FROM
+			                	    	:{Com_("D_T1_TRANSFER_HEADER")} h
+			                	    LEFT JOIN
+			                	    	:{Com_("D_T0_FORM_STATUS")} s
+			                	    ON
+			                	        s.FORM_ID = h.FORM_ID
+			                	    WHERE
+			                	    	:{query ::}
+			                	    AND s.IS_CURRENT = 1
+	                	    		AND (h.FORM_TIME >= :sDate or h.FORM_TIME >= :sDate or :sDate is null)
+			            			AND (h.FORM_TIME <= :eDate or h.FORM_TIME <= :eDate or :eDate is null)
+			                	    ORDER BY
+			                	        H.FORM_ID desc) t
+			            WHERE
+			                ROWNUM < :endRow)
+			    WHERE
+			        rowNumber >= :startRow};
+		List<TransferHeader> headerLst = processIter(headerIter);
+		headerIter.close();
+		closeDefaultContext(myCtx);
+		return headerLst;
+	}
+	
+	public List<TransferHeader> query(java.util.Date startDate, java.util.Date endDate,String inBranchId,String inStorageId,String outBranchId,String outStorageId, String formStatus,String branchType,int startRow,int endRow) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		Date sDate = SqlDateUtil.getSqlDate(startDate);
+		Date eDate = SqlDateUtil.getSqlDate(endDate);
+		
+		String query = formQuery(inBranchId,inStorageId,outBranchId,outStorageId,formStatus,branchType);
+		
+		DefaultContext myCtx = getDefaultContext();
+		HeaderIter headerIter = null;
+		#sql [myCtx] headerIter = {
+		SELECT
+			    *
+			    FROM
+			        (
+			            SELECT
+			                t.*,
+			                ROWNUM rowNumber
+			            FROM
+			                (SELECT
+			                	    h.*
+			                	    FROM
+			                	    :{Com_("D_T1_TRANSFER_HEADER")} h
+			                	        --LEFT JOIN :{Com_("D_T2_BRANCH")} b ON h.IN_BRANCH_ID = b.BRANCH_ID
+			                	    LEFT JOIN
+			                	    :{Com_("D_T0_FORM_STATUS")} s
+			                	    ON
+			                	        s.FORM_ID = h.FORM_ID
+			                	    LEFT JOIN
+			                	    :{Com_("D_T2_BRANCH")} d
+			                	    ON
+			                	        h.IN_BRANCH_ID = d.BRANCH_ID
+			                	    LEFT JOIN
+			                	    :{Com_("D_T2_BRANCH")} d2
+			                	    ON
+			                	        h.OUT_BRANCH_ID = d2.BRANCH_ID
+			                	    WHERE
+			                	    	:{query ::}
+			                	    AND s.IS_CURRENT = 1
+	                	    		AND (d.BUSINESS_DATE >= :sDate or d2.BUSINESS_DATE >= :sDate or :sDate is null)
+			            			AND (d.BUSINESS_DATE <= :eDate or d2.BUSINESS_DATE <= :eDate or :eDate is null)
+			                	    ORDER BY
+			                	        H.FORM_ID desc) t
+			            WHERE
+			                ROWNUM < :endRow)
+			    WHERE
+			        rowNumber >= :startRow};
+		List<TransferHeader> headerLst = processIter(headerIter);
+		headerIter.close();
+		closeDefaultContext(myCtx);
+		return headerLst;
+	}
+	
+	public double sum(java.util.Date startDate, java.util.Date endDate,String outBranchId,String outStorageId, String formStatus,String branchType) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		return sum(startDate,endDate,"","",outBranchId,outStorageId,formStatus,branchType);
+	}
+	
+	public double sum(java.util.Date startDate, java.util.Date endDate,String inBranchId,String inStorageId,String outBranchId,String outStorageId, String formStatus,String branchType) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		Date sDate = SqlDateUtil.getSqlDate(startDate);
+		Date eDate = SqlDateUtil.getSqlDate(endDate);
+		
+		String query = formQuery(inBranchId,inStorageId,outBranchId,outStorageId,formStatus,branchType);
+		
+		double allPayAmt = 0;
+		
+		DefaultContext myCtx = getDefaultContext();
+		#sql [myCtx] {
+		SELECT
+			    SUM(ALL_PAY_AMT)
+		INTO
+		    :allPayAmt
+		FROM
+		    (SELECT
+		    			h.ALL_PAY_AMT
+            	    FROM
+            	    :{Com_("D_T1_TRANSFER_HEADER")} h
+        	        	--LEFT JOIN :{Com_("D_T2_BRANCH")} b ON h.IN_BRANCH_ID = b.BRANCH_ID
+            	    LEFT JOIN
+            	    :{Com_("D_T0_FORM_STATUS")} s
+            	    ON
+            	        s.FORM_ID = h.FORM_ID
+            	    LEFT JOIN
+            	    :{Com_("D_T2_BRANCH")} d
+            	    ON
+            	        h.IN_BRANCH_ID = d.BRANCH_ID
+            	    LEFT JOIN
+            	    :{Com_("D_T2_BRANCH")} d2
+            	    ON
+            	        h.OUT_BRANCH_ID = d2.BRANCH_ID
+            	    WHERE
+            	    	:{query ::}
+            	    AND s.IS_CURRENT = 1
+    	    		AND (d.BUSINESS_DATE >= :sDate or d2.BUSINESS_DATE >= :sDate or :sDate is null)
+        			AND (d.BUSINESS_DATE <= :eDate or d2.BUSINESS_DATE <= :eDate or :eDate is null)
+            	    ) t};
+		closeDefaultContext(myCtx);
+		return allPayAmt;
+	}
+	
+	
+
+	public TransferHeader queryById(String formId) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		HeaderIter headerIter = null;
+		#sql [myCtx] headerIter = {
+			SELECT
+			    *
+			FROM
+			:{Com_("D_T1_TRANSFER_HEADER")} h
+			WHERE
+				h.form_id = :formId
+		};
+		List<TransferHeader> headerLst = processIter(headerIter);
+		headerIter.close();
+		closeDefaultContext(myCtx);
+		if (headerLst !=null && !headerLst.isEmpty()) {
+			return headerLst.get(0);
+		}
+		return null;
+	}
+	
+	private List<TransferHeader> processIter(HeaderIter headerIter) 
+			throws SQLException {
+		List<TransferHeader> headerLst = new ArrayList<TransferHeader>();
+		while(headerIter.next()) {
+			TransferHeader header = new TransferHeader();
+			header.setFormId(headerIter.form_id());
+			header.setInBranchId(headerIter.in_branch_id());
+			header.setInBranch(headerIter.in_branch());
+			header.setInStorageId(headerIter.in_storage_id());
+			header.setInStorage(headerIter.in_storage());
+			header.setOutBranchId(headerIter.out_branch_id());
+			header.setOutBranch(headerIter.out_branch());
+			header.setOutStorageId(headerIter.out_storage_id());
+			header.setOutStorage(headerIter.out_storage());
+			header.setFromMakerId(headerIter.from_maker_id());
+			header.setFromMaker(headerIter.from_maker());
+			header.setFormTime(SqlDateUtil.getUtilDate(headerIter.form_time()));
+			header.setFormTimeActual(SqlDateUtil.getUtilDate(headerIter.form_time_actual()));
+			header.setAuditorId(headerIter.auditor_id());
+			header.setAuditor(headerIter.auditor());
+			header.setAuditTime(SqlDateUtil.getUtilDate(headerIter.audit_time()));
+			header.setConfirmerId(headerIter.confirmer_id());
+			header.setConfirmer(headerIter.confirmer());
+			header.setConfirmTime(SqlDateUtil.getUtilDate(headerIter.confirm_time()));
+			header.setOutManId(headerIter.out_man_id());
+			header.setOutMan(headerIter.out_man());
+			header.setOutTime(SqlDateUtil.getUtilDate(headerIter.out_time()));
+			header.setFormNote(headerIter.form_note());
+			header.setAllPayAmt(headerIter.all_pay_amt());
+			header.setMaxPayItem(headerIter.max_pay_item());
+			header.setAuditTimeActual(SqlDateUtil.getUtilDate(headerIter.audit_time_actual()));
+			headerLst.add(header);
+		}
+		return headerLst;
+	}
+}

@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"   
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">  
+
+<mapper namespace="mapper.businessquery.DiscountMapper">  
+
+<resultMap id="discountResultMap" type="pojo.businessquery.DiscountBill">
+	<id property="billC" column="cBill_C" />
+	<result property="businessDate" column="DBUSINESS" />
+	<result property="table" column="cTable_N" />
+	<result property="shift" column="cShift_N" />
+	<result property="period" column="cPeriod_N" />
+	<result property="shopC" column="cBranch_C" />
+	<result property="shopN" column="cBranch_N" />
+	<result property="foodAmt" column="foodAmt" />
+	<result property="disAmt" column="disAmt" />
+	<result property="payAmt" column="payAmt" />
+	<result property="disMan" column="CDISMANCUR_N" />
+	<result property="disWhy" column="CDISCURWHY" />
+</resultMap>
+
+<select id="getCount" resultType="int">
+select
+	count(*)
+from(
+		SELECT
+			DBUSINESS ,
+			cBranch_C	,
+			cBranch_N	,
+			SUM(nFoodAmt)	foodAmt,
+			cTable_N	,
+			cBill_C	,
+			b.cPeriod_N	,
+			b.cShift_N	 ,
+			b.CDISMANCUR_N	,
+			b.CDISCURWHY	,
+			SUM(nDisAmt)	disAmt,
+			SUM(nPayAmt)	payAmt
+		FROM
+			${com}.d_t_food_bill b
+		WHERE
+			nDisAmt > 0
+		<if test="period != null">		
+			AND b.CPERIOD_N LIKE #{period}
+		</if>
+		<if test="shift != null">
+			AND b.CSHIFT_N LIKE  #{shift}
+		</if>
+		<if test="shopC != null">
+			AND b.cBranch_C LIKE #{shopC}
+		</if>
+		AND DBUSINESS IN
+		(
+			SELECT
+				DBUSINESS
+			FROM
+				${com}.d_t_food_bill d
+			WHERE
+				DBUSINESS &gt;=#{startDate}
+			AND DBUSINESS &lt;=#{endDate}
+			GROUP BY
+				DBUSINESS
+		)
+		GROUP BY
+			DBUSINESS,
+			cBranch_C,
+			cBranch_N,
+			cTable_N,
+			cBill_C,
+			b.cPeriod_N ,
+			b.cShift_N,
+			b.CDISMANCUR_N,
+			b.CDISCURWHY
+	ORDER BY
+		DBUSINESS,
+		cBill_C,
+		cBranch_C,
+		cTable_N
+	) t
+</select>
+
+<select id="getDiscount" resultMap="discountResultMap">
+	SELECT
+		DBUSINESS ,
+		cBranch_C	,
+		cBranch_N	,
+		SUM(nFoodAmt)	foodAmt,
+		cTable_N	,
+		cBill_C	,
+		b.cPeriod_N	,
+		b.cShift_N	 ,
+		b.CDISMANCUR_N	,
+		b.CDISCURWHY	,
+		SUM(nDisAmt)	disAmt,
+		SUM(nPayAmt)	payAmt
+	FROM
+		${com}.d_t_food_bill b
+	WHERE
+		nDisAmt > 0
+	<if test="period != null">		
+		AND b.CPERIOD_N LIKE #{period}
+	</if>
+	<if test="shift != null">
+		AND b.CSHIFT_N LIKE  #{shift}
+	</if>
+	<if test="shopC != null">
+		AND b.cBranch_C LIKE #{shopC}
+	</if>
+	AND DBUSINESS IN
+	(
+		SELECT
+			DBUSINESS
+		FROM
+			${com}.d_t_food_bill d
+		WHERE
+			DBUSINESS &gt;=#{startDate}
+		AND DBUSINESS &lt;=#{endDate}
+		GROUP BY
+			DBUSINESS
+	)
+	GROUP BY
+		DBUSINESS,
+		cBranch_C,
+		cBranch_N,
+		cTable_N,
+		cBill_C,
+		b.cPeriod_N ,
+		b.cShift_N,
+		b.CDISMANCUR_N,
+		b.CDISCURWHY
+	ORDER BY
+		DBUSINESS,
+		cBill_C,
+		cBranch_C,
+		cTable_N
+	limit #{startRow},#{endRow}
+</select>
+</mapper>

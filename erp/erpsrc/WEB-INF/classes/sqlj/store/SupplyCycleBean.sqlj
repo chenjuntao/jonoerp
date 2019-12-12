@@ -1,0 +1,212 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on Fri Feb 06 10:45:30 CST 2015 by lyz
+ * Last edited on Fri Feb 06 10:45:30 CST 2015 by lyz
+ * 
+ * comment: 供应商供应的原材料的供货周期表
+ */
+package logic.store;
+
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import pojo.store.SupplyCycle;
+import sqlj.runtime.ref.DefaultContext;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.TextUtil;
+import com.tanry.framework.acl.NoPrivilegeException;
+
+public class SupplyCycleBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(SupplyCycleBean.class);
+	
+	#sql private iterator ScycleIter(String branch_id, String item_id, Integer supply_cycle);
+	
+	public int saveEntity(SupplyCycle scycle)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		String branchId = scycle.getBranchId();
+		String itemId = scycle.getItemId();
+		Double supplyCycle = scycle.getSupplyCycle();
+		Double inventorysCycle = scycle.getInventorysCycle();
+
+		#sql [myCtx] {
+			INSERT INTO :{Com_("D_T2_SUPPLY_CYCLE")} 
+				(BRANCH_ID, ITEM_ID, SUPPLY_CYCLE, INVENTORYS_CYCLE) 
+			VALUES (:branchId, :itemId, :supplyCycle, :inventorysCycle)
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public int updateEntity(SupplyCycle scycle)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		String branchId = scycle.getBranchId();
+		String itemId = scycle.getItemId();
+		Double supplyCycle = scycle.getSupplyCycle();
+		Double inventorysCycle = scycle.getInventorysCycle();
+		
+		#sql [myCtx] {
+			UPDATE
+			:{Com_("D_T2_SUPPLY_CYCLE")}
+			SET
+				SUPPLY_CYCLE = :supplyCycle,
+				INVENTORYS_CYCLE = :inventorysCycle
+			WHERE 
+				BRANCH_ID = :branchId
+			AND ITEM_ID = :itemId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+
+	public int deleteEntity(String branchId)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		#sql [myCtx] {
+			DELETE
+			FROM
+			:{Com_("D_T2_SUPPLY_CYCLE")}
+			WHERE
+				BRANCH_ID = :branchId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+
+	#sql public static iterator ItemIter(String item_id, 
+			String item_name, 
+			String item_type, 
+			String category_id, 
+			String item_dimension, 
+			String query_code,
+			String item_specification, 
+			Double supply_cycle,
+			Double inventorys_cycle
+			);
+	
+	public List<Map> queryItem(String branchId, String itemName,String itemType)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		itemName = "%" + itemName + "%";
+		
+		DefaultContext myCtx = getDefaultContext();
+		ItemIter itemIter = null;
+		#sql [myCtx] itemIter = {
+			SELECT
+			    m.*,
+			    p.SUPPLY_CYCLE,
+			    p.INVENTORYS_CYCLE
+			FROM
+			:{Com_("D_T2_ITEM_META")} m
+			LEFT JOIN
+			:{Com_("D_T2_SUPPLY_CYCLE")} p
+			ON
+			    m.ITEM_ID = p.ITEM_ID
+		    AND p.BRANCH_ID = :branchId
+			WHERE
+			1=1 AND m.ITEM_TYPE =:itemType
+            AND (
+                    m.ITEM_ID LIKE :itemName
+                OR  m.ITEM_NAME LIKE :itemName)
+			ORDER BY
+			    m.ITEM_ID
+		};
+		List<Map> itemLst = processIter(itemIter);
+		itemIter.close();
+		closeDefaultContext(myCtx);
+		return itemLst;
+	}
+	
+	public List<Map> queryItemById(String branchId, String itemId)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		
+		DefaultContext myCtx = getDefaultContext();
+		ItemIter itemIter = null;
+		#sql [myCtx] itemIter = {
+			SELECT
+			    m.*,
+			    p.SUPPLY_CYCLE,
+			    p.INVENTORYS_CYCLE
+			FROM
+			:{Com_("D_T2_SUPPLY_CYCLE")} p		
+			LEFT JOIN
+			:{Com_("D_T2_ITEM_META")} m
+			ON
+			    m.ITEM_ID = p.ITEM_ID
+		    AND  p.BRANCH_ID = :branchId
+			WHERE
+			   m.ITEM_ID = :itemId
+			ORDER BY
+			    m.ITEM_ID};
+		List<Map> itemLst = processIter(itemIter);
+		itemIter.close();
+		closeDefaultContext(myCtx);
+		return itemLst;
+	}
+	
+	public List<Map> queryItemByCate(String branchId, String cateId) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		ItemIter itemIter = null;
+		#sql [myCtx] itemIter = {
+			SELECT
+			    m.*,
+			    p.SUPPLY_CYCLE,
+			    p.INVENTORYS_CYCLE
+			FROM
+			:{Com_("D_T2_ITEM_META")} m
+			LEFT JOIN
+			:{Com_("D_T2_SUPPLY_CYCLE")} p
+			ON
+			    m.ITEM_ID = p.ITEM_ID
+		    AND p.BRANCH_ID = :branchId
+			WHERE
+			 m.CATEGORY_ID = :cateId
+			ORDER BY
+			    m.ITEM_ID
+		};
+		List<Map> itemLst = processIter(itemIter);
+		itemIter.close();
+		closeDefaultContext(myCtx);
+		return itemLst;
+	}
+
+	private List<Map> processIter(ItemIter itemIter) 
+			throws SQLException {
+		List<Map> itemLst = new ArrayList<Map>();
+		while(itemIter.next()) {
+			Map<String, Object> item = new HashMap<String, Object>();
+			item.put("itemId", itemIter.item_id());
+			item.put("itemName", itemIter.item_name());
+			item.put("queryCode", itemIter.query_code());
+			item.put("categoryId", itemIter.category_id());
+			item.put("itemDimension", itemIter.item_dimension());
+			item.put("itemSpecification", itemIter.item_specification());
+			item.put("scycle", itemIter.supply_cycle());
+			item.put("inventorysCycle", itemIter.inventorys_cycle());
+			itemLst.add(item);
+		}
+		return itemLst;
+	}
+}

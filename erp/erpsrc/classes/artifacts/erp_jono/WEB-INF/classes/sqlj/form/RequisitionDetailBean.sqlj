@@ -1,0 +1,488 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on Tue Nov 11 16:14:06 CST 2014 by pw
+ * Last edited on Tue Nov 11 16:14:06 CST 2014 by pw
+ * 
+ * comment: 中央工厂生产领料单表明细
+ */
+package logic.form;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import pojo.form.RequisitionDetail;
+import sqlj.runtime.ref.DefaultContext;
+import com.tanry.business.form.FormConstant;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.TextUtil;
+import com.tanry.framework.acl.NoPrivilegeException;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+public class RequisitionDetailBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(RequisitionDetailBean.class);
+	
+	#sql private iterator DetailIter(
+			String form_id, 
+			String item_id, 
+			String item_name, 
+			String item_dimension, 
+			String item_specification,
+			Double item_count,
+			Double item_price,
+			Double receive_count,
+			Double different_count, 
+			Double received_count,
+			Double returned_count,
+			Date expired_time
+	);
+	
+	#sql private iterator TransformDetailIter(
+			String item_id, 
+			String item_name, 
+			String item_dimension, 
+			String item_specification, 
+			Double item_count,
+			Double differentCount,
+			Double receive_count,
+			Double received_count,
+			Double returned_count
+		);
+	
+	public int saveEntity(RequisitionDetail detail)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		String formId = detail.getFormId();
+		String itemId = detail.getItemId();
+		String itemName = detail.getItemName();
+		String itemDimension = detail.getItemDimension();
+		String itemSpecification = detail.getItemSpecification();
+		Double itemCount = detail.getItemCount();
+		Double receiveCount = detail.getReceiveCount();
+		Double differentCount = detail.getDifferentCount();
+		Date expiredTime = SqlDateUtil.getSqlDate(detail.getExpiredTime());
+
+		#sql [myCtx] {
+			INSERT INTO :{Com_("D_T1_REQUISITION_DETAIL")} 
+				(FORM_ID, ITEM_ID, ITEM_NAME, ITEM_DIMENSION, ITEM_SPECIFICATION, ITEM_COUNT, RECEIVE_COUNT, DIFFERENT_COUNT, EXPIRED_TIME) 
+			VALUES (:formId, :itemId, :itemName, :itemDimension, :itemSpecification, :itemCount, :receiveCount, :differentCount, :expiredTime)
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public int updateEntity(RequisitionDetail detail)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		String formId = detail.getFormId();
+		String itemId = detail.getItemId();
+		String itemName = detail.getItemName();
+		String itemDimension = detail.getItemDimension();
+		String itemSpecification = detail.getItemSpecification();
+		Double itemCount = detail.getItemCount();
+		Double receiveCount = detail.getReceiveCount();
+		Double differentCount = detail.getDifferentCount();
+		Date expiredTime = SqlDateUtil.getSqlDate(detail.getExpiredTime());
+
+		#sql [myCtx] {
+			UPDATE
+			:{Com_("D_T1_REQUISITION_DETAIL")}
+			SET
+				FORM_ID = :formId,
+				ITEM_ID = :itemId,
+				ITEM_NAME = :itemName,
+				ITEM_DIMENSION = :itemDimension,
+				ITEM_SPECIFICATION = :itemSpecification,
+				ITEM_COUNT = :itemCount,
+				RECEIVE_COUNT = :receiveCount,
+				DIFFERENT_COUNT = :differentCount,
+				EXPIRED_TIME = :expiredTime
+			WHERE 
+				FORM_ID = :formId
+			AND ITEM_ID = :itemId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+
+	//更新领料数
+	public int updateReceiveCount(RequisitionDetail detail)
+			throws NoPrivilegeException, SQLException, NoConnection {
+			DefaultContext myCtx = getDefaultContext();
+
+			String formId = detail.getFormId();
+			String itemId = detail.getItemId();
+			Double receiveCount = detail.getReceiveCount();
+
+			#sql [myCtx] {
+				UPDATE
+				:{Com_("D_T1_REQUISITION_DETAIL")}
+				SET
+					FORM_ID = :formId,
+					ITEM_ID = :itemId,
+					RECEIVE_COUNT = :receiveCount
+				WHERE 
+					FORM_ID = :formId
+				AND ITEM_ID = :itemId
+			};
+			closeDefaultContext(myCtx);
+			
+			return 1;
+		}
+
+	//更新退料数
+	public int updateItemCount(RequisitionDetail detail)
+			throws NoPrivilegeException, SQLException, NoConnection {
+			DefaultContext myCtx = getDefaultContext();
+
+			String formId = detail.getFormId();
+			String itemId = detail.getItemId();
+			Double itemCount = detail.getItemCount();
+
+			#sql [myCtx] {
+				UPDATE
+				:{Com_("D_T1_REQUISITION_DETAIL")}
+				SET
+					FORM_ID = :formId,
+					ITEM_ID = :itemId,
+					ITEM_COUNT = :itemCount
+				WHERE 
+					FORM_ID = :formId
+				AND ITEM_ID = :itemId
+			};
+			closeDefaultContext(myCtx);
+			
+			return 1;
+		}
+	
+	public int deleteByForm(String formId)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		#sql [myCtx] {
+			DELETE
+			FROM
+			:{Com_("D_T1_REQUISITION_DETAIL")}
+			WHERE
+				FORM_ID = :formId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	
+	public int updateReceiveStatus(String formId)
+			throws NoPrivilegeException, SQLException, NoConnection {
+			DefaultContext myCtx = getDefaultContext();
+
+			Integer counts1 = 0;
+			Integer counts2 = 0;
+			
+			#sql [myCtx] {
+				SELECT
+				    COUNT(*) into :counts1
+				    FROM
+				    :{Com_("D_T1_WORKORDER_ITEM")} i
+				    WHERE
+				     i.FORM_ID = :formId
+			};
+			
+			#sql [myCtx] {
+			SELECT
+			    COUNT(*) into :counts2
+			    FROM
+			    :{Com_("D_T1_WORKORDER_ITEM")} i
+			    WHERE
+			        i.RECEIVED_COUNT >= i.ITEM_COUNT
+			    AND i.FORM_ID = :formId
+			};
+			
+			if(counts1.intValue() != counts2.intValue()){
+				if(counts2.intValue() > 0){
+					#sql [myCtx] {
+						UPDATE
+						:{Com_("D_T1_WORK_ORDER_HEADER")} h
+						    SET
+						        h.RECEIVED_STATUS = 'receiving'
+						    WHERE
+						        h.FORM_ID = :formId
+						};
+				}
+			}else{
+				#sql [myCtx] {
+				UPDATE
+				:{Com_("D_T1_WORK_ORDER_HEADER")} h
+				    SET
+				        h.RECEIVED_STATUS = 'received'
+				    WHERE
+				        h.FORM_ID = :formId
+				};
+			}
+			
+			closeDefaultContext(myCtx);
+			
+			return counts2;
+		}
+	
+	public List<RequisitionDetail> transformToDetail(String queryStr)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		TransformDetailIter transformDetailIter = null;
+		#sql [myCtx] transformDetailIter = {
+			SELECT
+			    i.ITEM_ID ,
+			    i.ITEM_NAME ,
+			    m.ITEM_DIMENSION ,
+			    i.ITEM_COUNT,
+			    i.RECEIVED_COUNT,
+			    CASE
+			    	WHEN round((i.ITEM_COUNT -  i.RECEIVED_COUNT) ,4) >= 0
+			    	THEN round((i.ITEM_COUNT -  i.RECEIVED_COUNT) ,4)
+		        ELSE 0
+		        END receive_count,
+		        round((i.ITEM_COUNT -  i.RECEIVED_COUNT) ,4) differentCount,
+			    i.RETURNED_COUNT,
+			    m.ITEM_SPECIFICATION
+			FROM
+			:{Com_("D_T1_WORK_ORDER_HEADER")} h
+			INNER JOIN
+			:{Com_("D_T1_WORKORDER_ITEM")} i
+			ON
+			    h.FORM_ID = i.FORM_ID
+    		INNER JOIN
+    		:{Com_("D_T2_ITEM_META")} m
+			ON
+			    i.ITEM_ID = m.ITEM_ID
+    		INNER JOIN
+    		:{Com_("D_T0_FORM_STATUS")} s
+			ON
+			    s.FORM_ID = h.FORM_ID
+			AND s.IS_CURRENT = 1
+			WHERE
+				:{queryStr ::}};
+		
+		List<RequisitionDetail> detailLst = new ArrayList<RequisitionDetail>();
+		while(transformDetailIter.next()) {
+			RequisitionDetail detail = new RequisitionDetail();
+			detail.setItemId(transformDetailIter.item_id());
+			detail.setItemName(transformDetailIter.item_name());
+			detail.setItemDimension(transformDetailIter.item_dimension());
+			detail.setItemSpecification(transformDetailIter.item_specification());
+			detail.setItemCount(transformDetailIter.item_count());
+			
+			detail.setReceiveCount(transformDetailIter.receive_count());
+			detail.setReceivedCount(transformDetailIter.received_count());
+			detail.setReturnedCount(transformDetailIter.returned_count());
+			
+			detail.setDifferentCount(transformDetailIter.differentCount());
+			detail.setExpiredTime(null);
+			detailLst.add(detail);
+		}
+		transformDetailIter.close();
+		closeDefaultContext(myCtx);
+		return detailLst;
+	}
+	
+	 public int count(String formId)
+				throws NoPrivilegeException,SQLException,NoConnection {
+			
+			DefaultContext myCtx = getDefaultContext();
+			int total = 0;
+			#sql [myCtx] {
+				SELECT
+				  count(*) into :total
+				FROM
+				:{Com_("D_T1_REQUISITION_HEADER")} s
+				WHERE
+			   s.FORM_REF_ID = :formId
+			};
+			closeDefaultContext(myCtx);
+			return total;
+		}	
+	 
+	public List<RequisitionDetail> transformToDetail(String formId,String queryStr)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		TransformDetailIter transformDetailIter = null;
+		#sql [myCtx] transformDetailIter = {
+			SELECT
+			    i.ITEM_ID ,
+			    i.ITEM_NAME ,
+			    m.ITEM_DIMENSION ,
+			    i.ITEM_COUNT,
+			    i.RECEIVED_COUNT,
+			    CASE
+			    	WHEN round((i.ITEM_COUNT -  i.RECEIVED_COUNT) ,4) >= 0
+			    	THEN round((i.ITEM_COUNT -  i.RECEIVED_COUNT) ,4)
+		        ELSE 0
+		        END receive_count,
+		        round((i.ITEM_COUNT -  i.RECEIVED_COUNT) ,4) differentCount,
+			    i.RETURNED_COUNT,
+			    m.ITEM_SPECIFICATION
+			FROM
+			:{Com_("D_T1_WORK_ORDER_HEADER")} h
+			INNER JOIN
+			:{Com_("D_T1_WORKORDER_ITEM")} i
+			ON
+			    h.FORM_ID = i.FORM_ID
+			    AND h.FORM_ID=:formId
+    		INNER JOIN
+    		:{Com_("D_T2_ITEM_META")} m
+			ON
+			    i.ITEM_ID = m.ITEM_ID
+    		INNER JOIN
+    		:{Com_("D_T0_FORM_STATUS")} s
+			ON
+			    s.FORM_ID = h.FORM_ID
+			AND s.IS_CURRENT = 1
+			WHERE
+				:{queryStr ::}};
+		
+		List<RequisitionDetail> detailLst = new ArrayList<RequisitionDetail>();
+		while(transformDetailIter.next()) {
+			RequisitionDetail detail = new RequisitionDetail();
+			detail.setItemId(transformDetailIter.item_id());
+			detail.setItemName(transformDetailIter.item_name());
+			detail.setItemDimension(transformDetailIter.item_dimension());
+			detail.setItemSpecification(transformDetailIter.item_specification());
+			detail.setItemCount(transformDetailIter.item_count());
+			
+			detail.setReceiveCount(transformDetailIter.receive_count());
+			detail.setReceivedCount(transformDetailIter.received_count());
+			detail.setReturnedCount(transformDetailIter.returned_count());
+			
+			detail.setDifferentCount(transformDetailIter.differentCount());
+			detail.setExpiredTime(null);
+			detailLst.add(detail);
+		}
+		transformDetailIter.close();
+		closeDefaultContext(myCtx);
+		return detailLst;
+	}
+	
+	public List<RequisitionDetail> query(String formId)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		DetailIter detailIter = null;
+		#sql [myCtx] detailIter = {
+			SELECT
+			 d.FORM_ID,
+			    d.ITEM_ID,
+			    d.ITEM_NAME,
+			    d.ITEM_DIMENSION,
+			    d.ITEM_SPECIFICATION,
+			    d.ITEM_COUNT,
+			    d.RECEIVE_COUNT,
+			    d.DIFFERENT_COUNT,
+			    d.EXPIRED_TIME,
+			    p.ITEM_PRICE,
+			    i.RECEIVED_COUNT,
+			    i.RETURNED_COUNT
+			FROM
+			:{Com_("D_T1_REQUISITION_DETAIL")} d
+			LEFT JOIN
+			:{Com_("D_T1_REQUISITION_HEADER")} h
+			ON
+			    h.FORM_ID = d.FORM_ID
+    		LEFT JOIN
+			:{Com_("D_T2_ITEM_PRICE")} p
+			ON
+			    p.ITEM_ID = d.ITEM_ID
+    		AND p.PRICE_TYPE = 'BENCHMARK' --标准价
+	        AND p.IS_CURRENT =1
+			LEFT JOIN
+			:{Com_("D_T1_WORKORDER_ITEM")} i
+			ON
+			    h.FORM_REF_ID = i.FORM_ID
+			AND d.ITEM_ID = i.ITEM_ID
+			WHERE
+			    d.FORM_ID = :formId
+			ORDER BY
+			    d.ITEM_ID};
+		List<RequisitionDetail> detailLst = processIter(detailIter);
+		detailIter.close();
+		closeDefaultContext(myCtx);
+		return detailLst;
+	}
+	
+	
+	#sql private iterator OrginCountIter(
+			String item_id,
+			Double item_count
+	);
+	
+	public List<Map> getItemOrginCount(String formId,String storageId) throws NoPrivilegeException,SQLException,NoConnection{
+		DefaultContext myCtx = getDefaultContext();
+		OrginCountIter orginCountIter = null;
+		#sql [myCtx] orginCountIter = {
+			SELECT
+			    d.ITEM_ID,
+			    s.ITEM_COUNT
+			FROM
+			:{Com_("D_T1_REQUISITION_DETAIL")} d
+			LEFT JOIN
+			:{Com_("D_T2_STORAGE")} s
+			ON
+			    d.ITEM_ID = s.ITEM_ID
+			AND s.STORAGE_ID = :storageId
+			WHERE
+			    d.FORM_ID = :formId
+			ORDER BY
+			    d.ITEM_ID};
+		
+		List<Map> detailLst = new ArrayList<Map>();
+		while(orginCountIter.next()) {
+			Map map = new HashMap();
+			map.put("item_id",orginCountIter.item_id());
+			map.put("item_count",orginCountIter.item_count());
+			detailLst.add(map);
+		}
+		
+		orginCountIter.close();
+		closeDefaultContext(myCtx);
+		return detailLst;
+	}
+
+	private List<RequisitionDetail> processIter(DetailIter detailIter) 
+			throws SQLException {
+		List<RequisitionDetail> detailLst = new ArrayList<RequisitionDetail>();
+		while(detailIter.next()) {
+			RequisitionDetail detail = new RequisitionDetail();
+			detail.setFormId(detailIter.form_id());
+			detail.setItemId(detailIter.item_id());
+			detail.setItemName(detailIter.item_name());
+			detail.setItemDimension(detailIter.item_dimension());
+			detail.setItemSpecification(detailIter.item_specification());
+			detail.setItemCount(detailIter.item_count());
+			detail.setItemPrice(detailIter.item_price());
+			detail.setReceiveCount(detailIter.receive_count());
+			detail.setDifferentCount(detailIter.different_count());
+			detail.setExpiredTime(SqlDateUtil.getUtilDate(detailIter.expired_time()));
+			detail.setReceivedCount(detailIter.received_count());
+			detail.setReturnedCount(detailIter.returned_count());
+			detailLst.add(detail);
+		}
+		return detailLst;
+	}
+}

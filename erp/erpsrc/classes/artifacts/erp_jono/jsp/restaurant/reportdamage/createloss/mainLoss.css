@@ -1,0 +1,16 @@
+.dgrid-cell {
+	width: 80px;
+}
+
+.field-itemName {
+	width: 150px;
+}
+
+.field-itemDimension {
+	width: 60px;
+}
+
+.field-itemSpecification,.field-reason {
+	width: 120px;
+}
+

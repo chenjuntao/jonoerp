@@ -1,0 +1,279 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"   
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">  
+
+<mapper namespace="mapper.businessquery.IncomeDetailMapper">  
+
+<resultMap id="incomeDetailMap" type="pojo.businessquery.IncomeDetail">
+	<id property="businessDate" column="businessDate"/>
+	<result property="businessMonth" column="businessMonth"/> 
+	<result property="categoryN" column="categoryN"/> 
+	<result property="period1" column="period1"/> 
+	<result property="period2" column="period2"/> 
+	<result property="period3" column="period3"/> 
+	<result property="period4" column="period4"/> 
+	<result property="counts" column="counts"/> 
+</resultMap>
+
+
+<select id="daySum" resultMap="incomeDetailMap">
+	SELECT
+		SUM(period1) period1 ,
+		SUM(period2) period2 ,
+		SUM(period3) period3 ,
+		SUM(period4) period4,
+		SUM(counts)  counts
+	FROM
+	(
+		SELECT
+			DBUSINESS businessDate,
+			CATEGORY_ID,
+			CATEGORY_NAME categoryN,
+			SUM(
+				CASE WHEN b.CPERIOD_N = '01'
+				THEN bs.nAmt
+				ELSE 0
+				END)  period1,
+			SUM(
+				CASE WHEN b.CPERIOD_N = '02'
+				THEN bs.nAmt
+				ELSE 0
+				END)  period2,
+			SUM(
+				CASE WHEN b.CPERIOD_N = '03'
+				THEN bs.nAmt
+				ELSE 0
+				END)  period3,
+			SUM(
+				CASE WHEN b.CPERIOD_N = '04'
+				THEN bs.nAmt
+				ELSE 0
+				END)       period4,
+			SUM(bs.nAmt)  counts
+		FROM
+			${com}.d_t2_item_category c
+		LEFT JOIN
+			${com}.d_t_food_bills bs
+		ON
+			c.CATEGORY_ID = bs.cLitCls_c
+		LEFT JOIN
+			${com}.d_t_food_bill b
+		ON
+			b.CBILL_C = bs.CBILL_C
+		WHERE
+			DBUSINESS IN
+		(
+			SELECT
+				DBUSINESS
+			FROM
+				${com}.d_t_food_bill d
+			WHERE
+				DBUSINESS &gt;= #{startDate}
+			AND DBUSINESS &lt;= #{endDate}
+			GROUP BY
+				DBUSINESS
+		)
+		AND b.CBRANCH_C LIKE #{shopC}
+		AND c.ITEM_TYPE = 'PRODUCT'
+		AND c.PARENT_ID = '*'
+		GROUP BY
+			DBUSINESS,
+			CATEGORY_ID,
+			CATEGORY_NAME
+		ORDER BY
+			DBUSINESS,
+			c.CATEGORY_ID
+		) t
+</select>
+
+<select id="monthSum" resultMap="incomeDetailMap">
+	SELECT
+		SUM(period1) period1 ,
+		SUM(period2) period2 ,
+		SUM(period3) period3 ,
+		SUM(period4) period4,
+		SUM(counts)     counts
+	FROM
+	(
+		SELECT
+			DBUSINESS businessMonth,
+			CATEGORY_ID,
+			CATEGORY_NAME categoryN,
+			SUM(
+				CASE WHEN b.CPERIOD_N = '01'
+				THEN bs.nAmt
+				ELSE 0
+				END)  period1,
+			SUM(
+				CASE WHEN b.CPERIOD_N = '02'
+				THEN bs.nAmt
+				ELSE 0
+				END)  period2,
+			SUM(
+				CASE WHEN b.CPERIOD_N = '03'
+				THEN bs.nAmt
+				ELSE 0
+				END)  period3,
+			SUM(
+				CASE WHEN b.CPERIOD_N = '04'
+				THEN bs.nAmt
+				ELSE 0
+				END)  period4,
+			SUM(bs.nAmt) counts
+		FROM
+			${com}.d_t2_item_category c
+		LEFT JOIN
+			${com}.d_t_food_bills bs
+		ON
+			c.CATEGORY_ID = bs.cLitCls_c
+		LEFT JOIN
+			${com}.d_t_food_bill b
+		ON
+			b.CBILL_C = bs.CBILL_C
+		WHERE
+			DBUSINESS IN
+			(
+				SELECT
+					DBUSINESS
+				FROM
+					${com}.d_t_food_bill d
+				WHERE
+					DBUSINESS &gt;= #{startDate}
+				AND DBUSINESS &lt;= #{endDate}
+				GROUP BY
+					DBUSINESS
+			)
+		AND b.CBRANCH_C LIKE #{shopC}
+		AND c.ITEM_TYPE = 'PRODUCT'
+		AND c.PARENT_ID = '*'
+		GROUP BY
+			DBUSINESS,
+			CATEGORY_ID,
+			CATEGORY_NAME
+		ORDER BY
+			DBUSINESS,
+			c.CATEGORY_ID) t
+</select>
+
+<select id="monthIncomeDetail" resultMap="incomeDetailMap">
+	SELECT
+		DBUSINESS businessMonth,
+		CATEGORY_ID ,
+		CATEGORY_NAME categoryN,
+		SUM(
+			CASE WHEN b.CPERIOD_N = '01'
+			THEN bs.nAmt
+			ELSE 0
+			END) period1,
+		SUM(
+			CASE WHEN b.CPERIOD_N = '02'
+			THEN bs.nAmt
+			ELSE 0
+			END) period2,
+		SUM(
+			CASE WHEN b.CPERIOD_N = '03'
+			THEN bs.nAmt
+			ELSE 0
+			END) period3,
+		SUM(
+			CASE WHEN b.CPERIOD_N = '04'
+			THEN bs.nAmt
+			ELSE 0
+			END) period4,
+		SUM(bs.nAmt) counts
+	FROM
+		${com}.d_t2_item_category c
+	LEFT JOIN
+		${com}.d_t_food_bills bs
+	ON
+		c.CATEGORY_ID = bs.cLitCls_c
+	LEFT JOIN
+		${com}.d_t_food_bill b
+	ON
+		b.CBILL_C = bs.CBILL_C
+	WHERE
+		DBUSINESS IN
+		(
+			SELECT
+				DBUSINESS
+			FROM
+				${com}.d_t_food_bill d
+			WHERE
+				DBUSINESS &gt;= #{startDate}
+			AND DBUSINESS &lt;= #{endDate}
+			GROUP BY
+				DBUSINESS
+		)
+	AND b.CBRANCH_C LIKE #{shopC}
+	AND c.ITEM_TYPE = 'PRODUCT'
+	AND c.PARENT_ID = '*'
+	GROUP BY
+		DBUSINESS,
+		CATEGORY_ID,
+		CATEGORY_NAME
+	ORDER BY
+		DBUSINESS,
+		c.CATEGORY_ID
+</select>
+
+<select id="dayIncomeDetail" resultMap="incomeDetailMap">
+	SELECT
+		DBUSINESS businessDate,
+		CATEGORY_ID ,
+		CATEGORY_NAME categoryN,
+		SUM(
+			CASE WHEN b.CPERIOD_N = '01'
+			THEN bs.nAmt
+			ELSE 0
+			END)  period1,
+		SUM(
+			CASE WHEN b.CPERIOD_N = '02'
+			THEN bs.nAmt
+			ELSE 0
+			END)  period2,
+		SUM(
+			CASE WHEN b.CPERIOD_N = '03'
+			THEN bs.nAmt
+			ELSE 0
+			END)  period3,
+		SUM(
+			CASE WHEN b.CPERIOD_N = '04'
+			THEN bs.nAmt
+			ELSE 0
+			END) period4,
+		SUM(bs.nAmt)  counts
+	FROM
+		${com}.d_t2_item_category c
+	LEFT JOIN
+		${com}.d_t_food_bills bs
+	ON
+		c.CATEGORY_ID = bs.cLitCls_c
+	LEFT JOIN
+		${com}.d_t_food_bill b
+	ON
+		b.CBILL_C = bs.CBILL_C
+	WHERE
+		DBUSINESS IN
+		(
+			SELECT
+				DBUSINESS
+			FROM
+				${com}.d_t_food_bill d
+			WHERE
+				DBUSINESS &gt;= #{startDate}
+			AND DBUSINESS &lt;= #{endDate}
+			GROUP BY
+				DBUSINESS
+		)
+	AND b.CBRANCH_C LIKE #{shopC}
+	AND c.ITEM_TYPE = 'PRODUCT'
+	AND c.PARENT_ID = '*'
+	GROUP BY
+		DBUSINESS,
+		CATEGORY_ID,
+		CATEGORY_NAME
+	ORDER BY
+		DBUSINESS,
+		c.CATEGORY_ID
+</select>
+</mapper>

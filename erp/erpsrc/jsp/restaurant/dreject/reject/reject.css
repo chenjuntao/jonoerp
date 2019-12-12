@@ -1,0 +1,32 @@
+th.edit-note {
+	color: red;
+}
+
+.dgrid-cell {
+	width: 70px;
+}
+
+.field-itemName {
+	width: 150px;
+}
+
+.field-itemCategory {
+	width: 110px;
+}
+
+.field-itemDimension {
+	width: 60px;
+}
+
+.field-itemSpecification {
+	width: 90px;
+}
+
+.field-returnReason {
+	width: 150px;
+}
+
+
+
+
+

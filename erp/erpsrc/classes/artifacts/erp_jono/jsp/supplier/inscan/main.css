@@ -1,0 +1,46 @@
+
+#dataGrid{
+	position: absolute;
+	right: 0;
+	top: 62px;
+	bottom: 0;
+	width: 100%;
+	height: auto; /* override default height: 30em; in dgrid.css */
+}
+
+
+th[role="columnheader"] {
+	text-align: center;
+}
+
+.field-form_id,.field-form_ref_id,.field-status,.field-allPayAmt,.field-input_time,.field-rownumber,.field-inputer,.field-confirm,.field-audit_time{
+	text-align: center !important;
+}
+
+.field-rownumber{
+	width: 40px ;
+}
+
+.field-all_pay_amt,.field-allPayAmt,.field-confirm{
+	width: 60px ;
+}
+
+.field-form_maker{
+	width: 120px ;
+}
+
+.field-form_time,.field-delivery_type {
+	width: 80px ;
+}
+
+.field-form_id ,.field-form_ref_id {
+	width: 160px ;
+}
+
+ .field-requester,.field-operate,.field-status{
+	width: 100px ;
+}
+
+.field-provider{
+	width: 120px ;
+}

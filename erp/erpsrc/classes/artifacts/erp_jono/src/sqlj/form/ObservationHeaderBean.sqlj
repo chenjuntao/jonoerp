@@ -1,0 +1,238 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on Tue Aug 04 17:01:18 CST 2015 by pw
+ * Last edited on Tue Aug 04 17:01:18 CST 2015 by pw
+ * 
+ * comment: 出品岗位观察表头
+ */
+package logic.form;
+
+import java.sql.Date;
+import java.sql.Clob;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import pojo.form.ObservationHeader;
+import sqlj.runtime.ref.DefaultContext;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.TextUtil;
+import com.tanry.framework.acl.NoPrivilegeException;
+
+public class ObservationHeaderBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(ObservationHeaderBean.class);
+	
+	#sql private iterator HeaderIter(String item_id, String part_id, 
+			String part_name, String part_remark,String is_template);
+	
+	public int saveEntity(ObservationHeader header)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		String itemId = header.getItemId();
+		String partId = header.getPartId();
+		String partName = header.getPartName();
+		String partRemark = header.getPartRemark();
+		String isTemplate = header.getIsTemplate();
+
+		#sql [myCtx] {
+			INSERT INTO :{Com_("D_T2_OBSERVATION_HEADER")} 
+				(ITEM_ID, PART_ID, PART_NAME, PART_REMARK,IS_TEMPLATE) 
+			VALUES (:itemId, :partId, :partName, :partRemark, :isTemplate)
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public int updateEntity(ObservationHeader header)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		String itemId = header.getItemId();
+		String partId = header.getPartId();
+		String partName = header.getPartName();
+		String partRemark = header.getPartRemark();
+
+		#sql [myCtx] {
+			UPDATE
+			:{Com_("D_T2_OBSERVATION_HEADER")}
+			SET
+				PART_NAME = :partName,
+				PART_REMARK = :partRemark
+			WHERE 
+				ITEM_ID = :itemId
+				
+				AND PART_ID = :partId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public int updateTemplate(ObservationHeader header)
+			throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		String partId = header.getPartId();
+		String partName = header.getPartName();
+		String partRemark = header.getPartRemark();
+		
+		#sql [myCtx] {
+			UPDATE
+			:{Com_("D_T2_OBSERVATION_HEADER")}
+			SET
+				PART_NAME = :partName,
+				PART_REMARK = :partRemark
+			WHERE 
+				PART_ID = :partId AND IS_TEMPLATE = 'Y'
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+
+	public int deleteEntity(String itemId)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		#sql [myCtx] {
+			DELETE
+			 FROM
+			 :{Com_("D_T2_OBSERVATION_HEADER")}
+			WHERE
+				ITEM_ID = :itemId
+		};
+		
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+
+	public Integer count(String itemId)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		
+		DefaultContext myCtx = getDefaultContext();
+		Integer total = 0;
+		
+		#sql [myCtx] {
+			SELECT
+			    count(*) into :total
+			FROM
+			:{Com_("D_T2_OBSERVATION_HEADER")} h
+			WHERE
+				ITEM_ID = :itemId
+		};
+		
+		if(total == null){
+			total  = 0;
+		}
+		
+		closeDefaultContext(myCtx);
+		return total;
+	}
+	
+	public Integer countTemplate()
+			throws NoPrivilegeException,SQLException,NoConnection {
+		
+		DefaultContext myCtx = getDefaultContext();
+		Integer total = 0;
+		
+		#sql [myCtx] {
+			SELECT
+				count(*) into :total
+			FROM
+			:{Com_("D_T2_OBSERVATION_HEADER")} h
+			WHERE
+				IS_TEMPLATE = 'Y'
+		};
+		
+		if(total == null){
+			total  = 0;
+		}
+		
+		closeDefaultContext(myCtx);
+		return total;
+	}
+	
+	public List<ObservationHeader> queryByItemId(String itemId) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		HeaderIter headerIter = null;
+		#sql [myCtx] headerIter = {
+			SELECT
+			    *
+			FROM
+			:{Com_("D_T2_OBSERVATION_HEADER")} 
+			WHERE
+				ITEM_ID = :itemId
+		};
+		List<ObservationHeader> headerLst = processIter(headerIter);
+		headerIter.close();
+		closeDefaultContext(myCtx);
+		return headerLst;
+	}
+	
+	public List<ObservationHeader> loadTemplate() 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		HeaderIter headerIter = null;
+		#sql [myCtx] headerIter = {
+				SELECT
+					*
+				FROM
+				:{Com_("D_T2_OBSERVATION_HEADER")}
+				WHERE
+					IS_TEMPLATE = 'Y'
+		};
+		List<ObservationHeader> headerLst = processIter(headerIter);
+		headerIter.close();
+		closeDefaultContext(myCtx);
+		return headerLst;
+	}
+	
+	public List<ObservationHeader> loadData(String itemId) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		HeaderIter headerIter = null;
+		#sql [myCtx] headerIter = {
+				SELECT
+					*
+				FROM
+				:{Com_("D_T2_OBSERVATION_HEADER")}
+				WHERE
+					IS_TEMPLATE != 'Y' AND ITEM_ID = :itemId
+		};
+		List<ObservationHeader> headerLst = processIter(headerIter);
+		headerIter.close();
+		closeDefaultContext(myCtx);
+		return headerLst;
+	}
+	
+	private List<ObservationHeader> processIter(HeaderIter headerIter) 
+			throws SQLException {
+		List<ObservationHeader> headerLst = new ArrayList<ObservationHeader>();
+		while(headerIter.next()) {
+			ObservationHeader header = new ObservationHeader();
+			header.setItemId(headerIter.item_id());
+			header.setPartId(headerIter.part_id());
+			header.setPartName(headerIter.part_name());
+			header.setPartRemark(headerIter.part_remark());
+			header.setIsTemplate(headerIter.is_template());
+			headerLst.add(header);
+		}
+		return headerLst;
+	}
+}

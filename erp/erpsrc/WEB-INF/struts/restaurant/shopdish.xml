@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE struts PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN"
+    "http://struts.apache.org/dtds/struts-2.0.dtd">
+
+<struts>
+	<package name="restaurant_shopdish" namespace="/restaurant/shopdish" extends="trust-default">
+			<action name="mainView" class="action.restaurant.ShopDishAction">
+			<result name="success">/jsp/restaurant/shopdish/main.jsp</result>
+		</action>
+		
+		<action name="loadTree" method="loadTree" class="action.restaurant.ShopDishAction">
+			<result type="json" />
+		</action>
+		
+		<action name="listItem" method="listItem" class="action.restaurant.ShopDishAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="hq_shopdish" namespace="/hq/shopdish" extends="trust-default">
+		<action name="mainView" class="action.restaurant.ShopDishAction">
+			<result name="success">/jsp/hq/shopdish/main.jsp</result>
+		</action>
+	</package>
+	
+	<package name="restaurant_costcard" namespace="/restaurant/costcard" extends="trust-default">
+		<action name="mainView" class="action.restaurant.ShopCostCardAction">
+			<result name="success">/jsp/restaurant/costcard/main.jsp</result>
+		</action>
+		
+		<action name="doQuery" method="doQuery" class="action.restaurant.ShopCostCardAction">
+			<result type="json" />
+		</action>
+		
+		<action name="loadTree" method="loadTree" class="action.restaurant.ShopCostCardAction">
+			<result type="json" />
+		</action>
+	</package>
+</struts>
+

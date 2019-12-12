@@ -1,0 +1,257 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE struts PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN"
+    "http://struts.apache.org/dtds/struts-2.0.dtd">
+
+<struts>
+	<package name="lc_stock_in" namespace="/lc/stock/in/create" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.lc.stock.action.StockInAction">
+			<result name="success">/jsp/lc/stock/in/create/main.jsp</result>
+		</action>
+		
+		<action name="createView" method="createView" class="com.tanry.business.module.lc.stock.action.StockInAction">
+<!-- 			<result name="success">/jsp/lc/stock/in/create/create.jsp</result> -->
+				<result name="success">/jsp/lc/stock/in/create/handsontable/create.jsp</result>
+		</action>
+		
+		<action name="checkView" method="commitView" class="action.restaurant.putinstorage.CreateBillAction">
+			<result name="success">/jsp/lc/stock/in/create/check.jsp</result>
+		</action>
+		
+		<action name="loadTree" method="loadTree" class="com.tanry.business.module.lc.stock.action.StockInAction">
+			<result type="json" />
+		</action>
+		
+		<action name="queryUnifiedDetail" method="queryUnifiedDetail" class="com.tanry.business.module.lc.stock.action.StockInAction">
+			<result type="json" />
+		</action>
+		
+		<action name="queryUnOrder" method="queryUnOrder" class="com.tanry.business.module.lc.stock.action.StockInAction">
+			<result type="json" />
+		</action>
+		
+		<action name="queryCrossDetail" method="queryCrossDetail" class="com.tanry.business.module.lc.stock.action.StockInAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="lc_stock_in_audit" namespace="/lc/stock/in/audit" extends="trust-default">
+<!-- 	    物流中心入库单审核 -->
+		<action name="mainView" class="com.tanry.business.module.lc.stock.action.StockInAction">
+			<result name="success">/jsp/lc/stock/in/audit/main.jsp</result>
+		</action>
+		
+		<action name="mauditView" method="auditView" class="action.restaurant.putinstorage.ConfirmBillAction">
+			<result name="success">/jsp/lc/stock/in/audit/maudit.jsp</result>
+		</action>
+	</package>
+	
+	
+	<!-- 	物流中心入库单管理 -->
+	<package name="lc_stock_in_manage" namespace="/lc/stock/in/manage" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.cf.stock.StockInAction">
+			<result name="success">/jsp/lc/stock/in/manage/main.jsp</result>
+		</action>
+	</package>
+	
+	<package name="lc_stock_in_manual" namespace="/lc/stock/in/manual" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.lc.stock.action.StockInAction">
+			<result name="success">/jsp/lc/stock/in/manual/main.jsp</result>
+		</action>
+		
+		<action name="doSave" method="manualSave" class="action.restaurant.putinstorage.CreateBillAction">
+		    <interceptor-ref name="defaultStack" />
+			<interceptor-ref name="token" />
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="lc_stock_in_distribution" namespace="/lc/stock/in/distribution" extends="trust-default">
+		<action name="mainView" class="action.restaurant.putinstorage.DistributionBillAction">
+			<result name="success">/jsp/lc/stock/in/distribution/main.jsp</result>
+		</action>
+		
+		<action name="inputView" method="editView" class="action.restaurant.putinstorage.DistributionBillAction">
+			<result name="success">/jsp/lc/stock/in/distribution/input.jsp</result>
+		</action>
+		
+		<action name="checkView" method="checkView" class="action.restaurant.putinstorage.DistributionBillAction">
+			<result name="success">/jsp/lc/stock/in/distribution/check.jsp</result>
+		</action>
+		
+		<action name="inputBill" method="inputBill" class="action.restaurant.putinstorage.DistributionBillAction">
+		    <interceptor-ref name="defaultStack" />
+			<interceptor-ref name="token" />
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="lc_stock_out_internal" namespace="/lc/stock/out/internal" extends="trust-default">
+		<action name="mainView" class="action.restaurant.putinstorage.DistributionBillAction">
+			<result name="success">/jsp/lc/stock/out/internal/main.jsp</result>
+		</action>
+		
+		<action name="editView" method="editView" class="action.restaurant.putinstorage.DistributionBillAction">
+			<result name="success">/jsp/lc/stock/out/internal/edit.jsp</result>
+		</action>
+		
+		<action name="checkView" method="checkView" class="action.restaurant.putinstorage.DistributionBillAction">
+			<result name="success">/jsp/lc/stock/out/internal/check.jsp</result>
+		</action>
+	</package>
+	
+	<package name="lc_stock_out_external" namespace="/lc/stock/out/external" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.lc.request.action.DeliveryAction">
+			<result name="success">/jsp/lc/stock/out/external/main.jsp</result>
+		</action>
+		
+		<action name="editView" method="editView" class="action.restaurant.putinstorage.DistributionBillAction">
+			<result name="success">/jsp/lc/stock/out/external/edit.jsp</result>
+		</action>
+		
+		<action name="checkView" method="checkView" class="action.restaurant.putinstorage.DistributionBillAction">
+			<result name="success">/jsp/lc/stock/out/external/check.jsp</result>
+		</action>
+		
+		<action name="fillBill" method="fillBill" class="com.tanry.business.module.lc.stock.action.ExternalOutAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="lc_stock_picking" namespace="/lc/stock/picking" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.lc.stock.action.PickingAction">
+			<result name="success">/jsp/lc/stock/picking/main.jsp</result>
+		</action>
+		
+		<action name="aggregateView" method="aggregateView" class="com.tanry.business.module.lc.stock.action.PickingAction">
+			<result name="success">/jsp/lc/stock/picking/summary.jsp</result>
+		</action>
+		
+		<action name="checkView" method="checkView" class="action.restaurant.putinstorage.DistributionBillAction">
+			<result name="success">/jsp/lc/stock/picking/check.jsp</result>
+		</action>
+		
+		<action name="doQuery" method="doQuery" class="com.tanry.business.module.lc.stock.action.PickingAction">
+			<result type="json" />
+		</action>
+		
+		<action name="queryByStatus" method="queryByStatus" class="com.tanry.business.module.lc.stock.action.PickingAction">
+			<result type="json" />
+		</action>
+		
+		<action name="querySummary" method="querySummary" class="com.tanry.business.module.lc.stock.action.PickingAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doQuerySummary" method="doQuerySummary" class="com.tanry.business.module.lc.stock.action.PickingAction">
+			<result type="json" />
+		</action>
+		
+		<action name="createPickingBill" method="createPickingBill" class="com.tanry.business.module.lc.stock.action.PickingAction">
+		    <interceptor-ref name="defaultStack" />
+			<interceptor-ref name="token" />
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="lc_stock_picking_audit" namespace="/lc/stock/picking/audit" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.lc.stock.action.PickingManageAction">
+			<result name="success">/jsp/lc/stock/picking/audit/main.jsp</result>
+		</action>
+		
+		<action name="auditView" method="auditView" class="com.tanry.business.module.lc.stock.action.PickingManageAction">
+			<result name="success">/jsp/lc/stock/picking/audit/audit.jsp</result>
+		</action>
+		
+		<action name="doAudit" method="doAudit" class="com.tanry.business.module.lc.stock.action.PickingManageAction">
+		    <interceptor-ref name="defaultStack" />
+			<interceptor-ref name="token" />
+			<result type="json" />
+		</action>
+		
+		<action name="doSave" method="doSave" class="com.tanry.business.module.lc.stock.action.PickingManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="batchAudit" method="batchAudit" class="com.tanry.business.module.lc.stock.action.PickingManageAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="lc_stock_picking_manage" namespace="/lc/stock/picking/manage" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.lc.stock.action.PickingManageAction">
+			<result name="success">/jsp/lc/stock/picking/manage/main.jsp</result>
+		</action>
+		
+		<action name="editView" method="editView" class="com.tanry.business.module.lc.stock.action.PickingManageAction">
+			<result name="success">/jsp/lc/stock/picking/manage/edit.jsp</result>
+		</action>
+		
+		<action name="scanView" method="scanView" class="com.tanry.business.module.lc.stock.action.PickingManageAction">
+			<result name="success">/jsp/lc/stock/picking/manage/scan.jsp</result>
+		</action>
+		
+		<action name="queryTree" method="queryTree" class="com.tanry.business.module.lc.stock.action.PickingManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="auditTree" method="auditTree" class="com.tanry.business.module.lc.stock.action.PickingManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="queryById" method="queryById" class="com.tanry.business.module.lc.stock.action.PickingManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doDelete" method="doDelete" class="com.tanry.business.module.lc.stock.action.PickingManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doInvalid" method="doInvalid" class="com.tanry.business.module.lc.stock.action.PickingManageAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="lc_stock_packing" namespace="/lc/stock/packing" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.lc.stock.action.CreatePackingAction">
+			<result name="success">/jsp/lc/stock/packing/main.jsp</result>
+		</action>
+		
+		<action name="createView" method="createView" class="com.tanry.business.module.lc.stock.action.CreatePackingAction">
+			<result name="success">/jsp/lc/stock/packing/create.jsp</result>
+		</action>
+		
+		<action name="doQuery" method="doQuery" class="com.tanry.business.module.lc.stock.action.CreatePackingAction">
+			<result type="json" />
+		</action>
+		
+		<action name="queryDetail" method="queryDetail" class="com.tanry.business.module.lc.stock.action.CreatePackingAction">
+			<result type="json" />
+		</action>
+		
+		<action name="createPackingBill" method="createPackingBill" class="com.tanry.business.module.lc.stock.action.CreatePackingAction">
+		    <interceptor-ref name="defaultStack" />
+			<interceptor-ref name="token" />
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="lc_stock_packing_manage" namespace="/lc/stock/packing/manage" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.lc.stock.action.PackingManageAction">
+			<result name="success">/jsp/lc/stock/packing/manage/main.jsp</result>
+		</action>
+		
+		<action name="scanView" method="scanView" class="com.tanry.business.module.lc.stock.action.PackingManageAction">
+			<result name="success">/jsp/lc/stock/packing/manage/scan.jsp</result>
+		</action>
+		
+		<action name="queryTree" method="queryTree" class="com.tanry.business.module.lc.stock.action.PackingManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="queryById" method="queryById" class="com.tanry.business.module.lc.stock.action.PackingManageAction">
+			<result type="json" />
+		</action>
+	</package>
+</struts>
+

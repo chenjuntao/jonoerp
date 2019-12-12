@@ -1,0 +1,67 @@
+#dataGrid {
+	position: absolute;
+	width: 100%;
+	height: 91%;
+}
+
+td[role="columnheader"] {
+	text-align: center !important; 
+}
+
+.gridxSortNode{
+    text-align: center !important; 
+}
+
+td[colid="rownumber"] {
+	text-align: center !important; 
+	min-width: 50px  !important; 
+	max-width: 50px  !important; 
+}
+
+td[colid="form_id"] {
+	text-align: center !important; 
+	min-width: 200px  !important; 
+}
+
+td[colid="form_time"] {
+	text-align: center !important; 
+	min-width: 80px  !important; 
+}
+
+td[colid="item_id"] {
+	text-align: center !important; 
+	min-width: 80px  !important; 
+}
+
+td[colid="item_name"] {
+	min-width: 100px  !important; 
+}
+
+td[colid="item_count"] {
+	text-align: right !important; 
+	min-width: 100px  !important; 
+}
+
+td[colid="production_count"] {
+	text-align: right !important; 
+	min-width: 80px  !important; 
+}
+
+td[colid="production_step"] {
+	text-align: center !important; 
+	min-width: 80px  !important; 
+}
+
+td[colid="production_man"] {
+	min-width: 80px  !important; 
+}
+
+td[colid="production_time"] {
+	text-align: center !important; 
+	min-width: 80px  !important; 
+}
+
+
+td[colid="form_note"] {
+	min-width: 120px  !important; 
+}

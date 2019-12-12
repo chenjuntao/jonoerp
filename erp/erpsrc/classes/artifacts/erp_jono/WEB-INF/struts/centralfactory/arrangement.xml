@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE struts PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN"
+    "http://struts.apache.org/dtds/struts-2.0.dtd">
+
+<struts>
+	<package name="centralfactory_productionDemand_arrangement_create" namespace="/centralfactory/productionDemand/arrangement/create" extends="trust-default">
+		<action name="mainView" class="action.centralfactory.productionDemand.arrangement.CreateArrangementAction">
+			<result name="success">/jsp/centralfactory/productionDemand/arrangement/create/main.jsp</result>
+		</action>
+		
+		<action name="doAuditedQuery" method="doAuditedQuery" class="action.centralfactory.productionDemand.arrangement.CreateArrangementAction">
+			<result type="json" />
+		</action>
+		
+		<action name="toArrangement" method="toArrangement" class="action.centralfactory.productionDemand.arrangement.CreateArrangementAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doCommit" method="doCommit" class="action.centralfactory.productionDemand.arrangement.CreateArrangementAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="centralfactory_productionDemand_arrangement_audit" namespace="/centralfactory/productionDemand/arrangement/audit" extends="trust-default">
+		<action name="mainView" class="action.centralfactory.productionDemand.arrangement.AuditArrangementAction">
+			<result name="success">/jsp/centralfactory/productionDemand/arrangement/audit/main.jsp</result>
+		</action>
+		
+		<action name="doQuery" method="doQuery" class="action.centralfactory.productionDemand.arrangement.AuditArrangementAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doAuditedQuery" method="doAuditedQuery" class="action.centralfactory.productionDemand.arrangement.AuditArrangementAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doCFQuery" method="doCFQuery" class="action.centralfactory.productionDemand.arrangement.AuditArrangementAction">
+			<result type="json" />
+		</action>
+		
+		<action name="auditView" method="auditView" class="action.centralfactory.productionDemand.arrangement.AuditArrangementAction">
+			<result name="success">/jsp/centralfactory/productionDemand/arrangement/audit/audit.jsp</result>
+		</action>
+		
+		<action name="scanView" method="scanView" class="action.centralfactory.productionDemand.arrangement.AuditArrangementAction">
+			<result name="success">/jsp/centralfactory/productionDemand/arrangement/audit/scan.jsp</result>
+		</action>
+		
+		<action name="doAudit" method="doAudit" class="action.centralfactory.productionDemand.arrangement.AuditArrangementAction">
+			<interceptor-ref name="defaultStack" />
+			<interceptor-ref name="token" />
+			<result type="json" />
+		</action>
+		
+		<action name="queryDetail" method="queryDetail" class="action.centralfactory.productionDemand.arrangement.AuditArrangementAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="cf_arrangement_manage" namespace="/cf/arrangement/manage" extends="trust-default">
+		<action name="mainView" class="action.centralfactory.productionDemand.arrangement.AuditArrangementAction">
+			<result name="success">/jsp/centralfactory/productionDemand/arrangement/manage/main.jsp</result>
+		</action>
+		
+		<action name="doQuery" method="doQuery" class="action.centralfactory.productionDemand.arrangement.PlanMangeAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+</struts>
+

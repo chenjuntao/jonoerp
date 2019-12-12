@@ -1,0 +1,236 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on Aug 29, 2014 by liyzh
+ * Last edited on Aug 29, 2014 by liyzh
+ * 
+ * 说明： 单据状态表
+ */
+package logic.form;
+
+import java.sql.Date;
+import java.sql.SQLException;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import pojo.form.FormStatus;
+import sqlj.runtime.ref.DefaultContext;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.acl.NoPrivilegeException;
+import com.tanry.framework.util.TextUtil;
+
+public class FormStatusBean extends ConnectionPool {
+	
+	public static Logger log = Logger.getLogger(FormStatusBean.class);
+	
+	/**
+	 * 保存
+	 */
+	public int saveEntity(FormStatus fstatus)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		String formId = fstatus.getFormId();
+		String status = fstatus.getStatus();
+		Date statusTime = SqlDateUtil.getSqlDate(fstatus.getStatusTime());
+		String operator = fstatus.getOperator();
+		Integer statusOrder = getMaxOrder(formId,myCtx);
+		if (statusOrder != null) {
+			statusOrder++;
+		} else {
+			statusOrder = 0;
+		}
+		// 先将其他状态记录设置为非当前
+		#sql [myCtx] {
+			UPDATE
+			:{Com_("D_T0_FORM_STATUS")}
+			SET
+				IS_CURRENT = 0
+			WHERE
+				FORM_ID = :formId
+		};
+		// IS_CURRENT ： 1表示当前，0表示非当前
+		#sql [myCtx] {
+			INSERT INTO :{Com_("D_T0_FORM_STATUS")}
+				(FORM_ID, STATUS, STATUS_TIME, OPERATOR, STATUS_ORDER, IS_CURRENT) 
+				VALUES (:formId, 
+						:status, 
+						:statusTime, 
+						:operator,
+						:statusOrder,
+						1)
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	/**
+	 * 保存特殊含义的单据状态
+	 */
+	public int saveSpecial(FormStatus fstatus)
+			throws NoPrivilegeException, SQLException, NoConnection {
+			DefaultContext myCtx = getDefaultContext();
+			String formId = fstatus.getFormId();
+			String status = fstatus.getStatus();
+			Date statusTime = SqlDateUtil.getSqlDate(fstatus.getStatusTime());
+			String operator = fstatus.getOperator();
+			Integer statusOrder = getMaxOrder(formId,myCtx);
+			Integer isCurrent = fstatus.getIsCurrent();
+			if (statusOrder != null) {
+				statusOrder++;
+			} else {
+				statusOrder = 0;
+			}
+			// IS_CURRENT ： 1表示当前，0表示非当前
+			#sql [myCtx] {
+				INSERT INTO :{Com_("D_T0_FORM_STATUS")}
+					(FORM_ID, STATUS, STATUS_TIME, OPERATOR, STATUS_ORDER, IS_CURRENT) 
+					VALUES (:formId, 
+							:status, 
+							:statusTime, 
+							:operator,
+							:statusOrder,
+							:isCurrent)
+			};
+			closeDefaultContext(myCtx);
+			
+			return 1;
+		}
+	
+	/**
+	 * 保持单据状态，但是插入一个历史状态
+	 */
+	public int saveEntityWithoutSetCurrent(FormStatus fstatus)
+			throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		String formId = fstatus.getFormId();
+		String status = fstatus.getStatus();
+		Date statusTime = SqlDateUtil.getSqlDate(fstatus.getStatusTime());
+		String operator = fstatus.getOperator();
+		Integer statusOrder = getMaxOrder(formId, myCtx);
+		if (statusOrder != null) {
+			statusOrder++;
+		} else {
+			statusOrder = 0;
+		}
+		
+		// IS_CURRENT ： 1表示当前，0表示非当前
+		#sql [myCtx] {
+			INSERT INTO :{Com_("D_T0_FORM_STATUS")}
+			(FORM_ID, STATUS, STATUS_TIME, OPERATOR, STATUS_ORDER, IS_CURRENT) 
+			VALUES (:formId, 
+					:status, 
+					:statusTime, 
+					:operator,
+					:statusOrder,
+					0)
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	private Integer getMaxOrder(String formId,DefaultContext myCtx) 
+		throws NoPrivilegeException, SQLException, NoConnection {
+		if (TextUtil.isEmpty(formId)){
+			return null;
+		}
+		Integer maxOrder = 0;
+		try {
+			#sql [myCtx] {
+				SELECT
+				    MAX(STATUS_ORDER) into :maxOrder
+				FROM
+				:{Com_("D_T0_FORM_STATUS")}
+				WHERE
+					FORM_ID = :formId
+			};
+		} catch (SQLException e) {
+			log.debug("getMaxOrder, formId ： " + formId);
+			log.debug("Error running the query: " + e);
+			String sqlState = e.getSQLState();
+			log.debug("SQL state = " + sqlState);
+		}
+		
+		return maxOrder;
+	}
+	
+	public String getCurrentStatus(String formId) 
+		throws NoPrivilegeException, SQLException, NoConnection {
+		if (TextUtil.isEmpty(formId)){
+			return null;
+		}
+		
+		String status = null;
+		DefaultContext myCtx = null;
+		try {
+			myCtx = getDefaultContext();
+			
+			#sql [myCtx] {
+				SELECT
+					STATUS into :status
+				FROM
+				:{Com_("D_T0_FORM_STATUS")}
+				WHERE
+					FORM_ID = :formId
+				AND IS_CURRENT = 1
+			};
+		} catch (SQLException e) {
+			log.debug("getCurrentStatus, formId ： " + formId);
+			log.debug("Error running the query: " + e);
+			String sqlState = e.getSQLState();
+			log.debug("SQL state = " + sqlState);
+		}finally{
+			if(myCtx!=null){
+				closeDefaultContext(myCtx);
+			}
+		}
+		
+		return status;
+	}
+	
+	public boolean hasStatus(String formId,String status) 
+			throws NoPrivilegeException, SQLException, NoConnection {
+		boolean hasStatus = false;
+		Integer counts = 0;
+		DefaultContext myCtx = null;
+		if (TextUtil.isEmpty(formId)){
+			return false;
+		}
+		
+		try {
+			myCtx = getDefaultContext();
+			
+			#sql [myCtx] {
+			SELECT
+			    COUNT(*)
+			INTO
+			    :counts
+			FROM
+			:{Com_("D_T0_FORM_STATUS")} s
+			WHERE
+			    s.FORM_ID = :formId
+			AND s.STATUS = :status};
+		} catch (SQLException e) {
+			String sqlState = e.getSQLState();
+			log.debug("SQL state = " + sqlState);
+		}finally{
+			if(myCtx!=null){
+				closeDefaultContext(myCtx);
+			}
+		}
+		
+		if(counts > 0){
+			hasStatus = true;
+		}
+		
+		return hasStatus;
+	}
+}

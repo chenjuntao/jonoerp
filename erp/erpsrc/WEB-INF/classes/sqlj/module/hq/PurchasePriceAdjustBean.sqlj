@@ -1,0 +1,402 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on Mar 12, 2015 by liyzh
+ * Last edited on Mar 12, 2015 by liyzh
+ * 
+ * 说明： 采购调价单管理
+ */
+package logic.module.hq;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import java.util.Map;
+import java.util.HashMap;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import pojo.form.PriceAdjustHeader;
+import sqlj.runtime.ref.DefaultContext;
+
+import com.tanry.business.form.FormConstant;
+import com.tanry.business.form.FormPrefix;
+import com.tanry.business.form.FormUtil;
+import com.tanry.framework.acl.NoPrivilegeException;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.constant.BillStatus;
+import com.tanry.framework.util.TextUtil;
+
+public class PurchasePriceAdjustBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(PurchasePriceAdjustBean.class);
+	
+	public int updateEntity(PriceAdjustHeader header)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		String formId = header.getFormId();
+		Date formTime = SqlDateUtil.getSqlDate(header.getFormTime());
+		String adjustType = header.getAdjustType();
+		String adjustScope = header.getAdjustScope();
+		String effectType = header.getEffectType();
+		Date effectTime = SqlDateUtil.getSqlDate(header.getEffectTime());
+		String note = header.getNote();
+		String formMaker = header.getFormMaker();
+		Date makeTime = SqlDateUtil.getSqlDate(header.getMakeTime());
+		String auditor = header.getAuditor();
+		Date auditTime = SqlDateUtil.getSqlDate(header.getAuditTime());
+		String formNote = header.getFormNote();
+
+		#sql [myCtx] {
+			UPDATE
+			:{Com_("D_T1_PRICE_ADJUST_HEADER")}
+			SET
+				FORM_ID = :formId,
+			--	FORM_TIME = :formTime,
+			--	ADJUST_TYPE = :adjustType,
+			--	ADJUST_SCOPE = :adjustScope,
+				EFFECT_TYPE = :effectType,
+				EFFECT_TIME = :effectTime,
+				NOTE = :note,
+			--	FORM_MAKER = :formMaker,
+			--	MAKE_TIME = :makeTime,
+				AUDITOR = :auditor,
+				AUDIT_TIME = :auditTime,
+				FORM_NOTE = :formNote
+			WHERE 
+				FORM_ID = :formId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+
+	public int deleteEntity(String formId)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		#sql [myCtx] {
+			DELETE
+			FROM
+			:{Com_("D_T1_PRICE_ADJUST_HEADER")}
+			WHERE
+				FORM_ID = :formId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public int audit(String formId, String userId, java.util.Date auditTime)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		Date sAuditTime = SqlDateUtil.getSqlDate(auditTime);
+		#sql [myCtx] {
+			UPDATE
+			:{Com_("D_T1_PRICE_ADJUST_HEADER")}
+			SET
+				auditor = :userId,
+				audit_time = :sAuditTime
+			WHERE 
+				FORM_ID = :formId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+
+	public int count(java.util.Date startDate, java.util.Date endDate, String adjustType,String itemId, String queryType)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		String query = formQuery(queryType,itemId);
+		Date sDate = SqlDateUtil.getSqlDate(startDate);
+		Date eDate = SqlDateUtil.getSqlDate(endDate);
+		
+		DefaultContext myCtx = getDefaultContext();
+		int total = 0;
+		#sql [myCtx] {
+		SELECT
+		    COUNT( DISTINCT h.form_id)
+		INTO
+		    :total
+		FROM
+		    :{Com_("D_T1_PRICE_ADJUST_HEADER")} h
+		INNER JOIN
+		    :{Com_("D_T0_FORM_STATUS")} s
+		ON
+		    s.FORM_ID = h.FORM_ID
+		AND s.IS_CURRENT = 1
+		INNER JOIN
+		    :{Com_("D_T1_PRICE_ADJUST_DETAIL")} d
+		ON
+		    h.form_id = d.form_id
+		WHERE
+		    :{query :: 1=1}
+		AND h.ADJUST_TYPE = :adjustType
+		AND (
+		        h.FORM_TIME >= :sDate
+		    OR  :sDate IS NULL)
+		AND (
+		        h.FORM_TIME <= :eDate
+		    OR  :eDate IS NULL)};
+		closeDefaultContext(myCtx);
+		return total;
+	}
+	
+	private String formQuery(String queryType,String itemId) {
+		String query = " 1=1";
+		if (BillStatus.UNADUIT_US.equals(queryType)) {
+			query = query + " AND NVL( s.STATUS, 'null') = '" + BillStatus.UNADUIT_CN + "'";
+		}
+		
+		if(!TextUtil.isEmpty(itemId)){
+			query = query + " AND d.ITEM_ID = '" +itemId + "' ";
+		}
+		return query;
+	}
+
+	#sql private iterator HeaderIter(String form_id, Date form_time, String adjust_type, String adjust_scope, 
+			String supplier_id, String supplier_name,
+			String effect_type, Date effect_time, String note, String form_maker, Date make_time, String auditor,
+			Date audit_time, String form_note, String form_status);
+	
+	public List<PriceAdjustHeader> query(java.util.Date startDate, java.util.Date endDate, 
+			String adjustType, String queryType,String itemId, int startRow, int endRow) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		
+		String query = formQuery(queryType,itemId);
+		Date sDate = SqlDateUtil.getSqlDate(startDate);
+		Date eDate = SqlDateUtil.getSqlDate(endDate);
+		
+		DefaultContext myCtx = getDefaultContext();
+		
+		HeaderIter headerIter = null;
+		#sql [myCtx] headerIter = {
+			SELECT
+			    *
+			    FROM
+			        (
+			            SELECT
+			                t.*,
+			                ROWNUM rowNumber
+			            FROM
+			                (
+			                    SELECT
+			                    	DISTINCT  h.*,
+			                        s.status      AS form_status,
+			                        b.BRANCH_NAME AS SUPPLIER_NAME
+			                    FROM
+			                        :{Com_("D_T1_PRICE_ADJUST_HEADER")} h
+			                    INNER JOIN
+			                        :{Com_("D_T0_FORM_STATUS")} s
+			                    ON
+			                        s.FORM_ID = h.FORM_ID
+			                    AND s.IS_CURRENT = 1
+			                    INNER JOIN
+			                        :{Com_("D_T1_PRICE_ADJUST_DETAIL")} d
+			                    ON
+			                        h.form_id = d.form_id
+			                    LEFT JOIN
+			                        :{Com_("D_T2_BRANCH")} b
+			                    ON
+			                        b.BRANCH_ID = h.SUPPLIER_ID
+			                    WHERE
+			                        :{query :: 1=1}
+			                    AND h.ADJUST_TYPE = :adjustType
+			                    AND (
+			                            h.FORM_TIME >= :sDate
+			                        OR  :sDate IS NULL)
+			                    AND (
+			                            h.FORM_TIME <= :eDate
+			                        OR  :eDate IS NULL)
+			                    ORDER BY
+			                        h.FORM_ID DESC ) t
+			            WHERE
+			                ROWNUM < :endRow)
+			    WHERE
+			        rowNumber >= :startRow};
+		List<PriceAdjustHeader> headerLst = processIter(headerIter);
+		headerIter.close();
+		closeDefaultContext(myCtx);
+		return headerLst;
+	}
+	
+	public PriceAdjustHeader queryById(String formId) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		HeaderIter headerIter = null;
+		#sql [myCtx] headerIter = {
+			SELECT
+			    h.*,
+			    '' as form_status,
+			    b.BRANCH_NAME as SUPPLIER_NAME
+			FROM
+				:{Com_("D_T1_PRICE_ADJUST_HEADER")} h
+			LEFT JOIN
+				:{Com_("D_T2_BRANCH")} b
+			ON
+				b.BRANCH_ID = h.SUPPLIER_ID
+			WHERE
+				h.form_id = :formId
+		};
+		List<PriceAdjustHeader> headerLst = processIter(headerIter);
+		headerIter.close();
+		closeDefaultContext(myCtx);
+		if (headerLst !=null && !headerLst.isEmpty()) {
+			return headerLst.get(0);
+		}
+		return null;
+	}
+	
+	private List<PriceAdjustHeader> processIter(HeaderIter headerIter) 
+			throws SQLException {
+		List<PriceAdjustHeader> headerLst = new ArrayList<PriceAdjustHeader>();
+		while(headerIter.next()) {
+			PriceAdjustHeader header = new PriceAdjustHeader();
+			header.setFormId(headerIter.form_id());
+			header.setFormTime(SqlDateUtil.getUtilDate(headerIter.form_time()));
+			header.setAdjustType(headerIter.adjust_type());
+			header.setAdjustScope(headerIter.adjust_scope());
+			header.setSupplierId(headerIter.supplier_id());
+			header.setSupplierName(headerIter.supplier_name());
+			header.setEffectType(headerIter.effect_type());
+			header.setEffectTime(SqlDateUtil.getUtilDate(headerIter.effect_time()));
+			header.setNote(headerIter.note());
+			header.setFormMaker(headerIter.form_maker());
+			header.setMakeTime(SqlDateUtil.getUtilDate(headerIter.make_time()));
+			header.setAuditor(headerIter.auditor());
+			header.setAuditTime(SqlDateUtil.getUtilDate(headerIter.audit_time()));
+			header.setFormNote(headerIter.form_note());
+			header.setFormStatus(headerIter.form_status());
+			headerLst.add(header);
+		}
+		return headerLst;
+	}
+	
+	//----------------------------------------------------------------------------------------------------------------------------
+	#sql private iterator ItemIter(String rownumber,String itemId,String itemName,String itemDimension,String itemSpecification,Double receivePrice);
+	
+	public List<Map> queryPItem(String formId)  
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		ItemIter itemIter = null;
+		#sql [myCtx] itemIter = {
+			SELECT
+			    ROWNUM               rownumber,
+			    d.ITEM_ID            itemId,
+			    d.ITEM_NAME          itemName,
+			    d.ITEM_DIMENSION     itemDimension,
+			    d.ITEM_SPECIFICATION itemSpecification,
+			    NVL(p.ITEM_PRICE,0)  receivePrice
+			FROM
+				:{Com_("D_T1_PURCHASING_DETAIL")} d 
+			INNER JOIN
+				:{Com_("D_T1_PURCHASING_HEADER")} h 
+			ON
+			    d.FORM_ID = h.FORM_ID
+			LEFT JOIN
+				:{Com_("D_T2_ITEM_PRICE")} p 
+			ON
+			    d.ITEM_ID = p.ITEM_ID
+			AND p.IS_CURRENT =1
+			AND p.SUPPLIER_ID = h.PROVIDER_ID
+			WHERE
+			    d.FORM_ID = :formId
+    		 ORDER BY
+             DECODE(d.RECEIVER_ID,NULL,'',d.RECEIVER_ID) ,
+             DECODE(d.ITEM_ID,NULL,'',d.ITEM_ID)  
+		};
+		
+		List<Map> headerLst = new ArrayList<Map>();
+		
+		while(itemIter.next()) {
+			Map header = new HashMap();
+			
+			header.put("rownumber", itemIter.rownumber());
+			header.put("itemId", itemIter.itemId());
+			header.put("itemName", itemIter.itemName());
+			header.put("itemDimension", itemIter.itemDimension());
+			header.put("itemSpecification", itemIter.itemSpecification());
+			header.put("receivePrice", itemIter.receivePrice());
+			
+			headerLst.add(header);
+		}
+		
+		itemIter.close();
+		closeDefaultContext(myCtx);
+		return headerLst;
+	}
+	
+	
+	public List<Map> queryZItem(String formId)  
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		ItemIter itemIter = null;
+		#sql [myCtx] itemIter = {
+			WITH
+			    a AS
+			    (
+			        SELECT DISTINCT
+			            d.ITEM_ID            itemId,
+			            d.ITEM_NAME          itemName,
+			            d.ITEM_DIMENSION     itemDimension,
+			            d.ITEM_SPECIFICATION itemSpecification,
+			            p.ITEM_PRICE         receivePrice
+			        FROM
+			            :{Com_("D_T1_PURCHASING_MAPPING")} m
+			        INNER JOIN
+			            :{Com_("D_T1_PURCHASING_HEADER")} h
+			        ON
+			            h.FORM_ID = m.SMALL_FORM_ID
+			        INNER JOIN
+			            :{Com_("D_T1_PURCHASING_DETAIL")} d
+			        ON
+			            h.FORM_ID = d.form_id
+			        LEFT JOIN
+			            :{Com_("D_T2_ITEM_PRICE")} p
+			        ON
+			            d.ITEM_ID = p.ITEM_ID
+			        AND p.IS_CURRENT =1
+			        AND p.SUPPLIER_ID = h.PROVIDER_ID
+			        WHERE
+			            m.BIG_FORM_ID = :formId
+			        ORDER BY
+			            1
+			    )
+			SELECT
+			    ROWNUM rownumber,
+			    a.*
+			FROM
+			    a};
+		
+		List<Map> headerLst = new ArrayList<Map>();
+		
+		while(itemIter.next()) {
+			Map header = new HashMap();
+			
+			header.put("rownumber", itemIter.rownumber());
+			header.put("itemId", itemIter.itemId());
+			header.put("itemName", itemIter.itemName());
+			header.put("itemDimension", itemIter.itemDimension());
+			header.put("itemSpecification", itemIter.itemSpecification());
+			header.put("receivePrice", itemIter.receivePrice());
+			
+			headerLst.add(header);
+		}
+		
+		itemIter.close();
+		closeDefaultContext(myCtx);
+		return headerLst;
+	}
+	
+}

@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"   
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">  
+
+<mapper namespace="mapper.businessquery.ReturnReasonMapper">  
+
+<resultMap id="ReturnReasonResultMap" type="pojo.businessquery.ReturnReason">
+		<id property="returnAmount" column="returnAmount" />
+		<result property="returnAmt" column="returnAmt" />
+		<result property="returnWhy" column="returnWhy" />
+		<result property="shopC" column="shopC" />
+		<result property="shopN" column="shopN" />
+</resultMap>
+
+<select id="returnReasonSum" resultMap="ReturnReasonResultMap">
+	SELECT
+		CASE WHEN SUM(returnAmount) IS NULL
+			THEN 0
+			ELSE SUM(returnAmount)
+		END returnAmount,
+		CASE WHEN SUM(returnAmt) IS NULL
+			THEN 0
+			ELSE SUM(returnAmt)
+		END returnAmt
+	FROM
+	(
+		SELECT
+			bs.sRetSendRemark returnWhy,
+			SUM( bs.nQty)     returnAmount,
+			SUM( bs.nAmt)     returnAmt,
+			b.CBRANCH_C       shopC,
+			b.CBRANCH_N       shopN
+		FROM
+			${com}.d_t_food_bill b
+		LEFT JOIN
+			${com}.d_t_food_bills bs
+		ON
+			b.cBill_C = bs.cBill_C
+		WHERE
+			b.CBRANCH_C LIKE #{shopC}
+		AND bs.eRetSendFlag = '退品'
+		AND bs.eSuitFlag &lt;&gt; '套餐子项'
+		AND DBUSINESS &gt;= #{startDate}
+		AND DBUSINESS &lt;= #{endDate}
+		GROUP BY
+			bs.sRetSendRemark,
+			b.CBRANCH_C ,
+			b.CBRANCH_N
+		ORDER BY
+			SUM(bs.nQty) DESC
+	)t
+</select>
+
+<select id="returnReason" resultMap="ReturnReasonResultMap">
+	SELECT
+		bs.sRetSendRemark returnWhy,
+		SUM( bs.nQty)     returnAmount,
+		SUM( bs.nAmt)     returnAmt,
+		b.CBRANCH_C       shopC,
+		b.CBRANCH_N       shopN
+	FROM
+		${com}.d_t_food_bill b
+	LEFT JOIN
+		${com}.d_t_food_bills bs
+	ON
+		b.cBill_C = bs.cBill_C
+	WHERE
+		b.CBRANCH_C LIKE #{shopC}
+	AND bs.eRetSendFlag = '退品'
+	AND bs.eSuitFlag &lt;&gt; '套餐子项'
+	AND DBUSINESS &gt;= #{startDate}
+	AND DBUSINESS &lt;= #{endDate}
+	GROUP BY
+		bs.sRetSendRemark,
+		b.CBRANCH_C ,
+		b.CBRANCH_N
+	ORDER BY
+		SUM( bs.nQty) DESC
+</select>
+</mapper>

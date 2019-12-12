@@ -1,0 +1,246 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on Mar 26, 2015 by liyzh
+ * Last edited on Mar 26, 2015 by liyzh
+ * 
+ * 说明： 餐厅要货单选择原料、半成品
+ */
+package logic.module.restaurant;
+
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import sqlj.runtime.ref.DefaultContext;
+
+import vo.restaurant.RequestItemVO;
+import com.tanry.framework.acl.NoPrivilegeException;
+import com.tanry.framework.util.constant.ItemType;
+
+public class SelMaterialBean extends ConnectionPool {
+	
+	public static Logger log = Logger.getLogger(SelMaterialBean.class);
+	
+	#sql private iterator ItemIter(
+			String item_id,
+			String item_name, 
+			String query_code,
+			String item_category,
+			String item_dimension,
+			String shelf_name,
+			String item_specification, 
+			Double item_price);
+	
+	/**
+	 * 餐厅要货单选择原料、半成品
+	 */
+	public List<RequestItemVO> queryItem(String itemType, String itemName, String priceType)   
+			throws NoPrivilegeException,SQLException,NoConnection {
+		itemName = "%" + itemName + "%";
+		String query = " ITEM_TYPE = '" + itemType + "'";
+		if (ItemType.R_S.equals(itemType)) {
+			query = " (ITEM_TYPE = '" + ItemType.RAW 
+					+ "' OR  ITEM_TYPE = '" + ItemType.SEMIS
+					+ "' OR  ITEM_TYPE = '" + ItemType.SELFSEMIS + "')";
+		}
+		
+		DefaultContext myCtx = getDefaultContext();
+		ItemIter itemIter = null;
+		#sql [myCtx] itemIter = {
+			SELECT
+			    m.ITEM_ID,
+			    m.ITEM_NAME, m.QUERY_CODE,
+			    m.CATEGORY_ID AS item_category,
+			    m.ITEM_DIMENSION,
+			    m.ITEM_SPECIFICATION,
+			    p.ITEM_PRICE,
+			    s.SHELF_NAME
+			FROM
+			:{Com_("D_T2_ITEM_META")} m
+			LEFT JOIN
+			:{Com_("D_T2_ITEM_PRICE")} p
+			ON
+			    p.ITEM_ID = m.ITEM_ID   AND p.PRICE_TYPE = :priceType
+			LEFT JOIN
+				:{Com_("D_T2_SHELF_ITEM")} si 
+			ON
+			    m.ITEM_ID = si.ITEM_ID    AND si.PRIORITY = 0
+			LEFT JOIN
+				:{Com_("D_T2_SHELF")} s 
+			ON
+			    si.SHELF_ID = s.SHELF_ID
+			WHERE
+				:{query :: 1=1}
+            AND (
+                    m.ITEM_ID LIKE :itemName
+                OR  m.ITEM_NAME LIKE :itemName)
+            AND m.ENABLED = 1
+			ORDER BY
+			    m.ITEM_ID
+		};
+		List<RequestItemVO> itemLst = new ArrayList<RequestItemVO>();
+		while(itemIter.next()) {
+			RequestItemVO item = new RequestItemVO();
+			item.setItemId(itemIter.item_id());
+			item.setItemName(itemIter.item_name());
+			item.setQueryCode(itemIter.query_code());
+			item.setItemCategory(itemIter.item_category());
+			item.setItemDimension(itemIter.item_dimension());
+			item.setItemSpecification(itemIter.item_specification());
+			item.setItemPrice(itemIter.item_price());
+			item.setShelfName(itemIter.shelf_name());
+			itemLst.add(item);
+		}
+		itemIter.close();
+		closeDefaultContext(myCtx);
+		return itemLst;
+	}
+	
+	#sql private iterator ItemInventoryIter(
+			String item_id,
+			String item_name, String query_code,
+			String item_category,
+			String shelf_name,
+			String item_dimension,
+			String item_specification, Double item_price, Double inventory,String item_type);
+	
+	/**
+	 * 报损单根据库存自选原料（包括半成品），获取标准价
+	 */
+	public List<RequestItemVO> queryItemInventory(String itemName, String storageId ,String priceType)   
+			throws NoPrivilegeException,SQLException,NoConnection {
+		itemName = "%" + itemName + "%";
+		String query = " (ITEM_TYPE = '" + ItemType.RAW + "' OR  ITEM_TYPE = '" + ItemType.SEMIS + "')";
+		
+		DefaultContext myCtx = getDefaultContext();
+		ItemInventoryIter itemIter = null;
+		#sql [myCtx] itemIter = {
+			SELECT
+			    m.ITEM_ID,
+			    m.ITEM_NAME, m.QUERY_CODE,
+			    m.CATEGORY_ID AS item_category,
+			    m.ITEM_DIMENSION,
+			    m.ITEM_SPECIFICATION,
+			    m.ITEM_TYPE,
+			    p.ITEM_PRICE,
+			    s.SHELF_NAME,
+			    round(s.ITEM_COUNT,2) as inventory
+			FROM
+			:{Com_("D_T2_ITEM_META")} m
+			LEFT JOIN
+			:{Com_("D_T2_ITEM_PRICE")} p
+			ON
+			    p.ITEM_ID = m.ITEM_ID
+			AND p.PRICE_TYPE = :priceType
+			LEFT JOIN
+			:{Com_("D_T2_STORAGE")} s
+			ON
+				s.ITEM_ID = m.ITEM_ID	AND s.STORAGE_ID = :storageId
+			LEFT JOIN
+			:{Com_("D_T2_SHELF_ITEM")} si 
+			ON
+			    m.ITEM_ID = si.ITEM_ID    AND si.PRIORITY = 0
+			LEFT JOIN
+				:{Com_("D_T2_SHELF")} s 
+			ON
+			    si.SHELF_ID = s.SHELF_ID
+			WHERE
+				:{query :: 1=1}
+            AND (
+                    m.ITEM_ID LIKE :itemName
+                OR  m.ITEM_NAME LIKE :itemName)
+            AND m.ENABLED = 1
+			ORDER BY
+			    m.ITEM_ID
+		};
+		List<RequestItemVO> itemLst = new ArrayList<RequestItemVO>();
+		while(itemIter.next()) {
+			RequestItemVO item = new RequestItemVO();
+			item.setItemId(itemIter.item_id());
+			item.setItemName(itemIter.item_name());
+			item.setQueryCode(itemIter.query_code());
+			item.setItemCategory(itemIter.item_category());
+			item.setItemDimension(itemIter.item_dimension());
+			item.setItemSpecification(itemIter.item_specification());
+			item.setItemPrice(itemIter.item_price());
+			item.setInventory(itemIter.inventory());
+			item.setShelfName(itemIter.shelf_name());
+			item.setItemType(itemIter.item_type());
+			itemLst.add(item);
+		}
+		itemIter.close();
+		closeDefaultContext(myCtx);
+		return itemLst;
+	}
+	
+	/**
+	 * 报损单根据库存自选原料（不包括半成品），获取标准价
+	 */
+	public List<RequestItemVO> queryInventory(String itemName, String storageId,String priceType)   
+			throws NoPrivilegeException,SQLException,NoConnection {
+		itemName = "%" + itemName + "%";
+		String query =  " (ITEM_TYPE = '" + ItemType.RAW + "')";
+		
+		DefaultContext myCtx = getDefaultContext();
+		ItemInventoryIter itemIter = null;
+		#sql [myCtx] itemIter = {
+			SELECT
+			    m.ITEM_ID,
+			    m.ITEM_NAME, m.QUERY_CODE,
+			    m.CATEGORY_ID AS item_category,
+			    m.ITEM_DIMENSION,
+			    m.ITEM_SPECIFICATION,
+			    m.ITEM_TYPE,
+			    p.ITEM_PRICE,
+			    '' SHELF_NAME,
+			    round(s.ITEM_COUNT,2) as inventory
+			FROM
+			:{Com_("D_T2_ITEM_META")} m
+			LEFT JOIN
+			:{Com_("D_T2_ITEM_PRICE")} p
+			ON
+			    p.ITEM_ID = m.ITEM_ID
+			AND p.PRICE_TYPE = :priceType
+			LEFT JOIN
+			:{Com_("D_T2_STORAGE")} s
+			ON
+			    s.ITEM_ID = m.ITEM_ID
+			AND s.STORAGE_ID = :storageId
+			WHERE
+				:{query :: 1=1}
+			AND m.ENABLED = 1
+            AND (
+                    m.ITEM_ID LIKE :itemName
+                OR  m.ITEM_NAME LIKE :itemName)
+			ORDER BY
+			    m.ITEM_ID
+		};
+		List<RequestItemVO> itemLst = new ArrayList<RequestItemVO>();
+		while(itemIter.next()) {
+			RequestItemVO item = new RequestItemVO();
+			item.setItemId(itemIter.item_id());
+			item.setItemName(itemIter.item_name());
+			item.setQueryCode(itemIter.query_code());
+			item.setItemCategory(itemIter.item_category());
+			item.setItemDimension(itemIter.item_dimension());
+			item.setItemSpecification(itemIter.item_specification());
+			item.setItemPrice(itemIter.item_price());
+			item.setInventory(itemIter.inventory());
+			item.setItemType(itemIter.item_type());
+			itemLst.add(item);
+		}
+		itemIter.close();
+		closeDefaultContext(myCtx);
+		return itemLst;
+	}
+}

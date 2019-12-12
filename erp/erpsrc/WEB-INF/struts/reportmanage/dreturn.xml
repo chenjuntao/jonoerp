@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE struts PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN"
+    "http://struts.apache.org/dtds/struts-2.0.dtd">
+
+<struts>
+<!-- 	餐厅 -->
+	<package name="reportmanage_dreturn_restaurant_form" namespace="/reportmanage/dreturn/restaurant/form" extends="trust-default">
+		<action name="mainView" class="action.reportmanage.ReportManageAction">
+			<result name="success">/jsp/restaurant/reportmanage/dreturn/form/main.jsp</result>
+			<result name="mobile">/mobile/module/lc/dreturn/main.jsp</result>
+		</action>
+	</package>
+	
+	<package name="reportmanage_dreturn_restaurant_collect" namespace="/reportmanage/dreturn/restaurant/collect" extends="trust-default">
+		<action name="mainView" class="action.reportmanage.ReportManageAction">
+			<result name="success">/jsp/restaurant/reportmanage/dreturn/collect/main.jsp</result>
+			<result name="mobile">/mobile/module/dreturn/collect/main.jsp</result>
+		</action>
+	</package>
+	
+	<package name="reportmanage_dreturn_restaurant_detail" namespace="/reportmanage/dreturn/restaurant/detail" extends="trust-default">
+		<action name="mainView" class="action.reportmanage.ReportManageAction">
+			<result name="success">/jsp/restaurant/reportmanage/dreturn/detail/main.jsp</result>
+			<result name="mobile">/mobile/module/dreturn/detail/main.jsp</result>
+		</action>
+	</package>
+</struts>
+

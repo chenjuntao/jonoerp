@@ -1,0 +1,527 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on Dec 17, 2014 by liyzh
+ * Last edited on Dec 17, 2014 by liyzh
+ * 
+ * 说明： 物流中心采购单管理，包括统配、直配、越库
+ */
+package logic.module.lc;
+
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.sql.Date;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import sqlj.runtime.ref.DefaultContext;
+
+import com.tanry.framework.acl.NoPrivilegeException;
+import com.tanry.framework.util.constant.BranchCode;
+import com.tanry.framework.util.SqlDateUtil;
+
+public class PurchaseManageBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(PurchaseManageBean.class);
+	
+	#sql private iterator NodeIter(String id, String name, String parent, String dtype, String form_status);
+	
+	/**
+	 * 根据制单日期获取所有未入库的采购单，树形结构数据，直配单获取大单
+	 */
+	public List<Map> queryTree(String lcCode, String queryType) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		String query = " 1=1";
+		if ("unaudit".equals(queryType)) { // 获取未审核记录
+			query = query + " AND NVL( s.STATUS, 'null') = '未审核'"; 
+		}
+		
+		DefaultContext myCtx = getDefaultContext();
+		NodeIter nodeIter = null;
+		#sql [myCtx] nodeIter = {
+			WITH
+			    purchase AS
+			    (
+			        SELECT
+			            h.FORM_TIME,
+			            h.FORM_ID,
+			            h.DELIVERY_TYPE,
+			            s.STATUS AS form_status
+			        FROM
+			        :{Com_("D_T1_PURCHASING_HEADER")} h
+			        LEFT JOIN
+			        :{Com_("D_T0_FORM_STATUS")} s
+			        ON
+			            s.FORM_ID = h.FORM_ID
+			        AND s.IS_CURRENT = 1
+			        WHERE
+						:{query :: 1=1}
+			        AND h.REQUESTER_ID = :lcCode
+					AND h.RECEIVER_ID IS NULL --直配小单除外
+			    )
+			SELECT
+			    *
+			FROM
+			    (
+				SELECT
+				    TO_CHAR( p.FORM_TIME, 'yyyy-MM-dd') AS id,
+				    TO_CHAR( p.FORM_TIME, 'yyyy-MM-dd') AS name,
+				    'root'                              AS parent,
+				    ''                                  AS dtype,
+				    ''                                  AS form_status
+				FROM
+				    purchase p
+				GROUP BY
+				    p.FORM_TIME  
+			    ORDER BY
+			    	p.FORM_TIME DESC )
+			UNION ALL
+			SELECT
+			    *
+			FROM
+			    (
+			        SELECT
+			            p.FORM_ID                           AS id,
+			            p.FORM_ID                           AS name,
+			            TO_CHAR( p.FORM_TIME, 'yyyy-MM-dd') AS parent,
+			            p.DELIVERY_TYPE                     AS dtype,
+			            form_status
+			        FROM
+			            purchase p
+			        ORDER BY
+			            SUBSTR(p.FORM_ID, 3) DESC )
+		};
+		List<Map> nodeLst = new ArrayList<Map>();
+		while(nodeIter.next()) {
+			Map<String, String> node = new HashMap<String, String>();
+			node.put("id", nodeIter.id());
+			node.put("name", nodeIter.name());
+			node.put("parent", nodeIter.parent());
+			node.put("dtype", nodeIter.dtype());
+			node.put("status", nodeIter.form_status());
+			nodeLst.add(node);
+		}
+		nodeIter.close();
+		closeDefaultContext(myCtx);
+		return nodeLst;
+	}
+	/**
+	 * 根据制单日期获取所有未入库的采购单，树形结构数据，直配单获取大单
+	 */
+	public List<Map> queryTree(java.util.Date startDate, java.util.Date endDate,String lcCode, String queryType) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		String query = " 1=1";
+		if ("unaudit".equals(queryType)) { // 获取未审核记录
+			query = query + " AND NVL( s.STATUS, 'null') = '未审核'"; 
+		}
+		Date sDate = SqlDateUtil.getSqlDate(startDate);
+		Date eDate = SqlDateUtil.getSqlDate(endDate);
+		DefaultContext myCtx = getDefaultContext();
+		NodeIter nodeIter = null;
+		#sql [myCtx] nodeIter = {
+			WITH
+			    purchase AS
+			    (
+			        SELECT
+			            h.FORM_TIME,
+			            h.FORM_ID,
+			            h.DELIVERY_TYPE,
+			            s.STATUS AS form_status
+			        FROM
+			        :{Com_("D_T1_PURCHASING_HEADER")} h
+			        LEFT JOIN
+			        :{Com_("D_T0_FORM_STATUS")} s
+			        ON
+			            s.FORM_ID = h.FORM_ID
+			        AND s.IS_CURRENT = 1
+			        WHERE
+						:{query :: 1=1}
+			        AND h.REQUESTER_ID = :lcCode
+					AND h.RECEIVER_ID IS NULL --直配小单除外
+			    )
+			SELECT
+			    *
+			FROM
+			    (
+				SELECT
+				    TO_CHAR( p.FORM_TIME, 'yyyy-MM-dd') AS id,
+				    TO_CHAR( p.FORM_TIME, 'yyyy-MM-dd') AS name,
+				    'root'                              AS parent,
+				    ''                                  AS dtype,
+				    ''                                  AS form_status
+				FROM
+				    purchase p
+				    WHERE
+			           (p.FORM_TIME >= :sDate or :sDate is null)
+						AND (p.FORM_TIME <= :eDate or :eDate is null)
+				GROUP BY
+				    p.FORM_TIME  
+			    ORDER BY
+			    	p.FORM_TIME DESC )
+			UNION ALL
+			SELECT
+			    *
+			FROM
+			    (
+			        SELECT
+			            p.FORM_ID                           AS id,
+			            p.FORM_ID                           AS name,
+			            TO_CHAR( p.FORM_TIME, 'yyyy-MM-dd') AS parent,
+			            p.DELIVERY_TYPE                     AS dtype,
+			            form_status
+			        FROM
+			            purchase p
+			        ORDER BY
+			            SUBSTR(p.FORM_ID, 3) DESC )
+		};
+		List<Map> nodeLst = new ArrayList<Map>();
+		while(nodeIter.next()) {
+			Map<String, String> node = new HashMap<String, String>();
+			node.put("id", nodeIter.id());
+			node.put("name", nodeIter.name());
+			node.put("parent", nodeIter.parent());
+			node.put("dtype", nodeIter.dtype());
+			node.put("status", nodeIter.form_status());
+			nodeLst.add(node);
+		}
+		nodeIter.close();
+		closeDefaultContext(myCtx);
+		return nodeLst;
+	}
+	
+	/**
+	 * 中央工厂采购单 临时处理
+	 */
+	public List<Map> queryCFTree(String cfCode, String queryType) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		String query = " 1=1";
+		if ("unaudit".equals(queryType)) { // 获取未审核记录
+			query = query + " AND NVL( s.STATUS, 'null') = '未审核'"; 
+		}
+		
+		DefaultContext myCtx = getDefaultContext();
+		NodeIter nodeIter = null;
+		#sql [myCtx] nodeIter = {
+			WITH
+			    purchase AS
+			    (
+			        SELECT DISTINCT
+			            h.FORM_ID,
+			            h.FORM_TIME,
+			            h.DELIVERY_TYPE,
+			            s.STATUS AS form_status
+			        FROM
+			        :{Com_("D_T1_PURCHASING_HEADER")} h
+			        LEFT JOIN
+			        :{Com_("D_T0_FORM_STATUS")} s
+			        ON
+			            s.FORM_ID = h.FORM_ID
+			        AND s.IS_CURRENT = 1
+			        WHERE
+			            :{query :: 1=1}
+			        AND h.REQUESTER_ID = :cfCode
+			        ORDER BY
+			            h.FORM_ID
+			    )
+			SELECT
+			    *
+			FROM
+			    (
+			        SELECT
+			            TO_CHAR( p.FORM_TIME, 'yyyy-MM-dd') AS id,
+			            TO_CHAR( p.FORM_TIME, 'yyyy-MM-dd') AS name,
+			            'root'                              AS parent,
+			            ''                                  AS dtype,
+			            ''                                  AS form_status
+			        FROM
+			            purchase p
+			        GROUP BY
+			            p.FORM_TIME
+			        ORDER BY
+			            p.FORM_TIME DESC )
+			UNION ALL
+			SELECT
+			    *
+			FROM
+			    (
+			        SELECT
+			            p.FORM_ID                           AS id,
+			            p.FORM_ID                           AS name,
+			            TO_CHAR( p.FORM_TIME, 'yyyy-MM-dd') AS parent,
+			            p.DELIVERY_TYPE                     AS dtype,
+			            form_status
+			        FROM
+			            purchase p
+			        ORDER BY
+			            SUBSTR(p.FORM_ID, 3) DESC )};
+		List<Map> nodeLst = new ArrayList<Map>();
+		while(nodeIter.next()) {
+			Map<String, String> node = new HashMap<String, String>();
+			node.put("id", nodeIter.id());
+			node.put("name", nodeIter.name());
+			node.put("parent", nodeIter.parent());
+			node.put("dtype", nodeIter.dtype());
+			node.put("status", nodeIter.form_status());
+			nodeLst.add(node);
+		}
+		nodeIter.close();
+		closeDefaultContext(myCtx);
+		return nodeLst;
+	}
+	
+	/**
+	 * 中央工厂采购单 临时处理
+	 */
+	public List<Map> queryCFTree(java.util.Date startDate, java.util.Date endDate,String cfCode, String queryType) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		String query = " 1=1";
+		Date sDate = SqlDateUtil.getSqlDate(startDate);
+		Date eDate = SqlDateUtil.getSqlDate(endDate);
+		if ("unaudit".equals(queryType)) { // 获取未审核记录
+			query = query + " AND NVL( s.STATUS, 'null') = '未审核'"; 
+		}
+		
+		DefaultContext myCtx = getDefaultContext();
+		NodeIter nodeIter = null;
+		#sql [myCtx] nodeIter = {
+			WITH
+			    purchase AS
+			    (
+			        SELECT DISTINCT
+			            h.FORM_ID,
+			            h.FORM_TIME,
+			            h.DELIVERY_TYPE,
+			            s.STATUS AS form_status
+			        FROM
+			        :{Com_("D_T1_PURCHASING_HEADER")} h
+			        LEFT JOIN
+			        :{Com_("D_T0_FORM_STATUS")} s
+			        ON
+			            s.FORM_ID = h.FORM_ID
+			        AND s.IS_CURRENT = 1
+			        WHERE
+			            :{query :: 1=1}
+			        AND h.REQUESTER_ID = :cfCode
+			        ORDER BY
+			            h.FORM_ID
+			    )
+			SELECT
+			    *
+			FROM
+			    (
+			        SELECT
+			            TO_CHAR( p.FORM_TIME, 'yyyy-MM-dd') AS id,
+			            TO_CHAR( p.FORM_TIME, 'yyyy-MM-dd') AS name,
+			            'root'                              AS parent,
+			            ''                                  AS dtype,
+			            ''                                  AS form_status
+			        FROM
+			            purchase p
+			            WHERE
+				           (p.FORM_TIME >= :sDate or :sDate is null)
+							AND (p.FORM_TIME <= :eDate or :eDate is null)
+			        GROUP BY
+			            p.FORM_TIME
+			        ORDER BY
+			            p.FORM_TIME DESC )
+			UNION ALL
+			SELECT
+			    *
+			FROM
+			    (
+			        SELECT
+			            p.FORM_ID                           AS id,
+			            p.FORM_ID                           AS name,
+			            TO_CHAR( p.FORM_TIME, 'yyyy-MM-dd') AS parent,
+			            p.DELIVERY_TYPE                     AS dtype,
+			            form_status
+			        FROM
+			            purchase p
+			        ORDER BY
+			            SUBSTR(p.FORM_ID, 3) DESC )};
+		List<Map> nodeLst = new ArrayList<Map>();
+		while(nodeIter.next()) {
+			Map<String, String> node = new HashMap<String, String>();
+			node.put("id", nodeIter.id());
+			node.put("name", nodeIter.name());
+			node.put("parent", nodeIter.parent());
+			node.put("dtype", nodeIter.dtype());
+			node.put("status", nodeIter.form_status());
+			nodeLst.add(node);
+		}
+		nodeIter.close();
+		closeDefaultContext(myCtx);
+		return nodeLst;
+	}
+	#sql private iterator ItemIter(String form_id,
+			String receiver_id, String receiver, String receive_address,
+			String item_id, String item_name, String item_dimension,
+			String item_specification, String item_category, Double item_unit_price, Double item_count, Double pay_amt,Double receive_price,
+			Double receive_amt,Double supply_cycle);
+
+	public List<Map> queryDirect(String bigFormId)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		ItemIter itemIter = null;
+		#sql [myCtx] itemIter = {
+			SELECT
+			    sh.FORM_ID,
+			    sh.RECEIVER,
+			    sh.RECEIVER_ID,
+			    sh.RECEIVE_ADDRESS,
+			    d.ITEM_ID,
+			    d.ITEM_NAME,
+			    d.ITEM_DIMENSION,
+			    d.ITEM_SPECIFICATION,
+			    d.ITEM_CATEGORY,
+			    d.ITEM_UNIT_PRICE,
+			    d.RECEIVE_PRICE,
+			    d.RECEIVE_AMT,
+			    d.ITEM_COUNT,
+			    d.PAY_AMT,
+	            0.0 SUPPLY_CYCLE
+			FROM
+			:{Com_("D_T1_PURCHASING_HEADER")} h
+			LEFT JOIN
+			:{Com_("D_T1_PURCHASING_MAPPING")} m
+			ON
+			    m.BIG_FORM_ID = h.FORM_ID
+			LEFT JOIN
+			:{Com_("D_T1_PURCHASING_HEADER")} sh
+			ON
+			    sh.FORM_ID = m.SMALL_FORM_ID
+			LEFT JOIN
+			:{Com_("D_T1_PURCHASING_DETAIL")} d
+			ON
+			    d.FORM_ID = sh.FORM_ID
+			WHERE
+			    h.FORM_ID = :bigFormId
+			ORDER BY
+				d.ITEM_ID
+		};
+		List<Map> itemLst = processItemIter(itemIter);
+		itemIter.close();
+		closeDefaultContext(myCtx);
+		return itemLst;
+	}
+
+	public List<Map> queryDirect(String bigFormId,String lcCode)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		ItemIter itemIter = null;
+		#sql [myCtx] itemIter = {
+			SELECT
+			    sh.FORM_ID,
+			    sh.RECEIVER,
+			    sh.RECEIVER_ID,
+			    sh.RECEIVE_ADDRESS,
+			    d.ITEM_ID,
+			    d.ITEM_NAME,
+			    d.ITEM_DIMENSION,
+			    d.ITEM_SPECIFICATION,
+			    d.ITEM_CATEGORY,
+			    d.ITEM_UNIT_PRICE,
+			    d.RECEIVE_PRICE,
+			    d.RECEIVE_AMT,
+			    d.ITEM_COUNT,
+			    d.PAY_AMT,
+	            DECODE (ma.SUPPLY_CYCLE, NULL, ma.PRODUCTION_CYCLE,ma.SUPPLY_CYCLE) SUPPLY_CYCLE
+			FROM
+			:{Com_("D_T1_PURCHASING_HEADER")} h
+			LEFT JOIN
+			:{Com_("D_T1_PURCHASING_MAPPING")} m
+			ON
+			    m.BIG_FORM_ID = h.FORM_ID
+			LEFT JOIN
+			:{Com_("D_T1_PURCHASING_HEADER")} sh
+			ON
+			    sh.FORM_ID = m.SMALL_FORM_ID
+			LEFT JOIN
+			:{Com_("D_T1_PURCHASING_DETAIL")} d
+			ON
+			    d.FORM_ID = sh.FORM_ID
+    		LEFT JOIN
+	        :{Com_("D_V_MRP_AMOUNT_LC")} ma
+	        ON
+	            ma.ITEM_ID = d.ITEM_ID
+	        AND ma.BRANCH_ID = :lcCode
+			WHERE
+			    h.FORM_ID = :bigFormId
+			ORDER BY
+				d.ITEM_ID
+		};
+		List<Map> itemLst = processItemIter(itemIter);
+		itemIter.close();
+		closeDefaultContext(myCtx);
+		return itemLst;
+	}
+
+	private List<Map> processItemIter(ItemIter itemIter) 
+			throws SQLException {
+		List<Map> detailLst = new ArrayList<Map>();
+		while(itemIter.next()) {
+			Map<String, Object> detail = new HashMap<String, Object>();
+			detail.put("formId", itemIter.form_id());
+			detail.put("receiverId", itemIter.receiver_id());
+			detail.put("receiver", itemIter.receiver());
+			detail.put("receiveAddress", itemIter.receive_address());
+			detail.put("itemId", itemIter.item_id());
+			detail.put("itemName", itemIter.item_name());
+			detail.put("itemCategory", itemIter.item_category());
+			detail.put("itemDimension", itemIter.item_dimension());
+			detail.put("itemSpecification", itemIter.item_specification());
+			detail.put("itemCount", itemIter.item_count());
+			detail.put("itemUnitPrice", itemIter.item_unit_price());
+			detail.put("payAmt", itemIter.pay_amt());
+			detail.put("receivePrice", itemIter.receive_price());
+			detail.put("receiveAmt", itemIter.receive_amt());
+			detail.put("supplyCycle", itemIter.supply_cycle());
+			detailLst.add(detail);
+		}
+		return detailLst;
+	}
+	
+	
+	#sql private iterator SmallFormIdIter(String samllFormId);
+	public List<String> queryLittleFormIds(String bigFormId)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		SmallFormIdIter smallFormIdIter = null;
+		#sql [myCtx] smallFormIdIter = {
+			SELECT
+			    p.SMALL_FORM_ID samllFormId
+		    FROM
+		    	:{Com_("D_T1_PURCHASING_MAPPING")} p 
+		    WHERE
+		        p.BIG_FORM_ID = :bigFormId};
+		
+
+		List<String> detailLst = new ArrayList<String>();
+		while(smallFormIdIter.next()) {
+			detailLst.add( smallFormIdIter.samllFormId());
+		}
+	
+		smallFormIdIter.close();
+		closeDefaultContext(myCtx);
+		return detailLst;
+	}
+	
+	
+	/**
+	 * 通过采购单反查相应的要货单
+	 */
+	public List<Map> queryReference(String pFormId)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		return null;
+	}
+}

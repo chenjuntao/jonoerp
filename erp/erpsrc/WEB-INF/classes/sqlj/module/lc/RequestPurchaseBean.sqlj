@@ -1,0 +1,169 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on Nov 3, 2014 by liyzh
+ * Last edited on Nov 3, 2014 by liyzh
+ * 
+ * 说明： 餐厅要货、外部订货商订货单直接转化为采购单
+ */
+package logic.module.lc;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import pojo.form.CollectDetail;
+import pojo.form.RequestHeader;
+import sqlj.runtime.ref.DefaultContext;
+import com.tanry.business.form.FormConstant;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.TextUtil;
+import com.tanry.framework.acl.NoPrivilegeException;
+
+public class RequestPurchaseBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(RequestPurchaseBean.class);
+
+	#sql private iterator DetailIter(String item_id, String item_name, String item_dimension,
+			String item_specification, String item_category, Double item_unit_price, Double order_count, Double pay_amt, String provider_id, String provider);
+	
+	#sql private iterator ProviderIter(String provider_id, String provider);
+	
+	public List<Map> queryProvider(String formId)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		ProviderIter providerIter = null;
+		#sql [myCtx] providerIter = {
+			SELECT
+			    s.BRANCH_ID as PROVIDER_ID,
+			    s.BRANCH_NAME as PROVIDER
+			FROM
+				:{Com_("D_T1_REQUEST_DETAIL")} d,
+				:{Com_("D_T2_BRANCH")} s,
+				:{Com_("D_T2_SUPPLIER_BRANCH_ITEM")} si
+			WHERE
+		    	d.FORM_ID = :formId
+		    AND d.ITEM_ID = si.ITEM_ID
+			AND si.SUPPLIER_ID = s.BRANCH_ID
+			AND si.PRIORITY = 0
+			GROUP BY
+			    s.BRANCH_ID,
+			    s.BRANCH_NAME
+			ORDER BY
+				s.BRANCH_ID
+		};
+		List<Map> providerLst = new ArrayList<Map>();
+		while(providerIter.next()) {
+			Map<String, String> provider = new HashMap<String, String>();
+			provider.put("providerId", providerIter.provider_id());
+			provider.put("provider", providerIter.provider());
+			providerLst.add(provider);
+		}
+		providerIter.close();
+		closeDefaultContext(myCtx);
+		return providerLst;
+	}
+
+	public List<CollectDetail> query(String formId, String providerId)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		DetailIter detailIter = null;
+		#sql [myCtx] detailIter = {
+			SELECT
+				d.FORM_ID,
+				d.ITEM_ID,
+				d.ITEM_NAME,
+				d.ITEM_CATEGORY,
+				d.ITEM_DIMENSION,
+				d.ITEM_SPECIFICATION,
+				d.ORDER_COUNT,
+				d.ITEM_UNIT_PRICE,
+				d.PAY_AMT,
+			    s.BRANCH_ID as PROVIDER_ID,
+			    s.BRANCH_NAME as PROVIDER
+			FROM
+				:{Com_("D_T1_REQUEST_DETAIL")} d,
+		    	:{Com_("D_T2_BRANCH")} s,
+			    :{Com_("D_T2_SUPPLIER_BRANCH_ITEM")} si
+			WHERE
+		    	d.FORM_ID = :formId
+		    AND si.SUPPLIER_ID = :providerId
+		    AND d.ITEM_ID = si.ITEM_ID
+			AND si.SUPPLIER_ID = s.BRANCH_ID
+			AND si.PRIORITY = 0
+			ORDER BY
+				d.ITEM_ID
+		};
+		List<CollectDetail> detailLst = processIter(detailIter);
+		detailIter.close();
+		closeDefaultContext(myCtx);
+		return detailLst;
+	}
+	
+	public List<CollectDetail> query(String formId)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		DetailIter detailIter = null;
+		#sql [myCtx] detailIter = {
+			SELECT
+				d.FORM_ID,
+				d.ITEM_ID,
+				d.ITEM_NAME,
+				d.ITEM_CATEGORY,
+				d.ITEM_DIMENSION,
+				d.ITEM_SPECIFICATION,
+				d.ORDER_COUNT,
+				d.ITEM_UNIT_PRICE,
+				d.PAY_AMT,
+			    s.BRANCH_ID as PROVIDER_ID,
+			    s.BRANCH_NAME as PROVIDER
+			FROM
+				:{Com_("D_T1_REQUEST_DETAIL")} d,
+		    	:{Com_("D_T2_BRANCH")} s,
+			    :{Com_("D_T2_SUPPLIER_BRANCH_ITEM")} si
+			WHERE
+		    	d.FORM_ID = :formId
+		    AND d.ITEM_ID = si.ITEM_ID
+			AND si.SUPPLIER_ID = s.BRANCH_ID
+			AND si.PRIORITY = 0
+			ORDER BY
+				s.BRANCH_ID, d.ITEM_ID
+		};
+		List<CollectDetail> detailLst = processIter(detailIter);
+		detailIter.close();
+		closeDefaultContext(myCtx);
+		return detailLst;
+	}
+
+	private List<CollectDetail> processIter(DetailIter detailIter) 
+			throws SQLException {
+		List<CollectDetail> detailLst = new ArrayList<CollectDetail>();
+		while(detailIter.next()) {
+			CollectDetail detail = new CollectDetail();
+			detail.setItemId(detailIter.item_id());
+			detail.setItemName(detailIter.item_name());
+			detail.setItemCategory(detailIter.item_category());
+			detail.setItemDimension(detailIter.item_dimension());
+			detail.setItemSpecification(detailIter.item_specification());
+			detail.setItemCount(detailIter.order_count());
+			detail.setItemUnitPrice(detailIter.item_unit_price());
+			detail.setPayAmt(detailIter.pay_amt());
+			detail.setProviderId(detailIter.provider_id());
+			detail.setProvider(detailIter.provider());
+			detailLst.add(detail);
+		}
+		return detailLst;
+	}
+}

@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:aop = "http://www.springframework.org/schema/aop"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+	http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+	http://www.springframework.org/schema/aop 
+	http://www.springframework.org/schema/aop/spring-aop-2.5.xsd"
+	default-autowire="byName">
+
+	<bean id="branchManageService" class="com.tanry.business.module.hq.config.branch.service.BranchManageService" />
+	<bean id="groupManageService" class="com.tanry.business.module.hq.config.group.service.GroupManageService" />
+	<bean id="dtypeManageService" class="com.tanry.business.module.hq.config.group.service.DeliveryTypeManageService" />
+	
+	<bean id="metaManageService" class="com.tanry.business.module.hq.config.item.service.MetaManageService" />
+	<bean id="productManageService" class="com.tanry.business.module.hq.config.item.service.ProductManageService" />
+	<bean id="therapyManageService" class="com.tanry.business.module.hq.config.item.service.TherapyManageService" />
+	
+	<bean id="foodSuitManageService" class="com.tanry.business.module.hq.config.item.service.FoodSuitManageService" />
+	<bean id="procecssManageService" class="com.tanry.business.module.hq.config.item.service.ProcessManageService" />
+	<bean id="supplierManageService" class="com.tanry.business.module.hq.config.item.service.SupplierManageService" />
+	
+	<bean id="productionCycleService" class="com.tanry.business.module.hq.config.period.service.ProductionCycleService" />
+	<bean id="supplyCycleService" class="com.tanry.business.module.hq.config.period.service.SupplyCycleService" />
+	<bean id="brandManageService" class="com.tanry.business.module.hq.config.brand.service.BrandManageService" />
+	
+	<bean id="brandProductService" class="com.tanry.business.module.hq.config.brand.service.BrandProductService" />
+	<bean id="priceGroupService" class="com.tanry.business.module.hq.config.price.service.PriceGroupService" />
+	<bean id="priceManageService" class="com.tanry.business.module.hq.config.item.service.PriceManageService" />
+	
+	<bean id="boxTypeManageService" class="com.tanry.business.module.hq.config.box.service.BoxTypeManageService" />
+	<bean id="storageManageService" class="com.tanry.business.module.hq.config.storage.service.StorageManageService" />
+	<bean id="tagManageService" class="com.tanry.business.module.hq.config.tag.service.TagManageService" />
+	
+	<bean id="categoryManageService" class="com.tanry.business.module.hq.config.category.service.CategoryManageService" />
+	<bean id="shelfItemService" class="com.tanry.business.module.hq.config.shelf.service.ShelfItemService" />
+	
+	<bean id="priceAdjustDao" class="dao.price.PriceAdjustDao" />
+	<bean id="pBillManageService" class="com.tanry.business.module.hq.priceadjust.service.BillManageService" />
+	<bean id="sampleInfoService" class="com.tanry.business.module.hq.sample.service.SampleInfoService" />
+	
+	<bean id="purchasePriceAdjustBean" class="logic.module.hq.PurchasePriceAdjustBean" />
+	<bean id="priceAdjustQueryBean" class="logic.module.hq.PriceAdjustQueryBean" />
+	<bean id="selTherapyItemBean" class="logic.module.hq.SelTherapyItemBean" />
+	
+	<bean id="itemMetaQueryBean" class="logic.module.hq.ItemMetaQueryBean" />
+	<bean id="priceGroupQueryBean" class="logic.module.hq.PriceGroupQueryBean" />
+	<bean id="monthlySettleRecordBean" class="logic.module.hq.MonthlySettleRecordBean" />
+	
+	<bean id="setupCategoryBean" class="logic.module.hq.SetupCategoryBean" />
+	<bean id="branchQueryBean" class="logic.module.hq.BranchQueryBean" />
+	<bean id="sampleInfoBean" class="logic.module.hq.SampleInfoBean" />
+	
+	<bean id="storageSetBean" class="logic.store.StorageSetBean" />
+	
+</beans>
+

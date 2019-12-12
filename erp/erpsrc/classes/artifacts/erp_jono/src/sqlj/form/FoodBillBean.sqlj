@@ -1,0 +1,248 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on Wed Jul 22 13:05:34 CST 2015 by pw
+ * Last edited on Wed Jul 22 13:05:34 CST 2015 by pw
+ * 
+ * comment: 单据明细表
+ */
+package logic.form;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import pojo.form.FoodBill;
+import sqlj.runtime.ref.DefaultContext;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.TextUtil;
+import com.tanry.framework.acl.NoPrivilegeException;
+
+public class FoodBillBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(FoodBillBean.class);
+	
+	#sql private iterator DetailIter(
+			String cbill_c, 
+			Date dbusiness, 
+			String ctable_n, 
+			String cperiod_n,
+			String cshift_n, 
+			Integer iguestnum, 
+			Date dtbilltime,
+			Date dtsettletime, 
+			Double nfoodamt, 
+			Double ndisamt,
+			Double nroundamt,
+			Double noughtamt, 
+			String ccreateman, 
+			String csettleman,
+			String sremark, 
+			Double npayamt, 
+			String ssendman, 
+			String cbranch_c,
+			String cbranch_n, 
+			String cdismancur_n,
+			Double npresentamt, 
+			String cdiscurwhy);
+	
+	/**
+	 * companyId由调用者通过参数指定,by cjt
+	 */
+	public int saveEntity(FoodBill detail, String comId)
+			throws NoPrivilegeException, SQLException, NoConnection {
+		
+		DefaultContext myCtx = getComContext(comId);
+		
+		String cbillC = detail.getCbillC();
+		Date dbusiness = SqlDateUtil.getSqlDate(detail.getDbusiness());
+		String ctable = detail.getCtable();
+		String cperiod = detail.getCperiod();
+		String cshift = detail.getCshift();
+		Integer iguestnum = detail.getIguestnum();
+		Date dtbilltime = SqlDateUtil.getSqlDate(detail.getDtbilltime());
+		Date dtsettletime = SqlDateUtil.getSqlDate(detail.getDtsettletime());
+		Double nfoodamt = detail.getNfoodamt();
+		Double ndisamt = detail.getNdisamt();
+		Double nroundamt = detail.getNroundamt();
+		Double noughtamt = detail.getNoughtamt();
+		String ccreateman = detail.getCcreateman();
+		String csettleman = detail.getCsettleman();
+		String sremark = detail.getSremark();
+		Double npayamt = detail.getNpayamt();
+		String ssendman = detail.getSsendman();
+		String cbranchC = detail.getCbranchC();
+		String cbranchN = detail.getCbranchN();
+		String cdismancurN = detail.getCdismancurN();
+		Double npresentamt = detail.getNpresentamt();
+		String cdiscurwhy = detail.getCdiscurwhy();
+
+		String comTb = comId + ".d_t_food_bill";
+		
+		#sql [myCtx] {
+			INSERT INTO :{comTb}
+				(CBILL_C, DBUSINESS, CTABLE_N, CPERIOD_N, CSHIFT_N, 
+						IGUESTNUM, DTBILLTIME, DTSETTLETIME, NFOODAMT,
+						NDISAMT, NROUNDAMT,	NOUGHTAMT, CCREATEMAN,
+						CSETTLEMAN,	SREMARK, NPAYAMT, SSENDMAN, CBRANCH_C, 
+						CBRANCH_N, CDISMANCUR_N,NPRESENTAMT, CDISCURWHY) 
+			VALUES (:cbillC, :dbusiness, :ctable, :cperiod, :cshift, 
+					:iguestnum, :dtbilltime, :dtsettletime, :nfoodamt,
+					:ndisamt, :nroundamt, :noughtamt, :ccreateman, 
+					:csettleman, :sremark, :npayamt, :ssendman, :cbranchC, 
+					:cbranchN, :cdismancurN, :npresentamt, :cdiscurwhy)
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public int deleteEntity(java.util.Date startDate, java.util.Date endDate, String branchId)
+			throws NoPrivilegeException, SQLException, NoConnection {
+	        DefaultContext myCtx = getDefaultContext();
+			
+			Date sDate = SqlDateUtil.getSqlDate(startDate);
+			Date eDate = SqlDateUtil.getSqlDate(endDate);
+
+			#sql [myCtx] {
+				DELETE FROM
+				(
+					SELECT
+					    *
+					FROM
+					:{Com_("d_t_food_bill")} s
+					WHERE
+					 s.DBUSINESS >= :sDate 
+					AND s.DBUSINESS <= :eDate
+					AND s.CBRANCH_C = :branchId
+					)
+			};
+			closeDefaultContext(myCtx);
+			
+			return 1;
+		}
+	
+	 public int count(java.util.Date startDate, java.util.Date endDate, String branchId)
+				throws NoPrivilegeException,SQLException,NoConnection {
+			Date sDate = SqlDateUtil.getSqlDate(startDate);
+			Date eDate = SqlDateUtil.getSqlDate(endDate);
+			
+			DefaultContext myCtx = getDefaultContext();
+			int total = 0;
+			#sql [myCtx] {
+				SELECT
+				  count(*) into :total
+				FROM
+				:{Com_("d_t_food_bill")} s
+				WHERE
+				s.DBUSINESS >= :sDate
+				AND s.DBUSINESS <= :eDate
+				AND s.CBRANCH_C = :branchId
+			};
+			closeDefaultContext(myCtx);
+			return total;
+		}	
+	 
+	 #sql private iterator DateIter(Date dbusiness);
+	 public Date queryDate(java.util.Date startDate, java.util.Date endDate, String branchId)
+			 throws NoPrivilegeException,SQLException,NoConnection {
+			Date sDate = SqlDateUtil.getSqlDate(startDate);
+			Date eDate = SqlDateUtil.getSqlDate(endDate);
+			
+			DefaultContext myCtx = getDefaultContext();
+			DateIter dateIter = null;
+			#sql [myCtx] dateIter = {
+				SELECT
+				  s.DBUSINESS
+				FROM
+				:{Com_("d_t_food_bill")} s
+				WHERE
+				s.DBUSINESS >= :sDate
+				AND s.DBUSINESS <= :eDate
+				AND s.CBRANCH_C = :branchId
+				GROUP BY
+			    s.DBUSINESS
+			ORDER BY
+			    s.DBUSINESS
+			};
+			List<Date> headerLst = new ArrayList<Date>();
+			while(dateIter.next()) {
+				headerLst.add(dateIter.dbusiness());
+			}
+			dateIter.close();
+			closeDefaultContext(myCtx);
+			if (headerLst !=null && !headerLst.isEmpty()) {
+				return headerLst.get(0);
+			}
+			return eDate;
+		}
+	 
+	public List<FoodBill> query(java.util.Date startDate, java.util.Date endDate, String branchId)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		Date sDate = SqlDateUtil.getSqlDate(startDate);
+		Date eDate = SqlDateUtil.getSqlDate(endDate);
+		
+		DefaultContext myCtx = getDefaultContext();
+		DetailIter detailIter = null;
+		#sql [myCtx] detailIter = {
+			SELECT
+			CBILL_C, DBUSINESS, CTABLE_N, CPERIOD_N, CSHIFT_N, 
+			IGUESTNUM, DTBILLTIME, DTSETTLETIME, NFOODAMT, NDISAMT, NROUNDAMT,
+			NOUGHTAMT, CCREATEMAN, CSETTLEMAN, SREMARK, NPAYAMT, SSENDMAN, CBRANCH_C, 
+			CBRANCH_N, CDISMANCUR_N, NPRESENTAMT, CDISCURWHY
+			FROM
+				:{Com_("d_t_food_bill")} s
+			WHERE
+			 	s.DBUSINESS >= :sDate 
+			AND s.DBUSINESS <= :eDate
+			AND s.CBRANCH_C = :branchId
+		};
+		List<FoodBill> detailLst = processIter(detailIter);
+		detailIter.close();
+		closeDefaultContext(myCtx);
+		return detailLst;
+	}
+
+	
+	private List<FoodBill> processIter(DetailIter detailIter) 
+			throws SQLException {
+		List<FoodBill> detailLst = new ArrayList<FoodBill>();
+		while(detailIter.next()) {
+			FoodBill detail = new FoodBill();
+			detail.setCbillC(detailIter.cbill_c());
+			detail.setDbusiness(SqlDateUtil.getUtilDate(detailIter.dbusiness()));
+			detail.setCtable(detailIter.ctable_n());
+			detail.setCperiod(detailIter.cperiod_n());
+			detail.setCshift(detailIter.cshift_n());
+			detail.setIguestnum(detailIter.iguestnum());
+			detail.setDtbilltime(SqlDateUtil.getUtilDate(detailIter.dtbilltime()));
+			detail.setDtsettletime(SqlDateUtil.getUtilDate(detailIter.dtsettletime()));
+			detail.setNfoodamt(detailIter.nfoodamt());
+			detail.setNdisamt(detailIter.ndisamt());
+			detail.setNroundamt(detailIter.nroundamt());
+			detail.setNoughtamt(detailIter.noughtamt());
+			detail.setCcreateman(detailIter.ccreateman());
+			detail.setCsettleman(detailIter.csettleman());
+			detail.setSremark(detailIter.sremark());
+			detail.setNpayamt(detailIter.npayamt());
+			detail.setSsendman(detailIter.ssendman());
+			detail.setCbranchC(detailIter.cbranch_c());
+			detail.setCbranchN(detailIter.cbranch_n());
+			detail.setCdismancurN(detailIter.cdismancur_n());
+			detail.setNpresentamt(detailIter.npresentamt());
+			detail.setCdiscurwhy(detailIter.cdiscurwhy());
+			detailLst.add(detail);
+		}
+		return detailLst;
+	}
+}

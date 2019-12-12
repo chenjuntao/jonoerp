@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE struts PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN"
+    "http://struts.apache.org/dtds/struts-2.0.dtd">
+
+<struts>
+	<package name="restaurant_preject_create" namespace="/restaurant/preject/create" extends="trust-default">
+		<action name="mainView" class="action.restaurant.preject.CreateBillAction">
+			<result name="success">/jsp/restaurant/preject/create/main.jsp</result>
+		</action>
+		
+		<action name="returnView" class="action.restaurant.preject.CreateBillAction">
+			<result name="success">/jsp/restaurant/preject/create/returnMain.jsp</result>
+		</action>
+		
+		<action name="editView" method="editView" class="action.restaurant.preject.CreateBillAction">
+			<result name="success">/jsp/restaurant/preject/create/edit.jsp</result>
+		</action>
+		
+		<action name="checkView" method="checkView" class="action.restaurant.preject.CreateBillAction">
+			<result name="success">/jsp/restaurant/preject/create/check.jsp</result>
+		</action>
+		
+		<action name="doQuery" method="doQuery" class="action.restaurant.preject.CreateBillAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doSave" method="doSave" class="action.restaurant.preject.CreateBillAction">
+			<interceptor-ref name="defaultStack" />
+			<interceptor-ref name="token" />
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="restaurant_preject_manage" namespace="/restaurant/preject/manage" extends="trust-default">
+		<action name="mainView" class="action.restaurant.preject.BillManageAction">
+			<result name="success">/jsp/restaurant/preject/manage/main.jsp</result>
+		</action>
+		
+		<action name="mainOutView" class="action.restaurant.preject.BillManageAction">
+			<result name="success">/jsp/restaurant/preject/manage/mainOut.jsp</result>
+		</action>
+		
+		<action name="editView" method="editView" class="action.restaurant.preject.BillManageAction">
+			<result name="success">/jsp/restaurant/preject/manage/edit.jsp</result>
+		</action>
+		
+		<action name="editOutView" method="outView" class="action.restaurant.preject.BillManageAction">
+			<result name="success">/jsp/restaurant/preject/manage/editOut.jsp</result>
+		</action>
+		
+		<action name="scanView" method="scanView" class="action.restaurant.preject.BillManageAction">
+			<result name="success">/jsp/restaurant/preject/manage/scan.jsp</result>
+		</action>
+		
+		<action name="scanOutView" method="outView" class="action.restaurant.preject.BillManageAction">
+			<result name="success">/jsp/restaurant/preject/manage/scanOut.jsp</result>
+		</action>
+		
+		<action name="doQuery" method="doQuery" class="action.restaurant.preject.BillManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doOutQuery" method="doOutQuery" class="action.restaurant.preject.BillManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="queryDetail" method="queryDetail" class="action.restaurant.preject.BillManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="queryOutDetail" method="queryOutDetail" class="action.restaurant.preject.BillManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doSave" method="doSave" class="action.restaurant.preject.BillManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doDelete" method="doDelete" class="action.restaurant.preject.BillManageAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="restaurant_preject_reject" namespace="/restaurant/preject/reject" extends="trust-default">
+		<action name="mainView" class="action.restaurant.preject.BillManageAction">
+			<result name="success">/jsp/restaurant/preject/reject/main.jsp</result>
+		</action>
+		
+		<action name="rejectView" method="rejectView" class="action.restaurant.preject.BillManageAction">
+			<result name="success">/jsp/restaurant/preject/reject/reject.jsp</result>
+		</action>
+		
+		<action name="doReturn" method="doReturn" class="action.restaurant.preject.BillManageAction">
+			<interceptor-ref name="defaultStack" />
+			<interceptor-ref name="token" />
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="restaurant_preject_confirm" namespace="/restaurant/preject/confirm" extends="trust-default">
+		<action name="mainView" class="action.restaurant.preject.BillManageAction">
+			<result name="success">/jsp/restaurant/preject/confirm/main.jsp</result>
+		</action>
+		
+		<action name="confirmView" method="scanView" class="action.restaurant.preject.BillManageAction">
+			<result name="success">/jsp/restaurant/preject/confirm/confirm.jsp</result>
+		</action>
+		
+		<action name="doConfirm" method="doConfirm" class="action.restaurant.preject.BillManageAction">
+			<result type="json" />
+		</action>
+	</package>
+</struts>
+

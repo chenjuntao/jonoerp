@@ -1,0 +1,281 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE struts PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN"
+    "http://struts.apache.org/dtds/struts-2.0.dtd">
+
+<struts>
+	<package name="hq_item_meta" namespace="/hq/item/meta" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.hq.config.item.MetaManageAction">
+			<result name="success">/jsp/hq/config/item/meta/main.jsp</result>
+		</action>
+		
+		<action name="addView" method="editView" class="com.tanry.business.module.hq.config.item.MetaManageAction">
+			<result name="success">/jsp/hq/config/item/meta/add.jsp</result>
+		</action>
+		
+		<action name="editView" method="editView" class="com.tanry.business.module.hq.config.item.MetaManageAction">
+			<result name="success">/jsp/hq/config/item/meta/edit.jsp</result>
+		</action>
+		
+		<action name="uploadView" class="com.tanry.business.module.hq.config.item.MetaManageAction">
+			<result name="success">/jsp/hq/config/item/meta/upload.jsp</result>
+		</action>
+		
+		<action name="moveView" class="com.tanry.business.module.hq.config.item.MetaManageAction">
+			<result name="success">/jsp/hq/config/item/meta/move.jsp</result>
+		</action>
+		
+		<action name="checkItemId" method="checkItemId" class="com.tanry.business.module.hq.config.item.MetaManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="checkItemName" method="checkItemName" class="com.tanry.business.module.hq.config.item.MetaManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="checkItemCount" method="checkItemCount" class="com.tanry.business.module.hq.config.item.MetaManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="queryEnable" method="queryEnable" class="com.tanry.business.module.hq.config.item.MetaManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="checkIsTherapy" method="checkIsTherapy" class="com.tanry.business.module.hq.config.item.MetaManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="queryItem" method="queryItem" class="com.tanry.business.module.hq.config.item.MetaManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="queryPrice" method="queryPrice" class="com.tanry.business.module.hq.config.item.MetaManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doSave" method="doSave" class="com.tanry.business.module.hq.config.item.MetaManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doUpload" method="doUpload" class="com.tanry.business.module.hq.config.item.MetaManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="moveCate" method="moveCate" class="com.tanry.business.module.hq.config.item.MetaManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doEnable" method="doEnable" class="com.tanry.business.module.hq.config.item.MetaManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doDelete" method="doDelete" class="com.tanry.business.module.hq.config.item.MetaManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doExport" method="doExport" class="com.tanry.business.module.hq.config.item.MetaManageAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="hq_item_product" namespace="/hq/item/product" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.hq.config.item.ProductManageAction">
+			<result name="success">/jsp/hq/config/item/product/main.jsp</result>
+		</action>
+		
+		<action name="addView" method="editView" class="com.tanry.business.module.hq.config.item.ProductManageAction">
+			<result name="success">/jsp/hq/config/item/product/add.jsp</result>
+		</action>
+		
+		<action name="editView" method="editView" class="com.tanry.business.module.hq.config.item.ProductManageAction">
+			<result name="success">/jsp/hq/config/item/product/edit.jsp</result>
+		</action>
+		
+		<action name="editbcpView" method="editView" class="com.tanry.business.module.hq.config.item.ProductManageAction">
+			<result name="success">/jsp/hq/config/item/product/editbcp.jsp</result>
+		</action>
+		
+		<action name="therapyEditView" class="action.restaurant.ShopCostCardAction">
+			<result name="success">/jsp/hq/config/item/product/therapyEdit.jsp</result>
+		</action>
+		
+		<action name="queryProduct" method="queryProduct" class="com.tanry.business.module.hq.config.item.ProductManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doSave" method="doSave" class="com.tanry.business.module.hq.config.item.ProductManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="queryItemByCate" method="queryItemByCate" class="com.tanry.business.module.hq.config.item.TherapyManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="saveTherapy" method="doSave" class="com.tanry.business.module.hq.config.item.TherapyManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="computeBill" method="computeBill" class="com.tanry.business.module.hq.priceadjust.BillManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="suitEditView" class="action.restaurant.ShopCostCardAction">
+			<result name="success">/jsp/hq/config/item/product/suitEdit.jsp</result>
+		</action>
+	</package>
+	
+	<package name="hq_item_product_seltherapyitem" namespace="/hq/item/product/seltherapyitem" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.hq.config.item.SelTherapyItemAction">
+			<result name="success">/jsp/hq/config/item/product/seltherapyitem/main.jsp</result>
+		</action>
+		
+		<action name="queryItem" method="queryItem" class="com.tanry.business.module.hq.config.item.SelTherapyItemAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="hq_item_suit" namespace="/hq/item/suit" extends="trust-default">
+		<action name="mainView" class="action.restaurant.ShopCostCardAction">
+			<result name="success">/jsp/hq/config/item/product/suit/main.jsp</result>
+		</action>
+		
+		<action name="scanView" class="action.restaurant.ShopCostCardAction">
+			<result name="success">/jsp/hq/config/item/product/suit/scan.jsp</result>
+		</action>
+		
+		<action name="queryProduct" method="queryProduct" class="com.tanry.business.module.hq.config.item.FoodSuitManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="querySubItem" method="querySubItem" class="com.tanry.business.module.hq.config.item.FoodSuitManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="queryOption" method="queryOption" class="com.tanry.business.module.hq.config.item.FoodSuitManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="saveSubItem" method="saveSubItem" class="com.tanry.business.module.hq.config.item.FoodSuitManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="saveOption" method="saveOption" class="com.tanry.business.module.hq.config.item.FoodSuitManageAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="hq_item_suit_selsubitem" namespace="/hq/item/suit/selsubitem" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.hq.config.item.FoodSuitManageAction">
+			<result name="success">/jsp/hq/config/item/product/selsubitem/main.jsp</result>
+		</action>
+	</package>
+	
+	<package name="hq_item_semi" namespace="/hq/item/semi" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.hq.config.item.MetaManageAction">
+			<result name="success">/jsp/hq/config/item/semi/main.jsp</result>
+		</action>
+	</package>
+	
+	<package name="hq_item_process" namespace="/hq/item/process" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.hq.config.item.MetaManageAction">
+			<result name="success">/jsp/hq/config/item/process/main.jsp</result>
+		</action>
+		
+		<action name="processEditView" class="action.restaurant.ShopCostCardAction">
+			<result name="success">/jsp/hq/config/item/process/processEdit.jsp</result>
+		</action>
+		
+		<action name="processScanView" class="action.restaurant.ShopCostCardAction">
+			<result name="success">/jsp/hq/config/item/process/processScan.jsp</result>
+		</action>
+		
+		<action name="stepEditView" method="stepEditView" class="com.tanry.business.module.hq.config.item.ProcessManageAction">
+			<result name="success">/jsp/hq/config/item/process/stepEdit.jsp</result>
+		</action>
+		
+		<action name="checkStep" method="checkStep" class="com.tanry.business.module.hq.config.item.ProcessManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doQuery" method="doQuery" class="com.tanry.business.module.hq.config.item.ProcessManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doSave" method="doSave" class="com.tanry.business.module.hq.config.item.ProcessManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doDelete" method="doDelete" class="com.tanry.business.module.hq.config.item.ProcessManageAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+<!-- 	<package name="hq_item_supplier_delete" namespace="/hq/item/supplier" extends="trust-default"> -->
+<!-- 		<action name="mainView" class="com.tanry.business.module.hq.config.item.SupplierManageAction"> -->
+<!-- 			<result name="success">/jsp/hq/config/item/supplier/main.jsp</result> -->
+<!-- 		</action> -->
+<!-- 	</package> -->
+	
+	<package name="hq_item_supplier" namespace="/hq/item/supplier" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.hq.config.item.MetaManageAction">
+			<result name="success">/jsp/hq/config/item/supplier/main.jsp</result>
+		</action>
+		
+		<action name="deleteView" method="deleteView" class="com.tanry.business.module.hq.config.item.MetaManageAction">
+			<result name="success">/jsp/hq/config/item/supplier/main.jsp</result>
+		</action>
+		
+		<action name="queryItem" method="queryItem" class="com.tanry.business.module.hq.config.item.SupplierManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="querySupplier" method="querySupplier" class="com.tanry.business.module.hq.config.item.SupplierManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="querySupplierItemsByBranchId" method="querySupplierItemsByBranchId" class="com.tanry.business.module.hq.config.item.SupplierManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="queryBranchItemsBySupplier" method="queryBranchItemsBySupplier" class="com.tanry.business.module.hq.config.item.SupplierManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="deleteRelation" method="deleteRelation" class="com.tanry.business.module.hq.config.item.SupplierManageAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="hq_item_supplier_edit" namespace="/hq/item/supplier/edit" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.hq.config.item.MetaManageAction">
+			<result name="success">/jsp/hq/config/item/supplier/edit/main.jsp</result>
+		</action>
+		
+		<action name="queryItem" method="queryItem" class="com.tanry.business.module.hq.config.item.SupplierManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="querySupplier" method="querySupplier" class="com.tanry.business.module.hq.config.item.SupplierManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="saveRelation" method="saveRelation" class="com.tanry.business.module.hq.config.item.SupplierManageAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="hq_item_supplier_price" namespace="/hq/item/supplier/price" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.hq.config.item.SupplierPriceAction">
+			<result name="success">/jsp/hq/config/item/supplier/price/main.jsp</result>
+		</action>
+		
+		<action name="queryItem" method="queryItem" class="com.tanry.business.module.hq.config.item.SupplierPriceAction">
+			<result type="json" />
+		</action>
+		
+		<action name="savePrice" method="savePrice" class="com.tanry.business.module.hq.config.item.SupplierPriceAction">
+			<result type="json" />
+		</action>
+	</package>
+</struts>
+

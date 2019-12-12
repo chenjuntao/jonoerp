@@ -1,0 +1,38 @@
+.dgrid {
+	position: absolute;
+	right: 0;
+	top: 63px;
+	bottom: 0px;
+	width: 100%;
+	height: auto;  
+}
+
+.dgrid-cell {
+	width: 80px;
+}
+
+.dgrid-column-set-0 {
+	width: 160px;
+}
+
+.field-unit{
+   width: 50px;
+}
+
+.field-price,.field-qty,.field-amt{
+   width: 70px;
+}
+
+.field-smallN{
+	 width: 100px;
+}
+
+.field-billC{
+	 width: 120px;
+}
+
+.field-foodN{
+	 width: 140px;
+}
+
+

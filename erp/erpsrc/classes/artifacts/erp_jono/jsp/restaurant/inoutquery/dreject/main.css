@@ -1,0 +1,70 @@
+#dataGrid {
+	position: absolute;
+	right: 0;
+	top: 30px;
+	bottom: 0px;
+	width: 100%;
+	height: auto; /* override default height: 30em; in dgrid.css */
+}
+
+#commandTable {
+	position: absolute;
+	bottom: 0;
+	width: 100%;
+}
+
+th[role="columnheader"] {
+	text-align: center;
+}
+
+.dgrid-cell {
+	/* 	width: 80px; make all the columns 80px wide */
+	vertical-align: middle;
+}
+
+.field-rownumber, .field-formId, .field-requester, .field-provider, .field-receiveTime,
+	.field-inputTime, .field-inputer, .field-formStatus, .field-scan, .field-operate,
+	.field-returner, .field-returnBranch, .field-returnTime {
+	text-align: center;
+}
+
+.field-rownumber {
+	width: 40px;
+}
+
+.field-formId {
+	width: 150px;
+}
+
+.field-returnBranch, .field-requester, .field-provider {
+	width: 120px;
+}
+
+.field-returnTime, .field-receiveTime, .field-inputTime,
+	.field-returner, .field-inputer {
+	width: 80px;
+}
+
+.field-formNote, .field-snote {
+	width: 80px;
+}
+
+.field-maxPayItem {
+	width: 120px;
+}
+
+.field-formStatus {
+	width: 80px;
+}
+
+.field-scan {
+	width: 60px;
+}
+
+.field-operate {
+	width: 120px;
+}
+
+.grid-number {
+	text-align: right;
+}

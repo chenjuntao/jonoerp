@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE struts PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN"
+    "http://struts.apache.org/dtds/struts-2.0.dtd">
+
+<struts>
+	<package name="hq_brand" namespace="/hq/brand" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.hq.config.brand.BrandManageAction">
+			<result name="success">/jsp/hq/config/brand/main.jsp</result>
+		</action>
+		
+		<action name="editView" method="editView" class="com.tanry.business.module.hq.config.brand.BrandManageAction">
+			<result name="success">/jsp/hq/config/brand/edit.jsp</result>
+		</action>
+		
+		<action name="branchView" method="branchView" class="com.tanry.business.module.hq.config.brand.BrandManageAction">
+			<result name="success">/jsp/hq/config/brand/selbranch/main.jsp</result>
+		</action>
+		
+		<action name="checkBrandId" method="checkBrandId" class="com.tanry.business.module.hq.config.brand.BrandManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doQuery" method="doQuery" class="com.tanry.business.module.hq.config.brand.BrandManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="queryBranch" method="queryBranch" class="com.tanry.business.module.hq.config.brand.BrandManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doSave" method="doSave" class="com.tanry.business.module.hq.config.brand.BrandManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="setBranch" method="setBranch" class="com.tanry.business.module.hq.config.brand.BrandManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doDelete" method="doDelete" class="com.tanry.business.module.hq.config.brand.BrandManageAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="hq_brand_setproduct" namespace="/hq/brand/product" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.hq.config.brand.BrandProductAction">
+			<result name="success">/jsp/hq/config/brand/setproduct/main.jsp</result>
+		</action>
+		
+		<action name="doQuery" method="doQuery" class="com.tanry.business.module.hq.config.brand.BrandProductAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doSave" method="doSave" class="com.tanry.business.module.hq.config.brand.BrandProductAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="hq_brand_selproduct" namespace="/hq/brand/selproduct" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.hq.config.brand.SelProductAction">
+			<result name="success">/jsp/hq/config/brand/selproduct/main.jsp</result>
+		</action>
+		
+		<action name="queryProduct" method="queryProduct" class="com.tanry.business.module.hq.config.brand.SelProductAction">
+			<result type="json" />
+		</action>
+	</package>
+</struts>
+

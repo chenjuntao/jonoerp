@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE struts PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN"
+    "http://struts.apache.org/dtds/struts-2.0.dtd">
+
+<struts>
+	<package name="restaurant_dreject_create" namespace="/restaurant/dreject/create" extends="trust-default">
+		<action name="mainView" class="action.restaurant.dreject.CreateBillAction">
+			<result name="success">/jsp/restaurant/dreject/create/main.jsp</result>
+		</action>
+		
+		<action name="editView" method="editView" class="action.restaurant.dreject.CreateBillAction">
+			<result name="success">/jsp/restaurant/dreject/create/edit.jsp</result>
+		</action>
+		
+		<action name="checkView" method="checkView" class="action.restaurant.dreject.CreateBillAction">
+			<result name="success">/jsp/restaurant/dreject/create/check.jsp</result>
+		</action>
+		
+		<action name="doQuery" method="doQuery" class="action.restaurant.dreject.CreateBillAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doSave" method="doSave" class="action.restaurant.dreject.CreateBillAction">
+			<interceptor-ref name="defaultStack" />
+			<interceptor-ref name="token" />
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="restaurant_dreject_manage" namespace="/restaurant/dreject/manage" extends="trust-default">
+		<action name="mainView" class="action.restaurant.dreject.BillManageAction">
+			<result name="success">/jsp/restaurant/dreject/manage/main.jsp</result>
+		</action>
+		
+		<action name="editView" method="editView" class="action.restaurant.dreject.BillManageAction">
+			<result name="success">/jsp/restaurant/dreject/manage/edit.jsp</result>
+		</action>
+		
+		<action name="scanView" method="scanView" class="action.restaurant.dreject.BillManageAction">
+			<result name="success">/jsp/restaurant/dreject/manage/scan.jsp</result>
+		</action>
+		
+		<action name="doQuery" method="doQuery" class="action.restaurant.dreject.BillManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="queryDetail" method="queryDetail" class="action.restaurant.dreject.BillManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doSave" method="doSave" class="action.restaurant.dreject.BillManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doDelete" method="doDelete" class="action.restaurant.dreject.BillManageAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="restaurant_dreject_confirm" namespace="/restaurant/dreject/confirm" extends="trust-default">
+		<action name="mainView" class="action.restaurant.dreject.BillManageAction">
+			<result name="success">/jsp/restaurant/dreject/confirm/main.jsp</result>
+		</action>
+		
+		<action name="commitView" method="scanView" class="action.restaurant.dreject.BillManageAction">
+			<result name="success">/jsp/restaurant/dreject/confirm/confirm.jsp</result>
+		</action>
+		
+		<action name="doConfirm" method="doConfirm" class="action.restaurant.dreject.BillManageAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="restaurant_dreject_reject" namespace="/restaurant/dreject/reject" extends="trust-default">
+		<action name="mainView" method="rMainView" class="action.restaurant.dreject.BillManageAction">
+			<result name="success">/jsp/restaurant/dreject/reject/main.jsp</result>
+		</action>
+		
+		<action name="rejectView" method="rejectView" class="action.restaurant.dreject.BillManageAction">
+			<result name="success">/jsp/restaurant/dreject/reject/reject.jsp</result>
+		</action>
+		
+		<action name="doReturn" method="doReturn" class="action.restaurant.dreject.BillManageAction">
+		    <interceptor-ref name="defaultStack" />
+			<interceptor-ref name="token" />
+			<result type="json" />
+		</action>
+	</package>
+</struts>
+

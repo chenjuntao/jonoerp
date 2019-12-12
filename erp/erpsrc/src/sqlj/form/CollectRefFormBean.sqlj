@@ -1,0 +1,162 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on Mon Nov 03 10:14:53 CST 2014 by pw
+ * Last edited on Mon Nov 03 10:14:53 CST 2014 by pw
+ * 
+ */
+package logic.form;
+
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
+
+import pojo.form.CollectRefForm;
+import sqlj.runtime.ref.DefaultContext;
+
+import com.tanry.framework.acl.NoPrivilegeException;
+
+public class CollectRefFormBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(CollectRefFormBean.class);
+	
+	public int saveEntity(CollectRefForm header)
+			throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		String collectFormId = header.getCollectFormId();
+		String itemId = header.getItemId();
+		String refFormId = header.getRefFormId();
+
+		#sql [myCtx] {
+			INSERT INTO :{Com_("D_T1_COLLECT_REF_FORM")}
+				(COLLECT_FORM_ID, ITEM_ID, REF_FORM_ID) 
+			VALUES (:collectFormId, :itemId, :refFormId)
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+
+	public int deleteEntity(String formId)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		#sql [myCtx] {
+			DELETE
+			FROM
+				:{Com_("D_T1_COLLECT_REF_FORM")}
+			WHERE
+				FORM_ID = :formId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+
+	#sql private iterator RefIter(String ref_form_id);
+	
+	public String queryRefs(String formId, String itemId) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		RefIter refIter = null;
+		#sql [myCtx] refIter = {
+			SELECT
+			    r.REF_FORM_ID
+			FROM
+			:{Com_("D_T1_COLLECT_REF_FORM")} r
+			WHERE
+				r.COLLECT_FORM_ID = :formId
+			and r.item_id = :itemId
+		};
+		List<String> refLst = new ArrayList<String>();
+		while(refIter.next()) {
+			refLst.add(refIter.ref_form_id());
+		}
+		refIter.close();
+		closeDefaultContext(myCtx);
+		return StringUtils.join(refLst, ",");
+	}
+	
+	public Integer getSummarycount(String refFormIds) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		
+		String query = " r.REF_FORM_ID IN ('" + refFormIds.replaceAll(",", "','") + "') ";
+		
+		DefaultContext myCtx = getDefaultContext();
+		Integer total = 0;
+		#sql [myCtx] {
+		SELECT
+		    COUNT(*)
+		INTO
+		    : total
+		FROM
+		:{Com_("D_T1_COLLECT_REF_FORM")} r
+		WHERE
+			:{query :: 1=1}};
+		closeDefaultContext(myCtx);
+		return total;
+	}
+	
+	public String queryRefs(String formId) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		RefIter refIter = null;
+		#sql [myCtx] refIter = {
+			SELECT DISTINCT
+			    r.REF_FORM_ID
+			    FROM
+			    :{Com_("D_T1_COLLECT_REF_FORM")} r
+			    WHERE
+			        r.COLLECT_FORM_ID = :formId
+			    ORDER BY
+			        r.REF_FORM_ID};
+		List<String> refLst = new ArrayList<String>();
+		while(refIter.next()) {
+			refLst.add(refIter.ref_form_id());
+		}
+		refIter.close();
+		closeDefaultContext(myCtx);
+		return StringUtils.join(refLst, ",");
+	}
+	
+	public String queryDirectRefs(String formId) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		RefIter refIter = null;
+		#sql [myCtx] refIter = {
+			SELECT DISTINCT
+			    r.REF_FORM_ID
+			    FROM
+			    :{Com_("D_T1_COLLECT_REF_FORM")} r
+			INNER JOIN
+				:{Com_("D_T1_PURCHASING_HEADER")} ch
+			ON
+			    ch.FORM_ID=r.COLLECT_FORM_ID
+			INNER JOIN
+			:{Com_("D_T1_PURCHASING_MAPPING")} m
+			ON
+			    m.SMALL_FORM_ID = ch.FORM_ID
+			WHERE
+			    m.BIG_FORM_ID=:formId
+			    ORDER BY
+			        r.REF_FORM_ID};
+		List<String> refLst = new ArrayList<String>();
+		while(refIter.next()) {
+			refLst.add(refIter.ref_form_id());
+		}
+		refIter.close();
+		closeDefaultContext(myCtx);
+		return StringUtils.join(refLst, ",");
+	}
+}

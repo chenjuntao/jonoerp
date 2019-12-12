@@ -1,0 +1,35 @@
+.deliveryGrid {
+	position: absolute;
+	top: 152px;
+	bottom: 0px;
+	width: 100%;
+	height: auto;
+}
+
+.dgrid-cell {
+	width: 80px;
+}
+
+
+.field-itemName {
+	width: 150px;
+}
+
+.field-itemCategory {
+	width: 110px;
+}
+
+.field-itemDimension, .field-packagingFactor, .field-packagingUnit {
+	width: 70px;
+}
+
+.field-provider {
+	width: 220px;
+}
+
+
+.field-batch {
+	width: 160px;
+}
+
+

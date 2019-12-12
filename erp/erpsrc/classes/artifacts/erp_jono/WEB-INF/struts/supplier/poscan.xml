@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE struts PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN"
+    "http://struts.apache.org/dtds/struts-2.0.dtd">
+
+<struts>
+	<package name="sp_price" namespace="/sp/price" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.hq.config.price.PriceGroupAction">
+			<result name="success">/jsp/supplier/price/main.jsp</result>
+		</action>
+		
+		<action name="queryPrice" method="queryPrice" class="com.tanry.business.module.hq.config.price.PriceGroupAction">
+			<result type="json" />
+		</action>
+		
+		<action name="queryExport" method="queryExport" class="com.tanry.business.module.hq.config.price.PriceGroupAction">
+			<result type="json" />
+		</action>
+	</package>
+
+	<package name="sp_poscan" namespace="/sp/poscan" extends="trust-default">
+		<action name="mainView" class="action.supplier.PoscanAction">
+			<result name="success">/jsp/supplier/poscan/main.jsp</result>
+		</action>
+
+		<action name="scanView" method="scanView" class="action.supplier.PoscanAction">
+			<result name="success">/jsp/supplier/poscan/scan.jsp</result>
+		</action>
+
+		<action name="lscanView" method="scanView" class="action.supplier.PoscanAction">
+			<result name="success">/jsp/supplier/poscan/lscan.jsp</result>
+		</action>
+
+		<action name="deliveryStatus" method="deliveryStatus"
+			class="action.supplier.PoscanAction">
+			<result type="json" />
+		</action>
+
+		<action name="updateStatus" method="updateStatus"
+			class="action.supplier.PoscanAction">
+			<result type="json" />
+		</action>
+
+		<action name="doQuery" method="doQuery" class="action.supplier.PoscanAction">
+			<result type="json" />
+		</action>
+
+		<action name="queryPrice" method="queryPrice" class="action.supplier.PoscanAction">
+			<result type="json" />
+		</action>
+	</package>
+</struts>
+

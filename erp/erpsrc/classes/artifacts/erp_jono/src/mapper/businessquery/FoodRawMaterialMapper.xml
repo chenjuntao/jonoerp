@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"   
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">  
+
+<mapper namespace="mapper.businessquery.FoodRawMaterialMapper">  
+
+<select id="getSum" resultType="BigDecimal">
+	SELECT 
+		round(sum(nOughtAmt),4)
+	FROM 
+		${com}.d_t_food_bill
+	WHERE cbranch_c = #{shopC}
+	AND dbusiness &gt;= #{startDate}
+	AND dbusiness &lt;= #{endDate}
+</select>
+
+<select id="getAmt" resultType="BigDecimal">
+	SELECT
+		round(SUM(bs.NAMT),4) NAMT
+	FROM
+		${com}.d_t_food_bills bs
+	LEFT JOIN
+		${com}.d_t_food_bill b
+	ON
+		bs.CBILL_C = b.CBILL_C
+	WHERE
+		b.cbranch_c = #{shopC}
+	AND dbusiness &gt;= #{startDate}
+	AND dbusiness &lt;= #{endDate}
+	AND bs.cLitCls_C in('3033','3036')
+	GROUP BY
+		b.CBRANCH_C
+</select>
+
+<select id="getDetail" resultType="map">
+	SELECT
+		im.ITEM_ID	ITEM_ID,
+		im.ITEM_NAME	ITEM_NAME,
+		im.ITEM_DIMENSION	ITEM_DIMENSION,
+		round(SUM(t.item_gross_count * d.nqty),4) AS nqty
+	FROM
+		${com}.d_t_food_bill b,
+		${com}.d_t_food_bills d,
+		${com}.d_t2_therapy t,
+		${com}.d_t2_item_meta im
+	WHERE
+		d.CBILL_C = b.CBILL_C
+	AND b.cbranch_c = #{shopC}
+	AND t.THERAPY_ID = d.cfood_c
+	AND t.item_id =trim(im.ITEM_ID)
+	AND trim(im.CATEGORY_ID )= #{categoryId}
+	AND b.dbusiness &gt;= #{startDate}
+	AND b.dbusiness &lt;= #{endDate}
+	GROUP BY
+		im.ITEM_ID,
+		im.ITEM_NAME,
+		im.ITEM_DIMENSION
+	ORDER BY
+		im.ITEM_ID
+</select>
+
+<select id="getAllAmtTTCNY" resultType="map">
+
+		SELECT
+		    m.item_id,
+<!-- 		    DECODE(#{amt1},0,'',ROUND(qty1*10000/#{amt1},4)) nqty1, -->
+<!-- 		    DECODE(#{amt2},0,'',ROUND(qty2*10000/#{amt2},4)) nqty2, -->
+<!-- 		    DECODE(#{amt3},0,'',ROUND(qty3*10000/#{amt3},4)) nqty3 --> 
+			ROUND(g1.qty1*10000/#{amt1},4) nqty1,
+		   	ROUND(g2.qty2*10000/#{amt2},4) nqty2,
+		    ROUND(g3.qty3*10000/#{amt3},4) nqty3
+		FROM
+		    (SELECT
+		            m.item_id
+		        FROM
+		            ${com}.d_t2_item_meta m
+		        WHERE
+		            ${query}) m
+		LEFT JOIN
+		    (SELECT
+		            round(SUM(t.item_gross_count * d.nqty),4) qty1,
+		            t.item_id
+		        FROM
+		        	${com}.d_t_food_bill b,
+		            ${com}.d_t_food_bills d,
+		            ${com}.d_t2_therapy t
+		        WHERE
+		            d.CBILL_C = b.CBILL_C
+		        AND t.THERAPY_ID = trim(d.cfood_c)
+		        AND b.cbranch_c = #{shopC}
+        		AND b.dbusiness &gt;= #{startDate1}
+				AND b.dbusiness &lt;= #{endDate1}
+		        GROUP BY
+		            t.item_id)g1
+		ON
+		    m.item_id = g1.item_id
+		LEFT JOIN
+		    ( SELECT
+		            round(SUM(t.item_gross_count * d.nqty),4) qty2,
+		            t.item_id
+		        FROM
+		        	${com}.d_t_food_bill b,
+		        	${com}.d_t_food_bills d,
+		            ${com}.d_t2_therapy t
+		        WHERE
+		            d.CBILL_C = b.CBILL_C
+		        AND t.THERAPY_ID = d.cfood_c
+		        AND b.cbranch_c = #{shopC}
+        		AND b.dbusiness &gt;= #{startDate2}
+				AND b.dbusiness &lt;= #{endDate2}
+		        GROUP BY
+		            t.item_id)g2
+		ON
+		    m.item_id = g2.item_id
+		LEFT JOIN
+		    (SELECT
+		            round(SUM(t.item_gross_count * d.nqty),4) qty3,
+		            t.item_id
+		        FROM
+		        	${com}.d_t_food_bill b,
+		            ${com}.d_t_food_bills d,
+		            ${com}.d_t2_therapy t
+		        WHERE
+		            d.CBILL_C = b.CBILL_C
+		        AND t.THERAPY_ID = d.cfood_c
+		        AND b.cbranch_c = #{shopC}
+        		AND b.dbusiness &gt;= #{startDate3}
+				AND b.dbusiness &lt;= #{endDate3}
+		        GROUP BY
+		            t.item_id)g3
+		ON
+		    m.item_id = g3.item_id
+</select>
+
+</mapper>

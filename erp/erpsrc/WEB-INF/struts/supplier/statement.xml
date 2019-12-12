@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE struts PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN"
+    "http://struts.apache.org/dtds/struts-2.0.dtd">
+
+<struts>
+	<package name="sp_statement" namespace="/sp/statement" extends="trust-default">
+		<action name="mainView" class="action.supplier.StatementAction">
+			<result name="success">/jsp/supplier/statement/main.jsp</result>
+		</action>
+		
+		<action name="createView" method="createView" class="action.supplier.StatementAction">
+			<result name="success">/jsp/supplier/statement/create.jsp</result>
+		</action>
+		
+		<action name="doQuery" method="doQuery" class="action.supplier.StatementAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doAllQuery" method="doAllQuery" class="action.supplier.StatementAction">
+			<result type="json" />
+		</action>
+		
+		<action name="createBill" method="createBill" class="action.supplier.StatementAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="sp_statement_manage" namespace="/sp/statement/manage" extends="trust-default">
+		<action name="mainView" class="action.supplier.AcscanAction">
+			<result name="success">/jsp/supplier/statementmanage/main.jsp</result>
+		</action>
+		
+		<action name="doQuery" method="doQuery" class="action.supplier.AcscanAction">
+			<result type="json" />
+		</action>
+		
+		<action name="queryExport" method="queryExport" class="action.supplier.AcscanAction">
+			<result type="json" />
+		</action>
+		
+		<action name="operate" method="operate" class="action.supplier.AcscanAction">
+			<result name="success">/jsp/supplier/statementmanage/operate.jsp</result>
+		</action>
+		
+		<action name="scanView" method="operate" class="action.supplier.AcscanAction">
+			<result name="success">/jsp/supplier/statementmanage/scan.jsp</result>
+		</action>
+		
+		<action name="doDelete" method="doDelete" class="action.supplier.AcscanAction">
+			<result name="success">/jsp/supplier/statementmanage/operate.jsp</result>
+		</action>
+	</package>
+</struts>
+

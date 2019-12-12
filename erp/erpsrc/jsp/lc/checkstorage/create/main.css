@@ -1,0 +1,20 @@
+.dgrid-cell {
+	width: 80px;
+}
+
+.field-formId {
+	width: 110px;
+}
+
+.field-checkBranch,.field-checkBatchId{
+	width: 120px;
+}
+
+.field-maxPayItem,.field-operate{
+	width: 90px;
+}
+
+.field-scan {
+	width: 60px;
+}
+

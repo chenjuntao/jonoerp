@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE struts PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN"
+    "http://struts.apache.org/dtds/struts-2.0.dtd">
+
+<struts>
+	<package name="centralfactory_productionDemand_workOrder_create" namespace="/centralfactory/productionDemand/workOrder/create" extends="trust-default">
+		<action name="mainView" class="action.centralfactory.productionDemand.workOrder.CreateWorkOrderAction">
+			<result name="success">/jsp/centralfactory/productionDemand/workOrder/create/main.jsp</result>
+		</action>
+		
+		<action name="doCreate" method="doCreate" class="action.centralfactory.productionDemand.workOrder.CreateWorkOrderAction">
+			<result name="success">/jsp/centralfactory/productionDemand/workOrder/create/workOrderCreate.jsp</result>
+		</action>
+		
+		<action name="doBatchCreate" method="doBatchCreate" class="action.centralfactory.productionDemand.workOrder.CreateWorkOrderAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doOrderWorkQuery" method="doOrderWorkQuery" class="action.centralfactory.productionDemand.workOrder.CreateWorkOrderAction">
+			<result type="json" />
+		</action>
+
+		<action name="doWorkDetailQuery" method="doWorkDetailQuery" class="action.centralfactory.productionDemand.workOrder.CreateWorkOrderAction">
+			<result type="json" />
+		</action>		
+		
+		<action name="doWorkCommit" method="doWorkCommit" class="action.centralfactory.productionDemand.workOrder.CreateWorkOrderAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="centralfactory_productionDemand_workOrder_audit" namespace="/centralfactory/productionDemand/workOrder/audit" extends="trust-default">
+		<action name="mainView" class="action.centralfactory.productionDemand.workOrder.AuditWorkOrderAction">
+			<result name="success">/jsp/centralfactory/productionDemand/workOrder/audit/main.jsp</result>
+		</action>
+		
+		<action name="doQuery" method="doQuery" class="action.centralfactory.productionDemand.workOrder.AuditWorkOrderAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doAuditedQuery" method="doAuditedQuery" class="action.centralfactory.productionDemand.workOrder.AuditWorkOrderAction">
+			<result type="json" />
+		</action>
+		
+		<action name="auditView" method="auditView" class="action.centralfactory.productionDemand.workOrder.AuditWorkOrderAction">
+			<result name="success">/jsp/centralfactory/productionDemand/workOrder/audit/audit.jsp</result>
+		</action>
+		
+		<action name="scanView" method="scanView" class="action.centralfactory.productionDemand.workOrder.AuditWorkOrderAction">
+			<result name="success">/jsp/centralfactory/productionDemand/workOrder/audit/scan.jsp</result>
+		</action>
+		
+		<action name="doAudit" method="doAudit" class="action.centralfactory.productionDemand.workOrder.AuditWorkOrderAction">
+			<result type="json" />
+		</action>
+		
+		<action name="queryDetail" method="queryDetail" class="action.centralfactory.productionDemand.workOrder.AuditWorkOrderAction">
+			<result type="json" />
+		</action>
+		
+		<action name="queryItemDetail" method="queryItemDetail" class="action.centralfactory.productionDemand.workOrder.AuditWorkOrderAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="cf_workorder_manage" namespace="/cf/workorder/manage" extends="trust-default">
+		<action name="mainView" class="action.centralfactory.productionDemand.workOrder.AuditWorkOrderAction">
+			<result name="success">/jsp/centralfactory/productionDemand/workOrder/manage/main.jsp</result>
+		</action>
+		
+		<action name="editView" method="editView" class="action.centralfactory.productionDemand.workOrder.BillManageAction">
+			<result name="success">/jsp/centralfactory/productionDemand/workOrder/manage/edit.jsp</result>
+		</action>
+		
+		<action name="saveStep" method="saveStep" class="action.centralfactory.productionDemand.workOrder.BillManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="fillBill" method="fillBill" class="action.centralfactory.productionDemand.workOrder.BillManageAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="cf_workorder_set" namespace="/cf/workorder/set" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.cf.workShop.workShopSetAction">
+			<result name="success">/jsp/centralfactory/workShop/main.jsp</result>
+		</action>
+		
+		<action name="addView" method="addView" class="com.tanry.business.module.cf.workShop.workShopSetAction">
+			<result name="success">/jsp/centralfactory/workShop/add.jsp</result>
+		</action>
+		
+		<action name="queryWorkShop" method="queryWorkShop" class="com.tanry.business.module.cf.workShop.workShopSetAction">
+			<result type="json" />
+		</action>
+		
+		<action name="checkId" method="checkId" class="com.tanry.business.module.cf.workShop.workShopSetAction">
+			<result type="json" />
+		</action>
+		
+		<action name="save" method="save" class="com.tanry.business.module.cf.workShop.workShopSetAction">
+			<result type="json" />
+		</action>
+		
+		<action name="setMain" method="setMain" class="com.tanry.business.module.cf.workShop.workShopSetAction">
+			<result type="json" />
+		</action>
+		
+		<action name="del" method="dellect" class="com.tanry.business.module.cf.workShop.workShopSetAction">
+			<result type="json" />
+		</action>
+	</package>
+</struts>
+

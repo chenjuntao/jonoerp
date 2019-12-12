@@ -1,0 +1,39 @@
+
+#dataGrid {
+	position: absolute;
+	right: 0;
+	top: 30px;
+	bottom: 0;
+	width: 100%;
+	height: auto; /* override default height: 30em; in dgrid.css */
+}
+
+.dgrid-cell {
+	/* 	width: 80px; make all the columns 80px wide */
+	
+}
+
+th[role="columnheader"] {
+	text-align: center;
+}
+
+.field-rownumber, .field-itemId, .field-itemDimension, .field-therapy {
+	text-align: center;
+	vertical-align: middle;
+}
+
+.field-rownumber {
+	width: 40px;
+}
+
+.field-itemId {
+	width: 80px;
+}
+
+.field-itemDimension {
+	width: 60px;
+}
+
+.field-therapy {
+	width: 80px;
+}

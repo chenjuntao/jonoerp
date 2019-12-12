@@ -1,0 +1,28 @@
+.dataGrid {
+	width: 100%;
+	height: 120px; /* override default height: 30em; in dgrid.css */
+}
+
+.dgrid-cell {
+	width: 65px;
+}
+
+.field-formId,.field-maxPayItem,.field-formNote{
+	width: 100px;
+}
+
+.field-audit{
+	width: 60px;
+}
+
+/* input */
+.field-formRefId,.field-provider,.field-maxPayItem{
+	width: 120px;
+}
+
+/* antianudit */
+.field-antiauditBranch,.field-antiauditor,.field-antiauditTime,.field-formNote,.field-snote{
+	width: 100px;
+}
+
+

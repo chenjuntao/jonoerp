@@ -1,0 +1,225 @@
+package logic.module.supplier;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
+
+import pojo.form.CollectDetail;
+import pojo.form.RequestHeader;
+import sqlj.runtime.ref.DefaultContext;
+
+import com.tanry.business.form.FormConstant;
+import com.tanry.framework.acl.NoPrivilegeException;
+import com.tanry.framework.util.DateTimeUtil;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.TextUtil;
+
+public class SupplierReturnBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(SupplierReturnBean.class);
+	
+	#sql private iterator ReturnIter(
+			String form_id,
+			String form_ref_id,
+			String returner,
+			Date return_time,
+			String form_note,
+			Double all_pay_amt,
+			String max_pay_item,
+			String provider,
+			String input_department,
+			String status
+		);
+	
+	//	动态条件
+	private String formQuery( String supplierId,String branchId,String formIdText1,String formIdText2,String initStatus,String status){
+		String query = " 1=1 ";
+		if (!TextUtil.isEmpty(supplierId)) { 
+			query = query + " AND ih.PROVIDER_ID = '" + supplierId + "'";
+		}
+		
+		if (!TextUtil.isEmpty(branchId)) { 
+			query = query + " AND ih.INPUT_DEPARTMENT_ID = '" + branchId + "'";
+		}
+		
+		if (!TextUtil.isEmpty(formIdText1)) { 
+			query = query + " AND upper(gh.FORM_ID)  like'%" + formIdText1 + "%'";
+		}
+		
+		if (!TextUtil.isEmpty(formIdText2)) { 
+			query = query + " AND upper(ih.FORM_ID)  like'%" + formIdText2 + "%'";
+		}
+		
+			if (!TextUtil.isEmpty(initStatus)) { 
+				query = query + " AND s.status  in('" + initStatus.replaceAll(",", "','") + "')";
+			}
+		
+		if (!TextUtil.isEmpty(status)) {
+			if("供应商已确认".equals(status)){
+				query = query + " AND s1.status  = '" + status + "'";
+			}else{
+				query = query + " AND s1.status is null ";
+			}
+		}
+		
+		return query;
+}
+
+	public int count(java.util.Date startDate, java.util.Date endDate, String supplierId,String branchId,String formIdText1,String formIdText2,String initStatus,String status)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		String query = formQuery(supplierId,branchId,formIdText1,formIdText2,initStatus,status);
+		
+		Date sDate = SqlDateUtil.getSqlDate(startDate);
+		Date eDate = SqlDateUtil.getSqlDate(endDate);
+		
+		int total = 0;
+		
+		DefaultContext myCtx = getDefaultContext();
+		
+		#sql [myCtx]  {
+		SELECT
+		    COUNT(*)
+		INTO
+		    :total
+		FROM
+		:{Com_("D_T1_RETURN_GOODS_HEADER")} gh
+		LEFT JOIN
+		:{Com_("D_T1_INPUT_HEADER")} ih
+		ON
+		    gh.FORM_REF_ID = ih.FORM_ID
+		LEFT JOIN
+		:{Com_("d_t2_branch")} b
+		ON
+		    ih.PROVIDER_ID = b.BRANCH_ID
+		LEFT JOIN
+		:{Com_("D_T0_FORM_STATUS")} s
+		ON
+		    gh.FORM_ID = s.FORM_ID
+		AND s.IS_CURRENT = 1
+		LEFT JOIN
+		:{Com_("D_T0_FORM_STATUS")} s1
+    	ON
+    		s1.FORM_ID = gh.FORM_ID
+		AND s1.IS_CURRENT = 2
+		WHERE
+		    :{query :: 1=1}
+		AND b.BRANCH_TYPE = 'SUPPLIER'
+		AND (
+		        gh.RETURN_TIME >= :sDate
+		    OR  :sDate IS NULL)
+		AND (
+		        gh.RETURN_TIME <= :eDate
+		    OR  :eDate IS NULL)};
+		closeDefaultContext(myCtx);
+		return total;
+	}
+
+	
+	/**
+	 * startDate 	退货开始日期
+	 * endDate	  	退货结束日期
+	 * supplierId 	供应商Id
+	 * 
+	 * 退货单查询
+	 */
+	public List<Map> query(java.util.Date startDate, java.util.Date endDate, String supplierId,String branchId,String formIdText1,String formIdText2,String initStatus,String status,int startRow,int endRow)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		String query = formQuery(supplierId,branchId,formIdText1,formIdText2,initStatus,status);
+		
+		Date sDate = SqlDateUtil.getSqlDate(startDate);
+		Date eDate = SqlDateUtil.getSqlDate(endDate);
+		
+		DefaultContext myCtx = getDefaultContext();
+		ReturnIter returnIter = null;
+		#sql [myCtx] returnIter = {
+		SELECT
+			    *
+			    FROM
+			        (
+			            SELECT
+			                t.*,
+			                ROWNUM rowNumber
+			            FROM
+			                (
+			                    SELECT
+			                        gh.FORM_ID,
+			                        gh.FORM_REF_ID,
+			                        gh.RETURNER,
+			                        gh.RETURN_TIME,
+			                        gh.FORM_NOTE,
+			                        gh.ALL_PAY_AMT,
+			                        gh.MAX_PAY_ITEM,
+			                        ih.PROVIDER,
+			                        ih.INPUT_DEPARTMENT,
+			                        s1.STATUS
+			                    FROM
+			                    :{Com_("D_T1_RETURN_GOODS_HEADER")} gh
+			                    LEFT JOIN
+			                    :{Com_("D_T1_INPUT_HEADER")} ih
+			                    ON
+			                        gh.FORM_REF_ID = ih.FORM_ID
+			                    LEFT JOIN
+			                    :{Com_("d_t2_branch")} b
+			                    ON
+			                        ih.PROVIDER_ID = b.BRANCH_ID
+			                    LEFT JOIN
+			                    :{Com_("D_T0_FORM_STATUS")} s
+			                    ON
+			                        gh.FORM_ID = s.FORM_ID
+			                    AND s.IS_CURRENT = 1
+	                    		LEFT JOIN
+                    			:{Com_("D_T0_FORM_STATUS")} s1
+	                        	ON
+	                        		s1.FORM_ID = gh.FORM_ID
+                        		AND s1.IS_CURRENT = 2
+			                    WHERE
+			                        :{query :: 1=1}
+			                    AND b.BRANCH_TYPE = 'SUPPLIER'
+			                    AND (
+			                            gh.RETURN_TIME >= :sDate
+			                        OR  :sDate IS NULL)
+			                    AND (
+			                            gh.RETURN_TIME <= :eDate
+			                        OR  :eDate IS NULL)) t
+			            WHERE
+			                ROWNUM < :endRow )
+			    WHERE
+			        rowNumber >= :startRow};
+		List<Map> returnLst = returnProcessIter(returnIter);
+		returnIter.close();
+		closeDefaultContext(myCtx);
+		return returnLst;
+	}
+	
+	
+	private List<Map> returnProcessIter(ReturnIter returnIter) 
+			throws SQLException {
+		List<Map> headLst = new ArrayList<Map>();
+		while(returnIter.next()) {
+			Map<String, Object> head = new HashMap<String, Object>();
+			head.put("form_id", returnIter.form_id());
+			head.put("form_ref_id", returnIter.form_ref_id());
+			head.put("returner", returnIter.returner());
+			head.put("return_time", returnIter.return_time());
+			head.put("form_note", returnIter.form_note());
+			head.put("all_pay_amt", returnIter.all_pay_amt());
+			head.put("max_pay_item", returnIter.max_pay_item());
+			head.put("provider", returnIter.provider());
+			head.put("input_department", returnIter.input_department());
+			head.put("status", returnIter.status());
+			
+			headLst.add(head);
+		}
+		return headLst;
+	}
+	
+}

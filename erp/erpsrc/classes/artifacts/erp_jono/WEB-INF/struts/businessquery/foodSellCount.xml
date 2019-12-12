@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE struts PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN"
+    "http://struts.apache.org/dtds/struts-2.0.dtd">
+
+<struts>
+	<package name="businessquery_foodSellCount" namespace="/businessquery/foodSellCount" extends="trust-default">
+		<action name="mainView" class="action.businessquery.FoodSellCountAction">
+			<result name="success">/jsp/businessquery/foodSellCount/main.jsp</result>
+		</action>
+		
+		<action name="bigCategory" method="bigCategory" class="action.businessquery.FoodSellCountAction">
+			<result type="json" />
+		</action>
+		
+		<action name="littleCategory" method="littleCategory" class="action.businessquery.FoodSellCountAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="bq_foodSellCount_export" namespace="/bq/foodSellCount/export" extends="trust-default">
+		<action name="bigCategoryExport" method="bigCategoryExport" class="action.businessquery.export.FoodSellCountExportAction">
+			<result type="json" />
+		</action>
+		
+		<action name="littleCategoryExport" method="littleCategoryExport" class="action.businessquery.export.FoodSellCountExportAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	
+</struts>
+

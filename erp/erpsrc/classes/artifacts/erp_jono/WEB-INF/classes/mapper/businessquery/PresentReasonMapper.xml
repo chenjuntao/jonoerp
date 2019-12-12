@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"   
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">  
+
+<mapper namespace="mapper.businessquery.PresentReasonMapper">  
+
+<resultMap id="PresentReasonResultMap" type="pojo.businessquery.PresentReason">
+		<id property="presentAmount" column="presentAmount" />
+		<result property="presentPrice" column="presentPrice" />
+		<result property="presentWhy" column="presentWhy" />
+		<result property="shopC" column="shopC" />
+		<result property="shopN" column="shopN" />
+</resultMap>
+
+<select id="presentReasonSum" resultMap="PresentReasonResultMap">
+	SELECT
+		CASE WHEN SUM(presentAmount)IS NULL
+			THEN 0
+			ELSE SUM(presentAmount)
+		END presentAmount ,
+		CASE WHEN SUM(presentPrice)IS NULL
+			THEN 0
+			ELSE SUM(presentPrice)
+		END presentPrice
+	FROM
+	(
+		SELECT
+			b.cBranch_C       shopC,
+			b.cBranch_N       shopN,
+			SUM( bs.nQty)     presentAmount ,
+			SUM(bs.nAmt )     presentPrice,
+			bs.sRetSendRemark presentWhy
+		FROM
+			${com}.d_t_food_bill b
+		LEFT JOIN
+			${com}.d_t_food_bills bs
+		ON
+			b.cBill_C = bs.cBill_C
+		WHERE
+			1 = 1
+		AND	b.cBranch_C LIKE #{shopC}
+		AND bs.eRetSendFlag = '赠送'
+		AND DBUSINESS &gt;=#{startDate}
+		AND DBUSINESS &lt;=#{endDate}
+		GROUP BY
+			b.cBranch_C,
+			b.cBranch_N ,
+			bs.sRetSendRemark
+	) t
+</select>
+
+<select id="presentReason" resultMap="PresentReasonResultMap">
+	SELECT
+		b.cBranch_C       shopC,
+		b.cBranch_N       shopN,
+		SUM( bs.nQty)     presentAmount,
+		SUM(bs.nAmt )     presentPrice,
+		bs.sRetSendRemark presentWhy
+	FROM
+		${com}.d_t_food_bill b
+	LEFT JOIN
+		${com}.d_t_food_bills bs
+	ON
+		b.cBill_C = bs.cBill_C
+	WHERE
+		b.cBranch_C LIKE #{shopC}
+	AND bs.eRetSendFlag = '赠送'
+	AND DBUSINESS &gt;=#{startDate}
+	AND DBUSINESS &lt;=#{endDate}
+	GROUP BY
+		b.cBranch_C,
+		b.cBranch_N ,
+		bs.sRetSendRemark
+</select>
+</mapper>

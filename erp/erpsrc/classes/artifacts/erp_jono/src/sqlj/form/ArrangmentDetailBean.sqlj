@@ -1,0 +1,499 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on Tue Nov 04 17:07:12 CST 2014 by pw
+ * Last edited on Tue Nov 04 17:07:12 CST 2014 by pw
+ * 
+ * comment: 中央工厂生产计划/排程单明细
+ */
+package logic.form;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import pojo.form.ArrangmentDetail;
+import sqlj.runtime.ref.DefaultContext;
+import com.tanry.business.form.FormConstant;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.TextUtil;
+import com.tanry.framework.acl.NoPrivilegeException;
+
+public class ArrangmentDetailBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(ArrangmentDetailBean.class);
+	
+	#sql private iterator DetailIter(
+			String form_id, 
+			String item_id, 
+			String item_name, 
+			Double item_count,
+			String item_dimension, 
+			String item_dimension2, 
+			String item_specification, 
+			Double produce_count, 
+			Double produce_count2, 
+			String work_order_id, 
+			String workshop, 
+			Date produce_time, 
+			Double production_cycle, 
+			Date complete_time, 
+			String note,
+			Double item_price, 
+			Double payAmt,
+			String mainName,
+			Double grossCount
+		);
+	
+	public int saveEntity(ArrangmentDetail detail)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		String formId = detail.getFormId();
+		String itemId = detail.getItemId();
+		String itemName = detail.getItemName();
+		
+		String itemDimension = detail.getItemDimension();
+		String itemDimension2 = detail.getItemDimension2();
+		
+		Double produceCount = detail.getProduceCount();
+		Double produceCount2 = detail.getProduceCount2();
+		
+		String itemSpecification = detail.getItemSpecification();
+		String workOrderId = detail.getWorkOrderId();
+		String workshop = detail.getWorkshop();
+		Date produceTime = SqlDateUtil.getSqlDate(detail.getProduceTime());
+		Double productionCycle = detail.getProductionCycle();
+		Date completeTime = SqlDateUtil.getSqlDate(detail.getCompleteTime());
+		String note = detail.getNote();
+
+		#sql [myCtx] {
+			INSERT INTO :{Com_("D_T1_ARRENGMENT_DETAIL")} 
+				(FORM_ID, ITEM_ID, ITEM_NAME, ITEM_DIMENSION, ITEM_SPECIFICATION, PRODUCE_COUNT, WORK_ORDER_ID, WORKSHOP, PRODUCE_TIME, PRODUCTION_CYCLE, COMPLETE_TIME, NOTE,ITEM_DIMENSION2,PRODUCE_COUNT2) 
+			VALUES (:formId, :itemId, :itemName, :itemDimension, :itemSpecification, :produceCount, :workOrderId, :workshop, :produceTime, :productionCycle, :completeTime, :note,:itemDimension2,:produceCount2)
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public int updateEntity(ArrangmentDetail detail)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		String formId = detail.getFormId();
+		String itemId = detail.getItemId();
+		String itemName = detail.getItemName();
+		String itemDimension = detail.getItemDimension();
+		String itemDimension2 = detail.getItemDimension2();
+		String itemSpecification = detail.getItemSpecification();
+		Double produceCount = detail.getProduceCount();
+		Double produceCount2 = detail.getProduceCount2();
+		String workOrderId = detail.getWorkOrderId();
+		String workshop = detail.getWorkshop();
+		Date produceTime = SqlDateUtil.getSqlDate(detail.getProduceTime());
+		Double productionCycle = detail.getProductionCycle();
+		Date completeTime = SqlDateUtil.getSqlDate(detail.getCompleteTime());
+		String note = detail.getNote();
+
+		#sql [myCtx] {
+			UPDATE
+				:{Com_("D_T1_ARRENGMENT_DETAIL")} 
+			SET
+				FORM_ID = :formId,
+				ITEM_ID = :itemId,
+				ITEM_NAME = :itemName,
+				ITEM_DIMENSION = :itemDimension,
+				ITEM_DIMENSION2 = :itemDimension2,
+				ITEM_SPECIFICATION = :itemSpecification,
+				PRODUCE_COUNT = :produceCount,
+				PRODUCE_COUNT2 = :produceCount2,
+				WORK_ORDER_ID = :workOrderId,
+				WORKSHOP = :workshop,
+				PRODUCE_TIME = :produceTime,
+				PRODUCTION_CYCLE = :productionCycle,
+				COMPLETE_TIME = :completeTime,
+				NOTE = :note
+			WHERE 
+				FORM_ID = :formId
+			AND ITEM_ID = :itemId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+
+	public int updateProduceCount(String formId, String itemId, Double produceCount, java.util.Date completeTime)
+			throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		Date compTime = SqlDateUtil.getSqlDate(completeTime);
+		#sql [myCtx] {
+			UPDATE
+				:{Com_("D_T1_ARRENGMENT_DETAIL")} 
+			SET
+				PRODUCE_COUNT = :produceCount,
+				COMPLETE_TIME = :compTime
+			WHERE 
+				FORM_ID = :formId
+			AND ITEM_ID = :itemId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public int updateByWorkId(ArrangmentDetail detail)
+			throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		String workOrderId = detail.getWorkOrderId();
+		Date completeTime = SqlDateUtil.getSqlDate(detail.getCompleteTime());
+		
+		#sql [myCtx] {
+			UPDATE
+				:{Com_("D_T1_ARRENGMENT_DETAIL")} 
+		    SET
+		        COMPLETE_TIME = :completeTime
+		    WHERE
+		        WORK_ORDER_ID = :workOrderId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+
+	public int deleteByForm(String formId)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		#sql [myCtx] {
+			DELETE
+			FROM
+				:{Com_("D_T1_ARRENGMENT_DETAIL")} 
+			WHERE
+				FORM_ID = :formId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public boolean isToTransform(String formId)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		Double count1 = 0.0,count2 = 0.0;
+		
+		DefaultContext myCtx = getDefaultContext();
+		#sql [myCtx] {
+			SELECT
+			    COUNT(*)
+			INTO
+			    :count1
+			FROM
+				:{Com_("D_T1_ARRENGMENT_DETAIL")}  d
+			WHERE
+			    d.FORM_ID = :formId
+		};
+			    
+		#sql [myCtx] {
+			SELECT
+			    COUNT(*)
+			INTO
+			    :count2
+			FROM
+				:{Com_("D_T1_ARRENGMENT_DETAIL")}  d
+			LEFT JOIN
+			    :{Com_("D_T0_FORM_STATUS")} s
+			ON
+			    d.WORK_ORDER_ID = s.FORM_ID
+			WHERE
+			    d.FORM_ID = :formId
+		    AND s.STATUS IS NOT NULL
+		};
+				    
+		closeDefaultContext(myCtx);
+		
+		return count2 >= count1 ? true : false;
+	}
+ 
+	public List<ArrangmentDetail> query(String formId)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		DetailIter detailIter = null;
+		#sql [myCtx] detailIter = {
+				WITH
+			    item AS
+			    (
+			        SELECT
+			            *
+			        FROM
+			            (
+			                SELECT
+			                    t.THERAPY_ID,
+			                    t.ITEM_ID,
+			                    t.ITEM_NAME,
+			                    t.ITEM_GROSS_COUNT,
+			                    row_number() over(partition BY t.THERAPY_ID ORDER BY t.ITEM_GROSS_COUNT*t.UNIT_CONVERT_FACTOR DESC )
+			                    rn
+			                FROM
+			                :{Com_("D_T2_THERAPY")} t )
+			        WHERE
+			            rn=1
+			    )
+				SELECT
+			    d.FORM_ID,
+			    d.ITEM_ID,
+			    d.ITEM_NAME,
+			    0 ITEM_COUNT,
+			    d.ITEM_DIMENSION,
+			    d.ITEM_DIMENSION2,
+			    d.ITEM_SPECIFICATION,
+			    d.PRODUCE_COUNT,
+			    d.PRODUCE_COUNT2,
+			    d.WORK_ORDER_ID,
+			    d.PRODUCE_TIME,
+			    d.PRODUCTION_CYCLE,
+			    d.COMPLETE_TIME, d.NOTE,
+			    p.ITEM_PRICE,
+			    p.ITEM_PRICE*d.PRODUCE_COUNT payAmt,
+			    fw.WORKSHOP,
+			    i.ITEM_NAME mainName,
+			    i.ITEM_GROSS_COUNT*d.PRODUCE_COUNT2*u.DELIVERY_FACTOR grossCount
+				FROM
+					:{Com_("D_T1_ARRENGMENT_DETAIL")}  d
+				LEFT JOIN
+				    :{Com_("D_T2_ITEM_WORKSHOP")} wp
+				ON
+				    d.ITEM_ID=wp.ITEM_ID
+	    		LEFT JOIN
+		    	    item i
+		    	ON
+		    	    i.THERAPY_ID = d.ITEM_ID
+    			LEFT JOIN
+    			    :{Com_("D_T2_DELIVERY_UNIT")} u
+    			ON 
+    			    u.ITEM_ID = d.ITEM_ID
+	    		LEFT JOIN
+		    	    :{Com_("D_T2_ITEM_PRICE")} p
+		    	ON
+		    	    p.PRICE_TYPE = 'BENCHMARK'
+		    	AND p.ITEM_ID = d.ITEM_ID
+		    	AND p.IS_CURRENT =1
+				LEFT JOIN
+				    :{Com_("D_T2_FACTORY_WORKSHOP")} fw
+				ON
+				    fw.WORK_ORDER_ID=wp.WORK_ORDER_ID
+				WHERE
+				    d.FORM_ID = :formId
+				ORDER BY
+					d.ITEM_ID
+		};
+		List<ArrangmentDetail> detailLst = processIter(detailIter);
+		detailIter.close();
+		closeDefaultContext(myCtx);
+		return detailLst;
+	}
+	
+	public List<ArrangmentDetail> query(String formId,String branchId)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		DetailIter detailIter = null;
+		#sql [myCtx] detailIter = {
+				WITH
+			    item AS
+			    (
+			        SELECT
+			            *
+			        FROM
+			            (
+			                SELECT
+			                    t.THERAPY_ID,
+			                    t.ITEM_ID,
+			                    t.ITEM_NAME,
+			                    round(t.ITEM_GROSS_COUNT,2) ITEM_GROSS_COUNT,
+			                    row_number() over(partition BY t.THERAPY_ID ORDER BY t.ITEM_GROSS_COUNT*t.UNIT_CONVERT_FACTOR DESC )
+			                    rn
+			                FROM
+			                :{Com_("D_T2_THERAPY")} t )
+			        WHERE
+			            rn=1
+			    )  ,
+			    itemCount AS
+			    (
+			    	SELECT
+			    	    s.item_id,
+						round(sum(NVL(s.ITEM_COUNT,0)),2) item_count
+					FROM
+					:{Com_("D_T2_STORAGE")} s
+					LEFT JOIN
+					:{Com_("D_T2_BRANCH_STORAGE")} bs
+					ON
+					    s.STORAGE_ID = bs.STORAGE_ID
+					WHERE
+					    bs.BRANCH_ID = 'L00'
+					  AND bs.PRIORITY = 0
+					GROUP BY
+					    s.ITEM_ID
+			    )
+				SELECT
+			    d.FORM_ID,
+			    d.ITEM_ID,
+			    d.ITEM_NAME,
+			    nvl(c.ITEM_COUNT,0) ITEM_COUNT,
+			    d.ITEM_DIMENSION,
+			    d.ITEM_DIMENSION2,
+			    d.ITEM_SPECIFICATION,
+			    d.PRODUCE_COUNT,
+			    d.PRODUCE_COUNT2,
+			    d.WORK_ORDER_ID,
+			    d.PRODUCE_TIME,
+			    d.PRODUCTION_CYCLE,
+			    d.COMPLETE_TIME, d.NOTE,
+			    p.ITEM_PRICE,
+			    p.ITEM_PRICE*d.PRODUCE_COUNT payAmt,
+			    fw.WORKSHOP,
+			    i.ITEM_NAME mainName,
+			    round(i.ITEM_GROSS_COUNT*d.PRODUCE_COUNT2*u.DELIVERY_FACTOR,2) grossCount
+				FROM
+					:{Com_("D_T1_ARRENGMENT_DETAIL")}  d
+				LEFT JOIN
+				    :{Com_("D_T2_ITEM_WORKSHOP")} wp
+				ON
+				    d.ITEM_ID=wp.ITEM_ID
+	    		LEFT JOIN
+		    	    item i
+		    	ON
+		    	    i.THERAPY_ID = d.ITEM_ID
+	    		LEFT JOIN
+    	    	    itemCount c
+    	    	ON
+    	    	    c.ITEM_ID = d.ITEM_ID
+    			LEFT JOIN
+    			    :{Com_("D_T2_DELIVERY_UNIT")} u
+    			ON 
+    			    u.ITEM_ID = d.ITEM_ID
+	    		LEFT JOIN
+		    	    :{Com_("D_T2_ITEM_PRICE")} p
+		    	ON
+		    	    p.PRICE_TYPE = 'BENCHMARK'
+		    	AND p.ITEM_ID = d.ITEM_ID
+		    	AND p.IS_CURRENT =1
+				LEFT JOIN
+				    :{Com_("D_T2_FACTORY_WORKSHOP")} fw
+				ON
+				    fw.WORK_ORDER_ID=wp.WORK_ORDER_ID
+				WHERE
+				    d.FORM_ID = :formId
+				ORDER BY
+					d.WORK_ORDER_ID ASC
+		};
+		List<ArrangmentDetail> detailLst = processIter(detailIter);
+		detailIter.close();
+		closeDefaultContext(myCtx);
+		return detailLst;
+	}
+	
+	public Double countByItemId(String itemId)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		Double produceCount = 0.0;
+		DefaultContext myCtx = getDefaultContext();
+		#sql [myCtx] {
+			SELECT
+			    SUM(NVL(d.PRODUCE_COUNT,0))into :produceCount
+			    FROM
+			    	:{Com_("D_T1_ARRENGMENT_DETAIL")} d
+			    WHERE
+			        d.ITEM_ID = :itemId
+		};
+		closeDefaultContext(myCtx);
+		return produceCount;
+	}
+	
+	public ArrangmentDetail queryByWorkOrderId(String workOrderId)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		DetailIter detailIter = null;
+		#sql [myCtx] detailIter = {
+				WITH
+			    item AS
+			    (
+			        SELECT
+			            *
+			        FROM
+			            (
+			                SELECT
+			                    t.THERAPY_ID,
+			                    t.ITEM_ID,
+			                    t.ITEM_NAME,
+			                    t.ITEM_GROSS_COUNT,
+			                    row_number() over(partition BY t.THERAPY_ID ORDER BY t.ITEM_GROSS_COUNT*t.UNIT_CONVERT_FACTOR DESC )
+			                    rn
+			                FROM
+			                :{Com_("D_T2_THERAPY")} t )
+			        WHERE
+			            rn=1
+			    )
+			SELECT
+			    d.*,
+			    0 ITEM_COUNT,
+			    i.ITEM_NAME mainName,
+			    i.ITEM_GROSS_COUNT*d.PRODUCE_COUNT2 grossCount
+			    FROM
+			    	:{Com_("D_T1_ARRENGMENT_DETAIL")} d
+			    LEFT JOIN 
+			    	item i 
+		    	ON 
+			    	i.THERAPY_ID = d.ITEM_ID
+			    WHERE
+			        d.WORK_ORDER_ID = :workOrderId
+		};
+		List<ArrangmentDetail> detailLst = processIter(detailIter);
+		
+		
+		detailIter.close();
+		closeDefaultContext(myCtx);
+		
+		if(detailLst.size() == 0){
+			return null;
+		}
+		return detailLst.get(0);
+	}
+
+	private List<ArrangmentDetail> processIter(DetailIter detailIter) 
+			throws SQLException {
+		List<ArrangmentDetail> detailLst = new ArrayList<ArrangmentDetail>();
+		while(detailIter.next()) {
+			ArrangmentDetail detail = new ArrangmentDetail();
+			detail.setFormId(detailIter.form_id());
+			detail.setItemId(detailIter.item_id());
+			detail.setItemName(detailIter.item_name());
+			detail.setItemCount(detailIter.item_count());
+			detail.setItemDimension(detailIter.item_dimension());
+			detail.setItemDimension2(detailIter.item_dimension2());
+			detail.setItemSpecification(detailIter.item_specification());
+			detail.setProduceCount(detailIter.produce_count());
+			detail.setProduceCount2(detailIter.produce_count2());
+			detail.setWorkOrderId(detailIter.work_order_id());
+			detail.setWorkshop(detailIter.workshop());
+			detail.setProduceTime(SqlDateUtil.getUtilDate(detailIter.produce_time()));
+			detail.setProductionCycle(detailIter.production_cycle());
+			detail.setCompleteTime(SqlDateUtil.getUtilDate(detailIter.complete_time()));
+			detail.setNote(detailIter.note());
+			detail.setItemPrice(detailIter.item_price());
+			detail.setPayAmt(detailIter.payAmt());
+			detail.setMainName(detailIter.mainName());
+			detail.setGrossCount(detailIter.grossCount());
+			detailLst.add(detail);
+		}
+		return detailLst;
+	}
+}

@@ -1,0 +1,577 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on Nov 25, 2014 by liyzh
+ * Last edited on Nov 25, 2014 by liyzh
+ * 
+ * 说明： 查询库存
+ */
+package logic.store;
+
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import pojo.store.ItemMeta;
+import sqlj.runtime.ref.DefaultContext;
+
+import com.tanry.framework.acl.NoPrivilegeException;
+
+public class MRPQueryBean extends ConnectionPool {
+	
+	public static Logger log = Logger.getLogger(MRPQueryBean.class);
+
+	#sql public static iterator MrpItemIter(
+			String form_id,
+			String item_id, 
+			String item_count, 
+			String mrp_count, 
+			String received,
+			String infos,
+			String rownumber
+		);
+	
+	//物流中心已分配量
+	#sql public static iterator LcAMrpItemIter(
+			String form_id,
+			String form_id2,
+			String item_id, 
+			String mrp_count, 
+			String rownumber
+		);
+	
+	/**
+	 * 查询物流中心已分配量
+	 */
+	public List<Map> queryLcAllocation(String itemId,String branchId)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		
+		DefaultContext myCtx = getDefaultContext();
+		LcAMrpItemIter lcAMrpItemIter = null;
+		#sql [myCtx] lcAMrpItemIter = {
+			WITH
+			    a AS
+			    (
+			        SELECT
+			            d.FORM_ID,
+			            ''FORM_ID2,
+			            d.ITEM_ID,
+			            d.ORDER_COUNT
+			        FROM
+			            :{Com_("D_T1_REQUEST_HEADER")} h
+			        INNER JOIN
+			            :{Com_("D_T1_REQUEST_DETAIL")} d
+			        ON
+			            h.FORM_ID = d.FORM_ID
+			        AND h.PURCHASE_STATUS = '已汇总'
+			        AND h.SHIPPING_STATUS IS NULL
+			        AND d.DELIVERY_TYPE ='UNIFIED'
+			        LEFT JOIN
+			            :{Com_("D_T1_COLLECT_REF_FORM")} r
+			        ON
+			            d.form_id = r.REF_FORM_ID
+			        AND d.item_id = r.ITEM_ID
+			        WHERE
+			            SUBSTR(r.COLLECT_FORM_ID,1,2) = 'TP' 
+			        AND d.item_id = :itemId
+			    )
+			    ,
+			    b AS
+			    (
+			        SELECT
+			            h.FORM_ID,
+			            '' FORM_ID2,
+			            d.ITEM_ID,
+			            d.REQUEST_COUNT
+			        FROM
+			            :{Com_("D_T1_SHIPPING_HEADER")} h
+			        LEFT JOIN
+			            :{Com_("D_T0_FORM_STATUS")} s
+			        ON
+			            h.FORM_ID = s.FORM_ID
+			        AND s.IS_CURRENT = 1
+			        LEFT JOIN
+			            :{Com_("D_T1_REQUEST_HEADER")} rh
+			        ON
+			            h.FORM_REF_ID = rh.FORM_ID
+			        LEFT JOIN
+			            :{Com_("D_T1_PICKING_REF")} r
+			        ON
+			            h.FORM_ID = r.FORM_REF_ID
+			        INNER JOIN
+			            :{Com_("D_T1_SHIPPING_DETAIL")} d
+			        ON
+			            h.FORM_ID = d.FORM_ID
+			        WHERE
+			            h.PICK_STATUS IS NULL
+			        AND h.FORM_TYPE = 'INNER_UNIFIED'
+			        AND h.PROVIDER_ID = 'L00'
+			        AND h.FORM_REF_ID IS NOT NULL
+			        AND d.ITEM_ID = :itemId
+			        AND s.STATUS IS NOT NULL
+			        AND rh.PURCHASE_STATUS IS NOT NULL
+			    )
+			    ,
+			    c AS
+			    (
+			        SELECT
+			            sh.FORM_ID,
+			            pr.FORM_ID FORM_ID2,
+			            pr.ITEM_ID,
+			            pr.ITEM_COUNT
+			        FROM
+			            :{Com_("D_T1_SHIPPING_HEADER")} sh
+			        INNER JOIN
+			            :{Com_("D_T1_REQUEST_HEADER")} rh
+			        ON
+			            sh.FORM_REF_ID = rh.FORM_ID
+			        AND rh.PURCHASE_STATUS IS NOT NULL
+			        INNER JOIN
+			            :{Com_("D_T1_PICKING_REF")} pr
+			        ON
+			            sh.FORM_ID = pr.FORM_REF_ID
+			        AND sh.FORM_REF_ID IS NOT NULL
+			        AND sh.PROVIDER_ID = 'L00'
+			        AND sh.FORM_TYPE = 'INNER_UNIFIED'
+			        INNER JOIN
+			            :{Com_("D_T1_PICKING_HEADER")} ph
+			        ON
+			            ph.FORM_ID = pr.FORM_ID
+			        AND pr.ITEM_ID = :itemId
+			        AND ph.AUDIT_TIME IS NULL
+			    )
+			    ,
+			    d AS
+			    (
+			        SELECT
+			            *
+			        FROM
+			            a
+			        UNION ALL
+			        SELECT
+			            *
+			        FROM
+			            b
+			        UNION ALL
+			        SELECT
+			            *
+			        FROM
+			            c
+			    )
+			    ,
+			    e AS
+			    (
+			        SELECT
+			            d.form_id,
+			            d.form_id2,
+			            d.item_id,
+			            DECODE(form_id2,NULL,d.ORDER_COUNT,u.DELIVERY_FACTOR*d.ORDER_COUNT) ORDER_COUNT
+			        FROM
+			            d
+			        LEFT JOIN
+			            :{Com_("D_T2_DELIVERY_UNIT")} u
+			        ON
+			            d.item_id = u.ITEM_ID
+			    )
+			    ,
+			    f AS
+			    (
+			        SELECT
+			            FORM_ID,
+			            FORM_ID2,
+			            ITEM_ID,
+			            SUM(ORDER_COUNT) mrp_count
+			        FROM
+			            e
+			        GROUP BY
+			            GROUPING SETS( ( FORM_ID,FORM_ID2, ITEM_ID),NULL)
+			        ORDER BY
+			            DECODE(FORM_ID,NULL,-1,mrp_count) DESC
+			    )
+			SELECT
+			    DECODE(FORM_ID,NULL,'合计',ROWNUM) rownumber,
+			    f.*
+			FROM
+			    f};
+		
+		List<Map> itemLst = new ArrayList<Map>();
+		while(lcAMrpItemIter.next()) {
+			Map map = new HashMap();
+			map.put("form_id", lcAMrpItemIter.form_id());
+			map.put("form_id2", lcAMrpItemIter.form_id2());
+			map.put("item_id", lcAMrpItemIter.item_id());
+			map.put("mrp_count", lcAMrpItemIter.mrp_count());
+			map.put("rownumber", lcAMrpItemIter.rownumber());
+			itemLst.add(map);
+		}
+		
+		lcAMrpItemIter.close();
+		closeDefaultContext(myCtx);
+		
+		return itemLst;
+	}
+	
+	
+	/**
+	 * 查询物流中心原料在途量
+	 */
+	public List<Map> queryLcRawOnTheWay(String itemId,String branchId)
+			throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		MrpItemIter mrpItemIter = null;
+		#sql [myCtx] mrpItemIter = {WITH
+			    a AS
+			    (
+			        SELECT
+			            d.FORM_ID,
+			            d.ITEM_ID,
+			            d.ITEM_COUNT,
+			            id.FORM_ID ref_form_id,
+			            id.RECEIVE_COUNT
+			        FROM
+			        	:{Com_("D_T1_PURCHASING_HEADER")} h 
+			        INNER JOIN
+			        	:{Com_("D_T0_FORM_STATUS")} s 
+			        ON
+			            h.FORM_ID = s.FORM_ID
+			        AND s.IS_CURRENT = 1
+			        AND s.STATUS IN ('已审核',
+			                         '已入库')
+			        AND h.DELIVERY_TYPE = 'UNIFIED'
+			        INNER JOIN
+			        	:{Com_("D_T1_PURCHASING_DETAIL")} d 
+			        ON
+			            h.FORM_ID = d.FORM_ID
+			        AND h.REQUESTER_ID = 'L00'
+			        AND h.PROVIDER_ID != 'F00'
+			        LEFT JOIN
+			        	:{Com_("D_T1_INPUT_HEADER")} ih 
+			        ON
+			            d.FORM_ID = ih.FORM_REF_ID
+			        AND ih.AUDIT_TIME IS NULL
+			        AND ih.FORM_TYPE != 'MANUAL'
+			        LEFT JOIN
+			        	:{Com_("D_T1_INPUT_DETAIL")} id
+			        ON
+			            ih.FORM_ID = id.FORM_ID
+			        AND d.ITEM_ID = id.ITEM_ID
+			    )
+			    ,
+			    b AS
+			    (
+			        SELECT
+			            t.FORM_ID,
+			            t.ITEM_ID,
+			            t.ITEM_COUNT,
+			            DECODE(SIGN(t.ITEM_COUNT - SUM(NVL(t.RECEIVE_COUNT,0))),-1,0,t.ITEM_COUNT - SUM(NVL
+			            (t.RECEIVE_COUNT,0))) mrp_count ,
+			            listagg('('||t.ref_form_id ||','||t.RECEIVE_COUNT ||')',',') within GROUP (ORDER BY
+			            t.ITEM_COUNT) infos
+			        FROM
+			            a t
+			        GROUP BY
+			            t.FORM_ID,
+			            t.ITEM_ID,
+			            t.ITEM_COUNT
+			    )
+			    ,
+			    c AS
+			    (
+			        SELECT
+			            FORM_ID,
+			            ITEM_ID,
+			            SUM(ITEM_COUNT) ITEM_COUNT,
+			            SUM( mrp_count) mrp_count,
+			            infos,
+			            '' received
+			        FROM
+			            b
+			        WHERE
+			            item_id = :itemId
+			        GROUP BY
+			            GROUPING SETS( (FORM_ID,ITEM_ID,ITEM_COUNT,mrp_count,infos),NULL)
+			        ORDER BY
+			            DECODE(FORM_ID,NULL,-1,mrp_count) DESC
+			    )
+			SELECT
+			    DECODE(FORM_ID,NULL,'合计',ROWNUM) rownumber,
+			    c.*
+			FROM
+			    c};
+		List<Map> itemLst = processMrpIter(mrpItemIter);
+		mrpItemIter.close();
+		
+		closeDefaultContext(myCtx);
+		return itemLst;
+	}
+	
+	/**
+	 * 查询物流中心半成品在途量
+	 */
+	public List<Map> queryLcSemiOnTheWay(String itemId,String branchId)
+			throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		MrpItemIter mrpItemIter = null;
+		#sql [myCtx] mrpItemIter = {
+			WITH
+			    a AS
+			    (
+			        SELECT
+			            h.FORM_ID,
+			            sh.FORM_ID received ,
+			            d.ITEM_ID,
+			            SUM(d.ITEM_COUNT) mrp_count,
+			            ''                ITEM_COUNT,
+			            ''                infos
+			        FROM
+			        	:{Com_("D_T1_PURCHASING_HEADER")}  h 
+			        INNER JOIN
+			        	:{Com_("D_T0_FORM_STATUS")} s  
+			        ON
+			            h.FORM_ID = s.FORM_ID
+			        AND s.STATUS IN( '已审核',
+			                        '已入库')
+			        AND s.IS_CURRENT = 1
+			        AND h.REQUESTER_ID = 'L00'
+			        AND h.PROVIDER_ID = 'F00'
+			        AND h.DELIVERY_TYPE = 'UNIFIED'
+			        AND h.AUDIT_TIME IS NOT NULL
+			        AND h.PLAN_STATUS = '已汇总'
+			        AND h.OUT_STATUS IS NULL
+			        INNER JOIN
+			        	:{Com_("D_T1_PURCHASING_DETAIL")} d 
+			        ON
+			            h.FORM_ID = d.FORM_ID
+			        AND d.ITEM_ID = :itemId
+			        LEFT JOIN
+			        	:{Com_("D_T1_SHIPPING_HEADER")} sh 
+			        ON
+			            h.FORM_ID = sh.FORM_REF_ID
+			        AND sh.INPUT_TIME IS NULL
+			        GROUP BY
+			            GROUPING SETS( (h.FORM_ID, d.ITEM_ID,sh.FORM_ID,d.ITEM_COUNT),NULL)
+			        ORDER BY
+			            DECODE(FORM_ID,NULL,-1,mrp_count) DESC
+			    )
+			SELECT
+			    DECODE(FORM_ID,NULL,'合计',ROWNUM) rownumber,
+			    a.*
+			FROM
+			    a};
+		List<Map> itemLst = processMrpIter(mrpItemIter);
+		mrpItemIter.close();
+		
+		closeDefaultContext(myCtx);
+		return itemLst;
+	}
+	
+	/**
+	 * 查询中央工厂已分配量
+	 */
+	public List<Map> queryCfAllocation(String itemId,String branchId)
+			throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		MrpItemIter mrpItemIter = null;
+		#sql [myCtx] mrpItemIter = {
+			WITH
+			    temp AS
+			    (
+			        SELECT
+			            i.FORM_ID,
+			            i.ITEM_ID,
+			            i.ITEM_COUNT,
+			            rd.FORM_ID ref_form_id,
+			            rd.RECEIVE_COUNT
+			        FROM
+			        :{Com_("D_T1_WORK_ORDER_HEADER")} h
+			        INNER JOIN
+			        :{Com_("D_T0_FORM_STATUS")} s
+			        ON
+			            h.FORM_ID = s.FORM_ID
+			        AND s.IS_CURRENT = 1
+			        AND s.STATUS = '已审核'
+			        INNER JOIN
+			        :{Com_("D_T1_WORKORDER_ITEM")} i
+			        ON
+			            h.FORM_ID = i.FORM_ID
+			        AND i.ITEM_ID = :itemId
+			        LEFT JOIN
+			        :{Com_("D_T1_REQUISITION_HEADER")} rh
+			        ON
+			            i.FORM_ID = rh.FORM_REF_ID
+			        AND rh.AUDIT_TIME IS NOT NULL
+			        LEFT JOIN
+			        :{Com_("D_T1_REQUISITION_DETAIL")} rd
+			        ON
+			            rh.FORM_ID = rd.FORM_ID
+			        AND rd.ITEM_ID = :itemId
+			        WHERE
+		        	    (
+		        	        h.BATCH_FLAG='Y'
+		        	    AND rh.AUDIT_TIME IS NULL)
+		        	OR  (
+		        	        h.BATCH_FLAG!='Y' )
+			    )
+			    ,
+			    temp2 AS
+			    (
+			        SELECT
+			            t.FORM_ID,
+			            t.ITEM_ID,
+			            t.ITEM_COUNT,
+			            decode(sign(t.ITEM_COUNT - SUM(NVL(t.RECEIVE_COUNT,0))),-1,0,t.ITEM_COUNT - SUM(NVL(t.RECEIVE_COUNT,0))) Allocated ,
+			            SUM(NVL(t.RECEIVE_COUNT,0))                received,
+			            listagg('('||t.ref_form_id ||','||t.RECEIVE_COUNT ||')',',') within GROUP (ORDER BY
+			            t.ITEM_COUNT) infos
+			        FROM
+			            temp t
+			        GROUP BY
+			            t.FORM_ID,
+			            t.ITEM_ID,
+			            t.ITEM_COUNT
+			    )
+			SELECT
+			    DECODE(FORM_ID,NULL,'合计',ROWNUM)rownumber ,
+			    t.*
+			FROM
+			    (
+			        SELECT
+			            t.FORM_ID,
+			            t.ITEM_ID,
+			            SUM( t.ITEM_COUNT) ITEM_COUNT,
+			            SUM(t.Allocated)   mrp_count,
+			            SUM(t.received)    received,
+			            DECODE(length(t.infos),3,'',t.infos)infos
+			        FROM
+			            temp2 t
+			        GROUP BY
+			            GROUPING SETS( ( t.FORM_ID, t.ITEM_ID,t.ITEM_COUNT,t.Allocated,t.received,t.infos),NULL)
+			        ORDER BY
+			            DECODE(FORM_ID,NULL,-1,item_count) DESC) t};
+		List<Map> itemLst = processMrpIter(mrpItemIter);
+		mrpItemIter.close();
+		
+		closeDefaultContext(myCtx);
+		return itemLst;
+	}
+	
+	
+	/**
+	 * 查询中央工厂在途量
+	 */
+	public List<Map> queryCfOnTheWay(String itemId,String branchId)
+			throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		MrpItemIter mrpItemIter = null;
+		#sql [myCtx] mrpItemIter = {
+			WITH
+			    temp AS
+			    (
+			        SELECT
+			            d.FORM_ID,
+			            d.ITEM_ID,
+			            d.ITEM_COUNT,
+			            id.FORM_ID ref_form_id,
+			            id.RECEIVE_COUNT
+			        FROM
+			        :{Com_("D_T1_PURCHASING_HEADER")} h
+			        INNER JOIN
+			        :{Com_("D_T0_FORM_STATUS")} s
+			        ON
+			            h.FORM_ID = s.FORM_ID
+			        AND s.STATUS IN ('已审核',
+			                         '已入库')
+			        AND s.IS_CURRENT = 1
+			        INNER JOIN
+			        :{Com_("D_T1_PURCHASING_DETAIL")} d
+			        ON
+			            h.FORM_ID = d.FORM_ID
+			        AND h.REQUESTER_ID = :branchId
+			        AND d.ITEM_ID = :itemId
+			        LEFT JOIN
+			        :{Com_("D_T1_INPUT_HEADER")} ih
+			        ON
+			            d.FORM_ID = ih.FORM_REF_ID
+			        AND ih.AUDIT_TIME IS NOT NULL
+			        LEFT JOIN
+			        :{Com_("D_T1_INPUT_DETAIL")} id
+			        ON
+			            ih.FORM_ID = id.FORM_ID
+			        AND id.ITEM_ID = :itemId
+			    )
+			    ,
+			    temp2 AS
+			    (
+			        SELECT
+			            t.FORM_ID,
+			            t.ITEM_ID,
+			            t.ITEM_COUNT,
+			            DECODE(SIGN(t.ITEM_COUNT - SUM(NVL(t.RECEIVE_COUNT,0))),-1,0,t.ITEM_COUNT - SUM(NVL(t.RECEIVE_COUNT,0)))       ontheway ,
+			            SUM(NVL(t.RECEIVE_COUNT,0))                received,
+			            listagg('('||t.ref_form_id ||','||t.RECEIVE_COUNT ||')',',') within GROUP (ORDER BY
+			            t.ITEM_COUNT) infos
+			        FROM
+			            temp t
+			        GROUP BY
+			            t.FORM_ID,
+			            t.ITEM_ID,
+			            t.ITEM_COUNT
+			    )
+			SELECT
+			    DECODE(FORM_ID,NULL,'合计',ROWNUM)rownumber ,
+			    t.*
+			FROM
+			    (
+			        SELECT
+			            t.FORM_ID,
+			            t.ITEM_ID,
+			            SUM( t.ITEM_COUNT) ITEM_COUNT,
+			            SUM(t.ontheway)    mrp_count,
+			            SUM(t.received)    received,
+			            DECODE(LENGTH(t.infos),3,'',t.infos) infos
+			        FROM
+			            temp2 t
+			        GROUP BY
+			            GROUPING SETS( ( t.FORM_ID, t.ITEM_ID,t.ITEM_COUNT,t.ontheway,t.received,t.infos),NULL)
+			        ORDER BY
+			            DECODE(FORM_ID,NULL,-1,item_count) DESC) t};
+		List<Map> itemLst = processMrpIter(mrpItemIter);
+		mrpItemIter.close();
+		
+		closeDefaultContext(myCtx);
+		return itemLst;
+	}
+	
+	private List<Map> processMrpIter(MrpItemIter itemIter) 
+			throws SQLException {
+		List<Map> itemLst = new ArrayList<Map>();
+		while(itemIter.next()) {
+			Map map = new HashMap();
+			map.put("form_id", itemIter.form_id());
+			map.put("item_id", itemIter.item_id());
+			map.put("item_count", itemIter.item_count());
+			map.put("mrp_count", itemIter.mrp_count());
+			map.put("received", itemIter.received());
+			map.put("infos", itemIter.infos());
+			map.put("rownumber", itemIter.rownumber());
+			itemLst.add(map);
+		}
+		
+		return itemLst;
+	}
+	
+}

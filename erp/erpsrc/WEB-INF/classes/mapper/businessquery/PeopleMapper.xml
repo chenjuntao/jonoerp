@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"   
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">  
+
+<mapper namespace="mapper.businessquery.PeopleMapper">  
+
+<select id="listMan" resultType="map">
+	SELECT
+		trim(code) as peopleC,
+		trim(name) as peopleName,
+		concat('[',trim(code),']',trim(name)) peoplePinyin
+	FROM
+	(
+		SELECT DISTINCT
+			cCreateMan code,
+			cCreateMan name
+		FROM
+			${com}.d_t_food_bill
+		WHERE
+			ascii(#{nameCol}) &lt;&gt; 0 
+	) p
+	ORDER BY
+		trim(name)
+</select>
+</mapper>

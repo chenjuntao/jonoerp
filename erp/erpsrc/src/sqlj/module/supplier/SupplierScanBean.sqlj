@@ -1,0 +1,222 @@
+package logic.module.supplier;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
+
+import pojo.form.CollectDetail;
+import pojo.form.RequestHeader;
+import sqlj.runtime.ref.DefaultContext;
+
+import com.tanry.business.form.FormConstant;
+import com.tanry.framework.acl.NoPrivilegeException;
+import com.tanry.framework.util.DateTimeUtil;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.TextUtil;
+
+public class SupplierScanBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(SupplierScanBean.class);
+	
+	#sql private iterator HeaderIter(
+			String form_id,
+			String form_ref_id,
+			String provider,
+			String requester,
+			String storage,
+			String form_maker,
+			String form_note,
+			Double all_pay_amt,
+			String max_pay_item,
+			String status,
+			String delivery_type,
+			Date form_time
+			);
+	
+	
+	/**
+	 * startDate 	审核开始日期
+	 * endDate	  	审核结束日期
+	 * supplierId 	供应商Id
+	 */
+	public List<Map> scan(java.util.Date startDate, java.util.Date endDate, String supplierId,String formIdText,String orderType,int startRow, int endRow)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		String query = " 1=1";
+		
+		if (!TextUtil.isEmpty(supplierId)) { 
+			query = query + " AND h.PROVIDER_ID = '" + supplierId + "'";
+		}
+		
+		if (!TextUtil.isEmpty(formIdText)) { 
+			query = query + " AND upper(h.FORM_ID)  like'%" + formIdText + "%'";
+		}
+		
+		if (!TextUtil.isEmpty(orderType)) { 
+			query = query + " AND h.DELIVERY_TYPE  = '" + orderType + "'";
+		}
+		
+		Date sDate = SqlDateUtil.getSqlDate(startDate);
+		Date eDate = SqlDateUtil.getSqlDate(endDate);
+		
+		DefaultContext myCtx = getDefaultContext();
+		HeaderIter headerIter = null;
+		#sql [myCtx] headerIter = {
+			SELECT
+			    *
+			    FROM
+			        (
+			            SELECT
+			                t.*,
+			                ROWNUM rowNumber
+			            FROM
+			                (
+			                    SELECT
+			                        h.FORM_ID,
+			                        h.FORM_REF_ID,
+			                        h.PROVIDER,
+			                        h.REQUESTER,
+			                        h.STORAGE,
+			                        h.FORM_MAKER,
+			                        h.FORM_NOTE,
+			                        h.DELIVERY_TYPE,
+			                        h.ALL_PAY_AMT,
+			                        h.MAX_PAY_ITEM,
+			                        h.FORM_TIME,
+			                        CASE
+			                            WHEN (
+			                                    SELECT
+			                                        COUNT(*)
+			                                    FROM
+			                                    :{Com_("D_T0_FORM_STATUS")} s
+			                                    WHERE
+			                                        s.STATUS = '已查看'
+			                                    AND s.FORM_ID = h.FORM_ID) > 0
+			                            THEN 'Y'
+			                            ELSE 'N'
+			                        END status
+			                    FROM
+			                    :{Com_("D_T1_PURCHASING_HEADER")} h
+			                    LEFT JOIN
+			                    :{Com_("D_T2_BRANCH")} b
+			                    ON
+			                        h.PROVIDER_ID = b.BRANCH_ID
+                        		LEFT JOIN
+                        		:{Com_("D_T0_FORM_STATUS")} s
+	                        	ON
+	                        	    h.FORM_ID = s.FORM_ID
+	                        	AND s.IS_CURRENT = 1
+			                    WHERE
+			                        :{query :: 1=1}
+                                AND s.STATUS NOT IN ('未审核')
+			                    AND b.BRANCH_TYPE = 'SUPPLIER'
+			                    AND (
+			                            h.FORM_TIME >= :sDate
+			                        OR  :sDate IS NULL)
+			                    AND (
+			                            h.FORM_TIME <= :eDate
+			                        OR  :eDate IS NULL)
+			                    AND h.RECEIVER_ID IS NULL --不看直配小单
+			                    ORDER BY
+			                        h.FORM_TIME DESC,
+			                        h.FORM_ID DESC) t
+			            WHERE
+			                ROWNUM < :endRow)
+			    WHERE
+			        rowNumber >= :startRow};
+		List<Map> headerLst = processIter(headerIter);
+		headerIter.close();
+		closeDefaultContext(myCtx);
+		return headerLst;
+	}
+	
+	/**
+	 * startDate 	审核开始日期
+	 * endDate	  	审核结束日期
+	 * supplierId 	供应商Id
+	 */
+	public Integer count(java.util.Date startDate, java.util.Date endDate, String supplierId,String formIdText,String orderType)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		String query = " 1=1";
+		
+		if (!TextUtil.isEmpty(supplierId)) { 
+			query = query + " AND h.PROVIDER_ID = '" + supplierId + "'";
+		}
+		
+		if (!TextUtil.isEmpty(formIdText)) { 
+			query = query + " AND upper(h.FORM_ID)  like'%" + formIdText + "%'";
+		}
+		
+		if (!TextUtil.isEmpty(orderType)) { 
+			query = query + " AND h.DELIVERY_TYPE  = '" + orderType + "'";
+		}
+		
+		Date sDate = SqlDateUtil.getSqlDate(startDate);
+		Date eDate = SqlDateUtil.getSqlDate(endDate);
+		
+		Integer total = 0;
+		DefaultContext myCtx = getDefaultContext();
+		#sql [myCtx] {
+			SELECT
+			    COUNT( h.FORM_ID )
+			INTO
+			    :total
+			FROM
+			:{Com_("D_T1_PURCHASING_HEADER")} h
+			LEFT JOIN
+			:{Com_("D_T2_BRANCH")} b
+			ON
+			    h.PROVIDER_ID = b.BRANCH_ID
+			LEFT JOIN
+			:{Com_("D_T0_FORM_STATUS")} s
+			ON
+			    h.FORM_ID = s.FORM_ID
+			AND s.IS_CURRENT = 1
+			WHERE
+			    :{query :: 1=1}
+			AND s.STATUS NOT IN ('未审核')
+			AND b.BRANCH_TYPE = 'SUPPLIER'
+			AND (
+			        h.FORM_TIME >= :sDate
+			    OR  :sDate IS NULL)
+			AND (
+			        h.FORM_TIME <= :eDate
+			    OR  :eDate IS NULL)
+            AND h.RECEIVER_ID IS NULL --不看直配小单
+		};
+		closeDefaultContext(myCtx);
+		return total;
+	}
+	
+	
+	private List<Map> processIter(HeaderIter headerIter) 
+			throws SQLException {
+		List<Map> headLst = new ArrayList<Map>();
+		while(headerIter.next()) {
+			Map<String, Object> head = new HashMap<String, Object>();
+			head.put("form_id", headerIter.form_id());
+			head.put("form_ref_id", headerIter.form_ref_id());
+			head.put("provider", headerIter.provider());
+			head.put("requester", headerIter.requester());
+			head.put("storage", headerIter.storage());
+			head.put("form_maker", headerIter.form_maker());
+			head.put("form_note", headerIter.form_note());
+			head.put("all_pay_amt", headerIter.all_pay_amt());
+			head.put("max_pay_item", headerIter.max_pay_item());
+			head.put("status", headerIter.status());
+			head.put("form_time", headerIter.form_time());
+			head.put("delivery_type", headerIter.delivery_type());
+			headLst.add(head);
+		}
+		return headLst;
+	}
+	
+}

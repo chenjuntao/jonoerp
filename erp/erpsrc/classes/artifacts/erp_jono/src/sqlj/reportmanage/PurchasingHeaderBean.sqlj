@@ -1,0 +1,343 @@
+package logic.reportmanage;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import sqlj.runtime.ref.DefaultContext;
+import com.tanry.business.form.FormConstant;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.TextUtil;
+import com.tanry.framework.util.constant.BillStatus;
+import com.tanry.framework.acl.NoPrivilegeException;
+
+public class PurchasingHeaderBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(PurchasingHeaderBean.class);
+	
+	#sql private iterator HeaderIter(
+			String requester,
+			String item_id,
+			String item_name,
+			String item_dimension,
+			String item_specification,
+			String category_id,
+			Double item_count,
+			String category_name,
+			Double pay_amt,
+			Double item_unit_price,
+			Double receive_price,
+			Double receive_amt,
+			Double different_amt);
+	
+	#sql private iterator SumIter(
+			Double item_count,
+			Double pay_amt,
+			Double receive_amt);
+	
+	public Map getColmunType(){
+		Map map  = new HashMap();
+		map.put("requester_id", "String");
+		map.put("requester", "String");
+		map.put("item_id", "String");
+		map.put("item_name", "String");
+		map.put("item_dimension", "String");
+		map.put("item_specification", "String");
+		map.put("category_id", "String");
+		map.put("category_name", "String"); 
+		map.put("item_count", "Number"); 
+		map.put("item_unit_price", "Number"); 
+		map.put("pay_amt", "Number"); 
+		map.put("receive_price", "Number");
+		map.put("receive_amt", "Number");
+		map.put("different_amt", "Number");
+		
+		return map;
+	}
+	
+	
+	public Map getColmunPrefix(){
+		Map map  = new HashMap();
+		map.put("item_id", "d");
+		map.put("item_name", "m");
+		map.put("item_dimension", "m");
+		map.put("item_specification", "m");
+		map.put("category_id", "m");
+		map.put("category_name", "c");
+		map.put("item_count", "d"); 
+		map.put("item_unit_price", "pb"); 
+		map.put("pay_amt", "d"); 
+		map.put("receive_price",  "pp");
+		map.put("receive_amt",  "d");
+		map.put("different_amt",  "d");
+		map.put("provider", "h"); 
+		map.put("requester", "h"); 
+		map.put("requester_id", "h"); 
+		
+		return map;
+	}
+	
+	
+	public int count(String queryStr)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		int total = 0;
+		
+		#sql [myCtx] {
+		SELECT
+		    COUNT(*)
+		INTO
+		    :total
+		FROM
+		    (SELECT
+		    		 COUNT(*)
+            	FROM
+            	    :{Com_("D_T1_PURCHASING_HEADER")} h
+            	INNER JOIN
+            	    :{Com_("D_T0_FORM_STATUS")} s
+            	ON
+            	    h.FORM_ID = s.FORM_ID
+            	AND s.IS_CURRENT = 1
+            	INNER JOIN
+            	    :{Com_("D_T2_BRANCH")} b
+            	ON
+            	    h.REQUESTER_ID = b.BRANCH_ID
+            	INNER JOIN
+            	    :{Com_("D_T1_PURCHASING_DETAIL")} d
+            	ON
+            	    h.FORM_ID = d.FORM_ID
+            	LEFT JOIN
+            	    :{Com_("D_T2_ITEM_META")} m
+            	ON
+            	    m.ITEM_ID = d.ITEM_ID
+            	LEFT JOIN
+            	    :{Com_("D_T2_ITEM_CATEGORY")} c
+            	ON
+            	    c.CATEGORY_ID = d.ITEM_CATEGORY
+            	LEFT JOIN
+            	    :{Com_("D_T2_ITEM_PRICE")} pp
+            	ON
+            	    pp.PRICE_TYPE = 'PURCHASE'
+            	AND pp.ITEM_ID = d.ITEM_ID
+            	LEFT JOIN
+            	    :{Com_("D_T2_ITEM_PRICE")} pb
+            	ON
+            	    pb.PRICE_TYPE = 'BENCHMARK'
+            	AND pb.ITEM_ID = d.ITEM_ID
+            	WHERE
+            	    1 = 1
+	    		AND s.STATUS in ('已审核','已结案') :{queryStr :: ''}
+            	GROUP BY
+            	    h.REQUESTER_ID,
+            	    h.REQUESTER,
+            	    d.ITEM_ID,
+            	    m.ITEM_NAME,
+            	    m.ITEM_DIMENSION,
+            	    m.ITEM_SPECIFICATION,
+            	    m.CATEGORY_ID,
+            	    pp.ITEM_PRICE,
+            	    pb.ITEM_PRICE,
+            	    c.CATEGORY_NAME) a};
+		closeDefaultContext(myCtx);
+		return total;
+	}
+	
+	
+	public List<Map> query(int startRow, int endRow,String queryStr,  String sortStr)  
+			throws NoPrivilegeException,SQLException,NoConnection {
+		
+		DefaultContext myCtx = getDefaultContext();
+		HeaderIter headerIter = null;
+		#sql [myCtx] headerIter = {
+			SELECT
+			    *
+			    FROM
+			        (
+			            SELECT
+			                t.*,
+			                ROWNUM rowNumber
+			            FROM 
+			                (SELECT
+			                	    h.REQUESTER_ID,
+			                	    h.REQUESTER,
+			                	    d.ITEM_ID,
+			                	    m.ITEM_NAME,
+			                	    m.ITEM_DIMENSION,
+			                	    m.ITEM_SPECIFICATION,
+			                	    m.CATEGORY_ID,
+			                	    c.CATEGORY_NAME,
+			                	    NVL(pp.ITEM_PRICE,0)                                  RECEIVE_PRICE,
+			                	    NVL(pb.ITEM_PRICE,0)                                  ITEM_UNIT_PRICE,
+			                	    ROUND( SUM(NVL(ITEM_COUNT,0)),2)                               ITEM_COUNT,
+			                	    ROUND( SUM(NVL(ITEM_COUNT,0)),2)*NVL(pp.ITEM_PRICE,0)                        RECEIVE_AMT,
+			                	    ROUND( SUM(NVL(ITEM_COUNT,0)),2)*NVL(pb.ITEM_PRICE,0)                        PAY_AMT,
+			                	    ROUND( SUM(NVL(ITEM_COUNT,0)),2)*(NVL(pb.ITEM_PRICE,0)-NVL(pp.ITEM_PRICE,0)) DIFFERENT_AMT
+			                	FROM
+			                	    :{Com_("D_T1_PURCHASING_HEADER")} h
+			                	INNER JOIN
+			                	    :{Com_("D_T2_BRANCH")} b
+			                	ON
+			                	    h.REQUESTER_ID = b.BRANCH_ID
+			                	INNER JOIN
+			                	    :{Com_("D_T1_PURCHASING_DETAIL")} d
+			                	ON
+			                	    h.FORM_ID = d.FORM_ID
+			                	LEFT JOIN
+			                	    :{Com_("D_T2_ITEM_META")} m
+			                	ON
+			                	    m.ITEM_ID = d.ITEM_ID
+			                	LEFT JOIN
+			                	    :{Com_("D_T2_ITEM_CATEGORY")} c
+			                	ON
+			                	    c.CATEGORY_ID = d.ITEM_CATEGORY
+			                	LEFT JOIN
+			                	    :{Com_("D_T2_ITEM_PRICE")} pp
+			                	ON
+			                	    pp.PRICE_TYPE = 'PURCHASE'
+			                	AND pp.ITEM_ID = d.ITEM_ID
+			                	LEFT JOIN
+			                	    :{Com_("D_T2_ITEM_PRICE")} pb
+			                	ON
+			                	    pb.PRICE_TYPE = 'BENCHMARK'
+			                	AND pb.ITEM_ID = d.ITEM_ID
+			                	WHERE
+			                	    1 = 1
+                	    		AND h.AUDIT_TIME IS NOT NULL :{queryStr :: ''}
+			                	GROUP BY
+			                	    h.REQUESTER_ID,
+			                	    h.REQUESTER,
+			                	    d.ITEM_ID,
+			                	    m.ITEM_NAME,
+			                	    m.ITEM_DIMENSION,
+			                	    m.ITEM_SPECIFICATION,
+			                	    m.CATEGORY_ID,
+			                	    pp.ITEM_PRICE,
+			                	    pb.ITEM_PRICE,
+			                	    c.CATEGORY_NAME :{sortStr :: ''}) t
+			            WHERE
+			                ROWNUM < :endRow)
+			    WHERE
+			        rowNumber >= :startRow};
+		List<Map> headerLst = processIter(headerIter);
+		headerIter.close();
+		closeDefaultContext(myCtx);
+		return headerLst;
+	}
+	
+	public Map sum( String queryStr, String sortStr) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		SumIter sumIter = null;
+		
+		#sql [myCtx] sumIter = {
+		SELECT
+		    round(SUM (ITEM_COUNT),2) ITEM_COUNT,
+		    round(SUM(PAY_AMT),2)     PAY_AMT,
+		    round(SUM(RECEIVE_AMT),2) RECEIVE_AMT
+		FROM
+		    (SELECT
+	    		    round(SUM (ITEM_COUNT),2) ITEM_COUNT,
+		  		    round(SUM(PAY_AMT),2)     PAY_AMT,
+		  		    round(SUM(RECEIVE_AMT),2) RECEIVE_AMT
+            	FROM
+            	    :{Com_("D_T1_PURCHASING_HEADER")} h
+            	INNER JOIN
+            	    :{Com_("D_T0_FORM_STATUS")} s
+            	ON
+            	    h.FORM_ID = s.FORM_ID
+            	AND s.IS_CURRENT = 1
+            	INNER JOIN
+            	    :{Com_("D_T2_BRANCH")} b
+            	ON
+            	    h.REQUESTER_ID = b.BRANCH_ID
+            	INNER JOIN
+            	    :{Com_("D_T1_PURCHASING_DETAIL")} d
+            	ON
+            	    h.FORM_ID = d.FORM_ID
+            	LEFT JOIN
+            	    :{Com_("D_T2_ITEM_META")} m
+            	ON
+            	    m.ITEM_ID = d.ITEM_ID
+            	LEFT JOIN
+            	    :{Com_("D_T2_ITEM_CATEGORY")} c
+            	ON
+            	    c.CATEGORY_ID = d.ITEM_CATEGORY
+            	LEFT JOIN
+            	    :{Com_("D_T2_ITEM_PRICE")} pp
+            	ON
+            	    pp.PRICE_TYPE = 'PURCHASE'
+            	AND pp.ITEM_ID = d.ITEM_ID
+            	LEFT JOIN
+            	    :{Com_("D_T2_ITEM_PRICE")} pb
+            	ON
+            	    pb.PRICE_TYPE = 'BENCHMARK'
+            	AND pb.ITEM_ID = d.ITEM_ID
+            	WHERE
+            	    1 = 1
+	    		AND s.STATUS in ('已审核','已结案'):{queryStr :: ''}
+            	GROUP BY
+            	    h.REQUESTER_ID,
+            	    h.REQUESTER,
+            	    d.ITEM_ID,
+            	    m.ITEM_NAME,
+            	    m.ITEM_DIMENSION,
+            	    m.ITEM_SPECIFICATION,
+            	    m.CATEGORY_ID,
+            	    pp.ITEM_PRICE,
+            	    pb.ITEM_PRICE,
+            	    c.CATEGORY_NAME ) a};
+		
+		closeDefaultContext(myCtx);
+		
+		Map sumMap = processSumIter(sumIter);
+		sumIter.close();
+		
+		return sumMap;
+	}
+	
+	private Map processSumIter(SumIter sumIter) 
+			throws SQLException {
+		Map sumMap = new HashMap();
+		
+		while(sumIter.next()) {
+			sumMap.put("item_count", sumIter.item_count());
+			sumMap.put("pay_amt", sumIter.pay_amt());
+			sumMap.put("receive_amt", sumIter.receive_amt());
+		}
+			
+		return sumMap;
+	}
+	
+	private List<Map> processIter(HeaderIter headerIter) 
+			throws SQLException {
+		List<Map> headerLst = new ArrayList<Map>();
+		
+		while(headerIter.next()) {
+			Map header = new HashMap();
+			header.put("item_id", headerIter.item_id());
+			header.put("item_name", headerIter.item_name());
+			header.put("item_dimension", headerIter.item_dimension());
+			header.put("item_specification", headerIter.item_specification());
+			header.put("category_id", headerIter.category_id());
+			header.put("item_count", headerIter.item_count());
+			header.put("item_unit_price", headerIter.item_unit_price());
+			header.put("pay_amt", headerIter.pay_amt());
+			header.put("receive_price", headerIter.receive_price());
+			header.put("receive_amt", headerIter.receive_amt());
+			header.put("different_amt", headerIter.different_amt());
+			header.put("category_name", headerIter.category_name());
+			header.put("requester", headerIter.requester());
+			
+			headerLst.add(header);
+		}
+		return headerLst;
+	}
+}

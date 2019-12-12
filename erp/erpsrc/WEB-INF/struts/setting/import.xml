@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE struts PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN"
+    "http://struts.apache.org/dtds/struts-2.0.dtd">
+
+<struts>
+	<package name="settng_itemimport" namespace="/setting/import" extends="trust-default">
+		<action name="mainView" class="action.setting.ImportAction">
+			<result name="success">/jsp/setting/import/main.jsp</result>
+		</action>
+		
+		<action name="doImport" method="doImport" class="action.setting.ImportAction">
+			<result type="json" />
+		</action>
+		
+		<action name="branchMain" class="action.setting.ImportAction">
+			<result name="success">/jsp/setting/import/branchMain.jsp</result>
+		</action>
+		
+		<action name="newImport" class="action.setting.ImportAction">
+			<result name="success">/jsp/setting/import/newImport.jsp</result>
+		</action>
+		
+		<action name="doInSystem" method="doInSystem" class="action.setting.ImportAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doInBranch" method="doInBranch" class="action.setting.ImportAction">
+			<result type="json" />
+		</action>
+		
+		<action name="sysUserMain" class="action.setting.ImportAction">
+			<result name="success">/jsp/setting/import/sysUserMain.jsp</result>
+		</action>
+		
+		<action name="formMain" class="action.setting.ImportAction">
+			<result name="success">/jsp/setting/import/formMain.jsp</result>
+		</action>
+	</package>
+</struts>
+ 

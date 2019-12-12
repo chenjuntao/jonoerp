@@ -1,0 +1,17 @@
+
+.dgrid-cell {
+		width: 80px;
+}
+
+.field-itemName,.field-none{
+	width: 180px;
+}
+
+.field-itemDimension {
+	width: 60px;
+}
+
+.field-applyCount {
+	width: 120px;
+}
+

@@ -1,0 +1,275 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on Thu Feb 05 14:48:10 CST 2015 by lyz
+ * Last edited on Thu Feb 05 14:48:10 CST 2015 by lyz
+ * 
+ * comment: 配送模式表
+ */
+package logic.store;
+
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import pojo.store.DeliveryType;
+import sqlj.runtime.ref.DefaultContext;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.TextUtil;
+import com.tanry.framework.acl.NoPrivilegeException;
+
+public class DeliveryTypeBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(DeliveryTypeBean.class);
+	
+	public int saveEntity(DeliveryType dtype)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		String regionId = dtype.getRegionId();
+		String itemId = dtype.getItemId();
+		String deliveryType = dtype.getDeliveryType();
+
+		#sql [myCtx] {
+			INSERT INTO :{Com_("D_T2_DELIVERY_TYPE")} 
+				(REGION_ID, ITEM_ID, DELIVERY_TYPE) 
+			VALUES (:regionId, :itemId, :deliveryType)
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public int updateEntity(DeliveryType dtype)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		String regionId = dtype.getRegionId();
+		String itemId = dtype.getItemId();
+		String deliveryType = dtype.getDeliveryType();
+
+		#sql [myCtx] {
+			UPDATE
+			:{Com_("D_T2_DELIVERY_TYPE")}
+			SET
+				DELIVERY_TYPE = :deliveryType
+			WHERE 
+				REGION_ID = :regionId
+			AND ITEM_ID = :itemId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+
+	public int deleteEntity(String regionId, String itemId)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		#sql [myCtx] {
+			DELETE
+			FROM
+			:{Com_("D_T2_DELIVERY_TYPE")}
+			WHERE
+				REGION_ID = :regionId
+			AND ITEM_ID = :itemId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public int deleteEntity(String itemId)
+			throws NoPrivilegeException, SQLException, NoConnection {
+			DefaultContext myCtx = getDefaultContext();
+
+			#sql [myCtx] {
+				DELETE
+				FROM
+				:{Com_("D_T2_DELIVERY_TYPE")}
+				WHERE
+					 ITEM_ID = :itemId
+			};
+			closeDefaultContext(myCtx);
+			
+			return 1;
+		}
+	
+	public List<Map> query(String regionId, String itemName) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		itemName = "%" + itemName + "%";
+		
+		DefaultContext myCtx = getDefaultContext();
+		ItemIter itemIter = null;
+		#sql [myCtx] itemIter = {
+			SELECT
+			    m.*,
+			    c.CATEGORY_NAME,
+			    t.DELIVERY_TYPE
+			FROM
+			:{Com_("D_T2_ITEM_META")} m
+			LEFT JOIN
+			:{Com_("D_T2_DELIVERY_TYPE")} t
+			ON
+			    m.ITEM_ID = t.ITEM_ID 
+			    AND t.REGION_ID = :regionId
+			LEFT JOIN
+			:{Com_("D_T2_ITEM_CATEGORY")} c
+			ON
+			    c.CATEGORY_ID = m.CATEGORY_ID
+			WHERE
+			    1=1
+    		AND m.ITEM_TYPE != 'SEMIS'
+            AND (
+                    m.ITEM_ID LIKE :itemName
+                OR  m.ITEM_NAME LIKE :itemName)
+			ORDER BY
+			    m.ITEM_ID
+		};
+		List<Map> itemLst = processIter(itemIter);
+		itemIter.close();
+		closeDefaultContext(myCtx);
+		return itemLst;
+	}
+	
+	public Map queryById(String regionId, String itemId) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		
+		DefaultContext myCtx = getDefaultContext();
+		ItemIter itemIter = null;
+		#sql [myCtx] itemIter = {
+			SELECT
+			    m.*,
+			    c.CATEGORY_NAME,
+			    t.DELIVERY_TYPE
+			FROM
+			:{Com_("D_T2_DELIVERY_TYPE")} t
+			INNER JOIN
+			:{Com_("D_T2_ITEM_META")} m
+			ON
+			    m.ITEM_ID = t.ITEM_ID
+			LEFT JOIN
+			:{Com_("D_T2_ITEM_CATEGORY")} c
+			ON
+			    c.CATEGORY_ID = m.CATEGORY_ID
+			WHERE
+			    t.REGION_ID = :regionId
+			AND  m.ITEM_ID = :itemId
+			ORDER BY
+			    m.ITEM_ID};
+		
+		Map result = new HashMap();
+		Map<String, String> item = new HashMap<String, String>();
+		if(itemIter.next()) {
+			item.put("itemId", itemIter.item_id());
+			item.put("itemName", itemIter.item_name());
+			item.put("queryCode", itemIter.query_code());
+			item.put("categoryId", itemIter.category_id());
+			item.put("categoryName", itemIter.category_name());
+			item.put("itemDimension", itemIter.item_dimension());
+			item.put("itemSpecification", itemIter.item_specification());
+			item.put("dtype", itemIter.delivery_type());
+		}
+	
+		itemIter.close();
+		closeDefaultContext(myCtx);
+		return item;
+	}
+	
+	#sql public static iterator ItemIter(String item_id, 
+			String item_name, 
+			String item_type, 
+			String category_id, String category_name, 
+			String item_dimension, 
+			String query_code,
+			String item_specification, String delivery_type);
+	
+	public List<Map> queryByCate(String regionId, String cateId) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		ItemIter itemIter = null;
+		#sql [myCtx] itemIter = {
+			SELECT
+			    m.*,
+			    c.CATEGORY_NAME,
+			    t.DELIVERY_TYPE
+			FROM
+			:{Com_("D_T2_ITEM_META")} m
+			LEFT JOIN
+			:{Com_("D_T2_DELIVERY_TYPE")} t
+			ON
+			    m.ITEM_ID = t.ITEM_ID
+			    AND t.REGION_ID = :regionId
+			LEFT JOIN
+			:{Com_("D_T2_ITEM_CATEGORY")} c
+			ON
+			    c.CATEGORY_ID = m.CATEGORY_ID
+			WHERE
+			   1=1
+			AND m.CATEGORY_ID = :cateId
+			ORDER BY
+			    m.ITEM_ID
+		};
+		List<Map> itemLst = processIter(itemIter);
+		itemIter.close();
+		closeDefaultContext(myCtx);
+		return itemLst;
+	}
+	
+	private List<Map> processIter(ItemIter itemIter) 
+			throws SQLException {
+		List<Map> itemLst = new ArrayList<Map>();
+		while(itemIter.next()) {
+			Map<String, String> item = new HashMap<String, String>();
+			item.put("itemId", itemIter.item_id());
+			item.put("itemName", itemIter.item_name());
+			item.put("queryCode", itemIter.query_code());
+			item.put("categoryId", itemIter.category_id());
+			item.put("categoryName", itemIter.category_name());
+			item.put("itemDimension", itemIter.item_dimension());
+			item.put("itemSpecification", itemIter.item_specification());
+			item.put("dtype", itemIter.delivery_type());
+			itemLst.add(item);
+		}
+		return itemLst;
+	}
+	
+	// 参考其它分组，初始化原料的配送方式
+	public void updateByRefRegion(String regionId, String refRegionId)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		// 先清理老数据
+		#sql [myCtx] {
+			DELETE
+			FROM
+			:{Com_("D_T2_DELIVERY_TYPE")}
+			WHERE
+			REGION_ID = :regionId
+		};
+		
+		//将参考分组的数据拷贝进目标分组
+		#sql [myCtx] {
+			INSERT INTO :{Com_("D_T2_DELIVERY_TYPE")} 
+			(REGION_ID, ITEM_ID, DELIVERY_TYPE) 
+			(
+				SELECT :regionId, ITEM_ID, DELIVERY_TYPE 
+				FROM :{Com_("D_T2_DELIVERY_TYPE")}
+				WHERE REGION_ID = :refRegionId
+			)
+		};
+		
+		closeDefaultContext(myCtx);
+	}
+}

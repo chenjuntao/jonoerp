@@ -1,0 +1,106 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on Mar 16, 2015 by liyzh
+ * Last edited on Mar 16, 2015 by liyzh
+ * 
+ * 说明： 按配方表的需要查询原料和半成品
+ */
+package logic.module.hq;
+
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import sqlj.runtime.ref.DefaultContext;
+
+import com.tanry.business.module.hq.config.item.vo.TherapyItem;
+import com.tanry.framework.acl.NoPrivilegeException;
+import com.tanry.framework.util.constant.ItemType;
+
+public class SelTherapyItemBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(SelTherapyItemBean.class);
+
+	#sql public static iterator ItemIter(String item_id, 
+			String item_name, 
+			String item_type, 
+			String category_id, 
+			String item_dimension, 
+			String query_code,
+			String item_specification, String recipe_unit, Double recipe_factor, Double item_unit_price, Double receive_price);
+	
+	public List<TherapyItem> queryItem(String itemType, String itemName) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		itemName = "%" + itemName + "%";
+		String query = " ITEM_TYPE = '" + itemType + "'";
+		if (ItemType.R_S.equals(itemType)) {
+			query = " (ITEM_TYPE = '" + ItemType.RAW 
+					+ "' OR  ITEM_TYPE = '" + ItemType.SEMIS
+					+ "' OR  ITEM_TYPE = '" + ItemType.SELFSEMIS + "')";
+		}
+		
+		DefaultContext myCtx = getDefaultContext();
+		ItemIter itemIter = null;
+		#sql [myCtx] itemIter = {
+			SELECT
+			    m.*,
+			    u.RECIPE_UNIT,
+			    u.RECIPE_FACTOR,
+			    p.ITEM_PRICE  AS ITEM_UNIT_PRICE,
+			    p2.ITEM_PRICE AS RECEIVE_PRICE
+			FROM
+			:{Com_("D_T2_ITEM_META")} m
+			LEFT JOIN
+			:{Com_("D_T2_DELIVERY_UNIT")} u
+			ON
+			    m.ITEM_ID = u.ITEM_ID
+    		LEFT JOIN
+			:{Com_("D_T2_ITEM_PRICE")} p
+			ON
+			    p.ITEM_ID =  m.ITEM_ID
+			AND p.PRICE_TYPE = 'BENCHMARK'
+			AND p.IS_CURRENT = 1
+			LEFT JOIN
+			:{Com_("D_T2_ITEM_PRICE")} p2
+			ON
+			    p2.ITEM_ID = m.ITEM_ID
+			AND p2.PRICE_TYPE = 'PURCHASE'
+			AND p2.IS_CURRENT = 1
+			WHERE
+				:{query :: 1=1}
+            AND (
+                    m.ITEM_ID LIKE :itemName
+                OR  m.ITEM_NAME LIKE :itemName)
+		};
+
+		List<TherapyItem> itemLst = new ArrayList<TherapyItem>();
+		while (itemIter.next()) {
+			TherapyItem item = new TherapyItem();
+			item.setItemId(itemIter.item_id());
+			item.setItemName(itemIter.item_name());
+			item.setItemType(itemIter.item_type());
+			item.setCategoryId(itemIter.category_id());
+			item.setRecipeUnit(itemIter.recipe_unit());
+			item.setItemDimension(itemIter.item_dimension());
+			item.setRecipeFactor(itemIter.recipe_factor());
+			item.setQueryCode(itemIter.query_code());
+			item.setItemSpecification(itemIter.item_specification());
+			item.setBenchmarkPrice(itemIter.item_unit_price());
+			item.setPurchasePrice(itemIter.receive_price());
+			itemLst.add(item);
+		}
+		itemIter.close();
+		closeDefaultContext(myCtx);
+		return itemLst;
+	}
+}

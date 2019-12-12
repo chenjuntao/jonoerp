@@ -1,0 +1,333 @@
+ 
+package logic.store;
+
+import sqlj.runtime.*;
+import sqlj.runtime.ref.*;
+import java.sql.*;
+import oracle.sql.*;
+import oracle.sqlj.runtime.*;
+import oracle.jdbc.driver.*;
+import java.util.*;
+import java.text.SimpleDateFormat;
+import java.text.ParseException;
+import logic.pool.ConnectionPool;
+import logic.*;
+import com.tanry.framework.acl.*;
+import pojo.businessquery.ReturnBill;
+
+public class ReturnBean extends ConnectionPool
+{
+	private String strDateFormat = "yyyy-MM-dd"; //设置日期格式
+
+	#sql public static iterator ReturnBeanIterator(
+			String businessDate, String billC, String table, String period, String shift, String foodBill, 
+			String foodC, String foodN, String unit, float price, float returnAmount, float returnAmt, 
+			String returnWhy, String returnTime, String backMan, String suitFlag,
+			String shopC, String shopN, String smallC, String smallN);
+	
+	#sql public static iterator ReturnSumIterator(float price,float returnAmount,float returnAmt);
+	
+	public ReturnBean()
+	{
+	}
+	
+	public ReturnBill getReturnSum(String startDate,String endDate,String shopC,String period, String shift)
+			throws NoPrivilegeException,SQLException,NoConnection	{
+		
+		ReturnBill returnBean = new ReturnBill();
+		DefaultContext myCtx = getDefaultContext();
+		ReturnSumIterator returnSumIterator = null;
+		if (myCtx != null)
+		{
+			#sql [myCtx] returnSumIterator = {
+			SELECT
+					  CASE
+				        WHEN SUM(price) IS NULL
+				        THEN 0
+				        ELSE SUM(price)
+				    END price,
+				    CASE
+				        WHEN SUM(returnAmount) IS NULL
+				        THEN 0
+				        ELSE SUM(returnAmount)
+				    END returnAmount,
+				    CASE
+				        WHEN SUM(returnAmt) IS NULL
+				        THEN 0
+				        ELSE SUM(returnAmt)
+				    END returnAmt
+				    FROM
+				        (
+				            SELECT
+				                TO_CHAR(DBUSINESS, 'yyyy-MM-dd') businessDate,
+				                b.cBill_C                        billC,
+				                b.cTable_N                       table,
+				                b.cPeriod_N                      period,
+				                b.cShift_N                       shift,
+				                bs.cFood_C                       foodC,
+				                bs.sUnit                         unit,
+				                bs.nPrc                          price,
+				                bs.nQty                          returnAmount,
+				                bs.nAmt                          returnAmt,
+				                bs.sRetSendRemark                returnWhy,
+				                bs.cPresentBackMan               backMan,
+				                bs.eSuitFlag                     suitFlag,
+				                b.cBranch_C                      shopC
+				            FROM
+				                :{Com_("d_t_food_bill")} b
+				            LEFT JOIN
+				            	:{Com_("d_t_food_Bills")} bs
+				            ON
+				                b.cBill_C = bs.cBill_C
+				            WHERE
+				            	b.CBRANCH_C like :shopC
+						    and b.CPERIOD_N like :period
+						    and b.CSHIFT_N like :shift
+				            AND bs.eRetSendFlag = '退品'
+		            		AND bs.eSuitFlag <> '套餐子项'
+				            AND TO_CHAR(DBUSINESS, 'yyyy-MM-dd') IN
+				                (
+				                    SELECT
+				                        TO_CHAR(DBUSINESS, 'yyyy-MM-dd')
+				                    FROM
+				                    :{Com_("d_t_food_bill")} d
+				                    WHERE
+				                        DBUSINESS >= TO_Date( :startDate, 'yyyy-MM-dd')
+				                    AND DBUSINESS <= TO_Date( :endDate, 'yyyy-MM-dd')
+				                    GROUP BY
+				                        TO_CHAR(DBUSINESS, 'yyyy-MM-dd'))
+				            GROUP BY
+				                TO_CHAR(DBUSINESS, 'yyyy-MM-dd'),
+				                b.cTable_N ,
+				                b.cBill_C ,
+				                b.cPeriod_N ,
+				                b.cShift_N ,
+				                bs.cFood_C ,
+				                bs.sUnit ,
+				                bs.nPrc ,
+				                bs.nQty ,
+				                bs.nAmt ,
+				                bs.sRetSendRemark ,
+				                bs.cPresentBackMan ,
+				                bs.eSuitFlag ,
+				                b.cBranch_C)t
+				                
+			};
+			
+			while(returnSumIterator.next()) {
+				returnBean.price = returnSumIterator.price();
+				returnBean.returnAmount = returnSumIterator.returnAmount();
+				returnBean.returnAmt = returnSumIterator.returnAmt();
+			}
+			returnSumIterator.close();
+		}
+		else
+		{
+			throw new NoConnection();
+		}
+		closeDefaultContext(myCtx);
+		return returnBean;
+	}
+	
+	public int getHeadCount(String startDate,String endDate,String shopC,String period,String shift)
+			throws NoPrivilegeException,SQLException,NoConnection	{
+		int counts = 0;
+		
+		DefaultContext myCtx = getDefaultContext();
+		if (myCtx != null)
+		{
+			#sql [myCtx] {
+			SELECT
+				    COUNT(*) into :counts
+				    FROM
+				        (
+				            SELECT
+				                TO_CHAR(DBUSINESS, 'yyyy-MM-dd') businessDate,
+				                b.cBill_C                        billC,
+				                b.cTable_N                       table,
+				                b.cPeriod_N                      period,
+				                b.cShift_N                       shift,
+				                bs.cFood_C                       foodC,
+				                bs.sUnit                         unit,
+				                bs.nPrc                          price,
+				                bs.nQty                          returnAmount,
+				                bs.nAmt                          returnAmt,
+				                bs.sRetSendRemark                returnWhy,
+				                bs.cPresentBackMan               backMan,
+				                bs.eSuitFlag                     suitFlag,
+				                b.cBranch_C                      shopC
+				            FROM
+				            :{Com_("d_t_food_bill")} b
+				            LEFT JOIN
+				            :{Com_("d_t_food_Bills")} bs
+				            ON
+				                b.cBill_C = bs.cBill_C
+				            WHERE
+				            	b.CBRANCH_C like :shopC
+						    and b.CPERIOD_N like :period
+						    and b.CSHIFT_N like :shift
+				            AND bs.eRetSendFlag = '退品'
+		            		AND bs.eSuitFlag <> '套餐子项'
+				            AND TO_CHAR(DBUSINESS, 'yyyy-MM-dd') IN
+				                (
+				                    SELECT
+				                        TO_CHAR(DBUSINESS, 'yyyy-MM-dd')
+				                    FROM
+				                    :{Com_("d_t_food_bill")} d
+				                    WHERE
+				                        DBUSINESS >= TO_Date( :startDate, 'yyyy-MM-dd')
+				                    AND DBUSINESS <= TO_Date( :endDate, 'yyyy-MM-dd')
+				                    GROUP BY
+				                        TO_CHAR(DBUSINESS, 'yyyy-MM-dd'))
+				            GROUP BY
+				                TO_CHAR(DBUSINESS, 'yyyy-MM-dd'),
+				                b.cTable_N ,
+				                b.cBill_C ,
+				                b.cPeriod_N ,
+				                b.cShift_N ,
+				                bs.cFood_C ,
+				                bs.sUnit ,
+				                bs.nPrc ,
+				                bs.nQty ,
+				                bs.nAmt ,
+				                bs.sRetSendRemark ,
+				                bs.cPresentBackMan ,
+				                bs.eSuitFlag ,
+				                b.cBranch_C)t};
+		}
+		else
+		{
+			throw new NoConnection();
+		}
+		closeDefaultContext(myCtx);
+		return counts;
+	}
+	
+	public List<ReturnBill> getReturn(String startDate,String endDate,String shopC,String period,String shift,int startRow,int endRow)
+			throws NoPrivilegeException,SQLException,NoConnection	{
+		
+		List<ReturnBill> result = new ArrayList<ReturnBill>();
+		DefaultContext myCtx = getDefaultContext();
+		ReturnBeanIterator returnBeanIterator = null;
+		if (myCtx != null)
+		{
+			#sql [myCtx] returnBeanIterator = {
+				SELECT
+				    *
+				    FROM
+				        (
+				            SELECT
+				                t.*,
+				                ROWNUM rowNumber
+				            FROM
+				                (
+				                    SELECT
+				                        TO_CHAR(DBUSINESS, 'yyyy-MM-dd') businessDate,
+				                        b.cBill_C                        billC,
+				                        b.cTable_N                       table,
+				                        b.cPeriod_N                      period,
+				                        b.cShift_N                       shift,
+				                        bs.cFood_C                       foodC,
+				                        bs.cFood_N                       foodN,
+				                        bs.sUnit                         unit,
+				                        bs.nPrc                          price,
+				                        bs.nQty                          returnAmount,
+				                        bs.nAmt                          returnAmt,
+				                        bs.sRetSendRemark                returnWhy,
+				                        bs.cPresentBackMan	             backMan,
+				                        bs.eSuitFlag                     suitFlag,
+				                        b.cBranch_C                      shopC,
+				                        b.cBranch_N                      shopN,
+				                        cLitCls_C                        smallC,
+				                        cLitCls_N                        smallN
+				                    FROM
+				                    :{Com_("d_t_food_bill")} b
+				                    LEFT JOIN
+				                    :{Com_("d_t_food_Bills")} bs
+				                    ON
+				                        b.cBill_C = bs.cBill_C
+				                    WHERE
+				                        b.CBRANCH_C LIKE :shopC
+				                    AND b.CPERIOD_N LIKE :period
+				                    AND b.CSHIFT_N LIKE :shift
+				                    AND bs.eRetSendFlag = '退品'
+	                    		    AND bs.eSuitFlag <> '套餐子项'
+				                    AND TO_CHAR(DBUSINESS, 'yyyy-MM-dd') IN
+				                        (
+				                            SELECT
+				                                TO_CHAR(DBUSINESS, 'yyyy-MM-dd')
+				                            FROM
+				                            :{Com_("d_t_food_bill")} d
+				                            WHERE
+				                                DBUSINESS >= TO_Date( :startDate, 'yyyy-MM-dd')
+				                            AND DBUSINESS <= TO_Date( :endDate, 'yyyy-MM-dd')
+				                            GROUP BY
+				                                TO_CHAR(DBUSINESS, 'yyyy-MM-dd'))
+				                    GROUP BY
+				                        TO_CHAR(DBUSINESS, 'yyyy-MM-dd'),
+				                        b.cTable_N ,
+				                        b.cBill_C ,
+				                        b.cPeriod_N ,
+				                        b.cShift_N ,
+				                        bs.cFood_C ,
+				                        bs.cFood_N ,
+				                        bs.sUnit ,
+				                        bs.nPrc ,
+				                        bs.nQty ,
+				                        bs.nAmt ,
+				                        bs.sRetSendRemark ,
+				                        bs.cPresentBackMan ,
+				                        bs.eSuitFlag ,
+				                        b.cBranch_C ,
+				                        b.cBranch_N ,
+				                        cLitCls_C,
+				                        cLitCls_N                        
+				                    ORDER BY
+				                        TO_CHAR(DBUSINESS, 'yyyy-MM-dd'),
+				                        b.cBranch_C,
+				                        b.cBill_C,
+				                        b.cTable_N,
+				                        b.cPeriod_N,
+				                        b.cShift_N,
+				                        bs.cFood_C) t
+				            WHERE
+				                ROWNUM <= :endRow)
+				    WHERE
+				        rowNumber >= :startRow};
+			
+			while(returnBeanIterator.next()) {
+				ReturnBill returnBean = new ReturnBill();
+				returnBean.businessDate = returnBeanIterator.businessDate();
+				returnBean.billC = returnBeanIterator.billC();
+				returnBean.table = returnBeanIterator.table();
+				returnBean.period = returnBeanIterator.period();
+				returnBean.shift = returnBeanIterator.shift();
+				returnBean.foodBill = returnBeanIterator.foodBill();
+				returnBean.foodC = returnBeanIterator.foodC();
+				returnBean.foodN = returnBeanIterator.foodN();
+				returnBean.unit = returnBeanIterator.unit();
+				returnBean.price = returnBeanIterator.price();
+				returnBean.returnAmount = returnBeanIterator.returnAmount();
+				returnBean.returnAmt = returnBeanIterator.returnAmt();
+				returnBean.returnWhy = returnBeanIterator.returnWhy();
+				returnBean.returnTime = returnBeanIterator.returnTime();
+				returnBean.backMan = returnBeanIterator.backMan();
+				returnBean.suitFlag = returnBeanIterator.suitFlag();
+				returnBean.shopC = returnBeanIterator.shopC();
+				returnBean.shopN = returnBeanIterator.shopN();
+				returnBean.smallC = returnBeanIterator.smallC();
+				returnBean.smallN = returnBeanIterator.smallN();
+				
+				result.add(returnBean);
+			}
+			returnBeanIterator.close();
+		}
+		else
+		{
+			throw new NoConnection();
+		}
+		closeDefaultContext(myCtx);
+		return result;
+	}
+	
+}

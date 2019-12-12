@@ -1,0 +1,153 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on Wed Feb 04 09:39:01 CST 2015 by lyz
+ * Last edited on Wed Feb 04 09:39:01 CST 2015 by lyz
+ * 
+ * comment: 配送单位表
+ */
+package logic.store;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import pojo.store.DeliveryUnit;
+import sqlj.runtime.ref.DefaultContext;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.TextUtil;
+import com.tanry.framework.acl.NoPrivilegeException;
+
+public class DeliveryUnitBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(DeliveryUnitBean.class);
+	
+	#sql private iterator ParamIter(String item_id, String recipe_unit, Double recipe_factor, 
+			String delivery_unit, Double delivery_factor, Double unit_volume, Double unit_weight, 
+			Double min_order_count, Double out_receive_rate);
+	
+	public int saveEntity(DeliveryUnit param)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		String itemId = param.getItemId();
+		String recipeUnit = param.getRecipeUnit();
+		Double recipeFactor = param.getRecipeFactor();
+		String deliveryUnit = param.getDeliveryUnit();
+		Double deliveryFactor = param.getDeliveryFactor();
+		Double unitVolume = param.getUnitVolume();
+		Double unitWeight = param.getUnitWeight();
+		Double minOrderCount = param.getMinOrderCount();
+		Double outReceiveRate = param.getOutReceiveRate();
+
+		#sql [myCtx] {
+			INSERT INTO :{Com_("D_T2_DELIVERY_UNIT")} 
+				(ITEM_ID, RECIPE_UNIT, RECIPE_FACTOR, DELIVERY_UNIT, DELIVERY_FACTOR, UNIT_VOLUME, UNIT_WEIGHT, MIN_ORDER_COUNT, OUT_RECEIVE_RATE) 
+			VALUES (:itemId, :recipeUnit, :recipeFactor, :deliveryUnit, :deliveryFactor, :unitVolume, :unitWeight, :minOrderCount, :outReceiveRate)
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public int updateEntity(String oldItemId, DeliveryUnit param)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		String itemId = param.getItemId();
+		String recipeUnit = param.getRecipeUnit();
+		Double recipeFactor = param.getRecipeFactor();
+		String deliveryUnit = param.getDeliveryUnit();
+		Double deliveryFactor = param.getDeliveryFactor();
+		Double unitVolume = param.getUnitVolume();
+		Double unitWeight = param.getUnitWeight();
+		Double minOrderCount = param.getMinOrderCount();
+		Double outReceiveRate = param.getOutReceiveRate();
+
+		#sql [myCtx] {
+			UPDATE
+			:{Com_("D_T2_DELIVERY_UNIT")}
+			SET
+				ITEM_ID = :itemId,
+				RECIPE_UNIT = :recipeUnit,
+				RECIPE_FACTOR = :recipeFactor,
+				DELIVERY_UNIT = :deliveryUnit,
+				DELIVERY_FACTOR = :deliveryFactor,
+				UNIT_VOLUME = :unitVolume,
+				UNIT_WEIGHT = :unitWeight,
+				MIN_ORDER_COUNT = :minOrderCount,
+				OUT_RECEIVE_RATE = :outReceiveRate
+			WHERE 
+				ITEM_ID = :oldItemId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+
+	public int deleteEntity(String itemId)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		#sql [myCtx] {
+			DELETE
+			FROM
+			:{Com_("D_T2_DELIVERY_UNIT")}
+			WHERE
+				ITEM_ID = :itemId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public DeliveryUnit queryById(String itemId) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		ParamIter paramIter = null;
+		#sql [myCtx] paramIter = {
+			SELECT
+			    *
+			FROM
+			:{Com_("D_T2_DELIVERY_UNIT")} h
+			WHERE
+				h.ITEM_ID = :itemId
+		};
+		List<DeliveryUnit> paramLst = processIter(paramIter);
+		paramIter.close();
+		closeDefaultContext(myCtx);
+		if (paramLst !=null && !paramLst.isEmpty()) {
+			return paramLst.get(0);
+		}
+		return null;
+	}
+	
+	private List<DeliveryUnit> processIter(ParamIter paramIter) 
+			throws SQLException {
+		List<DeliveryUnit> paramLst = new ArrayList<DeliveryUnit>();
+		while(paramIter.next()) {
+			DeliveryUnit param = new DeliveryUnit();
+			param.setItemId(paramIter.item_id());
+			param.setRecipeUnit(paramIter.recipe_unit());
+			param.setRecipeFactor(paramIter.recipe_factor());
+			param.setDeliveryUnit(paramIter.delivery_unit());
+			param.setDeliveryFactor(paramIter.delivery_factor());
+			param.setUnitVolume(paramIter.unit_volume());
+			param.setUnitWeight(paramIter.unit_weight());
+			param.setMinOrderCount(paramIter.min_order_count());
+			param.setOutReceiveRate(paramIter.out_receive_rate());
+			paramLst.add(param);
+		}
+		return paramLst;
+	}
+}

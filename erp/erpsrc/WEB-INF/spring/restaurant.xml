@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:aop = "http://www.springframework.org/schema/aop"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+	http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+	http://www.springframework.org/schema/aop 
+	http://www.springframework.org/schema/aop/spring-aop-2.5.xsd"
+	default-autowire="byName">
+
+	<bean id="testGgoodsbillService" class="test.Service.GoodsBillService" />
+	<bean id="createBillService" class="service.restaurant.goodsbill.CreateBillService" />
+	<bean id="templateManageService" class="service.restaurant.goodsbill.TemplateManageService" />
+	<bean id="billManageService" class="service.restaurant.putinstorage.BillManageService" />
+	
+	<bean id="distributionService" class="service.restaurant.putinstorage.DistributionService" />
+	<bean id="antiBillManageService" class="service.restaurant.antiaudit.BillManageService" />
+	
+	<bean id="djBillManageService" class="service.restaurant.dreject.BillManageService" />
+	
+	<bean id="lockStorageService" class="service.restaurant.checkstorage.LockStorageService" />
+	<bean id="csBillManageService" class="service.restaurant.checkstorage.BillManageService" />
+	
+	<bean id="importItemService" class="service.restaurant.checkstorage.ImportItemService" />
+	
+	<bean id="importCheckItemDao" class="dao.importdata.ImportCheckItemDao" />
+	<bean id="importRequestDao" class="dao.importdata.ImportRequestDao" />
+	
+	<bean id="dbCreateBillService" class="service.restaurant.allocateitem.CreateBillService" />
+	<bean id="manageLossBillService" class="service.restaurant.reportdamage.ManageLossBillService" />
+	<bean id="manageSelfBillService" class="service.restaurant.production.ManageSelfBillService" />
+	
+	<bean id="shiftPeriodBean" class="logic.store.ShiftPeriodBean" />
+	<bean id="freeBillBean" class="logic.businessquery.FreeBillBean" />
+	<bean id="discountBean" class="logic.store.DiscountBean" />
+	<bean id="presentBean" class="logic.store.PresentBean" />
+	<bean id="returnBean" class="logic.store.ReturnBean" />
+	<bean id="dailySettlementService" class="service.restaurant.dailysettlement.DailySettlementService" />
+	
+	<bean id="inputReturnBean" class="logic.module.restaurant.InputReturnBean" />
+	<bean id="arrivePeriodBean" class="logic.module.restaurant.ArrivePeriodBean" />
+	<bean id="requestTemplateBean" class="logic.module.restaurant.RequestTemplateBean" />
+	<bean id="directStockInBean" class="logic.module.restaurant.DirectStockInBean" />
+	<bean id="distriStockInBean" class="logic.module.restaurant.DistriStockInBean" />
+	<bean id="selMaterialBean" class="logic.module.restaurant.SelMaterialBean" />
+	<bean id="selProductBean" class="logic.module.restaurant.SelProductBean" />
+	<bean id="productQueryBean" class="logic.module.restaurant.ProductQueryBean" />
+	<bean id="itemQueryBean" class="logic.module.restaurant.ItemQueryBean" />
+	
+	<bean id="stationObservationService" class="com.tanry.business.module.hq.so.service.StationObservationService" />
+	
+	<bean id="optionService" class="service.restaurant.option.OptionService" />
+</beans>
+

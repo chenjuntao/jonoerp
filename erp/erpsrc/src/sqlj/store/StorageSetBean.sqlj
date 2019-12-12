@@ -1,0 +1,153 @@
+package logic.store;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import sqlj.runtime.ref.DefaultContext;
+import com.tanry.business.form.FormConstant;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.TextUtil;
+import com.tanry.framework.util.constant.BillStatus;
+import com.tanry.framework.acl.NoPrivilegeException;
+
+public class StorageSetBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(StorageSetBean.class);
+	
+	#sql private iterator HeaderIter(
+			String id, 
+			String name, 
+			String parent, 
+			String isLeaf, 
+			String storage_id,
+	 	 	String storage_name,
+	 	 	Double priority);
+	
+	
+	public List<Map> query()  
+			throws NoPrivilegeException,SQLException,NoConnection {
+		
+		DefaultContext myCtx = getDefaultContext();
+		HeaderIter headerIter = null;
+		#sql [myCtx] headerIter = {WITH
+			    a AS
+			    (
+			        SELECT
+			            b.BRANCH_ID id,
+			            b.BRANCH_NAME,
+			            b.BRANCH_TYPE parent,
+			            'N'           isLeaf,
+			            ''            STORAGE_ID,
+			            ''            STORAGE_NAME,
+			            -1            PRIORITY
+			        FROM
+			        :{Com_("D_T2_BRANCH")} b
+			        WHERE
+			            b.BRANCH_TYPE IN ('RESTAURANT',
+			                              'CENTRALFACTORY',
+			                              'LOGISTICSCENTER','FRANCHISEE','OUTERORDER')
+			        ORDER BY
+			            b.BRANCH_TYPE,
+			            b.BRANCH_ID
+			    )
+			    ,
+			    b AS
+			    (
+			        SELECT
+			            s.BRANCH_ID id,
+			            s.STORAGE_ID,
+			            s.STORAGE_NAME,
+			            s.PRIORITY
+			        FROM
+			        :{Com_("D_T2_BRANCH_STORAGE")} s
+			    )
+			    ,
+			    c AS
+			    (
+			        SELECT
+			            b.BRANCH_TYPE id,
+			            CASE
+			                WHEN b.BRANCH_TYPE = 'RESTAURANT'
+			                THEN '餐厅'
+			                WHEN b.BRANCH_TYPE = 'LOGISTICSCENTER'
+			                THEN '物流中心'
+			                WHEN b.BRANCH_TYPE = 'CENTRALFACTORY'
+			                THEN '中央工厂'
+			                WHEN b.BRANCH_TYPE = 'FRANCHISEE'
+			                THEN '加盟店'
+			                WHEN b.BRANCH_TYPE = 'OUTERORDER'
+			                THEN '外部订货方'
+			            END    name,
+			            'root' parent,
+			            'N'    isLeaf,
+			            ''     STORAGE_ID,
+			            ''     STORAGE_NAME,
+			            -1     PRIORITY
+			        FROM
+			        :{Com_("D_T2_BRANCH")} b
+			        WHERE
+			            b.BRANCH_TYPE IN ('RESTAURANT',
+			                              'CENTRALFACTORY',
+			                              'LOGISTICSCENTER','FRANCHISEE','OUTERORDER')
+			        GROUP BY
+			            b.BRANCH_TYPE
+			    )
+			SELECT
+			    b.id ||b.STORAGE_ID id,
+			    b.STORAGE_NAME      name,
+			    b.id                parent,
+			    'Y'                 isLeaf ,
+			    b.STORAGE_ID,
+			    b.STORAGE_NAME,
+			    b.PRIORITY
+			FROM
+			    a
+			LEFT JOIN
+			    b
+			ON
+			    a.id = b.id
+			UNION ALL
+			SELECT
+			    *
+			FROM
+			    a
+			UNION ALL
+			SELECT
+			    *
+			FROM
+			    c};
+		List<Map> headerLst = processIter(headerIter);
+		headerIter.close();
+		closeDefaultContext(myCtx);
+		return headerLst;
+	}
+	
+	
+	private List<Map> processIter(HeaderIter headerIter) 
+			throws SQLException {
+		List<Map> headerLst = new ArrayList<Map>();
+		
+		while(headerIter.next()) {
+			Map header = new HashMap();
+			header.put("id", headerIter.id());
+			header.put("name", headerIter.name());
+			header.put("parent", headerIter.parent());
+			header.put("isLeaf", headerIter.isLeaf());
+			header.put("storage_id", headerIter.storage_id());
+			header.put("storage_name", headerIter.storage_name());
+			header.put("priority", headerIter.priority());
+			
+			headerLst.add(header);
+		}
+		return headerLst;
+	}
+}

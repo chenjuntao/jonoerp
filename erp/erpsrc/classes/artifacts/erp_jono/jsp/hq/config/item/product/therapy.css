@@ -1,0 +1,57 @@
+#dataGrid {
+	position: absolute;
+	right: 0;
+	top: 120px;
+	bottom: 0;
+	width: 100%;
+	height: auto; /* override default height: 30em; in dgrid.css */
+}
+
+th[role="columnheader"] {
+	text-align: center;
+}
+
+th.edit-note {
+	color: red;
+}
+
+.dgrid-column-set-0 {
+	width: 350px;
+}
+
+.dgrid-cell {
+	/* 	width: 80px; make all the columns 80px wide */
+	vertical-align: middle;
+}
+
+.field-rownumber,.field-itemId,.field-itemDimension,.field-stockDimension,.field-therapy,.field-itemType
+	{
+	text-align: center;
+}
+
+.field-rownumber {
+	width: 40px;
+}
+
+.field-itemId,.field-itemType {
+	width: 80px;
+}
+
+.field-itemName {
+	width: 140px;
+}
+
+.field-itemDimension,.field-stockDimension {
+	width: 60px;
+}
+
+.field-unitConvertFactor,.field-itemUsageRate,.field-recipeFactor {
+	width: 80px;
+	text-align: right;
+}
+
+.field-benchmarkPrice,.field-benchmarkAmt,.field-purchasePrice,.field-purchaseAmt,.field-itemCount,.field-itemGrossCount,.field-itemCount1,.field-itemUsageRate1
+	{
+	width: 120px;
+	text-align: right;
+}

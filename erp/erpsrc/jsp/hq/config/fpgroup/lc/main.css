@@ -1,0 +1,55 @@
+#dataGrid {
+	position: absolute;
+	right: 0;
+	top: 32px;
+	bottom: 0px;
+	width: 100%;
+	height: auto; /* override default height: 30em; in dgrid.css */
+}
+
+#commandTable {
+	position: absolute;
+	bottom: 0;
+	width: 100%;
+}
+
+th[role="columnheader"] {
+	text-align: center;
+}
+
+.dgrid-cell {
+	/* 	width: 80px; make all the columns 80px wide */
+	vertical-align: middle;
+}
+
+.field-rownumber, .field-operate {
+	text-align: center;
+}
+
+.field-rownumber {
+	width: 40px;
+}
+
+.field-priceGroupId {
+	width: 120px;
+}
+
+.field-priceGroupName {
+	width: 120px;
+}
+
+.field-priceGroupType {
+	width: 80px;
+}
+
+.field-priceGroupNote {
+	width: 150px;
+}
+
+.field-ownerName {
+	width: 80px;
+}
+
+.field-operate {
+	width: 60px;
+}

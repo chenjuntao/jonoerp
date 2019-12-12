@@ -1,0 +1,428 @@
+ 
+package logic.businessquery;
+
+import sqlj.runtime.*;
+import sqlj.runtime.ref.*;
+import java.sql.*;
+import oracle.sql.*;
+import oracle.sqlj.runtime.*;
+import oracle.jdbc.driver.*;
+import java.util.*;
+import java.text.SimpleDateFormat;
+import java.text.ParseException;
+import logic.pool.ConnectionPool;
+import logic.*;
+import com.tanry.framework.acl.*;
+import pojo.businessquery.BusinessCount;
+
+public class BusinessCountBean extends ConnectionPool
+{
+	//总的统计
+	#sql public static iterator SumIterator(
+				int billNum, 
+				int guestNum,
+				float foodAmt,
+				float disAmt,
+				float roundAmt,
+				float oughtAmt,
+				float payAmt,
+				float presentAmt 
+			);
+	
+	//加限制条件的统计，比如：按班次、时段、楼层等
+	#sql public static iterator ConditionIterator(
+				String conditionC,
+				String conditionN,
+				int billNum,
+				int guestNum,
+				float foodAmt,
+				float disAmt,
+				float roundAmt,
+				float oughtAmt,
+				float payAmt,
+				float presentAmt,
+				String shopC,
+				String shopN
+			);
+		
+		
+	public BusinessCount shiftSum(String startDate,String endDate,String shopC)
+			throws NoPrivilegeException,SQLException,NoConnection	{
+		
+		BusinessCount businessCount = new BusinessCount();
+		DefaultContext myCtx = getDefaultContext();
+		SumIterator sumIterator = null;
+		if (myCtx != null)
+		{
+			#sql [myCtx] sumIterator = {
+			SELECT
+				    SUM(billNum)    billNum,
+				    SUM(guestNum)   guestNum,
+				    SUM(foodAmt)    foodAmt,
+				    SUM(disAmt)     disAmt,
+				    SUM(roundAmt)   roundAmt,
+				    SUM(oughtAmt)   oughtAmt,
+				    SUM(payAmt)     payAmt,
+				    SUM(presentAmt) presentAmt
+				FROM
+				    (
+				        SELECT
+				            b.CSHIFT_N       shift,
+				            COUNT(cBranch_C) billNum,
+				            SUM(iGuestNum)   guestNum,
+				            SUM(nFoodAmt)    foodAmt,
+				            SUM(nDisAmt)     disAmt,
+				            SUM(nRoundAmt)   roundAmt,
+				            SUM(nOughtAmt)   oughtAmt,
+				            SUM(nPayAmt)     payAmt,
+				            SUM(nPresentAmt) presentAmt,
+				            cBranch_C        shopC,
+				            cBranch_N        shopN
+				        FROM
+				            :{Com_("d_t_food_bill")} b
+				        WHERE
+				        	DBUSINESS >= to_date(:startDate, 'yyyy-mm-dd')
+						AND DBUSINESS <= to_date(:endDate, 'yyyy-mm-dd')
+						AND b.CBRANCH_C LIKE :shopC
+				        GROUP BY
+				            b.CSHIFT_N ,
+				            cBranch_C,
+				            cBranch_N ) t};
+			
+			while(sumIterator.next()) {
+				processSumIter(businessCount, sumIterator);
+			}
+			sumIterator.close();
+		}
+		else
+		{
+			throw new NoConnection();
+		}
+		closeDefaultContext(myCtx);
+		return businessCount;
+	}
+
+	public BusinessCount periodSum(String startDate,String endDate,String shopC)
+			throws NoPrivilegeException,SQLException,NoConnection	{
+		
+		BusinessCount businessCount = new BusinessCount();
+		DefaultContext myCtx = getDefaultContext();
+		SumIterator sumIterator = null;
+		if (myCtx != null)
+		{
+			#sql [myCtx] sumIterator = {
+			SELECT
+				    SUM(billNum)    billNum,
+				    SUM(guestNum)   guestNum,
+				    SUM(foodAmt)    foodAmt,
+				    SUM(disAmt)     disAmt,
+				    SUM(roundAmt)   roundAmt,
+				    SUM(oughtAmt)   oughtAmt,
+				    SUM(payAmt)     payAmt,
+				    SUM(presentAmt) presentAmt
+				FROM
+				    (SELECT
+				    	    b.CPERIOD_N      period,
+				    	    COUNT(cBranch_C) billNum,
+				    	    SUM(iGuestNum)   guestNum,
+				    	    SUM(nFoodAmt)    foodAmt,
+				    	    SUM(nDisAmt)     disAmt,
+				    	    SUM(nRoundAmt)   roundAmt,
+				    	    SUM(nOughtAmt)   oughtAmt,
+				    	    SUM(nPayAmt)     payAmt,
+				    	    SUM(nPresentAmt) presentAmt,
+				    	    cBranch_C        shopC,
+				    	    cBranch_N        shopName
+				    	FROM
+				    	    :{Com_("d_t_food_bill")} b
+				    	WHERE
+				    			DBUSINESS >= to_date(:startDate, 'yyyy-mm-dd')
+							AND DBUSINESS <= to_date(:endDate, 'yyyy-mm-dd')
+							AND b.CBRANCH_C LIKE :shopC
+				    	GROUP BY
+				    	    b.CPERIOD_N ,
+				    	    cBranch_C,
+				    	    cBranch_N
+				    	) t};
+			
+			while(sumIterator.next()) {
+				processSumIter(businessCount, sumIterator);
+			}
+			sumIterator.close();
+		}
+		else
+		{
+			throw new NoConnection();
+		}
+		closeDefaultContext(myCtx);
+		return businessCount;
+	}
+	
+	public BusinessCount floorSum(String startDate,String endDate,String shopC)
+			throws NoPrivilegeException,SQLException,NoConnection	{
+		
+		BusinessCount businessCount = new BusinessCount();
+		DefaultContext myCtx = getDefaultContext();
+		SumIterator sumIterator = null;
+		if (myCtx != null)
+		{
+			#sql [myCtx] sumIterator = {
+			SELECT
+				    SUM(billNum)    billNum,
+				    SUM(guestNum)   guestNum,
+				    SUM(foodAmt)    foodAmt,
+				    SUM(disAmt)     disAmt,
+				    SUM(roundAmt)   roundAmt,
+				    SUM(oughtAmt)   oughtAmt,
+				    SUM(payAmt)     payAmt,
+				    SUM(presentAmt) presentAmt
+				FROM
+				    (SELECT
+				    		cBranch_C        shopC,
+					        cBranch_N        shopN,
+				    	    COUNT(cBranch_C) billNum,
+				    	    SUM(iGuestNum)   guestNum,
+				    	    SUM(nFoodAmt)    foodAmt,
+				    	    SUM(nDisAmt)     disAmt,
+				    	    SUM(nRoundAmt)   roundAmt,
+				    	    SUM(nOughtAmt)   oughtAmt,
+				    	    SUM(nPayAmt)     payAmt,
+				    	    SUM(nPresentAmt) presentAmt
+				    	FROM
+				    	    :{Com_("d_t_food_bill")} b
+				    	WHERE
+				    		DBUSINESS >= to_date(:startDate, 'yyyy-mm-dd')
+						AND DBUSINESS <= to_date(:endDate, 'yyyy-mm-dd')
+						AND b.CBRANCH_C LIKE :shopC
+				    	GROUP BY
+				    	    cBranch_C,
+				    	    cBranch_N
+				    	ORDER BY
+				    	    b.CBRANCH_C) t};
+			
+			while(sumIterator.next()) {
+				processSumIter(businessCount, sumIterator);
+			}
+			sumIterator.close();
+		}
+		else
+		{
+			throw new NoConnection();
+		}
+		closeDefaultContext(myCtx);
+		return businessCount;
+	}
+	
+	private void processSumIter(BusinessCount businessCount,SumIterator sumIterator)
+	{
+		try {
+			businessCount.billNum = sumIterator.billNum();
+		} catch (Exception e) {
+			businessCount.billNum = 0;
+		}
+	
+		try {
+			businessCount.guestNum = sumIterator.guestNum();
+		} catch (Exception e) {
+			businessCount.guestNum = 0;
+		}
+		
+		try {
+			businessCount.foodAmt = sumIterator.foodAmt();
+		} catch (Exception e) {
+			businessCount.foodAmt = 0;
+		}
+		
+		try {
+			businessCount.disAmt = sumIterator.disAmt();
+		} catch (Exception e) {
+			businessCount.disAmt = 0;
+		}
+		
+		try {
+			businessCount.roundAmt = sumIterator.roundAmt();
+		} catch (Exception e) {
+			businessCount.roundAmt = 0;
+		}
+		
+		try {
+			businessCount.oughtAmt = sumIterator.oughtAmt();
+		} catch (Exception e) {
+			businessCount.oughtAmt = 0;
+		}
+		
+		try {
+			businessCount.payAmt = sumIterator.payAmt();
+		} catch (Exception e) {
+			businessCount.payAmt = 0;
+		}
+		
+		try {
+			businessCount.presentAmt = sumIterator.presentAmt();
+		} catch (Exception e) {
+			businessCount.presentAmt = 0;
+		}	
+	}
+	
+	public List<BusinessCount> shift(String startDate,String endDate,String shopC)
+			throws NoPrivilegeException,SQLException,NoConnection	{
+		
+		List<BusinessCount> result = new ArrayList<BusinessCount>();
+		DefaultContext myCtx = getDefaultContext();
+		ConditionIterator conditionIterator = null;
+		if (myCtx != null)
+		{
+			#sql [myCtx] conditionIterator = {
+			SELECT
+				    b.CSHIFT_N       conditionN,
+				    COUNT(cBranch_C) billNum,
+				    SUM(iGuestNum)   guestNum,
+				    SUM(nFoodAmt)    foodAmt,
+				    SUM(nDisAmt)     disAmt,
+				    SUM(nRoundAmt)   roundAmt,
+				    SUM(nOughtAmt)   oughtAmt,
+				    SUM(nPayAmt)     payAmt,
+				    SUM(nPresentAmt) presentAmt,
+				    cBranch_C        shopC,
+				    cBranch_N        shopN
+				FROM
+				    :{Com_("d_t_food_bill")} b
+				WHERE
+				    DBUSINESS >= to_date(:startDate, 'yyyy-mm-dd')
+				AND DBUSINESS <= to_date(:endDate, 'yyyy-mm-dd')
+				AND b.CBRANCH_C LIKE :shopC
+				GROUP BY
+				    b.CSHIFT_N ,
+				    cBranch_C,
+				    cBranch_N
+				ORDER BY
+				    b.CSHIFT_N,
+				    cBranch_C};
+			
+			while(conditionIterator.next()) {
+				BusinessCount businessCount = processConditionIter(conditionIterator);		
+				businessCount.shift = conditionIterator.conditionN();
+				result.add(businessCount);
+			}
+			conditionIterator.close();
+		}
+		else
+		{
+			throw new NoConnection();
+		}
+		closeDefaultContext(myCtx);
+		return result;
+	}
+	
+	public List<BusinessCount> period(String startDate,String endDate,String shopC)
+			throws NoPrivilegeException,SQLException,NoConnection	{
+		
+		List<BusinessCount> result = new ArrayList<BusinessCount>();
+		DefaultContext myCtx = getDefaultContext();
+		ConditionIterator conditionIterator = null;
+		if (myCtx != null)
+		{
+			#sql [myCtx] conditionIterator = {
+			SELECT
+				    b.CPERIOD_N      conditionN,
+				    COUNT(cBranch_C) billNum,
+				    SUM(iGuestNum)   guestNum,
+				    SUM(nFoodAmt)    foodAmt,
+				    SUM(nDisAmt)     disAmt,
+				    SUM(nRoundAmt)   roundAmt,
+				    SUM(nOughtAmt)   oughtAmt,
+				    SUM(nPayAmt)     payAmt,
+				    SUM(nPresentAmt) presentAmt,
+				    cBranch_C        shopC,
+				    cBranch_N        shopN
+				FROM
+				    :{Com_("d_t_food_bill")} b
+				WHERE
+						DBUSINESS >= to_date(:startDate, 'yyyy-mm-dd')
+					AND DBUSINESS <= to_date(:endDate, 'yyyy-mm-dd')
+					AND b.CBRANCH_C LIKE :shopC
+				GROUP BY
+				    b.CPERIOD_N ,
+				    cBranch_C,
+				    cBranch_N
+				ORDER BY
+				    b.CPERIOD_N};
+			
+			while(conditionIterator.next()) {
+				BusinessCount businessCount = processConditionIter(conditionIterator);		
+				businessCount.period = conditionIterator.conditionN();
+				result.add(businessCount);
+			}
+			conditionIterator.close();
+		}
+		else
+		{
+			throw new NoConnection();
+		}
+		closeDefaultContext(myCtx);
+		return result;
+	}
+	
+	public List<BusinessCount> floor(String startDate,String endDate,String shopC)
+			throws NoPrivilegeException,SQLException,NoConnection	{
+		
+		List<BusinessCount> result = new ArrayList<BusinessCount>();
+		DefaultContext myCtx = getDefaultContext();
+		ConditionIterator conditionIterator = null;
+		if (myCtx != null)
+		{
+			#sql [myCtx] conditionIterator = {
+				SELECT
+					cBranch_C        shopC,
+					cBranch_N        shopN,
+				    COUNT(cBranch_C) billNum,
+				    SUM(iGuestNum)   guestNum,
+				    SUM(nFoodAmt)    foodAmt,
+				    SUM(nDisAmt)     disAmt,
+				    SUM(nRoundAmt)   roundAmt,
+				    SUM(nOughtAmt)   oughtAmt,
+				    SUM(nPayAmt)     payAmt,
+				    SUM(nPresentAmt) presentAmt,
+				FROM
+				    :{Com_("d_t_food_bill")} b
+				WHERE
+					DBUSINESS >= to_date(:startDate, 'yyyy-mm-dd')
+				AND DBUSINESS <= to_date(:endDate, 'yyyy-mm-dd')
+				AND b.CBRANCH_C LIKE :shopC
+				GROUP BY
+				    cBranch_C,
+				    cBranch_N
+				ORDER BY
+				    b.CBRANCH_C};
+			
+			while(conditionIterator.next()) {
+				BusinessCount businessCount = processConditionIter(conditionIterator);		
+				result.add(businessCount);
+			}
+			conditionIterator.close();
+		}
+		else
+		{
+			throw new NoConnection();
+		}
+		closeDefaultContext(myCtx);
+		return result;
+	}
+	
+	private BusinessCount processConditionIter(ConditionIterator conditionIterator)  throws SQLException
+	{
+		BusinessCount businessCount = new BusinessCount();
+		businessCount.billNum = conditionIterator.billNum();
+		businessCount.guestNum = conditionIterator.guestNum();
+		businessCount.foodAmt = conditionIterator.foodAmt();
+		businessCount.disAmt = conditionIterator.disAmt();
+		businessCount.roundAmt = conditionIterator.roundAmt();
+		businessCount.oughtAmt = conditionIterator.oughtAmt();
+		businessCount.payAmt = conditionIterator.payAmt();
+		businessCount.presentAmt = conditionIterator.presentAmt();
+		businessCount.shopC = conditionIterator.shopC();
+		businessCount.shopN = conditionIterator.shopN();
+		
+		return businessCount;
+	}
+}

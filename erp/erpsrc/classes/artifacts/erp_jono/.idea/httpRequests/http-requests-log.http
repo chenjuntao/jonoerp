@@ -1,0 +1,58 @@
+POST http://10.250.192.204:8079/msp/comApi/comReq
+Accept: */*
+Cache-Control: no-cache
+Content-Type: application/json
+
+idReverseCdr&parm_str={"propertyname":"msisdn", "propertyvalue":"8615073699442"}
+
+<> 2019-09-20T102533.200.json
+
+###
+
+POST http://10.250.192.204:8079/msp/comApi/comReq
+Accept: */*
+Cache-Control: no-cache
+Content-Type: application/json
+
+idReverseCdr&parm_str={"propertyname":"msisdn", "propertyvalue":"8613467516757"}
+
+<> 2019-09-20T102036.200.json
+
+###
+
+POST http://10.250.192.204:8079/msp/comApi/comReq
+Accept: */*
+Cache-Control: no-cache
+Content-Type: application/json
+
+idReverseCdr&parm_str={"propertyname":"msisdn", "propertyvalue":"8613467516757"}
+
+###
+
+POST http://10.250.192.204:8079/msp/comApi/comReq
+Accept: */*
+Cache-Control: no-cache
+Content-Type: application/json
+
+idReverseCdr&parm_str={"propertyname":"msisdn", "propertyvalue":"8613467516757"}
+
+###
+
+POST http://10.250.192.204:8079/msp/comApi/comReq
+Accept: */*
+Cache-Control: no-cache
+Content-Type: application/json
+
+idReverseCdr&parm_str={"propertyname":"msisdn", "propertyvalue":"8613467516757"}
+
+###
+
+POST http://10.250.192.6:8079/msp/comApi/comReq
+Accept: */*
+Cache-Control: no-cache
+Content-Type: application/json
+
+idReverseCdr&parm_str={"propertyname":"msisdn", "propertyvalue":"8613467516757"}
+
+###
+

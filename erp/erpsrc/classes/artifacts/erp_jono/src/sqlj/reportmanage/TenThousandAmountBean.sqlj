@@ -1,0 +1,126 @@
+package logic.reportmanage;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import sqlj.runtime.ref.DefaultContext;
+import com.tanry.business.form.FormConstant;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.TextUtil;
+import com.tanry.framework.util.constant.BillStatus;
+import com.tanry.framework.acl.NoPrivilegeException;
+
+public class TenThousandAmountBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(TenThousandAmountBean.class);
+	
+	#sql private iterator HeaderIter(
+			String item_id,
+			String item_name,
+			Double cost
+		);
+	
+	#sql private iterator AmtIter(
+	    	Double amt
+	);
+	
+	public Double getAmt(java.util.Date startDate1, java.util.Date endDate1,String branchId)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		
+		Date _startDate1 = SqlDateUtil.getSqlDate(startDate1);
+		Date _endDate1 = SqlDateUtil.getSqlDate(endDate1);
+		
+		DefaultContext myCtx = getDefaultContext();
+		Double amt = null;
+		
+		AmtIter amtIter = null;
+		#sql [myCtx] amtIter = {
+			SELECT
+			    SUM(b.BUSINESS_AMT) amt
+			    FROM
+			    :{Com_("D_T3_DAILY_BUSINESS_AMT")} b
+			    WHERE
+			        b.BRANCH_ID = :branchId
+			    AND b.BUSINESS_DATE >= :_startDate1
+			    AND b.BUSINESS_DATE <= :_endDate1
+			    GROUP BY
+			        b.BRANCH_ID};
+		
+		if(amtIter.next()){
+			amt = amtIter.amt();
+		}
+		
+		closeDefaultContext(myCtx);
+					
+		return amt;
+	}
+	
+	public List<Map> query(String branchId,String itemId,Double amt,java.util.Date startDate, java.util.Date endDate)  
+			throws NoPrivilegeException,SQLException,NoConnection {
+		Date _startDate = SqlDateUtil.getSqlDate(startDate);
+		Date _endDate = SqlDateUtil.getSqlDate(endDate);
+		
+		DefaultContext myCtx = getDefaultContext();
+		HeaderIter headerIter = null;
+		#sql [myCtx] headerIter = {
+			WITH
+			    a AS
+			    (
+			        SELECT
+			            t.ITEM_ID,
+			            t.ITEM_NAME
+			        FROM
+			        :{Com_("D_T2_THERAPY")} t
+			        WHERE
+			            t.THERAPY_ID = :itemId
+			    )
+			SELECT
+			    a.item_id,
+			    a.item_name,
+			    ROUND( SUM( NVL(r.AMT_ACTUAL,r.AMT_THEORY)* r.item_price/:amt * 10000),2) cost
+			FROM
+			    a
+			JOIN
+			:{Com_("D_T3_DAILY_RAW_AMT")} r
+			ON
+			    a.ITEM_ID = r.ITEM_ID
+			AND r.BRANCH_ID = :branchId
+			AND r.PRICE_TYPE = 'BENCHMARK'
+		    AND r.BUSINESS_DATE >= :_startDate
+		    AND r.BUSINESS_DATE <= :_endDate
+			GROUP BY
+			    a.ITEM_ID,
+			    a.ITEM_NAME
+			ORDER BY
+				cost desc};
+		List<Map> headerLst = processIter(headerIter);
+		headerIter.close();
+		closeDefaultContext(myCtx);
+		return headerLst;
+	}
+	
+	
+	private List<Map> processIter(HeaderIter headerIter) 
+			throws SQLException {
+		List<Map> headerLst = new ArrayList<Map>();
+		
+		while(headerIter.next()) {
+			Map header = new HashMap();
+			header.put("item_id", headerIter.item_id());
+			header.put("item_name", headerIter.item_name());
+			header.put("cost", headerIter.cost());
+			
+			headerLst.add(header);
+		}
+		return headerLst;
+	}
+}

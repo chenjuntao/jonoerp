@@ -1,0 +1,26 @@
+#categoryTree {
+	position: absolute;
+	left: 0;
+	right: 0;
+	top: 30px;
+	bottom: 0;
+	width: 20%;
+	height: auto; /* override default height: 30em; in dgrid.css */
+}
+
+#amountArea {
+	position: absolute;
+	right: 0;
+	top: 30px;
+	width: 80%;
+	height: 32px; /* override default height: 30em; in dgrid.css */
+}
+
+#detailGrid {
+	position: absolute;
+	right: 0;
+	top: 62px;
+	bottom: 0;
+	width: 80%;
+	height: auto; /* override default height: 30em; in dgrid.css */
+}

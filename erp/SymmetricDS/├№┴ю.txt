@@ -1,0 +1,19 @@
+52069864
+871330
+
+初始化系统表结构
+symadmin --engine corp-000 create-sym-tables
+
+插入配置数据
+dbimport --engine corp-000 insert_sample.sql
+
+注册所有子节点
+symadmin --engine corp-000 open-registration store 001  
+symadmin --engine corp-000 open-registration store 002  
+
+同步初始负载
+symadmin --engine corp-000 reload-node 001  
+symadmin --engine corp-000 reload-node 002  
+
+分别启动三个节点的服务，先执行子节点。
+sym

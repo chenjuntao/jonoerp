@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE struts PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN"
+    "http://struts.apache.org/dtds/struts-2.0.dtd">
+
+<struts>
+	<package name="cf_production_output" namespace="/cf/production/output" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.cf.stock.StockOutAction">
+			<result name="success">/jsp/centralfactory/production/output/main.jsp</result>
+		</action>
+		
+		<action name="editView" method="editView" class="action.centralfactory.productionDemand.workOrder.BillManageAction">
+			<result name="success">/jsp/centralfactory/production/output/edit.jsp</result>
+		</action>
+		
+		<action name="returnView" method="createView" class="com.tanry.business.module.cf.requisition.CreateRequisitionAction">
+			<result name="success">/jsp/centralfactory/production/output/return.jsp</result>
+		</action>
+		
+		<action name="stockinView" method="stockinView" class="com.tanry.business.module.cf.production.OutputRecordAction">
+			<result name="success">/jsp/centralfactory/production/output/stockin.jsp</result>
+		</action>
+		
+		<action name="putinStorage" method="putinStorage" class="action.centralfactory.productionDemand.workOrder.BillManageAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="cf_production_output_manual" namespace="/centralfactory/production/output/manual" extends="trust-default">
+		<action name="mainView" method="estimateView" class="action.restaurant.putinstorage.CreateBillAction">
+			<result name="success">/jsp/centralfactory/production/output/manual/main.jsp</result>
+		</action>
+	</package>
+</struts>
+

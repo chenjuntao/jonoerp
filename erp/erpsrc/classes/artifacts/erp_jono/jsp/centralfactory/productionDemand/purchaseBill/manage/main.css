@@ -1,0 +1,110 @@
+#treeWrapper {
+	position: absolute;
+	left: 0;
+	right: 0;
+	top: 30px;
+	bottom: 0px;
+	width: 20%;
+	height: auto;
+}
+
+#billTree {
+	width: 100%;
+	height: 100%;
+}
+
+#billInfo {
+	position: absolute;
+	right: 0;
+	top: 30px;
+	bottom: 0px;
+	width: 80%;
+	height: auto; /* override default height: 30em; in dgrid.css */
+}
+
+#dataGrid {
+	position: absolute;
+	right: 0;
+	top: 150px;
+	bottom: 0px;
+	width: 100%;
+	height: auto; /* override default height: 30em; in dgrid.css */
+}
+
+#commandTable {
+	position: absolute;
+	bottom: 0;
+	width: 100%;
+}
+
+th[role="columnheader"] {
+	text-align: center;
+}
+
+.dgrid-cell {
+	/* 	width: 80px; make all the columns 80px wide */
+	vertical-align: middle;
+}
+
+.field-rownumber, .field-itemId, .field-itemDimension, .field-therapy {
+	text-align: center;
+}
+
+.field-rownumber {
+	width: 40px;
+}
+
+.field-itemId {
+	width: 80px;
+}
+
+.field-ref {
+	width: 180px;
+}
+
+.field-itemName {
+	width: 150px;
+}
+
+.field-itemCategory {
+	width: 90px;
+}
+
+.field-itemDimension {
+	width: 60px;
+}
+
+.field-itemSpecification {
+	width: 80px;
+}
+
+.field-receiver {
+	width: 110px;
+}
+
+.field-receiveAddress {
+	width: 150px;
+}
+
+.field-itemCount {
+	width: 80px;
+}
+
+.field-inventory, .field-orderCount, .field-itemUnitPrice, .field-payAmt
+	{
+	width: 70px;
+}
+
+.field-expiredTime {
+	width: 90px;
+}
+
+.field-none {
+	/* 	width: 60px; */
+	
+}
+
+.grid-number {
+	width: 70px;
+	text-align: right;
+}

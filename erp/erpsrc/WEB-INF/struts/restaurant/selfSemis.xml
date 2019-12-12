@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE struts PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN"
+    "http://struts.apache.org/dtds/struts-2.0.dtd">
+
+<struts>
+	
+	<package name="restaurant_production_create" namespace="/restaurant/production/createself" extends="trust-default">
+		<action name="mainView" class="action.restaurant.production.CreateSelfSemisAction">
+			<result name="success">/jsp/restaurant/production/creategoods/createSelf.jsp</result>
+		</action>
+		
+		<action name="commitView" method="commitView" class="action.restaurant.production.CreateSelfSemisAction">
+			<result name="success">/jsp/restaurant/production/creategoods/commitSelf.jsp</result>
+			<result name="input" type="json" />
+		</action>
+		
+		<action name="doCommit" method="doCommit" class="action.restaurant.production.CreateSelfSemisAction">
+			<result type="json" />
+		</action>
+	</package>
+
+
+	<package name="restaurant_production_confirm" namespace="/restaurant/production/confirmSelf" extends="trust-default">
+		<action name="mainView" class="action.restaurant.production.ConfirmSelfSemisAction">
+			<result name="success">/jsp/restaurant/production/confirmgoods/listSelf.jsp</result>
+		</action>
+		
+		<action name="auditView" method="auditView" class="action.restaurant.production.ConfirmSelfSemisAction">
+			<result name="success">/jsp/restaurant/production/confirmgoods/confirmSelf.jsp</result>
+		</action>
+		
+		<action name="auditCommitView" method="auditCommitView" class="action.restaurant.production.ConfirmSelfSemisAction">
+			<result name="success">/jsp/restaurant/production/confirmgoods/commitSelf.jsp</result>
+		</action>
+		
+		<action name="doAudit" method="doAudit" class="action.restaurant.production.ConfirmSelfSemisAction">
+			<result type="json" />
+		</action>
+		
+	</package>
+
+	<package name="restaurant_production_query" namespace="/restaurant/production/querySelf" extends="trust-default">
+		<action name="mainView" class="action.restaurant.production.ManageSelfSemisAction">
+			<result name="success">/jsp/restaurant/production/querygoods/listSelfBill.jsp</result>
+		</action>
+		
+		<action name="doQuery" method="doQuery" class="action.restaurant.production.ManageSelfSemisAction">
+			<result type="json" />
+		</action>
+		
+		<action name="queryByStatus" method="queryByStatus" class="action.restaurant.production.ManageSelfSemisAction">
+			<result type="json" />
+		</action>
+		
+		<action name="scanView" method="scanView" class="action.restaurant.production.ManageSelfSemisAction">
+			<result name="success">/jsp/restaurant/production/querygoods/scanSelf.jsp</result>
+		</action>
+		
+		<action name="queryDetail" method="queryDetail" class="action.restaurant.production.ManageSelfSemisAction">
+			<result type="json" />
+		</action>
+		
+		<action name="editView" method="editView" class="action.restaurant.production.ManageSelfSemisAction">
+			<result name="success">/jsp/restaurant/production/querygoods/editSelf.jsp</result>
+		</action>
+		
+		<action name="doSave" method="doSave" class="action.restaurant.production.ManageSelfSemisAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doDelete" method="doDelete" class="action.restaurant.production.ManageSelfSemisAction">
+			<result type="json" />
+		</action>
+	</package>
+
+</struts>
+

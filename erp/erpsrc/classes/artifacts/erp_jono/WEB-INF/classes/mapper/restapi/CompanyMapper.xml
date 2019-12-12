@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"   
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">  
+
+<mapper namespace="mapper.restapi.CompanyMapper">  
+
+<!-- 保存 -->
+<insert id="saveEntity">
+	INSERT INTO ${com}.D_T_COMPANY
+		(COMPANY_ID, COMPANY_NAME, DB_NAME, CREATOR, REMARK) 
+	VALUES 
+		(#{map.companyId}, #{map.companyName}, #{map.dbName}, #{map.creator}, #{map.remark})
+</insert>
+
+<!-- 查询出所有的企业 -->
+<select id="listCompany" resultType="map" >
+    SELECT * FROM ${com}.D_T_COMPANY
+</select>
+
+<!-- 根据ComId查找对应的DbName -->
+<select id="getDbNameByComId" resultType="map" >
+    SELECT * FROM ${com}.D_T_COMPANY
+			WHERE COMPANY_ID = #{companyId}
+</select>
+
+<!-- DDL测试-->
+<update id="ddlTest" >
+	ALTER TABLE ${com}.D_T1_RETURN_GOODS_HEADER ADD (AUDIT_TIME DATE);
+<!-- 	ALTER TABLE ${com}.D_T1_SHIPPING_ANTIAUDIT_HEADER ADD (AUDIT_TIME DATE); -->
+</update>
+</mapper>

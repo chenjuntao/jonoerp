@@ -1,0 +1,207 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"   
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">  
+
+<mapper namespace="mapper.businessquery.ShopPaymentMapper">  
+
+<resultMap id="ShopPaymentResultMap" type="pojo.businessquery.ShopPayment">
+		<id property="shopC" column="shopC" />
+		<result property="businessDate" column="businessDate" />
+		<result property="shopN" column="shopN" />
+		<result property="foodAmt" column="foodAmt" />
+		<result property="billNum" column="billNum" />
+		<result property="amtPerBill" column="amtPerBill" />
+		<result property="guestNum" column="guestNum" />
+		<result property="amtPerGuest" column="amtPerGuest" />
+		<result property="tableNum" column="tableNum" />
+		<result property="amtPerTable" column="amtPerTable" />
+		<result property="guestPerTable" column="guestPerTable" />
+		<result property="disAmt" column="disAmt" />
+		<result property="roundAmt" column="roundAmt" />
+		<result property="presentAmt" column="presentAmt" />
+		<result property="oughtAmt" column="oughtAmt" />
+		<result property="payAmt" column="payAmt" />
+		<result property="payC" column="payC" />
+		<result property="payN" column="payN" />
+		<result property="payTypeAmt" column="payTypeAmt" />
+</resultMap>
+
+<select id="getShopPayInfo" resultMap="ShopPaymentResultMap">
+	SELECT
+		a.*,
+		b.payC payC,
+		b.payN payN,
+		b.payTypeAmt payTypeAmt
+	FROM
+	(
+		SELECT
+			'all' businessDate,
+			cBranch_C        shopC,
+			cBranch_N        shopN,
+			SUM(nFoodAmt)    foodAmt,
+			COUNT(cBranch_C) billNum,
+			CASE WHEN (COUNT(cBranch_C) = 0)
+				THEN 0
+				ELSE ROUND(SUM(nFoodAmt) / COUNT(cBranch_C),2)
+			END            amtPerBill,
+			SUM(iGuestNum) guestNum,
+			CASE WHEN (SUM(iGuestNum) = 0)
+				THEN 0
+				ELSE ROUND(SUM(nFoodAmt) / SUM(iGuestNum) ,2)
+			END                      amtPerGuest,
+			COUNT(DISTINCT cTable_N) tableNum,
+			CASE WHEN (SUM(nFoodAmt) = 0 OR COUNT(DISTINCT cTable_N) = 0)
+				THEN 0
+				ELSE ROUND(SUM(nFoodAmt) / COUNT(DISTINCT cTable_N) ,2)
+			END amtPerTable,
+			CASE WHEN (SUM(iGuestNum)=0 OR COUNT(DISTINCT cTable_N) = 0)
+				THEN 0
+				ELSE ROUND(SUM(iGuestNum) / COUNT(DISTINCT cTable_N) ,2)
+			END              guestPerTable,
+			SUM(nDisAmt)     disAmt,
+			SUM(nRoundAmt)   roundAmt,
+			SUM(nPresentAmt) presentAmt,
+			SUM(nOughtAmt)   oughtAmt,
+			SUM(nPayAmt)     payAmt
+		FROM
+			${com}.d_t_food_bill
+		WHERE
+			DBUSINESS &gt;= #{startDate}
+		AND DBUSINESS &lt;= #{endDate}
+		GROUP BY
+			cBranch_C,
+			cBranch_N
+			ORDER BY
+			cBranch_C
+	)a,
+	(
+		SELECT
+			b.cBranch_C    shopC,
+			b.CBRANCH_N    ShopN,
+			p.cPay_C       payC,
+			p.cPay_N       payN,
+			SUM(p.nPayAmt) payTypeAmt
+		FROM
+			${com}.d_t_food_bill b,
+			${com}.d_t_bill_pay p
+		WHERE
+			b.cBill_C = p.cBill_C
+		AND DBUSINESS &gt;= #{startDate}
+		AND DBUSINESS &lt;= #{endDate}
+		GROUP BY
+			b.cBranch_C,
+			b.CBRANCH_N,
+			p.cPay_C,
+			p.cPay_N
+			ORDER BY
+			b.cBranch_C,
+			p.CPAY_C
+	)b
+	WHERE
+		a.shopC = b.shopC
+</select>
+
+<select id="getShopPayInfoByDay" resultMap="ShopPaymentResultMap">
+	SELECT
+		a.*,
+		b.PAYC,
+		b.PAYN,
+		b.PAYTYPEAMT
+	FROM
+	(
+		SELECT
+			date_format(DBUSINESS, '%Y-%m-%d') businessDate,
+			cBranch_C                        shopC,
+			cBranch_N                        shopN,
+			SUM(nFoodAmt)                    foodAmt,
+			COUNT(cBranch_C)                 billNum,
+			CASE WHEN (COUNT(cBranch_C) = 0)
+				THEN 0
+				ELSE ROUND(SUM(nFoodAmt) / COUNT(cBranch_C),2)
+			END            amtPerBill,
+			SUM(iGuestNum) guestNum,
+			CASE WHEN (SUM(iGuestNum) = 0)
+				THEN 0
+				ELSE ROUND(SUM(nFoodAmt) / SUM(iGuestNum) ,2)
+			END                      amtPerGuest,
+			COUNT(DISTINCT cTable_N) tableNum,
+			CASE WHEN (SUM(nFoodAmt) = 0 or COUNT(DISTINCT cTable_N) = 0)
+				THEN 0
+				ELSE ROUND(SUM(nFoodAmt) / COUNT(DISTINCT cTable_N) ,2)
+			END amtPerTable,
+			CASE WHEN (SUM(iGuestNum)=0 or COUNT(DISTINCT cTable_N)=0)
+				THEN 0
+				ELSE ROUND(SUM(iGuestNum) / COUNT(DISTINCT cTable_N) ,2)
+			END              guestPerTable,
+			SUM(nDisAmt)     disAmt,
+			SUM(nRoundAmt)   roundAmt,
+			SUM(nPresentAmt) presentAmt,
+			SUM(nOughtAmt)   oughtAmt,
+			SUM(nPayAmt)     payAmt
+		FROM
+			${com}.d_t_food_bill
+		WHERE
+			date_format(DBUSINESS, '%Y-%m-%d') IN
+			(
+				SELECT
+					date_format(DBUSINESS, '%Y-%m-%d')
+				FROM
+				${com}.d_t_food_bill d
+				WHERE
+					 DBUSINESS &gt;= #{startDate}
+				AND DBUSINESS &lt;= #{endDate}
+				GROUP BY
+					date_format(DBUSINESS, '%Y-%m-%d')
+			)
+		GROUP BY
+			date_format(DBUSINESS, '%Y-%m-%d'),
+			cBranch_C,
+			cBranch_N
+		ORDER BY
+			date_format(DBUSINESS, '%Y-%m-%d'),
+		cBranch_C
+	)a,
+	(
+		SELECT
+			date_format(DBUSINESS, '%Y-%m-%d') businessDate,
+			a.cBranch_C                        shopC,
+			a.CBRANCH_N                        shopN,
+			b.cPay_C                           payC,
+			b.cPay_N                           payN,
+			SUM(b.nPayAmt)                     payTypeAmt
+		FROM
+			${com}.d_t_food_bill a,
+			${com}.d_t_bill_pay b
+		WHERE
+			a.cBill_C = b.cBill_C
+		AND date_format(DBUSINESS, '%Y-%m-%d') IN
+		(
+			SELECT
+				date_format(DBUSINESS, '%Y-%m-%d')
+			FROM
+				${com}.d_t_food_bill d
+			WHERE
+				DBUSINESS &gt;= #{startDate}
+			AND DBUSINESS &lt;= #{endDate}
+			GROUP BY
+				date_format(DBUSINESS, '%Y-%m-%d')
+		)
+		GROUP BY
+			date_format(DBUSINESS, '%Y-%m-%d'),
+			a.cBranch_C,
+			a.CBRANCH_N,
+			b.cPay_C,
+			b.cPay_N
+		ORDER BY
+			date_format(DBUSINESS, '%Y-%m-%d'),
+			a.cBranch_C
+	)b
+	WHERE
+		a.businessDate = b.businessDate
+	AND a.shopC = b.shopC
+	ORDER BY
+		a.BUSINESSDATE,
+		a.SHOPC,
+		b.PAYC
+</select>
+</mapper>

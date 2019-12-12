@@ -1,0 +1,310 @@
+package logic.form;
+
+import java.sql.Date;
+import java.sql.Clob;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import pojo.form.ObservationDetail;
+import sqlj.runtime.ref.DefaultContext;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.TextUtil;
+import com.tanry.framework.acl.NoPrivilegeException;
+
+public class ObservationDetailBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(ObservationDetailBean.class);
+	
+	#sql private iterator HeaderIter(
+			String item_id, 
+			String part_id, 
+			String process_id, 
+			String processed_name, 
+			int step, 
+			byte[] step_pic_blob,
+			String step_remark
+		);
+	
+	public int saveEntity(ObservationDetail detail)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+	    return saveEntity(detail, myCtx);
+	}
+	
+	public int saveEntity(ObservationDetail detail, DefaultContext myCtx )
+		throws NoPrivilegeException, SQLException, NoConnection {
+		
+		String itemId = detail.getItemId();
+		String partId = detail.getPartId();
+		String processId = detail.getProcessId();
+		String processedName = detail.getProcessedName();
+		int step = detail.getStep();
+		byte[] stepPicBlob = detail.getStepPicBlob();
+		String stepRemark = detail.getStepRemark();
+
+		#sql [myCtx] {
+			INSERT INTO :{Com_("D_T2_OBSERVATION_DETAIL")}
+				(ITEM_ID, PART_ID, PROCESS_ID, PROCESSED_NAME,STEP,STEP_PIC_BLOB,STEP_REMARK) 
+			VALUES (:itemId, :partId, :processId, :processedName, :step,:stepPicBlob,:stepRemark)
+		};
+		
+		return 1;
+	}
+	
+
+	public int deleteEntity(ObservationDetail detail)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		String itemId = detail.getItemId();
+		String processId = detail.getProcessId();
+		int step = detail.getStep();
+		
+		#sql [myCtx] {
+			DELETE  FROM	:{Com_("D_T2_OBSERVATION_DETAIL")}
+			WHERE
+				ITEM_ID = :itemId AND PROCESS_ID = :processId AND STEP = :step
+		};
+		
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public int updateStep(ObservationDetail detail)
+			throws NoPrivilegeException, SQLException, NoConnection {
+			DefaultContext myCtx = getDefaultContext();
+
+			String itemId = detail.getItemId();
+			String processId = detail.getProcessId();
+			int step = detail.getStep();
+			byte[] stepPicBlob = detail.getStepPicBlob();
+			String stepRemark = detail.getStepRemark();
+
+			if(stepPicBlob == null){
+				#sql [myCtx] {
+					UPDATE
+					:{Com_("D_T2_OBSERVATION_DETAIL")}
+					SET
+						STEP_REMARK = :stepRemark
+					WHERE 
+						PROCESS_ID = :processId
+					AND ITEM_ID = :itemId
+					AND STEP = :step
+				};
+			}else{
+				#sql [myCtx] {
+				DELETE
+					FROM
+					:{Com_("D_T2_OBSERVATION_DETAIL")}
+				WHERE
+				    PROCESS_ID = :processId
+				AND ITEM_ID = :itemId
+				AND STEP = :step};
+				
+				saveEntity(detail, myCtx);
+			}
+			
+			closeDefaultContext(myCtx);
+			
+			return 1;
+		}
+	
+	public int updateStepByDelete(String itemId,String processId,int updateStep,int currentStep)
+			throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		#sql [myCtx] {
+			UPDATE
+			:{Com_("D_T2_OBSERVATION_DETAIL")}
+			SET
+				STEP = :updateStep
+			WHERE 
+				PROCESS_ID = :processId		AND ITEM_ID = :itemId AND STEP = :currentStep
+		};
+		
+		closeDefaultContext(myCtx);
+		return 1;
+	}
+	
+
+	public Integer count(ObservationDetail detail)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		
+		DefaultContext myCtx = getDefaultContext();
+		Integer total = 0;
+		
+		String itemId = detail.getItemId();
+		String processId = detail.getProcessId();
+		int step = detail.getStep();
+		
+		#sql [myCtx] {
+			SELECT
+			    count(*) into :total
+			FROM
+			:{Com_("D_T2_OBSERVATION_DETAIL")} d
+			WHERE
+				ITEM_ID = :itemId AND PROCESS_ID = :processId AND STEP = :step
+		};
+		
+		if(total == null){
+			total  = 0;
+		}
+		
+		closeDefaultContext(myCtx);
+		return total;
+	}
+	
+	public Integer maxStep(ObservationDetail detail)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		
+		DefaultContext myCtx = getDefaultContext();
+		Integer total = 0;
+		
+		String itemId = detail.getItemId();
+		String processId = detail.getProcessId();
+		
+		#sql [myCtx] {
+			SELECT
+				max(STEP) into :total
+			FROM
+			:{Com_("D_T2_OBSERVATION_DETAIL")} d
+			WHERE
+				ITEM_ID = :itemId AND PROCESS_ID = :processId
+		};
+		
+		if(total == null){
+			total  = 0;
+		}
+		
+		closeDefaultContext(myCtx);
+		return total;
+	}
+	
+	/**
+	 * 根据出品图片查询观察表明细
+	 */
+	public List<ObservationDetail> query(String itemId) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		HeaderIter headerIter = null;
+		#sql [myCtx] headerIter = {
+			SELECT
+			    *
+			    FROM
+			    :{Com_("D_T2_OBSERVATION_DETAIL")} d
+			    WHERE
+			        ITEM_ID = :itemId
+			    ORDER BY
+			        d.PROCESS_ID,
+			        d.STEP};
+		List<ObservationDetail> headerLst = processIter(headerIter);
+		headerIter.close();
+		closeDefaultContext(myCtx);
+		return headerLst;
+	}
+	
+	public List<ObservationDetail> queryByProcessId(String itemId,String processId) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		HeaderIter headerIter = null;
+		#sql [myCtx] headerIter = {
+				SELECT
+					*
+				FROM
+				:{Com_("D_T2_OBSERVATION_DETAIL")} d
+				WHERE
+					ITEM_ID = :itemId AND PROCESS_ID = : processId
+				ORDER BY
+					d.PROCESS_ID,
+					d.STEP};
+		List<ObservationDetail> headerLst = processIter(headerIter);
+		headerIter.close();
+		closeDefaultContext(myCtx);
+		return headerLst;
+	}
+	
+	/**
+	 * 查询出品的某一操作步骤
+	 */
+	public ObservationDetail queryStep(String itemId,String processId, int step) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		HeaderIter headerIter = null;
+		ObservationDetail header = new ObservationDetail();
+		
+		#sql [myCtx] headerIter = {
+			SELECT
+			    *
+			    FROM
+			    :{Com_("D_T2_OBSERVATION_DETAIL")} d
+			    WHERE
+			        d.ITEM_ID = :itemId
+			    AND d.PROCESS_ID = :processId
+			    AND d.STEP = :step};
+	
+		if(headerIter.next()) {
+			header.setItemId(headerIter.item_id());
+			header.setPartId(headerIter.part_id());
+			header.setProcessId(headerIter.process_id());
+			header.setProcessedName(headerIter.processed_name());
+			header.setStep(headerIter.step());
+			header.setStepRemark(headerIter.step_remark());
+		}
+		
+		headerIter.close();
+		closeDefaultContext(myCtx);
+		return header;
+	}
+	
+	/**
+	 * 根据出品ID获取相应的图片数据
+	 */
+	public byte[] getPicData(String itemId,String  processId, Integer step)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		byte[] picData = null;
+		DefaultContext myCtx = getDefaultContext();
+		try {
+			#sql [myCtx] {
+				SELECT 
+					d.STEP_PIC_BLOB into :picData 
+				FROM
+				:{Com_("D_T2_OBSERVATION_DETAIL")} d
+				WHERE
+				    d.ITEM_ID = :itemId AND d.PROCESS_ID = :processId AND d.STEP = :step
+			};
+		} catch (SQLException e) {
+			log.error("itemId ： " + itemId + ", picData : " + picData);
+			log.error("Error running the query: " + e);
+			String sqlState = e.getSQLState();
+			log.error("SQL state = " + sqlState);
+			e.printStackTrace();
+		}
+		closeDefaultContext(myCtx);
+		
+		return picData;
+	}
+	
+	private List<ObservationDetail> processIter(HeaderIter headerIter) 
+			throws SQLException {
+		List<ObservationDetail> headerLst = new ArrayList<ObservationDetail>();
+		while(headerIter.next()) {
+			ObservationDetail header = new ObservationDetail();
+			header.setItemId(headerIter.item_id());
+			header.setPartId(headerIter.part_id());
+			header.setProcessId(headerIter.process_id());
+			header.setProcessedName(headerIter.processed_name());
+			header.setStep(headerIter.step());
+			header.setStepRemark(headerIter.step_remark());
+			headerLst.add(header);
+		}
+		return headerLst;
+	}
+}

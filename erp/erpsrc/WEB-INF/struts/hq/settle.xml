@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE struts PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN"
+    "http://struts.apache.org/dtds/struts-2.0.dtd">
+
+<struts>
+	<package name="monthly_settle" namespace="/settle/month" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.hq.settle.action.MonthlySettleAction">
+			<result name="success">/jsp/hq/settle/month/main.jsp</result>
+		</action>
+		
+		<action name="settleView" method="settleView" class="com.tanry.business.module.hq.settle.action.MonthlySettleAction">
+			<result name="success">/jsp/hq/settle/month/settle.jsp</result>
+		</action>
+		
+		<action name="checkStatus" method="checkStatus" class="com.tanry.business.module.hq.settle.action.MonthlySettleAction">
+			<result type="json" />
+		</action>
+		
+		<action name="queryOvertime" method="queryOvertime" class="com.tanry.business.module.hq.settle.action.MonthlySettleAction">
+			<result type="json" />
+		</action>
+		
+		<action name="saveRecord" method="saveRecord" class="com.tanry.business.module.hq.settle.action.MonthlySettleAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="monthly_settle_query" namespace="/settle/month/query" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.hq.settle.action.MonthlySettleAction">
+			<result name="success">/jsp/hq/settle/month/query/main.jsp</result>
+		</action>
+		
+		<action name="doQuery" method="doQuery" class="com.tanry.business.module.hq.settle.action.MonthlySettleAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="monthly_settle_setting_close_date" namespace="/settle/closedate" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.hq.settle.action.CloseDateAction">
+			<result name="success">/jsp/hq/settle/closedate/main.jsp</result>
+		</action>
+		
+		<action name="doSave" method="saveClosedate" class="com.tanry.business.module.hq.settle.action.CloseDateAction">
+			<result type="json" />
+		</action>
+	</package>
+</struts>
+

@@ -1,0 +1,261 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on Fri Sep 18 08:48:46 CST 2015 by lyz
+ * Last edited on Fri Sep 18 08:48:46 CST 2015 by lyz
+ * 
+ * comment: 总部-研发样品信息表
+ */
+package logic.module.hq;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import pojo.form.SampleInfo;
+import sqlj.runtime.ref.DefaultContext;
+
+import com.tanry.framework.acl.NoPrivilegeException;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.TextUtil;
+import com.tanry.framework.util.constant.BillStatus;
+
+public class SampleInfoBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(SampleInfoBean.class);
+	
+	public int saveEntity(SampleInfo sample)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		String id = TextUtil.uuid();
+		sample.setId(id);
+		String productName = sample.getProductName();
+		Integer minimumOrderQuantity = sample.getMinimumOrderQuantity();
+		String producePlace = sample.getProducePlace();
+		Integer orderCycle = sample.getOrderCycle();
+		Integer useCycle = sample.getUseCycle();
+		String qualificationPic = sample.getQualificationPic();
+		String samplePic = sample.getSamplePic();
+		Double price = sample.getPrice();
+		Double grossPrice = sample.getGrossPrice();
+		Double grossWeight = sample.getGrossWeight();
+		Double netWeight = sample.getNetWeight();
+		Double netRatio = sample.getNetRatio();
+		Integer shelfLife = sample.getShelfLife();
+		Integer deliveryTime = sample.getDeliveryTime();
+		String accptanceCriteria = sample.getAccptanceCriteria();
+		String supplier = sample.getSupplier();
+		String createUserId = sample.getCreateUserId();
+		Date createTime = SqlDateUtil.getSqlDate(new java.util.Date());
+
+		#sql [myCtx] {
+			INSERT INTO :{Com_("D_T1_SAMPLE_INFO")}
+				(ID, PRODUCT_NAME, MINIMUM_ORDER_QUANTITY, PRODUCE_PLACE, ORDER_CYCLE, USE_CYCLE, QUALIFICATION_PIC, SAMPLE_PIC, PRICE, GROSS_PRICE, GROSS_WEIGHT, NET_WEIGHT, 
+						NET_RATIO, SHELF_LIFE, DELIVERY_TIME, ACCPTANCE_CRITERIA, SUPPLIER, CREATE_USER_ID, CREATE_TIME) 
+			VALUES (:id, :productName, :minimumOrderQuantity, :producePlace, :orderCycle, :useCycle, :qualificationPic, :samplePic, :price, :grossPrice, :grossWeight, :netWeight, 
+					:netRatio, :shelfLife, :deliveryTime, :accptanceCriteria, :supplier, :createUserId, :createTime)
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public int updateEntity(SampleInfo sample)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		String id = sample.getId();
+		String productName = sample.getProductName();
+		Integer minimumOrderQuantity = sample.getMinimumOrderQuantity();
+		String producePlace = sample.getProducePlace();
+		Integer orderCycle = sample.getOrderCycle();
+		Integer useCycle = sample.getUseCycle();
+		String qualificationPic = sample.getQualificationPic();
+		String samplePic = sample.getSamplePic();
+		Double price = sample.getPrice();
+		Double grossPrice = sample.getGrossPrice();
+		Double grossWeight = sample.getGrossWeight();
+		Double netWeight = sample.getNetWeight();
+		Double netRatio = sample.getNetRatio();
+		Integer shelfLife = sample.getShelfLife();
+		Integer deliveryTime = sample.getDeliveryTime();
+		String accptanceCriteria = sample.getAccptanceCriteria();
+		String supplier = sample.getSupplier();
+
+		#sql [myCtx] {
+			UPDATE
+			:{Com_("D_T1_SAMPLE_INFO")}
+			SET
+				ID = :id,
+				PRODUCT_NAME = :productName,
+				MINIMUM_ORDER_QUANTITY = :minimumOrderQuantity,
+				PRODUCE_PLACE = :producePlace,
+				ORDER_CYCLE = :orderCycle,
+				USE_CYCLE = :useCycle,
+				-- QUALIFICATION_PIC = :qualificationPic,
+				-- SAMPLE_PIC = :samplePic,
+				PRICE = :price,
+				GROSS_PRICE = :grossPrice,
+				GROSS_WEIGHT = :grossWeight,
+				NET_WEIGHT = :netWeight,
+				NET_RATIO = :netRatio,
+				SHELF_LIFE = :shelfLife,
+				DELIVERY_TIME = :deliveryTime,
+				ACCPTANCE_CRITERIA = :accptanceCriteria,
+				SUPPLIER = :supplier
+			WHERE 
+				ID = :id
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+
+	public int updateQualificationPic(String id, String picId)
+			throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		#sql [myCtx] {
+			UPDATE
+			:{Com_("D_T1_SAMPLE_INFO")}
+			SET
+				QUALIFICATION_PIC = :picId
+			WHERE 
+				ID = :id
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public int updateSamplePic(String id, String picId)
+			throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		#sql [myCtx] {
+			UPDATE
+			:{Com_("D_T1_SAMPLE_INFO")}
+			SET
+				SAMPLE_PIC = :picId
+			WHERE 
+				ID = :id
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+
+	public int deleteEntity(String id)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		#sql [myCtx] {
+			DELETE
+			FROM
+			:{Com_("D_T1_SAMPLE_INFO")}
+			WHERE
+				ID = :id
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+
+	#sql private iterator SampleInfoIter(String id, String product_name, Integer minimum_order_quantity, String produce_place,
+			Integer order_cycle, Integer use_cycle, String qualification_pic, String sample_pic, Double price, Double gross_price, Double gross_weight,
+			Double net_weight, Double net_ratio, Integer shelf_life, Integer delivery_time, String accptance_criteria, String supplier,
+			String form_status);
+
+	public SampleInfo queryById(String id) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		SampleInfoIter sampleIter = null;
+		#sql [myCtx] sampleIter = {
+			SELECT
+			    i.*,
+			    '' as form_status
+			FROM
+			:{Com_("D_T1_SAMPLE_INFO")} i
+			WHERE
+				ID = :id
+		};
+		List<SampleInfo> sampleInfoLst = processIter(sampleIter);
+		sampleIter.close();
+		closeDefaultContext(myCtx);
+		if (sampleInfoLst !=null && !sampleInfoLst.isEmpty()) {
+			return sampleInfoLst.get(0);
+		}
+		return null;
+	}
+	
+	public List<SampleInfo> query(String productName, String queryType)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		productName = "%" + productName + "%";
+
+		String query = " 1=1";
+		if (BillStatus.UNADUIT_US.equals(queryType)) { // 获取未审核记录
+			query = query + " AND NVL( s.STATUS, 'null') = '" + BillStatus.UNADUIT_CN + "'"; 
+		}
+		
+		DefaultContext myCtx = getDefaultContext();
+		SampleInfoIter sampleIter = null;
+		#sql [myCtx] sampleIter = {
+			SELECT
+			    i.*,
+	            s.STATUS AS form_status
+			FROM
+			:{Com_("D_T1_SAMPLE_INFO")} i
+	        LEFT JOIN
+	        :{Com_("D_T0_FORM_STATUS")} s
+	        ON
+	            s.FORM_ID = i.ID
+	        AND s.IS_CURRENT = 1
+			WHERE
+				:{query :: 1=1}
+			AND	PRODUCT_NAME LIKE :productName
+		};
+		List<SampleInfo> sampleInfoLst = processIter(sampleIter);
+		sampleIter.close();
+		closeDefaultContext(myCtx);
+		return sampleInfoLst;
+	}
+
+	private List<SampleInfo> processIter(SampleInfoIter sampleIter) 
+			throws SQLException {
+		List<SampleInfo> sampleInfoLst = new ArrayList<SampleInfo>();
+		while(sampleIter.next()) {
+			SampleInfo sample = new SampleInfo();
+			sample.setId(sampleIter.id());
+			sample.setProductName(sampleIter.product_name());
+			sample.setMinimumOrderQuantity(sampleIter.minimum_order_quantity());
+			sample.setProducePlace(sampleIter.produce_place());
+			sample.setOrderCycle(sampleIter.order_cycle());
+			sample.setUseCycle(sampleIter.use_cycle());
+			sample.setQualificationPic(sampleIter.qualification_pic());
+			sample.setSamplePic(sampleIter.sample_pic());
+			sample.setPrice(sampleIter.price());
+			sample.setGrossPrice(sampleIter.gross_price());
+			sample.setGrossWeight(sampleIter.gross_weight());
+			sample.setNetWeight(sampleIter.net_weight());
+			sample.setNetRatio(sampleIter.net_ratio());
+			sample.setShelfLife(sampleIter.shelf_life());
+			sample.setDeliveryTime(sampleIter.delivery_time());
+			sample.setAccptanceCriteria(sampleIter.accptance_criteria());
+			sample.setSupplier(sampleIter.supplier());
+			sample.setFormStatus(sampleIter.form_status());
+			sampleInfoLst.add(sample);
+		}
+		return sampleInfoLst;
+	}
+}

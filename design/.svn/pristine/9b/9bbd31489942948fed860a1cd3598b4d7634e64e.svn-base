@@ -1,0 +1,8 @@
+--品牌/公司表
+drop table D_T0_COMPANY cascade constraints;
+create table D_T0_COMPANY
+(
+   COMPANY_ID        VARCHAR2(32),  --公司编号
+   COMPANY_NAME      VARCHAR2(64),  --公司名称
+   REMARK            VARCHAR2(200)  --备注
+);

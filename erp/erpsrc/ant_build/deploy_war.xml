@@ -1,0 +1,30 @@
+<project name="erp" default="war" basedir="..">
+	
+	<!-- 功能：将系统打包成WAR包，用于部署到服务器， by cjt -->
+
+	<!-- ==================== File and Directory Names ======================== -->
+
+	<property name="deployDir" value="home/cjt/jono" />
+	<property name="warFileName" value="erp.war" />  
+
+	<!--  ==================== Export to war package ==================== -->
+
+    <target name="war">
+    		<echo>删除原有war包...</echo>
+	        <delete file="${deployDir}/${warFileName}" />  
+    	    <echo>建立新war包...</echo>
+	        <war destfile="${deployDir}/${warFileName}" webxml="${basedir}/WEB-INF/web.xml">  
+	           <!-- 将jsp文件、class文件、配置文件等拷贝到war包的对应路径下。 -->  
+	           <fileset dir="${basedir}">  
+	           		<include name="*.html" />
+					<include name="jsp/**/*.*" />
+	           		<include name="mobile/**/*.*" />
+					<include name="WEB-INF/**/*.*" />
+	       
+	           		<exclude name="WEB-INF/classes/sqlj/**/*.*" />
+	           	    <exclude name="WEB-INF/lib/**/*.*" />
+	            </fileset> 
+	        </war>  
+	    </target>
+
+</project>

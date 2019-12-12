@@ -1,0 +1,247 @@
+//===============================================
+//
+// Copyright (c) 2014
+// Tanry Electronic Technology Co., Ltd.
+// ChangSha, China
+//
+// All Rights Reserved.
+//
+// First created on 2014.8.29 by wkb
+// Last edited on 2014.9.11 by lyz
+//
+//===============================================
+
+
+package logic.form;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+import org.apache.log4j.Logger;
+import pojo.form.InputDetail;
+import sqlj.runtime.ref.DefaultContext;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.acl.NoPrivilegeException;
+import com.tanry.framework.util.TextUtil;
+
+public class InputDetailBean extends ConnectionPool {
+	
+	public static Logger log = Logger.getLogger(InputDetailBean.class);
+
+	#sql private iterator DetailIter(String form_id,
+			String item_id,
+			String item_name,
+			String item_dimension,
+			String item_specification,
+			String item_category,
+			Double order_count,
+			Double receive_count,
+			Double different_count,
+			Double item_unit_price,
+			Double pay_amt,Double receive_price,Double receive_amt,
+			String batch,
+			Date expired_time, Double out_receive_rate, Double received_count);
+	
+	public List<InputDetail> query(String formId)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		return query(formId,null);
+	}
+
+	/*餐厅改为标准价*/
+	public List<InputDetail> query(String formId,String hasSum)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		String pFormId = null;
+		#sql [myCtx]{
+			SELECT
+			    h.FORM_REF_ID into :pFormId
+			FROM
+			:{Com_("D_T1_INPUT_HEADER")} h
+			WHERE
+			    h.FORM_ID = :formId
+		};
+		
+		DetailIter detailIter = null;
+		#sql [myCtx] detailIter = {
+			SELECT
+			    d.form_id,
+			    DECODE(d.ITEM_ID,NULL,'合计',d.ITEM_ID) ITEM_ID,
+			    d.ITEM_NAME,
+			    d.ITEM_DIMENSION,
+			    d.ITEM_SPECIFICATION,
+			    d.ITEM_CATEGORY,
+			    SUM(d.ORDER_COUNT)ORDER_COUNT,
+			    d.RECEIVED_COUNT,
+			    sum(d.RECEIVE_COUNT) RECEIVE_COUNT,
+			    d.DIFFERENT_COUNT,
+			    d.ITEM_UNIT_PRICE,
+			    sum(d.PAY_AMT) PAY_AMT,
+			    d.RECEIVE_PRICE,
+			    sum(d.RECEIVE_AMT) RECEIVE_AMT,
+			    d.BATCH,
+			    d.EXPIRED_TIME,
+			    u.OUT_RECEIVE_RATE
+			FROM
+			:{Com_("D_T1_INPUT_DETAIL")} d
+			LEFT JOIN
+			:{Com_("D_T2_DELIVERY_UNIT")} u
+			ON
+			    u.ITEM_ID = d.ITEM_ID
+			WHERE
+			    d.FORM_ID = :formId
+			GROUP BY
+			    GROUPING SETS( (d.FORM_ID, d.ITEM_ID, d.ITEM_NAME, d.ITEM_DIMENSION,d.ITEM_SPECIFICATION,
+			    d.ITEM_CATEGORY, d.ORDER_COUNT,d.RECEIVED_COUNT, d.RECEIVE_COUNT, d.DIFFERENT_COUNT,
+			    d.ITEM_UNIT_PRICE, d.PAY_AMT, d.RECEIVE_PRICE, d.RECEIVE_AMT, d.BATCH, d.EXPIRED_TIME, u.OUT_RECEIVE_RATE),NULL)
+			ORDER BY
+			    d.ITEM_ID};
+		List<InputDetail> detailLst = processIter(detailIter);
+		
+		if(detailLst.size() >0){
+			if(TextUtil.isEmpty(hasSum)){
+				detailLst.remove(detailLst.size() -1);
+			}
+		}
+		
+		detailIter.close();
+		closeDefaultContext(myCtx);
+		return detailLst;
+	}
+
+	private List<InputDetail> processIter(DetailIter detailIter) 
+			throws SQLException {
+		List<InputDetail> detailLst = new ArrayList<InputDetail>();
+		while(detailIter.next()) {
+			InputDetail detail = new InputDetail();
+			detail.setFormId(detailIter.form_id());
+			detail.setItemId(detailIter.item_id());
+			detail.setItemName(detailIter.item_name());
+			detail.setItemDimension(detailIter.item_dimension());
+			detail.setItemSpecification(detailIter.item_specification());
+			detail.setItemCategory(detailIter.item_category());
+			detail.setOrderCount(detailIter.order_count());
+			detail.setReceiveCount(detailIter.receive_count());
+			detail.setDifferentCount(detailIter.different_count());
+			detail.setItemUnitPrice(detailIter.item_unit_price());
+			detail.setPayAmt(detailIter.pay_amt());
+			detail.setReceivePrice(detailIter.receive_price());
+			detail.setReceiveAmt(detailIter.receive_amt());
+			detail.setBatch(detailIter.batch());
+			detail.setExpiredTime(SqlDateUtil.getUtilDate(detailIter.expired_time()));
+
+			detail.setReceivedCount(detailIter.received_count());
+			detail.setOutReceiveRate(detailIter.out_receive_rate());
+			detailLst.add(detail);
+		}
+		return detailLst;
+	}
+	
+	/**
+	 * 保存明细
+	 */
+	public int saveEntity(InputDetail detail)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		String formId = detail.getFormId();
+		String itemId = detail.getItemId();
+		String itemName = detail.getItemName();
+		String itemDimension = detail.getItemDimension();
+		String itemSpecification = detail.getItemSpecification();
+		String itemCategory = detail.getItemCategory();
+		Double orderCount = detail.getOrderCount();
+		Double receivedCount = detail.getReceivedCount();
+		Double receiveCount = detail.getReceiveCount();
+		Double differentCount = detail.getDifferentCount();
+		Double itemUnitPrice = detail.getItemUnitPrice();
+		Double payAmt = detail.getPayAmt();
+		Double receivePrice = detail.getReceivePrice();
+		Double receiveAmt = detail.getReceiveAmt();
+		String batch = detail.getBatch();
+		Date expiredTime = SqlDateUtil.getSqlDate(detail.getExpiredTime());
+	
+		#sql [myCtx] {
+			INSERT INTO :{Com_("D_T1_INPUT_DETAIL")}
+				(FORM_ID, ITEM_ID, ITEM_NAME, ITEM_DIMENSION, ITEM_SPECIFICATION, ITEM_CATEGORY, 
+					ORDER_COUNT, RECEIVED_COUNT, RECEIVE_COUNT, DIFFERENT_COUNT, ITEM_UNIT_PRICE, PAY_AMT,RECEIVE_PRICE,RECEIVE_AMT, BATCH, EXPIRED_TIME) 
+			VALUES (:formId, 
+					:itemId, 
+					:itemName, 
+					:itemDimension, 
+					:itemSpecification, 
+					:itemCategory, 
+					:orderCount,  :receivedCount, 
+					:receiveCount, 
+					:differentCount, 
+					:itemUnitPrice, 
+					:payAmt, 
+					:receivePrice,
+					:receiveAmt,
+					:batch, 
+					:expiredTime)
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+
+	public int updateEntity(InputDetail detail)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		String formId = detail.getFormId();
+		String itemId = detail.getItemId();
+		String itemName = detail.getItemName();
+		String itemDimension = detail.getItemDimension();
+		String itemSpecification = detail.getItemSpecification();
+		String itemCategory = detail.getItemCategory();
+		Double orderCount = detail.getOrderCount();
+		Double receiveCount = detail.getReceiveCount();
+		Double receivedCount = detail.getReceivedCount();
+		Double differentCount = detail.getDifferentCount();
+		Double itemUnitPrice = detail.getItemUnitPrice();
+		Double payAmt = detail.getPayAmt();
+		Double receivePrice = detail.getReceivePrice();
+		Double receiveAmt = detail.getReceiveAmt();
+		String batch = detail.getBatch();
+		Date expiredTime = SqlDateUtil.getSqlDate(detail.getExpiredTime());
+	
+		#sql [myCtx] {
+			UPDATE
+			:{Com_("D_T1_INPUT_DETAIL")}
+			SET
+				RECEIVE_COUNT = :receiveCount,
+				DIFFERENT_COUNT = :differentCount,
+			    PAY_AMT = :payAmt,
+			    RECEIVE_AMT = :receiveAmt,
+			    RECEIVED_COUNT = :receivedCount	
+			WHERE
+				FORM_ID = :formId
+			and ITEM_ID = :itemId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+
+	public int deleteByForm(String formId)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		#sql [myCtx] {
+			DELETE
+			FROM
+			:{Com_("D_T1_INPUT_DETAIL")}
+			WHERE
+				FORM_ID = :formId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+}

@@ -1,0 +1,14 @@
+#categoryTree {
+	position: absolute;
+	left: 0;
+	top: 0px;
+	bottom: 30px;
+	width: 100%;
+	height: auto;
+}
+
+#commandTable {
+	position: absolute;
+	bottom: 0;
+	width: 100%;
+}

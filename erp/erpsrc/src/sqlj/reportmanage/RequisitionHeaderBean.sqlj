@@ -1,0 +1,238 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on Tue Nov 11 10:31:07 CST 2014 by pw
+ * Last edited on Tue Nov 11 10:31:07 CST 2014 by pw
+ * 
+ * comment: 中央工厂生产领料单表头
+ */
+package logic.reportmanage;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import java.util.Map;
+import java.util.HashMap;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import pojo.form.RequisitionHeader;
+import sqlj.runtime.ref.DefaultContext;
+import com.tanry.business.form.FormConstant;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.TextUtil;
+import com.tanry.framework.acl.NoPrivilegeException;
+
+public class RequisitionHeaderBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(RequisitionHeaderBean.class);
+	
+	#sql private iterator HeaderIter(String form_type, String item_id, String item_name,
+			 String storage_id, String storage,String workshop,
+			Double receive_count,
+			String item_dimension, 
+			String item_specification);
+	
+	#sql private iterator SumIter(
+			Double receive_count);
+	
+	public Map getColmunType(){
+		Map map  = new HashMap();
+		map.put("form_type", "String");
+		map.put("item_name", "String");
+		map.put("item_id", "String");
+		map.put("receive_count", "Number");
+		map.put("workshop","String");
+		map.put("storage_id", "String");
+		map.put("storage", "String");
+		map.put("item_dimension", "String");
+		map.put("item_specification", "String");
+		return map;
+	}
+	
+	public Map getColmunPrefix(){
+		Map map  = new HashMap();
+		map.put("form_type", "h");
+		map.put("item_id", "d");
+		map.put("item_name", "d");
+		map.put("receive_count", "d");
+		map.put("workshop","h");
+		map.put("storage_id", "h");
+		map.put("storage", "h");
+		map.put("item_dimension", "d");
+		map.put("item_specification", "d");
+		return map;
+	}
+	
+	public int count(String queryStr, String sortStr)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		
+		DefaultContext myCtx = getDefaultContext();
+		int total = 0;
+		#sql [myCtx] {
+		SELECT
+		    COUNT(*)
+		INTO
+		    :total
+		FROM
+		    (SELECT
+		    	    COUNT(*)
+		    FROM
+		    :{Com_("D_T1_REQUISITION_HEADER")} h
+		    LEFT JOIN
+		    :{Com_("D_T1_REQUISITION_DETAIL")} d
+		    ON
+		        h.FORM_ID = d.FORM_ID
+		    LEFT JOIN
+		    :{Com_("D_T0_FORM_STATUS")} s
+		    ON
+		        s.FORM_ID = d.FORM_ID
+		    AND s.IS_CURRENT = 1
+		    WHERE
+		        1 = 1 AND s.STATUS NOT IN ('未审核') :{queryStr :: ''}
+		    GROUP BY
+		        h.FORM_TYPE,
+		        h.STORAGE_ID,
+		        h.STORAGE,
+		        h.FORM_MAKER,
+		        d.ITEM_ID,
+		        d.ITEM_NAME
+		       ) a};
+		closeDefaultContext(myCtx);
+		return total;
+	}
+	
+	
+	public List<Map> query(int startRow, int endRow,String queryStr,  String sortStr)  
+			throws NoPrivilegeException,SQLException,NoConnection {
+		
+		DefaultContext myCtx = getDefaultContext();
+		HeaderIter headerIter = null;
+		#sql [myCtx] headerIter = {
+			SELECT
+			    *
+			    FROM
+			        (
+			            SELECT
+			                t.*,
+			                ROWNUM rowNumber
+			            FROM 
+			                (SELECT
+			          		        h.FORM_TYPE,
+			          		        h.STORAGE_ID,
+			          		        h.STORAGE,
+			          		        h.WORKSHOP,
+			          		        d.ITEM_ID,
+			          		        d.ITEM_NAME,
+				         			d.item_dimension, 
+				         			d.item_specification,
+			                	    SUM(NVL(RECEIVE_COUNT,0))RECEIVE_COUNT
+			                	FROM
+			                	:{Com_("D_T1_REQUISITION_HEADER")} h
+			        		    LEFT JOIN
+			        		    :{Com_("D_T1_REQUISITION_DETAIL")} d
+			        		    ON
+			        		        h.FORM_ID = d.FORM_ID
+			    		        WHERE
+		                	    1 = 1 AND h.AUDIT_TIME IS NOT NULL :{queryStr :: ''}
+		                	GROUP BY
+		                	 h.FORM_TYPE,
+		          		        h.STORAGE_ID,
+		          		        h.STORAGE,
+		          		        h.WORKSHOP,
+		          		        d.ITEM_ID,
+		          		        d.ITEM_NAME,
+			         			d.item_dimension, 
+			         			d.item_specification :{sortStr :: ''}) t
+			            WHERE
+			                ROWNUM < :endRow)
+			    WHERE
+			        rowNumber >= :startRow};
+		List<Map> headerLst = processIter(headerIter);
+		headerIter.close();
+		closeDefaultContext(myCtx);
+		return headerLst;
+	}
+	
+	public Map sum( String queryStr, String sortStr) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		
+		DefaultContext myCtx = getDefaultContext();
+		SumIter sumIter = null;
+		
+		#sql [myCtx] sumIter = {SELECT
+			    SUM (RECEIVE_COUNT) RECEIVE_COUNT
+			FROM
+			    (
+			        SELECT
+			            SUM(NVL(RECEIVE_COUNT,0))RECEIVE_COUNT
+			            FROM
+			            :{Com_("D_T1_REQUISITION_HEADER")} h
+				    LEFT JOIN
+				    :{Com_("D_T1_REQUISITION_DETAIL")} d
+				    ON
+				        h.FORM_ID = d.FORM_ID
+				    LEFT JOIN
+				    :{Com_("D_T0_FORM_STATUS")} s
+				    ON
+				        s.FORM_ID = d.FORM_ID
+				    AND s.IS_CURRENT = 1
+                	WHERE
+                	    1 = 1 AND s.STATUS NOT IN ('未审核') :{queryStr :: ''}
+			        GROUP BY
+			        h.FORM_TYPE,
+			        h.STORAGE_ID,
+			        h.STORAGE,
+			        h.FORM_MAKER,
+			        d.ITEM_ID,
+			        d.ITEM_NAME) a};
+		
+		closeDefaultContext(myCtx);
+		
+		Map sumMap = processSumIter(sumIter);
+		sumIter.close();
+		
+		return sumMap;
+	}
+
+	private Map processSumIter(SumIter sumIter) 
+			throws SQLException {
+		Map sumMap = new HashMap();
+		
+		while(sumIter.next()) {
+			sumMap.put("receive_count", sumIter.receive_count());
+		}
+			
+		return sumMap;
+	}
+
+	private List<Map> processIter(HeaderIter headerIter) 
+			throws SQLException {
+		List<Map> headerLst = new ArrayList<Map>();
+		
+		while(headerIter.next()) {
+			Map header = new HashMap();
+			header.put("form_type", headerIter.form_type());
+			header.put("storage_id", headerIter.storage_id());
+			header.put("storage", headerIter.storage());
+			header.put("receive_count", headerIter.receive_count());
+			header.put("workshop", headerIter.workshop());
+			header.put("item_id", headerIter.item_id());
+			header.put("item_name", headerIter.item_name());
+			header.put("item_dimension", headerIter.item_dimension());
+			header.put("item_specification", headerIter.item_specification());
+			
+			headerLst.add(header);
+		}
+		return headerLst;
+	}
+}

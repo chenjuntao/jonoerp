@@ -1,0 +1,62 @@
+#categoryTree {
+	position: absolute;
+	left: 0;
+	right: 0;
+	top: 0px;
+	bottom: 0;
+	width: 20%;
+	height: auto; /* override default height: 30em; in dgrid.css */
+}
+
+#dataGrid {
+	position: absolute;
+	right: 0;
+	top: 0px;
+	bottom: 0;
+	width: 80%;
+	height: auto; /* override default height: 30em; in dgrid.css */
+}
+
+.dgrid-cell {
+	/* 	width: 80px; make all the columns 80px wide */
+	
+}
+
+th[role="columnheader"] {
+	text-align: center;
+}
+
+.field-rownumber, .field-itemId, .field-itemDimension, .field-categoryId,
+	.field-supplier, .field-operate, .field-therapy {
+	text-align: center;
+	vertical-align: middle;
+}
+
+.dgrid-cell {
+	width: 80px;
+}
+
+.field-itemId {
+	width: 50px;
+}
+
+.field-rownumber {
+	width: 40px;
+}
+
+.field-queryCode, .field-itemDimension, .field-categoryId {
+	width: 60px;
+}
+
+.field-supplier {
+	width: 150px;
+}
+
+.field-itemUnitPrice {
+	width: 50px;
+	text-align: right;
+}
+
+.field-operate, .field-therapy {
+	width: 60px;
+}

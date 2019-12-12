@@ -1,0 +1,41 @@
+erp
+┣━ant_build：编译
+┣━doc：
+┣━jsp：页面
+┣━mobile:移动端页面
+┣━src：
+┃	┣━action：表示层
+┃	┣━com：原先李颖钊打算把系统目录重新组织一下，将框架和各个模块目录放在/src/com/tanry/下面，但只做了一小部分工作，未完成。
+┃	┃	┗━tanry
+┃	┃		┣━business:
+┃	┃		┗━framework：
+┃	┃			┣━acl：黄老师原先框架中的spring权限管理。
+┃	┃			┣━cookie：
+┃	┃			┣━desktop：进入程序后系统主界面
+┃	┃			┣━form：单据公用
+┃	┃			┣━ic：拦截器
+┃	┃			┣━listener：监听器
+┃	┃			┣━log：日志公用
+┃	┃			┣━service：
+┃	┃			┣━util：其他公用辅助类
+┃	┃			┗━web：
+┃	┣━dao：一部分代码采用了JDBC的方式访问数据库，在此目录中。
+┃	┣━logic：数据访问层，sqlj文件编译后的java代码在此目录中。
+┃	┃	┗━pool:该目录并非sqlj文件编译后生成的代码。
+┃	┃		┣━ConnectionPool.java：通过sqlj方式访问数据库的框架
+┃	┃		┗━jdbcConnectionPool.java：通过jdbc方式访问数据库的框架
+┃	┣━pojo：
+┃	┣━service：业务逻辑层
+┃	┣━sqlj：数据访问层，保存sqlj文件
+┃	┗━test：
+┗━WEB-INF：Java的WEB应用的安全目录，客户端无法访问，服务端可以访问。
+	┣━classes：存放src目录中的java代码生成class文件。
+	┣━lib：存放web应用需要的各种JAR文件。
+	┣━spring：spring配置
+	┣━struts：struts配置
+	┣━applicationContext.xml：spring配置
+	┣━jono-security.xml：黄老师原先框架中的权限配置
+	┣━log4j.properties：日志配置
+	┣━struts.xml：struts配置
+	┣━sysOption.properties：
+	┗━web.xml：Java的WEB应用程序配置文件，描述了 servlet 和其他的应用组件配置及命名规则。

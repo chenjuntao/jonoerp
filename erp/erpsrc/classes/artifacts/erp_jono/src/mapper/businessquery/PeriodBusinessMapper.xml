@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"   
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">  
+
+
+<mapper namespace="mapper.businessquery.PeriodBusinessMapper">  
+
+<select id="listPeriodBusiness" resultType="map">
+		SELECT
+			@rownum:=@rownum+1 rownumber,
+			@rownum id,
+			t1.timeSlot,
+			SUM(t1.guestCount) guestCount,
+			SUM(t1.billCount)  billCount,
+			t1.guestPerTime,
+			t1.guestPerCost,
+			SUM(t1.foodAmtSum)foodAmtSum,
+			SUM(t1.payAmt)    payAmt,
+			SUM(t1.oughtAmt)  oughtAmt,
+			t1.shopName,
+			t1.shopC
+		FROM
+			(
+			SELECT
+				@rownum:=0,
+				date_format(b.dtBillTime,'%H')								timeSlot,
+				SUM(b.iGuestNum)                                           guestCount,
+				COUNT(b.CBILL_C)                                           billCount,
+				case when SUM(b.iGuestNum) = 0 then 0
+				else floor(60 / SUM(b.iGuestNum))
+				end 														guestPerTime,
+				case when SUM(b.iGuestNum) = 0 then 0
+				else ROUND(SUM(nFoodAmt) / SUM(b.iGuestNum),2 )
+				end 															guestPerCost,
+				SUM(nFoodAmt)                                                            foodAmtSum,
+				SUM(nPayAmt)                                                            payAmt,
+				SUM(nOughtAmt)                                                           oughtAmt,
+				b.CBRANCH_N                                                              shopName,
+				b.CBRANCH_C                                                              shopC
+			FROM
+				${com}.d_t_food_bill b
+			WHERE
+				${queryText}
+			GROUP BY
+				b.CBRANCH_C,
+				b.CBRANCH_N,
+				date_format(b.dtBillTime,'%H')
+			)t1
+		GROUP BY
+			t1.shopC,t1.shopName,t1.timeSlot,t1.guestCount,t1.billCount,
+			t1.guestPerTime, t1.guestPerCost, t1.foodAmtSum ,t1.payAmt,t1.oughtAmt with rollup
+</select>
+</mapper>

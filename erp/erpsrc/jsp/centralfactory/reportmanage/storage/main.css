@@ -1,0 +1,123 @@
+#dataGrid {
+	position: absolute;
+	width: 100%;
+	height: 99%;
+}
+
+
+td[role="columnheader"] {
+	text-align: center !important; 
+}
+
+td[colid="rownumber"] {
+	text-align: center !important; 
+	min-width: 50px  !important; 
+	max-width: 50px  !important; 
+}
+
+td[colid="form_id"] {
+	text-align: center !important; 
+	min-width: 180px  !important; 
+}
+td[colid="delivery_type"] {
+	text-align: center !important; 
+	min-width: 65px  !important; 
+}
+
+td[colid="provider_id"] {
+	text-align: center !important; 
+	min-width: 100px  !important; 
+}
+
+td[colid="provider"] {
+	text-align: center !important; 
+	min-width: 120px  !important; 
+}
+
+td[colid="requester_id"] {
+	text-align: center !important; 
+	min-width: 110px  !important; 
+}
+
+td[colid="requester"] {
+	text-align: center !important; 
+	min-width: 100px  !important; 
+}
+
+td[colid="receive_address"] {
+	min-width: 150px  !important; 
+}
+
+
+td[colid="receiver"] {
+	text-align: center !important; 
+	min-width: 100px  !important; 
+}
+
+td[colid="receiver_id"] {
+	text-align: center !important; 
+	min-width: 110px  !important; 
+}
+
+td[colid="receive_time"] {
+	text-align: center !important; 
+	min-width: 80px  !important; 
+}
+
+td[colid="form_maker_id"] {
+	text-align: center !important; 
+	min-width: 110px  !important; 
+}
+
+td[colid="form_maker"] {
+	text-align: center !important; 
+	min-width: 80px  !important; 
+}
+
+td[colid="form_time"] {
+	text-align: center !important; 
+	min-width: 80px  !important; 
+}
+
+td[colid="auditor_id"] {
+	text-align: center !important; 
+	min-width: 110px  !important; 
+}
+
+td[colid="auditor"] {
+	text-align: center !important; 
+	min-width: 80px  !important; 
+}
+
+td[colid="audit_time"] {
+	text-align: center !important; 
+	min-width: 80px  !important; 
+}
+
+td[colid="form_note"] {
+	min-width: 120px  !important; 
+}
+
+td[colid="storage_id"] {
+	text-align: center !important; 
+	min-width: 110px  !important; 
+}
+
+td[colid="storage"] {
+	text-align: center !important; 
+	min-width: 150px  !important; 
+}
+
+td[colid="all_pay_amt"] {
+	text-align: center !important; 
+	min-width: 80px  !important; 
+}
+
+td[colid="max_pay_item"] {
+	min-width: 150px  !important; 
+}
+
+td[colid="status"] {
+	text-align: center !important; 
+	min-width: 80px  !important; 
+}

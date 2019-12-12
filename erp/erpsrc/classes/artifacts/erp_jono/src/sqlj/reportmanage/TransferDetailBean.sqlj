@@ -1,0 +1,310 @@
+package logic.reportmanage;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import sqlj.runtime.ref.DefaultContext;
+import com.tanry.business.form.FormConstant;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.TextUtil;
+import com.tanry.framework.util.constant.BillStatus;
+import com.tanry.framework.acl.NoPrivilegeException;
+
+public class TransferDetailBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(TransferDetailBean.class);
+	
+	#sql private iterator HeaderIter(
+			String in_branch_id,
+			String in_branch,
+			String in_storage_id,
+			String in_storage,
+			String out_branch_id,
+			String out_branch,
+			String out_storage_id,
+			String out_storage,
+			String form_id, 
+			String item_id, 
+			String item_name, 
+			String item_dimension, 
+			String item_specification, 
+			String item_category, 
+			String category_name,
+			Double apply_count, 
+			Double actual_count, 
+			Double different_count, 
+			Double unit_price, 
+			Double pay_amt, 
+			Date form_time,
+			Date confirm_time,
+			String status);
+	
+	#sql private iterator SumIter(
+			Double apply_count,
+			Double actual_count,
+			Double different_count,
+			Double pay_amt);
+	
+	public Map getColmunType(){
+		Map map  = new HashMap();
+		map.put("in_branch_id", "String");
+		map.put("in_branch", "String");
+		map.put("in_storage_id", "String");
+		map.put("in_storage", "String");
+		map.put("out_branch_id", "String");
+		map.put("out_branch", "String");
+		map.put("out_storage_id", "String");
+		map.put("out_storage", "String");
+		
+		map.put("form_id", "String");
+		map.put("item_id", "String");
+		map.put("item_name", "String");
+		map.put("item_dimension", "String");
+		map.put("item_specification", "String");
+		map.put("item_category", "String");
+		map.put("category_name", "String"); 
+		map.put("apply_count", "Number"); 
+		map.put("actual_count", "Number"); 
+		map.put("different_count", "Number"); 
+		map.put("unit_price", "Number"); 
+		map.put("pay_amt", "Number"); 
+		map.put("form_time", "Date"); 
+		map.put("confirm_time", "Date"); 
+		map.put("status", "String"); 
+		
+		return map;
+	}
+	
+	public Map getColmunPrefix(){
+		Map map  = new HashMap();
+		
+		map.put("in_branch_id", "h");
+		map.put("in_branch", "h");
+		map.put("in_storage_id", "h");
+		map.put("in_storage", "h");
+		map.put("out_branch_id", "h");
+		map.put("out_branch", "h");
+		map.put("out_storage_id", "h");
+		map.put("out_storage", "h");
+		
+		map.put("form_id", "d");
+		map.put("item_id", "d");
+		map.put("item_name", "d");
+		map.put("item_dimension", "d");
+		map.put("item_specification", "d");
+		map.put("item_category", "d");
+		map.put("category_name", "c");
+		map.put("apply_count", "d"); 
+		map.put("actual_count", "d"); 
+		map.put("different_count", "d"); 
+		map.put("unit_price", "d"); 
+		map.put("pay_amt", "d"); 
+		map.put("form_time", "h"); 
+		map.put("confirm_time", "h"); 
+		map.put("status", "s"); 
+		
+		return map;
+	}
+	
+	public int count(String queryStr)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		
+		DefaultContext myCtx = getDefaultContext();
+		int total = 0;
+		#sql [myCtx] {
+		SELECT
+		    COUNT(*)
+		INTO
+		    :total
+		FROM
+		    :{Com_("D_T1_TRANSFER_HEADER")} h
+		INNER JOIN
+		    :{Com_("D_T0_FORM_STATUS")} s
+		ON
+		    h.FORM_ID = s.FORM_ID
+		AND s.IS_CURRENT = 1
+		INNER JOIN
+		    :{Com_("D_T2_BRANCH")} b
+		ON
+		    h.IN_BRANCH_ID = b.BRANCH_ID
+		INNER JOIN
+		    :{Com_("D_T1_TRANSFER_DETAIL")} d
+		ON
+		    h.FORM_ID = d.FORM_ID
+		LEFT JOIN
+		    :{Com_("D_T2_ITEM_CATEGORY")} c
+		ON
+		    d.ITEM_CATEGORY = c.CATEGORY_ID
+		WHERE
+		    1 = 1
+		AND s.STATUS ='已审核' :{queryStr :: ''}};
+		closeDefaultContext(myCtx);
+		return total;
+	}
+	
+	
+	public List<Map> query(int startRow, int endRow,String queryStr,String sortStr)  
+			throws NoPrivilegeException,SQLException,NoConnection {
+		
+		DefaultContext myCtx = getDefaultContext();
+		HeaderIter headerIter = null;
+		#sql [myCtx] headerIter = {
+			SELECT
+			    *
+			    FROM
+			        (
+			            SELECT
+			                t.*,
+			                ROWNUM rowNumber
+			            FROM
+			                (SELECT
+			                	    d.FORM_ID,
+			                	    d.ITEM_ID,
+			                	    d.ITEM_NAME,
+			                	    d.ITEM_DIMENSION,
+			                	    d.ITEM_SPECIFICATION,
+			                	    d.ITEM_CATEGORY,
+			                	    NVL(d.APPLY_COUNT,0)     APPLY_COUNT,
+			                	    NVL(d.ACTUAL_COUNT,0)    ACTUAL_COUNT,
+			                	    NVL(d.DIFFERENT_COUNT,0) DIFFERENT_COUNT,
+			                	    NVL(d.UNIT_PRICE,0)      UNIT_PRICE,
+			                	    NVL(d.PAY_AMT,0)         PAY_AMT,
+			                	    h.form_time,
+			                	    h.confirm_time,
+			                	    h.in_branch_id,
+			                	    h.in_branch,
+			                	    h.in_storage_id,
+			                	    h.in_storage,
+			                	    h.out_branch_id,
+			                	    h.out_branch,
+			                	    h.out_storage_id,
+			                	    h.out_storage,
+			                	    c.CATEGORY_NAME,
+			                	    '已审核' STATUS
+			                	FROM
+			                	    :{Com_("D_T1_TRANSFER_HEADER")} h
+			                	INNER JOIN
+			                	    :{Com_("D_T2_BRANCH")} b
+			                	ON
+			                	    h.IN_BRANCH_ID = b.BRANCH_ID
+			                	INNER JOIN
+			                	    :{Com_("D_T1_TRANSFER_DETAIL")} d
+			                	ON
+			                	    h.FORM_ID = d.FORM_ID
+			                	LEFT JOIN
+			                	    :{Com_("D_T2_ITEM_CATEGORY")} c
+			                	ON
+			                	    d.ITEM_CATEGORY = c.CATEGORY_ID
+			                	WHERE
+			                	    1 = 1
+                	    		AND h.CONFIRM_TIME IS NOT NULL :{queryStr :: ''}:{sortStr :: ''}) t
+			            WHERE
+			                ROWNUM < :endRow)
+			    WHERE
+			        rowNumber >= :startRow};
+		List<Map> headerLst = processIter(headerIter);
+		headerIter.close();
+		closeDefaultContext(myCtx);
+		return headerLst;
+	}
+	
+	public Map sum( String queryStr) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		SumIter sumIter = null;
+		
+		#sql [myCtx] sumIter = {
+			SELECT
+				SUM( d.apply_count)     apply_count,
+			    SUM( d.actual_count)    actual_count,
+			    SUM( d.different_count) different_count,
+			    SUM(d.pay_amt)          pay_amt
+        	FROM
+        	    :{Com_("D_T1_TRANSFER_HEADER")} h
+        	INNER JOIN
+        	    :{Com_("D_T0_FORM_STATUS")} s
+        	ON
+        	    h.FORM_ID = s.FORM_ID
+        	AND s.IS_CURRENT = 1
+        	INNER JOIN
+        	    :{Com_("D_T2_BRANCH")} b
+        	ON
+        	    h.IN_BRANCH_ID = b.BRANCH_ID
+        	INNER JOIN
+        	    :{Com_("D_T1_TRANSFER_DETAIL")} d
+        	ON
+        	    h.FORM_ID = d.FORM_ID
+        	LEFT JOIN
+        	    :{Com_("D_T2_ITEM_CATEGORY")} c
+        	ON
+        	    d.ITEM_CATEGORY = c.CATEGORY_ID
+        	WHERE
+        	    1 = 1
+        	AND s.STATUS ='已审核' :{queryStr :: ''}};
+		
+		closeDefaultContext(myCtx);
+		
+		Map sumMap = processSumIter(sumIter);
+		sumIter.close();
+		
+		return sumMap;
+	}
+	
+	private Map processSumIter(SumIter sumIter) 
+			throws SQLException {
+		Map sumMap = new HashMap();
+		while(sumIter.next()) {
+			sumMap.put("apply_count", sumIter.apply_count());
+			sumMap.put("actual_count", sumIter.actual_count());
+			sumMap.put("different_count", sumIter.different_count());
+			sumMap.put("pay_amt", sumIter.pay_amt());
+		}
+			
+		return sumMap;
+	}
+	
+	private List<Map> processIter(HeaderIter headerIter) 
+			throws SQLException {
+		List<Map> headerLst = new ArrayList<Map>();
+		
+		while(headerIter.next()) {
+			Map header = new HashMap();
+			header.put("form_id", headerIter.form_id());
+			header.put("item_id", headerIter.item_id());
+			header.put("item_name", headerIter.item_name());
+			header.put("item_dimension", headerIter.item_dimension());
+			header.put("item_specification", headerIter.item_specification());
+			header.put("item_category", headerIter.item_category());
+			header.put("category_name", headerIter.category_name());
+			header.put("apply_count", headerIter.apply_count());
+			header.put("actual_count", headerIter.actual_count());
+			header.put("different_count", headerIter.different_count());
+			header.put("unit_price", headerIter.unit_price());
+			header.put("pay_amt", headerIter.pay_amt());
+			header.put("form_time", headerIter.form_time());
+			header.put("confirm_time", headerIter.confirm_time());
+			header.put("status", headerIter.status());
+			
+			header.put("in_branch_id", headerIter.in_branch_id());
+			header.put("in_branch", headerIter.in_branch());
+			header.put("in_storage_id", headerIter.in_storage_id());
+			header.put("in_storage", headerIter.in_storage());
+			header.put("out_branch_id", headerIter.out_branch_id());
+			header.put("out_branch", headerIter.out_branch());
+			header.put("out_storage_id", headerIter.out_storage_id());
+			header.put("out_storage", headerIter.out_storage());
+			
+			headerLst.add(header);
+		}
+		return headerLst;
+	}
+}

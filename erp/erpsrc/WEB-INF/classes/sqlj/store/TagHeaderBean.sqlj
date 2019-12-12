@@ -1,0 +1,185 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on Wed Jun 01 10:51:52 CST 2016 by pw
+ * Last edited on Wed Jun 01 10:51:52 CST 2016 by pw
+ * 
+ * comment: 标签头表
+ */
+package logic.store;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import pojo.store.TagHeader;
+import sqlj.runtime.ref.DefaultContext;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.TextUtil;
+import com.tanry.framework.acl.NoPrivilegeException;
+
+public class TagHeaderBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(TagHeaderBean.class);
+	
+	#sql private iterator HeaderIter(
+			String rownumber,
+			String tag_id, 
+			String tag_name, 
+			String type_code,
+			String tag_note
+		);
+	
+	
+	public int saveEntity(TagHeader header)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		String tagId = header.getTagId();
+		String tagName = header.getTagName();
+		String typeCode = header.getTypeCode();
+		String tagNote = header.getTagNote();
+
+		#sql [myCtx] {
+			INSERT INTO :{Com_("D_T2_TAG_HEADER")}   
+				(TAG_ID, TAG_NAME, TAG_NOTE,TYPE_CODE) 
+			VALUES (:tagId, :tagName,:tagNote, :typeCode)
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public List<TagHeader> query(String type) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		HeaderIter headerIter = null;
+		#sql [myCtx] headerIter = {
+			SELECT
+				ROWNUM rownumber,
+			    h.*
+			    FROM
+			    	:{Com_("D_T2_TAG_HEADER")}  h
+			    ORDER BY
+			        1};
+		
+		List<TagHeader> headerLst = processIter(headerIter);
+		headerIter.close();
+		closeDefaultContext(myCtx);
+		return headerLst;
+	}
+	
+	#sql private iterator CheckedIter(
+			String rownumber,
+			String tag_id, 
+			String tag_name, 
+			String type_code,
+			String tag_note,
+			String checked
+		);
+	
+	public List<TagHeader> queryCheckedTag(String itemId) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		CheckedIter checkedIter = null;
+		#sql [myCtx] checkedIter = {
+			SELECT
+				ROWNUM rownumber,
+			    h.*,
+			    DECODE(d.CODE,NULL,'N','Y') checked
+			FROM
+				:{Com_("D_T2_TAG_HEADER")} h 
+			LEFT JOIN
+				:{Com_("D_T2_TAG_DETAIL")} d 
+			ON
+			    h.TAG_ID = d.TAG_ID
+			AND d.CODE = :itemId};
+		
+		List<TagHeader> headerLst = new ArrayList<TagHeader>();
+		while(checkedIter.next()) {
+			TagHeader header = new TagHeader();
+			header.setTagId(checkedIter.tag_id());
+			header.setTagName(checkedIter.tag_name());
+			header.setTypeCode(checkedIter.type_code());
+			header.setTagNote(checkedIter.tag_note());
+			header.setRownumber(checkedIter.rownumber());
+			header.setChecked(checkedIter.checked());
+			headerLst.add(header);
+		}
+		checkedIter.close();
+		closeDefaultContext(myCtx);
+		return headerLst;
+	}
+	
+	public TagHeader queryByTagId(String tagId) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		TagHeader header = new TagHeader();
+		HeaderIter headerIter = null;
+		
+		#sql [myCtx] headerIter = {
+			SELECT
+				ROWNUM rownumber,
+			    h.*
+			    FROM
+			    	:{Com_("D_T2_TAG_HEADER")}  h
+			    WHERE
+			        h.TAG_ID = :tagId};
+		
+		if(headerIter.next()) {
+			header.setTagId(headerIter.tag_id());
+			header.setTagName(headerIter.tag_name());
+			header.setTypeCode(headerIter.type_code());
+			header.setTagNote(headerIter.tag_note());
+		}
+		
+		headerIter.close();
+		closeDefaultContext(myCtx);
+		return header;
+	}
+	
+	public int deleteEntity(String tagId)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		#sql [myCtx] {
+			DELETE
+			FROM
+				:{Com_("D_T2_TAG_HEADER")}  h
+			WHERE
+				h.TAG_ID = :tagId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	
+	private List<TagHeader> processIter(HeaderIter headerIter) 
+			throws SQLException {
+		List<TagHeader> headerLst = new ArrayList<TagHeader>();
+		while(headerIter.next()) {
+			TagHeader header = new TagHeader();
+			header.setTagId(headerIter.tag_id());
+			header.setTagName(headerIter.tag_name());
+			header.setTypeCode(headerIter.type_code());
+			header.setTagNote(headerIter.tag_note());
+			header.setRownumber(headerIter.rownumber());
+			headerLst.add(header);
+		}
+		return headerLst;
+	}
+	
+}

@@ -1,0 +1,46 @@
+/**
+ *by cjt
+ *first created on 2014.6.12
+ *last edited on 2014.7.7
+ *
+ *edited by pw on 2014.7.28
+ */
+
+package logic.restapi;
+
+import sqlj.runtime.ref.*;
+import java.sql.*;
+import java.util.*;
+import java.text.ParseException;
+import logic.pool.ConnectionPool;
+import logic.*;
+import com.tanry.framework.acl.*;
+import java.sql.Date;
+
+public class WeightBean extends ConnectionPool{
+	private String comId = "jono";
+	#sql public static iterator WeightIter(
+			String myid,
+			String num, 
+			String pic
+		);
+	
+	public int saveEntity(String myid,String num,String pic) throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getComContext(comId);
+
+		//String id = map.get("id").toString();
+		//String num = map.get("num").toString();
+		//String pic = map.get("pic").toString();
+
+		#sql [myCtx] {
+			INSERT INTO jono.weight
+				(myid, num, pic)
+			VALUES 
+				(:myid, :num, :pic)
+			};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+}

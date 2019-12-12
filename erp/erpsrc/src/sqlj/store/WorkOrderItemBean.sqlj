@@ -1,0 +1,291 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on Fri Jun 12 11:18:33 CST 2015 by pw
+ * Last edited on Fri Jun 12 11:18:33 CST 2015 by pw
+ * 
+ * comment: 中央工厂生产工单原料明细
+ */
+package logic.form;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import pojo.form.WorkOrderItem;
+import sqlj.runtime.ref.DefaultContext;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.TextUtil;
+import com.tanry.framework.acl.NoPrivilegeException;
+
+public class WorkOrderItemBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(WorkOrderItemBean.class);
+	
+	#sql private iterator DetailIter(
+			String form_id, 
+			String item_id, 
+			String item_name, 
+			String item_dimension,
+			String item_specification,
+			Double item_count, 
+			Double received_count,
+			Double returned_count
+		);
+	
+	public int saveEntity(WorkOrderItem detail)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		String formId = detail.getFormId();
+		String itemId = detail.getItemId();
+		String itemName = detail.getItemName();
+		String itemDimension =  detail.getItemDimension();
+		String itemSpecification =  detail.getItemSpecification();
+		
+		Double itemCount = detail.getItemCount();
+		Double receivedCount = detail.getReceivedCount();
+		Double returnedCount = detail.getReturnedCount();
+
+		#sql [myCtx] {
+			INSERT INTO :{Com_("D_T1_WORKORDER_ITEM")} 
+				(FORM_ID, ITEM_ID, ITEM_NAME,ITEM_DIMENSION,ITEM_SPECIFICATION, ITEM_COUNT, RECEIVED_COUNT, RETURNED_COUNT) 
+			VALUES (:formId, :itemId, :itemName,:itemDimension,:itemSpecification, :itemCount, :receivedCount, :returnedCount)
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public int updateEntity(WorkOrderItem detail)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		String formId = detail.getFormId();
+		String itemId = detail.getItemId();
+		
+		Double itemCount = detail.getItemCount();
+		Double receivedCount = detail.getReceivedCount();
+		Double returnedCount = detail.getReturnedCount();
+
+		#sql [myCtx] {
+			UPDATE
+			:{Com_("D_T1_WORKORDER_ITEM")}
+			SET
+				RECEIVED_COUNT = :receivedCount
+			WHERE 
+				FORM_ID = :formId
+			AND ITEM_ID = :itemId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public int updateReturn(WorkOrderItem detail)
+			throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		String formId = detail.getFormId();
+		String itemId = detail.getItemId();
+		
+		Double itemCount = detail.getItemCount();
+		Double returnedCount = detail.getReturnedCount();
+		
+		#sql [myCtx] {
+			UPDATE
+			:{Com_("D_T1_WORKORDER_ITEM")}
+		    SET
+		        RETURNED_COUNT = :returnedCount
+		    WHERE
+		        FORM_ID = :formId
+		    AND ITEM_ID = :itemId};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public int insert(String formId)
+			throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		#sql [myCtx] {
+		INSERT
+			INTO
+			:{Com_("D_T1_WORKORDER_ITEM")}
+		    (
+		        FORM_ID,
+		        ITEM_ID,
+		        ITEM_NAME,
+		        ITEM_DIMENSION,
+		        ITEM_SPECIFICATION,
+		        ITEM_COUNT,
+		        RECEIVED_COUNT,
+		        RETURNED_COUNT
+		    )
+		WITH
+		    a AS
+		    (
+		        SELECT
+		            t.ITEM_ID,
+		            SUM( ROUND(NVL(h.ITEM_COUNT * ITEM_GROSS_COUNT,0),4)) ITEM_COUNT
+		        FROM
+		        :{Com_("D_T1_WORK_ORDER_HEADER")} h
+		        INNER JOIN
+		        :{Com_("D_T2_THERAPY")} t
+		        ON
+		            h.ITEM_ID = t.THERAPY_ID
+		        AND t.OWNER = 'CENTRALFACTORY'
+		        LEFT JOIN
+		        :{Com_("D_T2_ITEM_META")} m
+		        ON
+		            t.ITEM_ID = m.ITEM_ID
+		        WHERE
+		            h.FORM_ID = :formId
+		        AND m.ITEM_TYPE = 'RAW'
+		        GROUP BY
+		            t.ITEM_ID
+		    )
+		    ,
+		    b AS
+		    (
+		        SELECT
+		            t.ITEM_ID,
+		            SUM( ROUND(NVL(h.ITEM_COUNT * ITEM_GROSS_COUNT,0),4)) ITEM_COUNT
+		        FROM
+		        :{Com_("D_T1_WORK_ORDER_HEADER")} h
+		        INNER JOIN
+		        :{Com_("D_T2_THERAPY")} t
+		        ON
+		            h.ITEM_ID = t.THERAPY_ID
+		        AND t.OWNER = 'CENTRALFACTORY'
+		        LEFT JOIN
+		        :{Com_("D_T2_ITEM_META")} m
+		        ON
+		            t.ITEM_ID = m.ITEM_ID
+		        WHERE
+		            h.FORM_ID = :formId
+		        AND m.ITEM_TYPE = 'SEMIS'
+		        GROUP BY
+		            t.ITEM_ID
+		    )
+		SELECT
+			:formId 	FORM_ID,
+		    u.item_id,
+		    m.item_name,
+		    m.ITEM_DIMENSION,
+		    m.ITEM_SPECIFICATION,
+		    SUM(item_count) item_count,
+		    0               RECEIVED_COUNT,
+		    0               RETURNED_COUNT
+		FROM
+		    (
+		        SELECT
+		            *
+		        FROM
+		            a
+		        UNION ALL
+		        SELECT
+		            t.ITEM_ID,
+		            SUM( ROUND(NVL(b.ITEM_COUNT * ITEM_GROSS_COUNT,0),4)) ITEM_COUNT
+		        FROM
+		            b
+		        LEFT JOIN
+		        :{Com_("D_T2_THERAPY")} t
+		        ON
+		            b.item_id = t.THERAPY_ID
+		        GROUP BY
+		            t.ITEM_ID) u
+		LEFT JOIN
+		:{Com_("D_T2_ITEM_META")} m
+		ON
+		    u.item_id = m.ITEM_ID
+		GROUP BY
+		    u.item_id,
+		    m.ITEM_NAME,
+		    m.ITEM_DIMENSION,
+		    m.ITEM_SPECIFICATION
+		HAVING
+		    SUM(item_count) > 0
+		ORDER BY
+		    u.item_id};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+
+	public int deleteByForm(String formId)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		#sql [myCtx] {
+			DELETE
+			FROM
+			:{Com_("D_T1_WORKORDER_ITEM")}
+			WHERE
+				FORM_ID = :formId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public List<WorkOrderItem> query(String formId)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		DetailIter detailIter = null;
+		#sql [myCtx] detailIter = {
+			SELECT
+			    d.FORM_ID,
+			    d.ITEM_ID,
+			    d.ITEM_NAME,
+			    d.ITEM_DIMENSION,
+			    d.ITEM_SPECIFICATION,
+			    item_dimension,
+			    item_specification,
+			    round(d.ITEM_COUNT,2) ITEM_COUNT,
+			    round(d.RECEIVED_COUNT,2) RECEIVED_COUNT,
+			    round(d.RETURNED_COUNT,2) RETURNED_COUNT
+			FROM
+			:{Com_("D_T1_WORKORDER_ITEM")} d
+			WHERE
+			    d.FORM_ID = :formId
+			ORDER BY
+				d.ITEM_ID
+		};
+		List<WorkOrderItem> detailLst = processIter(detailIter);
+		detailIter.close();
+		closeDefaultContext(myCtx);
+		return detailLst;
+	}
+
+	private List<WorkOrderItem> processIter(DetailIter detailIter) 
+			throws SQLException {
+		List<WorkOrderItem> detailLst = new ArrayList<WorkOrderItem>();
+		while(detailIter.next()) {
+			WorkOrderItem detail = new WorkOrderItem();
+			detail.setFormId(detailIter.form_id());
+			detail.setItemId(detailIter.item_id());
+			detail.setItemName(detailIter.item_name());
+
+			detail.setItemDimension(detailIter.item_dimension());
+			detail.setItemSpecification(detailIter.item_specification());
+			
+			detail.setItemCount(detailIter.item_count());
+			detail.setReceivedCount(detailIter.received_count());
+			detail.setReturnedCount(detailIter.returned_count());
+			detailLst.add(detail);
+		}
+		return detailLst;
+	}
+}

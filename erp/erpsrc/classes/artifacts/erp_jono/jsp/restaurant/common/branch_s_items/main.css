@@ -1,0 +1,25 @@
+#dataGrid {
+	position: absolute;
+	right: 0;
+	top: 32px;
+	bottom: 0px;
+	width: 100%;
+	height: auto; /* override default height: 30em; in dgrid.css */
+}
+
+th[role="columnheader"] {
+	text-align: center;
+}
+
+
+.field-supplierId,.field-itemId {
+	width: 60px;
+}
+
+.field-itemName,.field-none {
+	width: 120px;
+}
+
+.field-supplier {
+	width: 180px;
+}

@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"   
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">  
+
+<mapper namespace="mapper.store.DeliveryRegionMapper">  
+
+<insert id="saveRegionBranch">
+	INSERT INTO :{Com_("D_T2_DELIVERY_REGION_BRANCH")} 
+		(REGION_ID, BRANCH_ID) 
+	VALUES (:regionId, :branchId)
+</insert>
+
+<update id="updateRegionBranch">
+	UPDATE
+	:{Com_("D_T2_DELIVERY_REGION_BRANCH")}
+	SET
+		REGION_ID = :regionId,
+		BRANCH_ID = :branchId
+	WHERE 
+		BRANCH_ID = :odlBranchId
+</update>
+
+<delete id="deleteRegionBranch">
+	DELETE
+	FROM
+	:{Com_("D_T2_DELIVERY_REGION_BRANCH")}
+	WHERE
+		BRANCH_ID = :branchId
+</delete>
+
+<insert id="saveRegion">
+	INSERT INTO ${com}.D_T2_DELIVERY_REGION
+	(REGION_ID, REGION_NAME, BRANCH_ID, DELIVERY_CYCLE)
+	VALUES (:regionId, :regionName, :branchId, :deliveryCycle)
+</insert>
+
+<update id="updateRegion">
+	UPDATE
+	${com}.D_T2_DELIVERY_REGION
+	SET
+	REGION_ID = :regionId,
+	REGION_NAME = :regionName,
+	BRANCH_ID = :branchId,
+	DELIVERY_CYCLE = :deliveryCycle
+	WHERE
+	REGION_ID = :oldRegionId
+</update>
+
+<delete id="deleteRegion">
+	DELETE
+	FROM
+	${com}.D_T2_DELIVERY_REGION
+	WHERE
+	REGION_ID = :regionId
+</delete>
+
+<update id="enableRegion">
+	UPDATE
+	${com}.D_T2_DELIVERY_REGION
+	SET
+	ENABLED = :enabled
+	WHERE
+	REGION_ID = :regionId
+</update>
+
+<select id="queryAllRegion">
+	SELECT
+	*
+	FROM
+	${com}.D_T2_DELIVERY_REGION
+	ORDER BY
+	REGION_ID
+</select>
+
+<select id="queryRegionById">
+	SELECT
+	*
+	FROM
+	${com}.D_T2_DELIVERY_REGION r
+	WHERE
+	r.REGION_ID = :regionId
+</select>
+
+<select id="queryRegionByLcId">
+	SELECT
+	    *
+	FROM
+	${com}.D_T2_DELIVERY_REGION r
+	WHERE
+		r.BRANCH_ID = :lcId
+</select>
+
+<select id="getRegionByBranch">
+	SELECT
+	    r.*
+	FROM
+	${com}.D_T2_DELIVERY_REGION_BRANCH rb
+	INNER JOIN
+	${com}.D_T2_DELIVERY_REGION r
+	ON
+	    r.REGION_ID = rb.REGION_ID
+	WHERE
+	    rb.BRANCH_ID = :branchId
+</select>
+
+</mapper>

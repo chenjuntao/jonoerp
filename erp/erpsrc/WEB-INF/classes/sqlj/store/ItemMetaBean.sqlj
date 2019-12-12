@@ -1,0 +1,856 @@
+//===============================================
+//
+// Copyright (c) 2014
+// Tanry Electronic Technology Co., Ltd.
+// ChangSha, China
+//
+// All Rights Reserved.
+//
+// First created on 2014.8.6 by cjt
+// Last edited on 2014.10.23 by lyz
+//
+// Comments:read:{Com_("D_T2_ITEM_META")} table.
+// 说明：读取原材料、成品、半成品的元信息。
+//
+//===============================================
+
+package logic.store;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+import pojo.store.ItemMeta;
+import sqlj.runtime.ref.DefaultContext;
+
+import com.tanry.business.form.FormConstant;
+import com.tanry.framework.acl.NoPrivilegeException;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.constant.BranchCode;
+import com.tanry.framework.util.constant.ItemType;
+
+public class ItemMetaBean extends ConnectionPool {
+
+	/**
+	 * companyId由调用者通过参数指定,by cjt
+	 */
+	public int saveEntity(ItemMeta itemMeta, String comId)
+			throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getComContext(comId);
+		return saveEntityImp(itemMeta, myCtx);
+	}
+	
+	/**
+	 * companyId默认通过session访问,by cjt
+	 */
+	public int saveEntity(ItemMeta itemMeta)
+			throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		return saveEntityImp(itemMeta, myCtx);
+	}
+	
+	private int saveEntityImp(ItemMeta itemMeta, DefaultContext myCtx)
+			throws NoPrivilegeException, SQLException, NoConnection {
+
+		String itemId = itemMeta.getItemId();
+		String itemBarCode = itemMeta.getItemBarCode();
+		String itemName = itemMeta.getItemName();
+		String itemNameEng = itemMeta.getItemNameEng();
+		String itemType = itemMeta.getItemType();
+		String categoryId = itemMeta.getCategoryId();
+		String itemDimension = itemMeta.getItemDimension();
+		String queryCode = itemMeta.getQueryCode();
+		String itemSpecification = itemMeta.getItemSpecification();
+		String itemPic = itemMeta.getItemPic();
+		String itemNote = itemMeta.getItemNote();
+		String boxType = itemMeta.getBoxType();
+		int enabled = itemMeta.getEnabled();
+		Date effectDate = SqlDateUtil.getSqlDate(itemMeta.getEffectDate());
+		String cBranch_c = itemMeta.getCBranchC();
+		String categoryName = itemMeta.getCategoryName();
+
+		#sql [myCtx] {
+			INSERT INTO
+			:{Com_("D_T2_ITEM_META")}
+			    (
+			        ITEM_ID,
+			        ITEM_BAR_CODE,
+			        ITEM_NAME,
+			        ITEM_NAME_ENG,
+			        ITEM_DIMENSION,
+			        QUERY_CODE,
+			        CATEGORY_ID,
+			        ITEM_SPECIFICATION,
+			        ITEM_TYPE,
+			        ITEM_PIC,
+			        ITEM_NOTE, 
+			        BOX_TYPE,
+			        ENABLED,
+			        EFFECT_DATE
+			    )
+			    VALUES
+			    (
+			    	:itemId,
+			    	:itemBarCode,
+			    	:itemName,
+			    	:itemNameEng,
+			        :itemDimension,
+			        :queryCode,
+			        :categoryId,
+			        :itemSpecification,
+			        :itemType,
+			        :itemPic,
+			        :itemNote,
+			        :boxType,
+			        :enabled,
+			        :effectDate
+			    )
+		};
+		
+		int bInHandPro = itemMeta.getbInHandPro();
+		int bDisFood = itemMeta.getbDisFood();
+		int bDisCount = itemMeta.getbDisCount();
+		int bwaimai = itemMeta.getBwaimai();
+		//如果是出品,则推送到前台系统，by cjt
+		if (itemType.equals(ItemType.PRODUCT)){
+			if(existTableCTFOOD(myCtx)){
+				#sql [myCtx] {
+					INSERT INTO
+					:{Com_("C_T_FOOD")}
+				    (
+				        ITEM_ID,
+				        ITEM_BAR_CODE,
+				        ITEM_NAME,
+				        ITEM_NAME_ENG,
+				        ITEM_DIMENSION,
+				        QUERY_CODE,
+				        CATEGORY_ID,
+				        CATEGORY_NAME,
+				        CBRANCH_C,
+				        ITEM_NOTE,
+				        ENABLED,
+				        BINHANDPRO,
+				        BDISFOOD,
+				        BDISCOUNT,
+				        BWAIMAI
+				    )
+				    VALUES
+				    (
+				    	:itemId,
+				    	:itemBarCode,
+				    	:itemName,
+				    	:itemNameEng,
+				        :itemDimension,
+				        :queryCode,
+				        :categoryId,
+				        :categoryName,
+				        :cBranch_c,
+				        :itemNote,
+				        :enabled,
+				        :bInHandPro,
+					    :bDisFood,
+					    :bDisCount,
+					    :bwaimai
+				    )
+				};
+			}
+		}
+		
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	/**
+	 * companyId由调用者通过参数指定,by cjt
+	 */
+	public int updateEntity(String oldItemId, ItemMeta itemMeta, String comId)
+			throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getComContext(comId);
+		return updateEntityImp(oldItemId, itemMeta, myCtx);
+	}
+		
+	/**
+	 * companyId默认通过session访问,by cjt
+	 */
+	public int updateEntity(String oldItemId, ItemMeta itemMeta) 
+			throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		return updateEntityImp(oldItemId, itemMeta, myCtx);
+	}
+	
+	private int updateEntityImp(String oldItemId, ItemMeta itemMeta, DefaultContext myCtx)
+			throws NoPrivilegeException, SQLException, NoConnection {
+		
+		String itemId = itemMeta.getItemId();
+		String itemBarCode = itemMeta.getItemBarCode();
+		String itemName = itemMeta.getItemName();
+		String itemNameEng = itemMeta.getItemNameEng();
+		String itemType = itemMeta.getItemType();
+		String categoryId = itemMeta.getCategoryId();
+		String itemDimension = itemMeta.getItemDimension();
+		String queryCode = itemMeta.getQueryCode();
+		String itemSpecification = itemMeta.getItemSpecification();
+		String itemPic = itemMeta.getItemPic();
+		String itemNote = itemMeta.getItemNote();
+		String boxType = itemMeta.getBoxType();
+		int enabled = itemMeta.getEnabled();
+		Date effectDate = SqlDateUtil.getSqlDate(itemMeta.getEffectDate());
+		String cBranch_c = itemMeta.getCBranchC();
+		String categoryName = itemMeta.getCategoryName();
+
+		#sql [myCtx] {
+			UPDATE
+			:{Com_("D_T2_ITEM_META")}
+			SET
+			    ITEM_ID = :itemId,
+			    ITEM_BAR_CODE = :itemBarCode,
+			    ITEM_NAME = :itemName,
+			    ITEM_NAME_ENG = :itemNameEng,
+			    ITEM_TYPE = :itemType,
+			    CATEGORY_ID = :categoryId,
+			    ITEM_DIMENSION = :itemDimension,
+			    QUERY_CODE = :queryCode,
+			    ITEM_SPECIFICATION = :itemSpecification,
+			    ITEM_PIC = :itemPic,
+			    ITEM_NOTE = :itemNote,
+			    BOX_TYPE = :boxType,
+			    ENABLED = :enabled,
+			    EFFECT_DATE = :effectDate
+			WHERE 
+				ITEM_ID = :oldItemId
+		};
+		
+		int bInHandPro = itemMeta.getbInHandPro();
+		int bDisFood = itemMeta.getbDisFood();
+		int bDisCount = itemMeta.getbDisCount();
+		int bwaimai = itemMeta.getBwaimai();
+		//如果是出品,则推送到前台系统，by cjt
+		if (itemType.equals(ItemType.PRODUCT)){
+			if(existTableCTFOOD(myCtx)){
+				#sql [myCtx] {
+					UPDATE
+						:{Com_("C_T_FOOD")}
+					SET
+					    ITEM_BAR_CODE = :itemBarCode,
+					    ITEM_NAME = :itemName,
+					    ITEM_NAME_ENG = :itemNameEng,
+					    CATEGORY_ID = :categoryId,
+					    CATEGORY_NAME = :categoryName,
+					    CBRANCH_C = :cBranch_c,
+					    ITEM_DIMENSION = :itemDimension,
+					    QUERY_CODE = :queryCode,
+					    ITEM_NOTE = :itemNote,
+					    ENABLED = :enabled,
+					    BINHANDPRO = :bInHandPro,
+					    BDISFOOD = :bDisFood,
+					    BDISCOUNT = :bDisCount,
+					    BWAIMAI = :bwaimai
+					WHERE 
+						ITEM_ID = :itemId
+				};
+			}
+		}
+		
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+
+	public int deleteEntity(String itemId)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		#sql [myCtx] {
+			DELETE FROM
+			:{Com_("D_T2_ITEM_META")}
+			WHERE
+				ITEM_ID = :itemId
+		};
+		
+		//如果是出品,则推送到前台系统，by cjt
+		if(existTableCTFOOD(myCtx)){
+			#sql [myCtx] {
+				DELETE FROM
+					:{Com_("C_T_FOOD")}
+				WHERE
+					ITEM_ID = :itemId
+			};
+		}
+		
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	/**
+	 * 是否包含该物料,by cjt
+	 */
+	public boolean containsEntity(String itemId, String itemType, String comId)
+			throws NoPrivilegeException, SQLException, NoPrivilegeException{
+		DefaultContext myCtx = getComContext(comId);
+		int count = 0;
+		#sql [myCtx] {
+			select count(*) into :count
+			from :{Com_("D_T2_ITEM_META")}
+			where item_id = :itemId
+			and item_type = :itemType
+		};
+
+		closeDefaultContext(myCtx);
+		return count > 0;
+	}
+	
+	/**
+	 * 修改物料类别
+	 */
+	public int moveCate(String itemId, String newCateId)
+			throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		String itemType = null;
+		String newCateName = null;
+		#sql [myCtx] {
+			SELECT
+		    	c.ITEM_TYPE,c.CATEGORY_NAME into :itemType,:newCateName
+		    FROM
+		    :{Com_("D_T2_ITEM_CATEGORY")} c
+		    WHERE
+			   	CATEGORY_ID = :newCateId
+		};
+		#sql [myCtx] {
+			UPDATE
+			:{Com_("D_T2_ITEM_META")}
+			SET
+			   	CATEGORY_ID = :newCateId,
+			   	ITEM_TYPE = :itemType
+			WHERE
+				ITEM_ID = :itemId
+		};
+		
+		//如果是出品,则推送到前台系统，by cjt
+		if (itemType.equals(ItemType.PRODUCT)){
+			if(existTableCTFOOD(myCtx)){
+				#sql [myCtx] {
+				UPDATE
+					:{Com_("C_T_FOOD")}
+				SET
+					CATEGORY_ID = :newCateId,
+					CATEGORY_NAME = :newCateName
+			   	WHERE
+			   		ITEM_ID = :itemId
+				};
+			}
+		}
+				
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	/**
+	 * 启停用物料
+	 */
+	public int enableItem(String itemId, String itemType, Integer enabled, java.util.Date effectDate)
+			throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		Date sDate = SqlDateUtil.getSqlDate(effectDate);
+		#sql [myCtx] {
+			UPDATE
+				:{Com_("D_T2_ITEM_META")}
+			SET
+			   	ENABLED = :enabled,
+			   	EFFECT_DATE = :sDate
+			WHERE 
+				ITEM_ID = :itemId
+		};
+		
+		//如果是出品,则推送到前台系统，by cjt
+		if(existTableCTFOOD(myCtx)){
+			#sql [myCtx] {
+			UPDATE
+				:{Com_("C_T_FOOD")}
+			SET
+			ENABLED = :enabled
+			WHERE 
+			ITEM_ID = :itemId 
+			};
+		}
+		
+		if (enabled == 1) {
+			if (ItemType.SEMIS.equals(itemType)) {
+				initSupplier(myCtx, itemId);
+			}
+			
+			initDeliveryType(myCtx, itemId);
+		}
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	#sql public static iterator DtypeIter(String region_id, Integer num);
+	
+	/**
+	 * 启用物料时初始化配送方式为统配
+	 */
+	private void initDeliveryType(DefaultContext myCtx, String itemId)
+			throws NoPrivilegeException, SQLException, NoConnection {
+		DtypeIter dtypeIter = null;
+		#sql [myCtx] dtypeIter = {
+			SELECT
+			    r.REGION_ID,
+			    t.num
+			FROM
+			:{Com_("D_T2_DELIVERY_REGION")} r
+			LEFT JOIN
+			    (
+			        SELECT
+			            d.REGION_ID,
+			            COUNT(*) AS num
+			        FROM
+			        :{Com_("D_T2_DELIVERY_TYPE")} d
+			        WHERE
+			            d.ITEM_ID = :itemId
+			        GROUP BY
+			            d.REGION_ID) t
+			ON
+			    t.REGION_ID = r.REGION_ID
+		};
+		String dtype = FormConstant.UNIFIED_DELIVERY;
+		while(dtypeIter.next()) {
+			String regionId = dtypeIter.region_id();
+			Integer num = dtypeIter.num();
+			if (num == null) { // 初始化为统配
+				#sql [myCtx] {
+					INSERT INTO :{Com_("D_T2_DELIVERY_TYPE")} 
+						(REGION_ID, ITEM_ID, DELIVERY_TYPE) 
+					VALUES (:regionId, :itemId, :dtype)
+				};
+			}
+		}
+	}
+	
+	/**
+	 * 启用物料时，如果是半成品，则将供应商设置为中央工厂，保证数据的连通性
+	 */
+	private void initSupplier(DefaultContext myCtx, String itemId)
+			throws NoPrivilegeException, SQLException, NoConnection {
+		String lcCode = BranchCode.DEFAULT_LOGISTICSCENTER;
+		String cfCode = BranchCode.DEFAULT_CENTRALFACTORY;
+		int total = 0;
+		#sql [myCtx] {
+			SELECT
+			    COUNT(*) into :total
+			FROM
+			:{Com_("D_T2_SUPPLIER_BRANCH_ITEM")}
+			WHERE
+			    ITEM_ID = :itemId
+			AND BRANCH_ID = :lcCode
+			AND PRIORITY = 0
+		};
+		if (total == 0) {
+			#sql [myCtx] {
+				INSERT INTO :{Com_("D_T2_SUPPLIER_BRANCH_ITEM")} 
+					(SUPPLIER_ID, BRANCH_ID, ITEM_ID, PRIORITY) 
+				VALUES (:cfCode, :lcCode, :itemId, 0)
+			};
+		}
+	}
+
+	public int updatePic(String itemId, String picId)
+			throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		#sql [myCtx] {
+			UPDATE
+			:{Com_("D_T2_ITEM_META")}
+			SET
+			    ITEM_PIC = :picId
+			WHERE 
+				ITEM_ID = :itemId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	#sql public static iterator ColumnIter(String item_id, String info,String item_name);
+	
+	public List<Map> GetItemCount(String ids)throws NoPrivilegeException,SQLException,NoConnection {
+		String query = " s.ITEM_ID IN ('" + ids.replaceAll(",", "','") + "') ";
+		DefaultContext myCtx = getDefaultContext();
+		ColumnIter columnIter = null;
+		#sql [myCtx] columnIter = {
+				WITH
+			    item AS
+			    (
+			        SELECT
+			            s.ITEM_ID,
+			            m.ITEM_NAME,
+			            b.STORAGE_NAME
+			        FROM
+			        :{Com_("D_T2_STORAGE")} s
+		            LEFT JOIN
+		            :{Com_("D_T2_ITEM_META")} m
+			        ON
+			            m.ITEM_ID =s.ITEM_ID
+			        LEFT JOIN
+			        :{Com_("D_T2_BRANCH_STORAGE")} b
+			        ON
+			            b.STORAGE_ID=s.STORAGE_ID
+			        WHERE
+			        :{query :: 1=1}
+			        AND s.ITEM_COUNT!=0
+			    )
+			SELECT
+			    ITEM_ID,
+			    ITEM_NAME,
+			    listagg(STORAGE_NAME,',')within GROUP (ORDER BY ITEM_ID) info
+			FROM
+			    item
+			GROUP BY
+			    ITEM_ID,
+			    ITEM_NAME
+		};
+		List<Map> returnLst = returnColumnIter(columnIter);
+		columnIter.close();
+		closeDefaultContext(myCtx);
+		return returnLst;
+	}
+	
+	public List<Map> GetIsTherapy(String ids)throws NoPrivilegeException,SQLException,NoConnection {
+		String query = " t.ITEM_ID IN ('" + ids.replaceAll(",", "','") + "') ";
+		DefaultContext myCtx = getDefaultContext();
+		ColumnIter columnIter = null;
+		#sql [myCtx] columnIter = {
+			WITH
+			    item AS
+			    (
+			        SELECT
+			            t.ITEM_ID,
+			            t.THERAPY_NAME,
+			            t.ITEM_NAME
+			        FROM
+			        :{Com_("D_T2_THERAPY")} t
+			        WHERE
+			        	:{query :: 1=1}	
+			    )
+			SELECT
+			    ITEM_ID,
+			    ITEM_NAME,
+			    listagg(THERAPY_NAME,',')within GROUP (ORDER BY ITEM_ID) info
+			FROM
+			    item
+			GROUP BY
+			    ITEM_ID,
+			    ITEM_NAME
+		};
+		List<Map> returnLst = returnColumnIter(columnIter);
+		columnIter.close();
+		closeDefaultContext(myCtx);
+		return returnLst;
+	}
+	
+	private List<Map> returnColumnIter(ColumnIter columnIter) 
+			throws SQLException {
+		List<Map> headLst = new ArrayList<Map>();
+		while(columnIter.next()) {
+			Map<String, Object> head = new HashMap<String, Object>();
+			head.put("itemId", columnIter.item_id());
+			head.put("info", columnIter.info());
+			head.put("itemName", columnIter.item_name());
+			
+			headLst.add(head);
+		}
+		return headLst;
+	}
+	
+	#sql public static iterator ItemIter(String item_id, 
+			String item_name, 
+			String item_name_eng, 
+			String item_type, 
+			String category_id, 
+			String item_dimension, 
+			String query_code,
+			String item_specification,
+			String item_pic, String box_type, Integer enabled);
+	
+	public ItemMeta GetItemById(String id) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		ItemMeta item = null;
+		DefaultContext myCtx = getDefaultContext();
+		ItemIter itemIter = null;
+		#sql [myCtx] itemIter = {
+			SELECT 
+				* 
+			FROM 
+			:{Com_("D_T2_ITEM_META")} 
+				
+			WHERE ITEM_ID = :id
+		};
+		if(itemIter.next()) {
+			item = constructItemMetaBean(itemIter);
+		}
+		itemIter.close();
+		closeDefaultContext(myCtx);
+		return item;
+	}
+	
+	public ItemMeta GetById(String id) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		ItemMeta item = null;
+		DefaultContext myCtx = getDefaultContext();
+		ItemIter itemIter = null;
+		#sql [myCtx] itemIter = {
+				WITH
+			    a AS
+			    (
+			        SELECT DISTINCT
+			            t.item_id,
+			            nvl(t.ITEM_DIMENSION,'-') ITEM_DIMENSION
+			        FROM
+			        :{Com_("D_T2_THERAPY")} t
+			    )
+			SELECT
+			m.item_id,
+			m.item_bar_code,
+			m.item_name, 
+			m.item_name_eng, 
+			m.item_type, 
+			m.category_id, 
+			a.item_dimension, 
+			m.query_code,
+			m.item_specification,
+			m.item_pic, 
+			m.box_type,
+			m.item_note,
+			m.effect_date,
+			m.enabled
+			FROM
+			:{Com_("D_T2_ITEM_META")} m
+			LEFT JOIN
+			    a
+			ON
+			    a.item_id= m.item_id
+			WHERE m.ITEM_ID = :id
+		};
+		if(itemIter.next()) {
+			item = constructItemMetaBean(itemIter);
+		}
+		itemIter.close();
+		closeDefaultContext(myCtx);
+		return item;
+	}
+	
+	public List<ItemMeta> getItemsByName(String itemName) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		List<ItemMeta> result = new ArrayList<ItemMeta>();
+		DefaultContext myCtx = getDefaultContext();
+		ItemIter itemIter = null;
+		#sql [myCtx] itemIter = {
+			SELECT
+		    	*
+		    FROM
+		    :{Com_("D_T2_ITEM_META")} m
+		    WHERE
+		        trim(m.ITEM_NAME) = :itemName
+		};
+		while(itemIter.next()) {
+			result.add(constructItemMetaBean(itemIter));
+		}
+		itemIter.close();
+		closeDefaultContext(myCtx);
+		return result;
+	}
+
+	public List<ItemMeta> GetAllItemsByType(String itemType) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		List<ItemMeta> result = new ArrayList<ItemMeta>();
+		DefaultContext myCtx = getDefaultContext();
+		ItemIter itemIter = null;
+		#sql [myCtx] itemIter = {
+			SELECT
+		    	*
+		    FROM
+		    :{Com_("D_T2_ITEM_META")} m
+		    WHERE
+		    	ITEM_TYPE = :itemType
+		};
+		while(itemIter.next()) {
+			result.add(constructItemMetaBean(itemIter));
+		}
+		itemIter.close();
+		closeDefaultContext(myCtx);
+		return result;
+	}
+	
+	public List<ItemMeta> queryItem(String itemType, String itemName) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		itemName = "%" + itemName + "%";
+		String query = " ITEM_TYPE = '" + itemType + "'";
+		if (ItemType.R_S.equals(itemType)) {
+			query = " (ITEM_TYPE = '" + ItemType.RAW 
+					+ "' OR  ITEM_TYPE = '" + ItemType.SEMIS
+					+ "' OR  ITEM_TYPE = '" + ItemType.SELFSEMIS + "')";
+		}
+		
+		List<ItemMeta> result = new ArrayList<ItemMeta>();
+		DefaultContext myCtx = getDefaultContext();
+		ItemIter itemIter = null;
+		#sql [myCtx] itemIter = {
+			SELECT
+			    *
+			FROM
+			:{Com_("d_t2_item_meta")} m
+			WHERE
+				:{query :: 1=1}
+            AND (
+                    m.ITEM_ID LIKE :itemName
+                OR  m.ITEM_NAME LIKE :itemName)
+		};
+		while (itemIter.next()) {
+			result.add(constructItemMetaBean(itemIter));
+		}
+		itemIter.close();
+		closeDefaultContext(myCtx);
+		return result;
+	}
+
+	public List<ItemMeta> queryItem(String itemType, String itemName, String exceptId) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		itemName = "%" + itemName + "%";
+		
+		List<ItemMeta> result = new ArrayList<ItemMeta>();
+		DefaultContext myCtx = getDefaultContext();
+		ItemIter itemIter = null;
+		#sql [myCtx] itemIter = {
+			SELECT
+			    *
+			FROM
+			:{Com_("d_t2_item_meta")} m
+			WHERE
+			    item_type = :itemType
+            AND (
+                    m.ITEM_ID LIKE :itemName
+                OR  m.ITEM_NAME LIKE :itemName)
+            AND m.ITEM_ID != :exceptId
+		};
+		while (itemIter.next()) {
+			result.add(constructItemMetaBean(itemIter));
+		}
+		itemIter.close();
+		closeDefaultContext(myCtx);
+		return result;
+	}
+
+	public List<ItemMeta> GetAllItemMeta() 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		List<ItemMeta> result = new ArrayList<ItemMeta>();
+		DefaultContext myCtx = getDefaultContext();
+		ItemIter itemIter = null;
+		#sql [myCtx] itemIter = {
+			SELECT
+			    *
+			FROM
+			:{Com_("d_t2_item_meta")} m
+		};
+		while (itemIter.next()) {
+			result.add(constructItemMetaBean(itemIter));
+		}
+		itemIter.close();
+		closeDefaultContext(myCtx);
+		return result;
+	}
+	
+	public List<ItemMeta> queryByCategory(String categoryId) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		List<ItemMeta> result = new ArrayList<ItemMeta>();
+		DefaultContext myCtx = getDefaultContext();
+		ItemIter itemIter = null;
+		#sql [myCtx] itemIter = {
+			SELECT
+			    *
+			FROM
+				:{Com_("d_t2_item_meta")} m
+			WHERE
+			    trim(category_id) = :categoryId
+			AND m.ENABLED = 1
+			ORDER BY
+				ITEM_ID
+		};
+		while(itemIter.next()) {
+			result.add(constructItemMetaBean(itemIter));
+		}
+		itemIter.close();
+		closeDefaultContext(myCtx);
+		return result;
+	}
+	
+	#sql private iterator ItemIdIter(String item_id);
+	public List<ItemMeta> listItemMeta() 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		List<ItemMeta> result = new ArrayList<ItemMeta>();
+		DefaultContext myCtx = getDefaultContext();
+		ItemIdIter itemIter = null;
+		#sql [myCtx] itemIter = {
+			SELECT
+			    *
+			FROM
+			:{Com_("d_t2_item_meta")}
+		};
+		while(itemIter.next()) {
+			ItemMeta itemMeta = new ItemMeta();
+			itemMeta.setItemId(itemIter.item_id());
+			result.add(itemMeta);
+		}
+		itemIter.close();
+		closeDefaultContext(myCtx);
+		return result;
+	}
+	
+	/**
+	 * 从ItemIter构建ItemMeta
+	 */
+	private ItemMeta constructItemMetaBean(ItemIter itemIter) throws SQLException {
+		ItemMeta item = new ItemMeta();
+		item.setItemId(itemIter.item_id());
+		item.setItemName(itemIter.item_name());
+		item.setItemNameEng(itemIter.item_name_eng());
+		item.setItemType(itemIter.item_type());
+		item.setCategoryId(itemIter.category_id());
+		item.setItemDimension(itemIter.item_dimension());
+		item.setQueryCode(itemIter.query_code());
+		String itemSpecification = itemIter.item_specification();
+		if (itemSpecification != null) {
+			itemSpecification = itemSpecification.trim();
+		}else{
+			itemSpecification = "";
+		}
+		item.setItemSpecification(itemSpecification);
+		item.setItemPic(itemIter.item_pic());
+		item.setBoxType(itemIter.box_type());
+		item.setEnabled(itemIter.enabled());
+
+		return item;
+	}
+	
+	//判断是否存在用于推送出品信息的表
+	public boolean existTableCTFOOD (DefaultContext myCtx)
+			throws NoPrivilegeException, SQLException, NoConnection {
+		int count = 0;
+		String dbName = this.getCompanyId().toUpperCase();
+		#sql [myCtx]{
+			select count(*) into :count
+			from dba_tables 
+			where owner = :dbName
+			and TABLE_NAME = 'C_T_FOOD'
+		};
+		return count > 0;
+	}
+}

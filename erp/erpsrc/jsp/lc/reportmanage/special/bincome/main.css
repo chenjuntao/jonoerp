@@ -1,0 +1,28 @@
+#dataGrid {
+	position: absolute;
+    top: 36px;
+    bottom: 0px;
+    width: 100%;
+    height: auto;
+}
+
+
+.dgrid-cell {
+	width: 70px;
+}
+
+.dgrid-column-set-0 {
+	width: 360px;
+}
+
+.filed-dayinfo{
+	width: 55px;
+}
+
+.field-dbusiness{
+	width: 75px;
+}
+
+.field-16,.field-23,.field-08,.field-09{
+	width: 90px;
+}

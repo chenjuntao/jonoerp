@@ -1,0 +1,136 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on Nov 3, 2014 by liyzh
+ * Last edited on Nov 3, 2014 by liyzh
+ * 
+ * 说明： 内部万元需求量查询
+ */
+package logic.module.lc;
+
+import java.math.BigDecimal;
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import sqlj.runtime.ref.DefaultContext;
+
+import com.tanry.framework.acl.NoPrivilegeException;
+import com.tanry.framework.util.SqlDateUtil;
+
+/**
+ * TTCNY is "ten thousand CNY(china yuan)"
+ */
+public class DemandTTCNYBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(DemandTTCNYBean.class);
+
+	#sql private iterator MaterialIter(String ITEM_ID, String ITEM_NAME, String ITEM_DIMENSION, BigDecimal nqty); 
+	
+	/**
+	 * 查询某个时间段所有餐厅总的要货金额
+	 */
+	public BigDecimal queryTotal(java.util.Date startDate, java.util.Date endDate)
+			throws NoPrivilegeException,SQLException,NoConnection{
+
+		DefaultContext myCtx = getDefaultContext();
+
+		Date sDate = SqlDateUtil.getSqlDate(startDate);
+		Date eDate = SqlDateUtil.getSqlDate(endDate);
+		
+		BigDecimal total = BigDecimal.ZERO;
+		Object amtObj = null;
+		//查询该时间段内所有餐厅总的要货金额
+		#sql [myCtx] {
+			SELECT
+			    SUM(d.PAY_AMT) INTO :amtObj
+			FROM
+				:{Com_("D_T1_REQUEST_HEADER")} h,
+				:{Com_("D_T1_REQUEST_DETAIL")} d
+			WHERE
+			    d.FORM_ID = h.FORM_ID
+			AND h.FORM_TYPE = 'request'
+			AND (h.FORM_TIME >= :sDate or :sDate is null)
+			AND (h.FORM_TIME <= :eDate or :eDate is null)
+		};
+		if (amtObj != null) {
+			total = (BigDecimal)amtObj;
+		}
+		total = total.setScale(2, BigDecimal.ROUND_HALF_UP);
+
+		closeDefaultContext(myCtx);
+
+		return total;
+	}
+	
+	/**
+	 * 根据原材料种类查询万元需求量
+	 */
+	public List<Map> queryDetail(java.util.Date startDate, java.util.Date endDate, String categoryId)
+			throws NoPrivilegeException,SQLException,NoConnection{
+
+		//查询该时间段内所有餐厅总的要货金额
+		BigDecimal total = queryTotal(startDate, endDate);
+
+		DefaultContext myCtx = getDefaultContext();
+
+		Date sDate = SqlDateUtil.getSqlDate(startDate);
+		Date eDate = SqlDateUtil.getSqlDate(endDate);
+		//查询某类别下所有的原料数量
+		MaterialIter materialIter = null;
+		#sql [myCtx] materialIter = {
+			SELECT
+				d.ITEM_ID,
+			    d.ITEM_NAME,
+			    d.ITEM_DIMENSION,
+			    SUM(d.ORDER_COUNT) AS nqty
+			FROM
+				:{Com_("D_T1_REQUEST_HEADER")} h,
+				:{Com_("D_T1_REQUEST_DETAIL")} d
+			WHERE
+			    d.FORM_ID = h.FORM_ID
+			AND h.FORM_TYPE = 'request'
+			AND d.ITEM_CATEGORY = :categoryId
+			AND (h.FORM_TIME >= :sDate or :sDate is null)
+			AND (h.FORM_TIME <= :eDate or :eDate is null)
+			GROUP BY
+				d.ITEM_ID,
+			    d.ITEM_NAME,
+			    d.ITEM_DIMENSION
+			ORDER BY
+			    d.ITEM_ID
+		};
+		List<Map> detailLst = new ArrayList();
+		while(materialIter.next()) {
+			Map<String, Object> map = new HashMap<String, Object>();
+			map.put("itemId", materialIter.ITEM_ID());
+			map.put("itemName", materialIter.ITEM_NAME());
+			map.put("unit", materialIter.ITEM_DIMENSION());
+
+			// 每万元材料数量计算公式： amt / nqty = 10000 / 每万元材料数量				
+			BigDecimal nqty = materialIter.nqty().setScale(2, BigDecimal.ROUND_HALF_UP);
+			map.put("nqty", nqty);
+			BigDecimal unitQty = BigDecimal.ZERO;
+			if (total.compareTo(BigDecimal.ZERO) != 0) {
+				unitQty = nqty.multiply(new BigDecimal(10000)).divide(total, 2, BigDecimal.ROUND_HALF_UP);
+			}
+			map.put("unitQty", unitQty);
+			detailLst.add(map);
+		}
+		materialIter.close();
+		closeDefaultContext(myCtx);
+		return detailLst;
+	}
+}

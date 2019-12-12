@@ -1,0 +1,61 @@
+#dataGrid {
+	position: absolute;
+	right: 0;
+	top: 120px;
+	bottom: 0;
+	width: 100%;
+	height: auto; /* override default height: 30em; in dgrid.css */
+}
+
+
+.dgrid-cell {
+	width: 80px;
+}
+
+.field-rownumber, .field-formId, .field-formTime, .field-adjustType,
+	.field-adjustScope, .field-effectType, .field-effectTime, .field-note,
+	.field-makeTime, .field-auditTime,
+	.field-formStatus, .field-scan, .field-operate, .field-audit {
+	text-align: center;
+}
+
+.field-rownumber {
+	width: 40px;
+}
+
+.dgrid-column-set-0 {
+	width: 320px;
+}
+
+.field-formId {
+	width: 150px;
+}
+
+.field-formTime,.field-effectTime  {
+	width: 100px;
+}
+
+.field-supplierName {
+	width: 130px;
+}
+
+.field-effectType {
+	width: 80px;
+}
+
+
+.field-formMaker {
+	width: 120px;
+}
+
+.field-scan, .field-audit {
+	width: 60px;
+}
+
+.field-operate {
+	width: 120px;
+}
+
+.grid-number {
+	text-align: right;
+}

@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"   
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">  
+
+<mapper namespace="mapper.businessquery.BillPayDetailMapper">  
+<resultMap id="BillPayDetailResultMap" type="pojo.businessquery.BillPayDetail">
+	<id property="billC" column="billC" />
+	<result property="payN" column="payN" />
+	<result property="unit" column="unit" />
+	<result property="payAmt" column="payAmt" />
+	<result property="businessDate" column="businessDate" />
+	<result property="table" column="tableN" />
+	<result property="shift" column="shift" />
+	<result property="shopC" column="shopC" />
+	<result property="period" column="period" />
+	<result property="shopN" column="shopN" />
+	<result property="vipC" column="vipC" />
+	<result property="vipN" column="vipN" />
+</resultMap>
+
+<select id="sum" resultMap="BillPayDetailResultMap">
+	SELECT
+		CASE WHEN SUM(p.nPayAmt) IS NULL
+			THEN 0
+			ELSE SUM(p.nPayAmt)
+		END payAmt
+	FROM
+		${com}.d_t_food_bill b
+	LEFT JOIN
+		${com}.d_t_bill_pay p
+	ON
+		b.cBill_C = p.cBill_C
+	WHERE
+		DBUSINESS &gt;=#{startDate}
+	AND DBUSINESS &lt;=#{endDate}
+<if test="shopC != null">
+	AND b.cBranch_C LIKE #{shopC}
+</if>
+<if test="period != null">
+	AND b.cPeriod_N LIKE #{period}
+</if>
+<if test="shift != null">
+	AND b.cShift_N LIKE #{shift}
+</if>
+<if test="table != null">
+	AND b.cTable_N LIKE #{table}
+</if>
+	AND p.cPay_N IS NOT NULL
+	ORDER BY
+		b.cBill_C,
+		p.nPayAmt
+</select>
+
+<select id="count" resultType="int">
+	SELECT
+		COUNT(*)
+	FROM
+		${com}.d_t_food_bill b
+	LEFT JOIN
+		${com}.d_t_bill_pay p
+	ON
+		b.cBill_C = p.cBill_C
+	WHERE
+		DBUSINESS &gt;=#{startDate}
+	AND DBUSINESS &lt;=#{endDate}
+<if test="shopC != null">
+	AND b.cBranch_C LIKE #{shopC}
+</if>
+<if test="period != null">
+	AND b.cPeriod_N LIKE #{period}
+</if>
+<if test="shift != null">
+	AND b.cShift_N LIKE #{shift}
+</if>
+<if test="table != null">
+	AND b.cTable_N LIKE #{table}
+</if>
+	AND p.cPay_N IS NOT NULL
+</select>
+
+<select id="billPay" resultMap="BillPayDetailResultMap">
+	SELECT
+		b.CBill_C                        billC,
+		cPay_N                           payN,
+		sUnit                            unit,
+		p.nPayAmt                        payAmt,
+		date_format(dBusiness, '%Y-%m-%d') businessDate,
+		b.cTable_N                       tableN,
+		b.cPeriod_N                      period,
+		b.cShift_N                       shift,
+		cBranch_C                        shopC,
+		cBranch_N                        shopN,
+		p.cVIP_c                         vipC,
+		p.cVIP_n                         vipN
+	FROM
+		${com}.d_t_food_bill b
+	LEFT JOIN
+		${com}.d_t_bill_pay p
+	ON
+		b.cBill_C = p.cBill_C
+	WHERE
+		DBUSINESS &gt;=#{startDate}
+	AND DBUSINESS &lt;=#{endDate}
+<if test="shopC != null">
+	AND b.cBranch_C LIKE #{shopC}
+</if>
+<if test="period != null">
+	AND b.cPeriod_N LIKE #{period}
+</if>
+<if test="shift != null">
+	AND b.cShift_N LIKE #{shift}
+</if>
+<if test="table != null">
+	AND b.cTable_N LIKE #{table}
+</if>
+	AND p.cPay_N IS NOT NULL
+	ORDER BY
+		b.cBill_C,
+		p.nPayAmt
+	limit #{startRow},#{endRow}
+</select>
+</mapper>

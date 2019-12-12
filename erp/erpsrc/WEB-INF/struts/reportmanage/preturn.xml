@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE struts PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN"
+    "http://struts.apache.org/dtds/struts-2.0.dtd">
+
+<struts>
+<!-- 	餐厅 -->
+	<package name="reportmanage_preturn_restaurant_form" namespace="/reportmanage/preturn/restaurant/form" extends="trust-default">
+		<action name="mainView" class="action.reportmanage.ReportManageAction">
+			<result name="success">/jsp/restaurant/reportmanage/preturn/form/main.jsp</result>
+			<result name="mobile">/mobile/module/restaurant/dreject/main.jsp</result>
+		</action>
+	</package>
+	
+	<package name="reportmanage_preturn_restaurant_collect" namespace="/reportmanage/preturn/restaurant/collect" extends="trust-default">
+		<action name="mainView" class="action.reportmanage.ReportManageAction">
+			<result name="success">/jsp/restaurant/reportmanage/preturn/collect/main.jsp</result>
+			<result name="mobile">/mobile/module/preturn/collect/main.jsp</result>
+		</action>
+	</package>
+	
+	<package name="reportmanage_preturn_restaurant_detail" namespace="/reportmanage/preturn/restaurant/detail" extends="trust-default">
+		<action name="mainView" class="action.reportmanage.ReportManageAction">
+			<result name="success">/jsp/restaurant/reportmanage/preturn/detail/main.jsp</result>
+			<result name="mobile">/mobile/module/preturn/detail/main.jsp</result>
+		</action>
+	</package>
+	
+<!-- 	物流中心 -->
+	<package name="reportmanage_preturn_lc_form" namespace="/reportmanage/preturn/lc/form" extends="trust-default">
+		<action name="mainView" class="action.reportmanage.ReportManageAction">
+			<result name="success">/jsp/lc/reportmanage/preturn/form/main.jsp</result>
+			<result name="mobile">/mobile/module/lc/preturn/main.jsp</result>
+		</action>
+	</package>
+	
+	<package name="reportmanage_preturn_lc_collect" namespace="/reportmanage/preturn/lc/collect" extends="trust-default">
+		<action name="mainView" class="action.reportmanage.ReportManageAction">
+			<result name="success">/jsp/lc/reportmanage/preturn/collect/main.jsp</result>
+				<result name="mobile">/mobile/module/lc/preturn/collect/main.jsp</result>
+		</action>
+	</package>
+	
+	<package name="reportmanage_preturn_lc_detail" namespace="/reportmanage/preturn/lc/detail" extends="trust-default">
+		<action name="mainView" class="action.reportmanage.ReportManageAction">
+			<result name="success">/jsp/lc/reportmanage/preturn/detail/main.jsp</result>
+			<result name="mobile">/mobile/module/lc/preturn/detail/main.jsp</result>
+		</action>
+	</package>
+	
+<!-- 	中央工厂 -->
+	<package name="reportmanage_preturn_cf_form" namespace="/reportmanage/preturn/cf/form" extends="trust-default">
+		<action name="mainView" class="action.reportmanage.ReportManageAction">
+			<result name="success">/jsp/centralfactory/reportmanage/preturn/form/main.jsp</result>
+			<result name="mobile">/mobile/module/cf/preturn/form/main.jsp</result>
+		</action>
+	</package>
+	
+	<package name="reportmanage_preturn_cf_collect" namespace="/reportmanage/preturn/cf/collect" extends="trust-default">
+		<action name="mainView" class="action.reportmanage.ReportManageAction">
+			<result name="success">/jsp/centralfactory/reportmanage/preturn/collect/main.jsp</result>
+			<result name="mobile">/mobile/module/cf/preturn/collect/main.jsp</result>
+		</action>
+	</package>
+	
+	<package name="reportmanage_preturn_cf_detail" namespace="/reportmanage/preturn/cf/detail" extends="trust-default">
+		<action name="mainView" class="action.reportmanage.ReportManageAction">
+			<result name="success">/jsp/centralfactory/reportmanage/preturn/detail/main.jsp</result>
+			<result name="mobile">/mobile/module/cf/preturn/detail/main.jsp</result>
+		</action>
+	</package>
+</struts>
+

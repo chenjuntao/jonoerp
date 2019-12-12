@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE struts PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN"
+    "http://struts.apache.org/dtds/struts-2.0.dtd">
+
+<struts>
+   <!-- 物流中心要货单查询 -->
+   <package name="reportmanage_request_lc_form" namespace="/reportmanage/request/lc/form" extends="trust-default">
+		<action name="mainView" class="action.reportmanage.ReportManageAction">
+			<result name="success">/jsp/lc/reportmanage/request/form/main.jsp</result>
+			<result name="mobile">/mobile/module/lc/form/main.jsp</result>
+		</action>
+	</package>
+	
+	<!-- 物流中心要货汇总 -->
+	<package name="reportmanage_request_lc_collect" namespace="/reportmanage/request/lc/collect" extends="trust-default">
+		<action name="mainView" class="action.reportmanage.ReportManageAction">
+			<result name="success">/jsp/lc/reportmanage/request/collect/main.jsp</result>
+		</action>
+	</package>
+	
+	<!-- 物流中心要货按门店小计汇总 -->
+	<package name="reportmanage_request_lc_branch_collect" namespace="/reportmanage/request/lc/branch/collect" extends="trust-default">
+		<action name="mainView" class="action.reportmanage.SpecialReportManageAction">
+			<result name="success">/jsp/lc/reportmanage/request/hbranch/main.jsp</result>
+		</action>
+		
+		<action name="doQuery" method="doQuery" class="action.reportmanage.SpecialReportManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doQueryBranch" method="doQueryBranch" class="action.reportmanage.SpecialReportManageAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<!-- 物流中心要货明细 -->
+	<package name="reportmanage_request_lc_detail" namespace="/reportmanage/request/lc/detail" extends="trust-default">
+		<action name="mainView" class="action.reportmanage.ReportManageAction">
+			<result name="success">/jsp/lc/reportmanage/request/detail/main.jsp</result>
+		</action>
+	</package>
+	
+<!-- 餐厅要货单查询 -->
+	<package name="reportmanage_request_restaurant_form" namespace="/reportmanage/request/restaurant/form" extends="trust-default">
+		<action name="mainView" class="action.reportmanage.ReportManageAction">
+			<result name="success">/jsp/restaurant/reportmanage/request/form/main.jsp</result>
+			<result name="mobile">/mobile/module/restaurant/goodsbill/main.jsp</result>
+		</action>
+	</package>
+	
+<!-- 餐厅要货汇总 -->
+	<package name="reportmanage_request_restaurant_collect" namespace="/reportmanage/request/restaurant/collect" extends="trust-default">
+		<action name="mainView" class="action.reportmanage.ReportManageAction">
+			<result name="success">/jsp/restaurant/reportmanage/request/collect/main.jsp</result>
+			<result name="mobile">/mobile/module/request/collect/main.jsp</result>
+		</action>
+	</package>
+	
+<!-- 	餐厅要货明细 -->
+	<package name="reportmanage_request_restaurant_detail" namespace="/reportmanage/request/restaurant/detail" extends="trust-default">
+		<action name="mainView" class="action.reportmanage.ReportManageAction">
+			<result name="success">/jsp/restaurant/reportmanage/request/detail/main.jsp</result>
+			<result name="mobile">/mobile/module/request/detail/main.jsp</result>
+		</action>
+	</package>
+	
+	
+	<!-- 外部订货单查询 -->
+	<package name="reportmanage_request_out_form" namespace="/reportmanage/request/out/form" extends="trust-default">
+		<action name="mainView" class="action.reportmanage.ReportManageAction">
+			<result name="success">/jsp/outerorder/reportmanage/request/form/main.jsp</result>
+		</action>
+	</package>
+	
+	
+<!-- 	外部订货汇总 -->
+	<package name="reportmanage_request_out_collect" namespace="/reportmanage/request/out/collect" extends="trust-default">
+		<action name="mainView" class="action.reportmanage.ReportManageAction">
+			<result name="success">/jsp/outerorder/reportmanage/request/collect/main.jsp</result>
+		</action>
+	</package>
+
+<!-- 	外部订货明细  -->	
+	<package name="reportmanage_request_out_detail" namespace="/reportmanage/request/out/detail" extends="trust-default">
+		<action name="mainView" class="action.reportmanage.ReportManageAction">
+			<result name="success">/jsp/outerorder/reportmanage/request/detail/main.jsp</result>
+		</action>
+	</package>
+</struts>
+

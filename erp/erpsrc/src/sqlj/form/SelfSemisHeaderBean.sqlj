@@ -1,0 +1,295 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on Fri Jul 08 12:06:04 CST 2016 by czc
+ * Last edited on Fri Jul 08 12:06:04 CST 2016 by czc
+ * 
+ * comment: 半成品加工单表头
+ */
+package logic.form;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import pojo.form.SelfSemisHeader;
+import sqlj.runtime.ref.DefaultContext;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.TextUtil;
+import com.tanry.framework.acl.NoPrivilegeException;
+
+public class SelfSemisHeaderBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(SelfSemisHeaderBean.class);
+	
+	#sql private iterator HeaderIter(String form_id, String branch_id, String branch, String creator_man_id, String form_maker, Date form_time, Date form_time_actual, String auditor_id, String auditor, Date audit_time, String form_note, String main_item,String status,Date audit_time_actual);
+	
+	public int saveEntity(SelfSemisHeader header)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		String formId = header.getFormId();
+		String branchId = header.getBranchId();
+		String branch = header.getBranch();
+		String creatorManId = header.getCreatorManId();
+		String formMaker = header.getFormMaker();
+		Date formTime = SqlDateUtil.getSqlDate(header.getFormTime());
+		Date formTimeActual = SqlDateUtil.getSqlDate(new java.util.Date());
+		String auditorId = header.getAuditorId();
+		String auditor = header.getAuditor();
+		Date auditTime = SqlDateUtil.getSqlDate(header.getAuditTime());
+		String formNote = header.getFormNote();
+		String mainItem = header.getMainItem();
+
+		#sql [myCtx] {
+			INSERT INTO :{Com_("D_T1_SELF_SEMIS_HEADER")} 
+				(FORM_ID, BRANCH_ID, BRANCH, CREATOR_MAN_ID, FORM_MAKER, FORM_TIME, FORM_TIME_ACTUAL, AUDITOR_ID, AUDITOR, AUDIT_TIME, FORM_NOTE, MAIN_ITEM) 
+			VALUES (:formId, :branchId, :branch, :creatorManId, :formMaker, :formTime, :formTimeActual, :auditorId, :auditor, :auditTime, :formNote, :mainItem)
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public int updateEntity(SelfSemisHeader header)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		String formId = header.getFormId();
+		String branchId = header.getBranchId();
+		String branch = header.getBranch();
+		String creatorManId = header.getCreatorManId();
+		String formMaker = header.getFormMaker();
+		Date formTime = SqlDateUtil.getSqlDate(header.getFormTime());
+		Date formTimeActual = SqlDateUtil.getSqlDate(header.getFormTimeActual());
+		String auditorId = header.getAuditorId();
+		String auditor = header.getAuditor();
+		Date auditTime = SqlDateUtil.getSqlDate(header.getAuditTime());
+		String formNote = header.getFormNote();
+		String mainItem = header.getMainItem();
+
+		#sql [myCtx] {
+			UPDATE
+			:{Com_("D_T1_SELF_SEMIS_HEADER")}
+			SET
+				FORM_NOTE = :formNote,
+				MAIN_ITEM = :mainItem
+			WHERE 
+				FORM_ID = :formId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+
+	public int deleteEntity(String formId)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		#sql [myCtx] {
+			DELETE
+			FROM
+			:{Com_("D_T1_SELF_SEMIS_HEADER")}
+			WHERE
+				FORM_ID = :formId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	/**
+	 * 餐厅半成品入库审核
+	 */
+	public int audit(String formId, String autidorId, String autidor, java.util.Date auditTime)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		Date sAuditTime = SqlDateUtil.getSqlDate(auditTime);
+		Date auditTimeActual = SqlDateUtil.getSqlDate(new java.util.Date());
+		#sql [myCtx] {
+			UPDATE
+			:{Com_("D_T1_SELF_SEMIS_HEADER")}
+			SET
+				AUDITOR_ID = :autidorId,
+				AUDITOR = :autidor,
+				AUDIT_TIME = :sAuditTime,
+				AUDIT_TIME_ACTUAL = :auditTimeActual
+			WHERE 
+				FORM_ID = :formId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public int count(java.util.Date startDate, java.util.Date endDate, String branchId, String queryType)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		String query = formQuery(branchId, queryType);
+		Date sDate = SqlDateUtil.getSqlDate(startDate);
+		Date eDate = SqlDateUtil.getSqlDate(endDate);
+		
+		DefaultContext myCtx = getDefaultContext();
+		int total = 0;
+		#sql [myCtx] {
+			SELECT
+			    count(*) into :total
+			FROM
+			:{Com_("D_T1_SELF_SEMIS_HEADER")} h
+			LEFT JOIN
+			:{Com_("D_T0_FORM_STATUS")} s
+			ON
+			    s.FORM_ID = h.FORM_ID
+			AND s.IS_CURRENT = 1
+			WHERE
+				:{query ::}
+			AND (h.FORM_TIME >= :sDate or :sDate is null)
+			AND (h.FORM_TIME <= :eDate or :eDate is null)
+		};
+		closeDefaultContext(myCtx);
+		return total;
+	}
+	
+	private String formQuery(String branchId, String queryType) {
+		String query = " 1=1";
+		if (!"-1".equals(branchId)) {
+			query = query + " AND h.BRANCH_ID = '" + branchId + "'";
+		}
+		if ("unaudit".equals(queryType)) { // 获取未审核记录
+			query = query + " AND NVL( s.STATUS, 'null') = '未审核'"; 
+		} else if ("audit".equals(queryType)) { // 获取已审核记录
+			query = query + " AND NVL( s.STATUS, 'null') = '已审核'";
+		}
+		return query;
+	}
+	
+	public List<SelfSemisHeader> query(java.util.Date startDate, java.util.Date endDate, String branchId, String queryType, int startRow, int endRow) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		String query = formQuery(branchId, queryType);
+		Date sDate = SqlDateUtil.getSqlDate(startDate);
+		Date eDate = SqlDateUtil.getSqlDate(endDate);
+		
+		DefaultContext myCtx = getDefaultContext();
+		HeaderIter headerIter = null;
+		#sql [myCtx] headerIter = {
+		SELECT
+	    *
+	    FROM
+	        (
+	            SELECT
+	                t.*,
+	                DECODE(FORM_ID,NULL,'合计',to_char(ROWNUM)) rownumber,
+	                ROWNUM                           rowIndex
+	            FROM
+	                (
+			SELECT
+				h.FORM_ID,
+	            h.BRANCH_ID,
+	            h.BRANCH,
+	            h.CREATOR_MAN_ID,
+	            h.FORM_MAKER,
+	            h.FORM_TIME,
+	            h.FORM_TIME_ACTUAL,
+	            h.AUDITOR_ID,
+	            h.AUDITOR,
+	            h.AUDIT_TIME,
+	            h.FORM_NOTE,
+	            h.MAIN_ITEM,
+	            h.AUDIT_TIME_ACTUAL,
+	            s.STATUS
+			FROM
+			:{Com_("D_T1_SELF_SEMIS_HEADER")} h
+			LEFT JOIN
+			:{Com_("D_T0_FORM_STATUS")} s
+			ON
+			    s.FORM_ID = h.FORM_ID
+			AND s.IS_CURRENT = 1
+			WHERE
+				:{query ::}
+			AND (h.FORM_TIME >= :sDate or :sDate is null)
+			AND (h.FORM_TIME <= :eDate or :eDate is null)
+		  ORDER BY
+             NVL(h.FORM_ID,' ') DESC ) t
+         WHERE
+             ROWNUM < :endRow)
+		 WHERE
+		 	rowIndex >= :startRow};
+		List<SelfSemisHeader> headerLst = processIter(headerIter);
+		headerIter.close();
+		closeDefaultContext(myCtx);
+		return headerLst;
+	}
+	
+	public SelfSemisHeader queryById(String formId) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		HeaderIter headerIter = null;
+		#sql [myCtx] headerIter = {
+			SELECT
+				h.FORM_ID,
+	            h.BRANCH_ID,
+	            h.BRANCH,
+	            h.CREATOR_MAN_ID,
+	            h.FORM_MAKER,
+	            h.FORM_TIME,
+	            h.FORM_TIME_ACTUAL,
+	            h.AUDITOR_ID,
+	            h.AUDITOR,
+	            h.AUDIT_TIME,
+	            h.FORM_NOTE,
+	            h.MAIN_ITEM,
+	            h.AUDIT_TIME_ACTUAL,
+	            s.STATUS
+        	FROM
+			:{Com_("D_T1_SELF_SEMIS_HEADER")} h
+			LEFT JOIN
+			:{Com_("D_T0_FORM_STATUS")} s
+			ON
+			    s.FORM_ID = h.FORM_ID
+			AND s.IS_CURRENT = 1
+			WHERE
+				h.form_id = :formId
+		};
+		List<SelfSemisHeader> headerLst = processIter(headerIter);
+		headerIter.close();
+		closeDefaultContext(myCtx);
+		if (headerLst !=null && !headerLst.isEmpty()) {
+			return headerLst.get(0);
+		}
+		return null;
+	}
+	
+	private List<SelfSemisHeader> processIter(HeaderIter headerIter) 
+			throws SQLException {
+		List<SelfSemisHeader> headerLst = new ArrayList<SelfSemisHeader>();
+		while(headerIter.next()) {
+			SelfSemisHeader header = new SelfSemisHeader();
+			header.setFormId(headerIter.form_id());
+			header.setBranchId(headerIter.branch_id());
+			header.setBranch(headerIter.branch());
+			header.setCreatorManId(headerIter.creator_man_id());
+			header.setFormMaker(headerIter.form_maker());
+			header.setFormTime(SqlDateUtil.getUtilDate(headerIter.form_time()));
+			header.setFormTimeActual(SqlDateUtil.getUtilDate(headerIter.form_time_actual()));
+			header.setAuditorId(headerIter.auditor_id());
+			header.setAuditor(headerIter.auditor());
+			header.setAuditTime(SqlDateUtil.getUtilDate(headerIter.audit_time()));
+			header.setAuditTimeActual(SqlDateUtil.getUtilDate(headerIter.audit_time_actual()));
+			header.setFormNote(headerIter.form_note());
+			header.setMainItem(headerIter.main_item());
+			header.setFormStatus(headerIter.status());
+			headerLst.add(header);
+		}
+		return headerLst;
+	}
+}

@@ -1,0 +1,332 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on Thu Feb 12 11:09:52 CST 2015 by lyz
+ * Last edited on Thu Feb 12 11:09:52 CST 2015 by lyz
+ * 
+ * comment: 中央工厂售价调价单、中央工厂采购调价单、物流中心采购调价单、物流中心标准调价单、物流中心加盟调价单、物流中心零售调价单明细
+ */
+package logic.form;
+
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
+
+import pojo.form.PriceAdjustDetail;
+import sqlj.runtime.ref.DefaultContext;
+
+import com.tanry.framework.acl.NoPrivilegeException;
+import com.tanry.framework.util.constant.ItemType;
+import org.apache.commons.lang.StringUtils;
+
+public class PriceAdjustDetailBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(PriceAdjustDetailBean.class);
+	
+	#sql private iterator DetailIter(
+			String form_id, 
+			String item_id, 
+			String item_name, 
+			String item_dimension, 
+			String item_specification, 
+			Double item_packager, 
+			Double old_price, 
+			Double new_price,
+			String enabled);
+	
+	public int saveEntity(PriceAdjustDetail detail)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		String formId = detail.getFormId();
+		String itemId = detail.getItemId();
+		String itemName = detail.getItemName();
+		String itemDimension = detail.getItemDimension();
+		String itemSpecification = detail.getItemSpecification();
+		Double itemPackager = detail.getItemPackager();
+		Double oldPrice = detail.getOldPrice();
+		Double newPrice = detail.getNewPrice();
+
+		#sql [myCtx] {
+			INSERT INTO :{Com_("D_T1_PRICE_ADJUST_DETAIL")} 
+				(FORM_ID, ITEM_ID, ITEM_NAME, ITEM_DIMENSION, ITEM_SPECIFICATION, ITEM_PACKAGER, OLD_PRICE, NEW_PRICE) 
+			VALUES (:formId, :itemId, :itemName, :itemDimension, :itemSpecification, :itemPackager, :oldPrice, :newPrice)
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public int updateEntity(PriceAdjustDetail detail)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		String formId = detail.getFormId();
+		String itemId = detail.getItemId();
+		String itemName = detail.getItemName();
+		String itemDimension = detail.getItemDimension();
+		String itemSpecification = detail.getItemSpecification();
+		Double itemPackager = detail.getItemPackager();
+		Double oldPrice = detail.getOldPrice();
+		Double newPrice = detail.getNewPrice();
+
+		#sql [myCtx] {
+			UPDATE
+			:{Com_("D_T1_PRICE_ADJUST_DETAIL")}
+			SET
+				FORM_ID = :formId,
+				ITEM_ID = :itemId,
+				ITEM_NAME = :itemName,
+				ITEM_DIMENSION = :itemDimension,
+				ITEM_SPECIFICATION = :itemSpecification,
+				ITEM_PACKAGER = :itemPackager,
+				OLD_PRICE = :oldPrice,
+				NEW_PRICE = :newPrice
+			WHERE 
+				FORM_ID = :formId
+			AND ITEM_ID = :itemId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+
+	public int deleteByForm(String formId)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		#sql [myCtx] {
+			DELETE
+			FROM
+			:{Com_("D_T1_PRICE_ADJUST_DETAIL")}
+			WHERE
+				FORM_ID = :formId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+
+	/**
+	 * 删除除此之外的其它调价明细
+	 */
+	public int deleteExcept(String formId, List<String> itemIdLst)
+			throws NoPrivilegeException, SQLException, NoConnection {
+		String query = " 1=1 ";
+		if (itemIdLst.size() != 0) { // 非空处理
+			query = " (1,ITEM_ID) NOT IN ((1,'" + StringUtils.join(itemIdLst, ",").replaceAll(",", "'),(1,'") + "')) ";
+		}
+		
+		DefaultContext myCtx = getDefaultContext();
+		#sql [myCtx] {
+			DELETE
+			FROM
+			:{Com_("D_T1_PRICE_ADJUST_DETAIL")}
+			WHERE
+				FORM_ID = :formId
+			AND	:{query :: 1=1}
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public List<PriceAdjustDetail> query(String formId)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		DetailIter detailIter = null;
+		#sql [myCtx] detailIter = {
+			SELECT
+			    d.*,
+			    nvl(m.enabled,0) enabled
+			FROM
+				:{Com_("D_T1_PRICE_ADJUST_DETAIL")} d
+			LEFT JOIN 
+				:{Com_("D_T2_ITEM_META")} M
+			ON
+				M.ITEM_ID = D.ITEM_ID
+			WHERE
+			    d.FORM_ID = :formId
+			ORDER BY
+				d.ITEM_ID
+		};
+		List<PriceAdjustDetail> detailLst = processIter(detailIter);
+		detailIter.close();
+		closeDefaultContext(myCtx);
+		return detailLst;
+	}
+
+	private List<PriceAdjustDetail> processIter(DetailIter detailIter) 
+			throws SQLException {
+		List<PriceAdjustDetail> detailLst = new ArrayList<PriceAdjustDetail>();
+		while(detailIter.next()) {
+			PriceAdjustDetail detail = new PriceAdjustDetail();
+			detail.setFormId(detailIter.form_id());
+			detail.setItemId(detailIter.item_id());
+			detail.setItemName(detailIter.item_name());
+			detail.setItemDimension(detailIter.item_dimension());
+			detail.setItemSpecification(detailIter.item_specification());
+			detail.setItemPackager(detailIter.item_packager());
+			detail.setOldPrice(detailIter.old_price());
+			detail.setNewPrice(detailIter.new_price());
+			detail.setEnabled(detailIter.enabled().equals("1")?"启用":"未启用");
+			detailLst.add(detail);
+		}
+		return detailLst;
+	}
+	
+	#sql public static iterator ItemIter(String item_id, 
+			String item_name, 
+			String item_dimension, 
+			String item_specification,
+			Double item_packager,
+			Double item_price);
+	
+	public List<PriceAdjustDetail> queryItem(String itemType, String itemName, String priceType)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		itemName = "%" + itemName + "%";
+		String query = " ITEM_TYPE = '" + itemType + "'";
+		if (ItemType.R_S.equals(itemType)) {
+			query = " (ITEM_TYPE = '" + ItemType.RAW 
+					+ "' OR  ITEM_TYPE = '" + ItemType.SEMIS
+					+ "' OR  ITEM_TYPE = '" + ItemType.SELFSEMIS + "')";
+		}
+		
+		DefaultContext myCtx = getDefaultContext();
+		ItemIter itemIter = null;
+		#sql [myCtx] itemIter = {
+			SELECT
+			    m.*,
+			    p.ITEM_PRICE,
+			    u.DELIVERY_FACTOR AS item_packager
+			FROM
+			:{Com_("D_T2_ITEM_META")} m
+			LEFT JOIN
+			:{Com_("D_T2_ITEM_PRICE")} p
+			ON
+			    p.ITEM_ID = m.ITEM_ID
+			AND p.IS_CURRENT =1
+			AND	p.PRICE_TYPE = :priceType
+			LEFT JOIN
+			:{Com_("D_T2_DELIVERY_UNIT")} u
+			ON
+			    u.ITEM_ID = m.ITEM_ID
+			WHERE
+				:{query :: 1=1}
+            AND (
+                    m.ITEM_ID LIKE :itemName
+                OR  m.ITEM_NAME LIKE :itemName)
+            ORDER BY
+            	m.ITEM_ID
+		};
+		List<PriceAdjustDetail> detailLst = new ArrayList<PriceAdjustDetail>();
+		while(itemIter.next()) {
+			PriceAdjustDetail detail = new PriceAdjustDetail();
+			detail.setItemId(itemIter.item_id());
+			detail.setItemName(itemIter.item_name());
+			detail.setItemDimension(itemIter.item_dimension());
+			detail.setItemSpecification(itemIter.item_specification());
+			detail.setItemPackager(itemIter.item_packager());
+			detail.setOldPrice(itemIter.item_price());
+			detail.setNewPrice(itemIter.item_price());
+			detailLst.add(detail);
+		}
+		itemIter.close();
+		closeDefaultContext(myCtx);
+		return detailLst;
+	}
+	
+	public List<PriceAdjustDetail> queryBySupplier(String supplierId, String itemType, String itemName, String priceType)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		itemName = "%" + itemName + "%";
+		String query = " ITEM_TYPE = '" + itemType + "'";
+		if (ItemType.R_S.equals(itemType)) {
+			query = " (ITEM_TYPE = '" + ItemType.RAW 
+					+ "' OR  ITEM_TYPE = '" + ItemType.SEMIS
+					+ "' OR  ITEM_TYPE = '" + ItemType.SELFSEMIS + "')";
+		}
+		DefaultContext myCtx = getDefaultContext();
+		ItemIter itemIter = null;
+		#sql [myCtx] itemIter = {
+				SELECT
+			    m.ITEM_ID,
+			    m.ITEM_NAME,
+			    m.QUERY_CODE,
+			    m.CATEGORY_ID,
+			    m.ITEM_DIMENSION,
+			    m.ITEM_SPECIFICATION,
+			    i.ITEM_PRICE,
+			    u.DELIVERY_FACTOR AS item_packager
+			    
+			FROM
+			    (
+			        SELECT
+			            ITEM_ID,
+			            SUM(ITEM_PRICE) AS ITEM_PRICE
+			        FROM
+			            (
+			                SELECT
+			                    sbi.ITEM_ID,
+			                    0 AS ITEM_PRICE
+			                FROM
+			                :{Com_("D_T2_SUPPLIER_BRANCH_ITEM")} sbi
+			                WHERE
+			                    sbi.SUPPLIER_ID = :supplierId
+			                GROUP BY
+			                    sbi.ITEM_ID
+			                UNION ALL
+			                SELECT
+			                    p.ITEM_ID,
+			                    p.ITEM_PRICE
+			                FROM
+			                :{Com_("D_T2_ITEM_PRICE")} p
+			                WHERE
+		                    	p.PRICE_TYPE = 'SUPPLIER' 
+			                AND p.SUPPLIER_ID = :supplierId 
+			                AND p.IS_CURRENT =1)
+			        GROUP BY
+			            ITEM_ID) i
+			INNER JOIN
+			:{Com_("D_T2_ITEM_META")} m
+			ON
+			    m.ITEM_ID = i.ITEM_ID
+			    		  LEFT JOIN
+			    		  :{Com_("D_T2_DELIVERY_UNIT")} u
+						ON
+						    u.ITEM_ID = m.ITEM_ID
+			    		WHERE
+						:{query :: 1=1}
+		            AND (
+		                    m.ITEM_ID LIKE :itemName
+		                OR  m.ITEM_NAME LIKE :itemName)
+		            ORDER BY
+		            	m.ITEM_ID
+		 
+		};
+		List<PriceAdjustDetail> detailLst = new ArrayList<PriceAdjustDetail>();
+		while(itemIter.next()) {
+			PriceAdjustDetail detail = new PriceAdjustDetail();
+			detail.setItemId(itemIter.item_id());
+			detail.setItemName(itemIter.item_name());
+			detail.setItemDimension(itemIter.item_dimension());
+			detail.setItemSpecification(itemIter.item_specification());
+			detail.setItemPackager(itemIter.item_packager());
+			detail.setOldPrice(itemIter.item_price());
+			detail.setNewPrice(itemIter.item_price());
+			detailLst.add(detail);
+		}
+		itemIter.close();
+		closeDefaultContext(myCtx);
+		return detailLst;
+	}
+}

@@ -1,0 +1,402 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"   
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">  
+
+<mapper namespace="mapper.businessquery.PresentMapper">  
+
+<resultMap id="PresentResultMap" type="pojo.businessquery.PresentBill">
+		<id property="billC" column="billC" />
+		<result property="businessDate" column="businessDate" />
+		<result property="table" column="tableN" />
+		<result property="period" column="period" />
+		<result property="shift" column="shift" />
+		<result property="foodN" column="foodN" />
+		<result property="unit" column="unit" />
+		<result property="presentAmount" column="presentAmount" />
+		<result property="price" column="price" />
+		<result property="presentPrice" column="presentPrice" />
+		<result property="extracPrice" column="extracPrice" />
+		<result property="presentMan" column="presentMan" />
+		<result property="presentWhy" column="presentWhy" />
+		<result property="shopC" column="shopC" />
+		<result property="shopN" column="shopN" />
+		<result property="bigC" column="bigC" />
+		<result property="bigN" column="bigN" />
+		<result property="smallC" column="smallC" />
+		<result property="smallN" column="smallN" />
+	</resultMap>
+
+<select id="getDetailSum" resultMap="PresentResultMap">
+	SELECT
+		CASE WHEN SUM(presentAmount) IS NULL
+			THEN 0
+			ELSE SUM(presentAmount)
+		END 							presentAmount,
+		CASE WHEN SUM(presentPrice) IS NULL
+			THEN 0
+			ELSE SUM(presentPrice)
+		END 							presentPrice,
+		null							extracPrice
+	FROM
+	(
+		SELECT
+			bs.nQty            presentAmount ,
+			bs.nAmt            presentPrice
+		FROM
+			${com}.d_t_food_bill b
+		LEFT JOIN
+			${com}.d_t_food_Bills bs
+		ON
+			b.cBill_C = bs.cBill_C
+		WHERE
+			1=1
+	<if test="shopC!=null">
+		AND	b.cBranch_C LIKE #{shopC}
+	</if>
+	<if test="period!=null">
+		AND b.CPERIOD_N LIKE #{period}
+	</if>
+	<if test="shift!=null">
+		AND b.CSHIFT_N LIKE #{shift}
+	</if>
+		AND bs.eRetSendFlag = '赠送'
+		AND date_format(DBUSINESS, '%Y-%m-%d') IN
+		(
+			SELECT
+				date_format(DBUSINESS, '%Y-%m-%d')
+			FROM
+				${com}.d_t_food_bill d
+			WHERE
+				DBUSINESS &gt;= #{startDate}
+			AND DBUSINESS &lt;= #{endDate}
+			GROUP BY
+				date_format(DBUSINESS, '%Y-%m-%d')
+		)
+		GROUP BY
+			date_format(DBUSINESS, '%Y-%m-%d'),
+			b.cBranch_C,
+			b.cTable_N,
+			b.cBill_C,
+			bs.cFood_C ,
+			b.cPeriod_N,
+			b.cShift_N,
+			bs.sUnit ,
+			bs.nQty ,
+			bs.nPrc ,
+			bs.nAmt ,
+			bs.cPresentBackMan ,
+			bs.sRetSendRemark
+	) t
+
+</select>
+
+<select id="getHeadSum" resultMap="PresentResultMap">
+	SELECT
+		CASE WHEN SUM(presentAmount) IS NULL
+			THEN 0
+			ELSE SUM(presentAmount)
+		END presentAmount,
+		CASE WHEN SUM(presentPrice) IS NULL
+			THEN 0
+			ELSE SUM(presentPrice)
+		END presentPrice
+	FROM
+	(
+		SELECT
+			SUM(IFNULL(bs.nQty,0)) presentAmount ,
+			SUM(IFNULL(bs.nAmt,0))  presentPrice
+		FROM
+			${com}.d_t_food_bill b
+		LEFT JOIN
+			${com}.d_t_food_Bills bs
+		ON
+			b.cBill_C = bs.cBill_C
+		WHERE
+			1=1
+	<if test="shopC!=null">
+		AND	b.cBranch_C LIKE #{shopC}
+	</if>
+	<if test="period!=null">
+		AND b.CPERIOD_N LIKE #{period}
+	</if>
+	<if test="shift!=null">
+		AND b.CSHIFT_N LIKE #{shift}
+	</if>
+		AND bs.eRetSendFlag = '赠送'
+		AND bs.eSuitFlag &lt;&gt; '套餐子项'
+		AND date_format(DBUSINESS, '%Y-%m-%d') IN
+		(
+			SELECT
+				date_format(DBUSINESS, '%Y-%m-%d')
+			FROM
+				${com}.d_t_food_bill d
+			WHERE
+				DBUSINESS &gt;= #{startDate}
+			AND DBUSINESS &lt;= #{endDate}
+			GROUP BY
+				date_format(DBUSINESS, '%Y-%m-%d')
+		)
+		GROUP BY
+			date_format(DBUSINESS, '%Y-%m-%d') ,
+			b.cBranch_C                            ,
+			b.cBranch_N                            ,
+			b.cTable_N                             ,
+			b.cBill_C                              ,
+			b.cPeriod_N                            ,
+			b.cShift_N                             
+		) t
+
+</select>
+
+<select id="getDetailCount" resultType="int">
+	SELECT
+		COUNT( *) 
+	FROM
+	(
+		SELECT
+			date_format(DBUSINESS, '%Y-%m-%d') ,
+			b.cBranch_C                      ,
+			b.cTable_N                       ,
+			b.cBill_C                        ,
+			bs.cFood_C                       ,
+			b.cPeriod_N,
+			b.cShift_N,
+			bs.sUnit           ,
+			bs.nQty             ,
+			bs.nPrc            ,
+			bs.nAmt            ,
+			bs.cPresentBackMan 	   ,
+			bs.sRetSendRemark  
+		FROM
+			${com}.d_t_food_bill b
+		LEFT JOIN
+			${com}.d_t_food_Bills bs
+		ON
+			b.cBill_C = bs.cBill_C
+		WHERE
+			1=1
+	<if test="shopC!=null">
+		AND	b.cBranch_C LIKE #{shopC}
+	</if>
+	<if test="period!=null">
+		AND b.CPERIOD_N LIKE #{period}
+	</if>
+	<if test="shift!=null">
+		AND b.CSHIFT_N LIKE #{shift}
+	</if>
+		AND bs.eRetSendFlag = '赠送'
+		AND date_format(DBUSINESS, '%Y-%m-%d') IN
+		(
+			SELECT
+				date_format(DBUSINESS, '%Y-%m-%d')
+			FROM
+				${com}.d_t_food_bill d
+			WHERE
+				DBUSINESS &gt;= #{startDate}
+			AND DBUSINESS &lt;= #{endDate}
+			GROUP BY
+				date_format(DBUSINESS, '%Y-%m-%d')
+		)
+		GROUP BY
+			date_format(DBUSINESS, '%Y-%m-%d'),
+			b.cBranch_C,
+			b.cTable_N,
+			b.cBill_C,
+			bs.cFood_C ,
+			b.cPeriod_N,
+			b.cShift_N,
+			bs.sUnit ,
+			bs.nQty ,
+			bs.nPrc ,
+			bs.nAmt ,
+			bs.cPresentBackMan ,
+			bs.sRetSendRemark 
+	) t
+</select>
+
+<select id="getHeadCount" resultType="int">
+	SELECT
+		COUNT( *) counts
+	FROM
+	(
+		SELECT
+			date_format(DBUSINESS, '%Y-%m-%d') businessDate,
+			b.cBranch_C                            shopC,
+			b.cBranch_N                            shopN,
+			b.cTable_N                             tableN,
+			b.cBill_C                              billC,
+			b.cPeriod_N                            period,
+			b.cShift_N                             shift,
+			SUM(IFNULL( bs.nQty,0)) presentAmount ,
+			SUM(IFNULL(bs.nAmt,0))  presentPrice
+		FROM
+			${com}.d_t_food_bill b
+		LEFT JOIN
+			${com}.d_t_food_Bills bs
+		ON
+			b.cBill_C = bs.cBill_C
+		WHERE
+			1=1
+	<if test="shopC!=null">
+		AND	b.cBranch_C LIKE #{shopC}
+	</if>
+	<if test="period!=null">
+		AND b.CPERIOD_N LIKE #{period}
+	</if>
+	<if test="shift!=null">
+		AND b.CSHIFT_N LIKE #{shift}
+	</if>
+		AND bs.eRetSendFlag = '赠送'
+		AND bs.eSuitFlag &lt;&gt; '套餐子项'
+		AND date_format(DBUSINESS, '%Y-%m-%d') IN
+		(
+			SELECT
+				date_format(DBUSINESS, '%Y-%m-%d')
+			FROM
+			${com}.d_t_food_bill d
+			WHERE
+				DBUSINESS &gt;= #{startDate}
+			AND DBUSINESS &lt;= #{endDate}
+			GROUP BY
+				date_format(DBUSINESS, '%Y-%m-%d')
+		)
+		GROUP BY
+			date_format(DBUSINESS, '%Y-%m-%d'),
+			b.cBranch_C,
+			b.cBranch_N,
+			b.cTable_N ,
+			b.cBill_C,
+			period,
+			shift
+	) t
+</select>
+
+<select id="getDetail" resultMap="PresentResultMap">
+		SELECT
+			date_format(DBUSINESS, '%Y-%m-%d') businessDate,
+			b.cBranch_C                      shopC,
+			b.cBranch_N                      shopN,
+			b.cTable_N                       tableN,
+			b.cBill_C                        billC,
+			bs.cFood_C                       foodC,
+			bs.cFood_N                       foodN,
+			b.cPeriod_N                      period,
+			b.cShift_N                       shift,
+			bs.sUnit           unit,
+			bs.nQty            presentAmount ,
+			bs.nPrc            price,
+			bs.nAmt            presentPrice,
+			bs.cPresentBackMan     presentMan,
+			bs.sRetSendRemark  presentWhy,
+			bs.cLitCls_C       smallC,
+			bs.cLitCls_N       smallN
+		FROM
+			${com}.d_t_food_bill b
+		LEFT JOIN
+			${com}.d_t_food_Bills bs
+		ON
+			b.cBill_C = bs.cBill_C
+		WHERE
+			1=1
+	<if test="shopC!=null">
+		AND	b.cBranch_C LIKE #{shopC}
+	</if>
+	<if test="period!=null">
+		AND b.CPERIOD_N LIKE #{period}
+	</if>
+	<if test="shift!=null">
+		AND b.CSHIFT_N LIKE #{shift}
+	</if>
+		AND bs.eRetSendFlag = '赠送'
+		AND bs.eSuitFlag &lt;&gt; '套餐子项'
+		AND date_format(DBUSINESS, '%Y-%m-%d') IN
+		(
+			SELECT
+				date_format(DBUSINESS, '%Y-%m-%d')
+			FROM
+				${com}.d_t_food_bill d
+			WHERE
+				DBUSINESS &gt;= #{startDate}
+			AND DBUSINESS &lt;= #{endDate}
+			GROUP BY
+				date_format(DBUSINESS, '%Y-%m-%d')
+		)
+		GROUP BY
+			date_format(DBUSINESS, '%Y-%m-%d'),
+			b.cBranch_C,
+			b.cBranch_N,
+			b.cTable_N ,
+			b.cBill_C,
+			bs.cFood_C ,
+			bs.cFood_N ,
+			period,
+			shift,
+			bs.sUnit ,
+			bs.nQty ,
+			bs.nPrc ,
+			bs.nAmt ,
+			bs.cPresentBackMan ,
+			bs.sRetSendRemark,
+			bs.cLitCls_C,
+			bs.cLitCls_N
+		ORDER BY
+			date_format(DBUSINESS, '%Y-%m-%d'),
+			b.cTable_N,
+			b.cBranch_C,
+			b.cBill_C,
+			bs.cFood_C
+		limit #{startRow},#{endRow}
+</select>
+
+<select id="getHead" resultMap="PresentResultMap">
+	SELECT
+		date_format(DBUSINESS, '%Y-%m-%d') businessDate,
+		b.cBranch_C                            shopC,
+		b.cBranch_N                            shopN,
+		b.cTable_N                             tableN,
+		b.cBill_C                              billC,
+		b.cPeriod_N                            period,
+		b.cShift_N                             shift,
+		SUM(IFNULL( bs.nQty,0)) presentAmount ,
+		SUM(IFNULL(bs.nAmt,0))  presentPrice
+	FROM
+		${com}.d_t_food_bill b
+	LEFT JOIN
+		${com}.d_t_food_Bills bs
+	ON
+		b.cBill_C = bs.cBill_C
+	WHERE
+		1=1
+	<if test="shopC!=null">
+		AND	b.cBranch_C LIKE #{shopC}
+	</if>
+	<if test="period!=null">
+		AND b.CPERIOD_N LIKE #{period}
+	</if>
+	<if test="shift!=null">
+		AND b.CSHIFT_N LIKE #{shift}
+	</if>
+	AND bs.eSuitFlag &lt;&gt; '套餐子项'
+	AND date_format(DBUSINESS, '%Y-%m-%d') IN
+	(
+		SELECT
+			date_format(DBUSINESS, '%Y-%m-%d')
+		FROM
+			${com}.d_t_food_bill d
+		WHERE
+			DBUSINESS &gt;= #{startDate}
+			AND DBUSINESS &lt;= #{endDate}
+		GROUP BY
+			date_format(DBUSINESS, '%Y-%m-%d')
+	)
+	GROUP BY
+		date_format(DBUSINESS, '%Y-%m-%d'),
+		b.cBranch_C,
+		b.cBranch_N,
+		b.cTable_N ,
+		b.cBill_C,
+		period,
+		shift
+	limit #{startRow},#{endRow}
+</select>
+</mapper>

@@ -1,0 +1,34 @@
+#categoryTree {
+	position: absolute;
+	left: 0;
+	right: 0;
+	top: 30px;
+	bottom: 0;
+	width: 20%;
+	height: auto; /* override default height: 30em; in dgrid.css */
+}
+
+#dataGrid {
+	position: absolute;
+	right: 0;
+	top: 30px;
+	bottom: 0;
+	width: 80%;
+	height: auto; /* override default height: 30em; in dgrid.css */
+}
+
+.dgrid-cell {
+	width: 60px;
+}
+
+.field-itemDimension{
+	width: 50px;
+}
+
+.field-itemSpecification{
+	width: 80px;
+}
+
+.field-itemName{
+	width: 140px;
+}

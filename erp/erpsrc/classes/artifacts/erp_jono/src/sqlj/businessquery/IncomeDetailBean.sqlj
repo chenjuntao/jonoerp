@@ -1,0 +1,477 @@
+ 
+package logic.businessquery;
+
+import sqlj.runtime.*;
+import sqlj.runtime.ref.*;
+import java.sql.*;
+import oracle.sql.*;
+import oracle.sqlj.runtime.*;
+import oracle.jdbc.driver.*;
+import java.util.*;
+import java.text.SimpleDateFormat;
+import java.text.ParseException;
+import logic.pool.ConnectionPool;
+import logic.*;
+import com.tanry.framework.acl.*;
+import pojo.businessquery.IncomeDetail;
+
+public class IncomeDetailBean extends ConnectionPool
+{
+	#sql public static iterator DayIterator(
+			String businessDate,
+			String categoryN,
+			float period1,
+			float period2,
+			float period3,
+			float period4,
+			float counts
+			);
+	
+	#sql public static iterator MonthIterator(
+			String businessMonth,
+			String categoryN,
+			float period1,
+			float period2,
+			float period3,
+			float period4,
+			float counts
+			);
+	
+	#sql public static iterator SumIterator(
+			float period1,
+			float period2,
+			float period3,
+			float period4,
+			float counts
+			);
+	
+	public IncomeDetailBean()
+	{
+	}
+	
+	public IncomeDetail daySum(String startDate,String endDate,String shopC)
+			throws NoPrivilegeException,SQLException,NoConnection	{
+		
+		IncomeDetail incomeDetail = new IncomeDetail();
+		DefaultContext myCtx = getDefaultContext();
+		SumIterator sumIterator = null;
+		if (myCtx != null)
+		{
+			#sql [myCtx] sumIterator = {
+			SELECT
+				    SUM(period1) period1 ,
+				    SUM(period2) period2 ,
+				    SUM(period3) period3 ,
+				    SUM(period4) period4,
+				    SUM(counts)  counts
+				FROM
+				    (
+				        SELECT
+				            TO_CHAR(DBUSINESS, 'yyyy-MM-dd') businessDate,
+				            CATEGORY_ID,
+				            CATEGORY_NAME categoryN,
+				            SUM(
+						        CASE
+						            WHEN b.CPERIOD_N = '01'
+						            THEN bs.nAmt
+						            ELSE 0
+						        END)  period1,
+						    SUM(
+						        CASE
+						            WHEN b.CPERIOD_N = '02'
+						            THEN bs.nAmt
+						            ELSE 0
+						        END)  period2,
+						    SUM(
+						        CASE
+						            WHEN b.CPERIOD_N = '03'
+						            THEN bs.nAmt
+						            ELSE 0
+						        END)  period3,
+						    SUM(
+						        CASE
+						            WHEN b.CPERIOD_N = '04'
+						            THEN bs.nAmt
+						            ELSE 0
+						        END)       period4,
+						    SUM(bs.nAmt)  counts
+				        FROM
+				        	:{Com_("d_t2_item_category")} c
+				        LEFT JOIN
+				        	:{Com_("d_t_food_bills")} bs
+				        ON
+				            c.CATEGORY_ID = bs.cLitCls_c
+				        LEFT JOIN
+				        	:{Com_("d_t_food_bill")} b
+				        ON
+				            b.CBILL_C = bs.CBILL_C
+				        WHERE
+				            TO_CHAR(DBUSINESS, 'yyyy-MM-dd') IN
+				            (
+				                SELECT
+				                    TO_CHAR(DBUSINESS, 'yyyy-MM-dd')
+				                FROM
+				                	:{Com_("d_t_food_bill")} d
+				                WHERE
+				                	DBUSINESS >= to_date(:startDate, 'yyyy-mm-dd')
+								AND DBUSINESS <= to_date(:endDate, 'yyyy-mm-dd')
+				                GROUP BY
+				                    TO_CHAR(DBUSINESS, 'yyyy-MM-dd') )
+	                    AND b.CBRANCH_C LIKE :shopC
+				        AND c.ITEM_TYPE = 'PRODUCT'
+				        AND c.PARENT_ID = '*'
+				        GROUP BY
+				            TO_CHAR(DBUSINESS, 'yyyy-MM-dd'),
+				            CATEGORY_ID,
+				            CATEGORY_NAME
+				        ORDER BY
+				            TO_CHAR(DBUSINESS, 'yyyy-MM-dd'),
+				            c.CATEGORY_ID) t};
+			
+			while(sumIterator.next()) {
+				try {
+					incomeDetail.period1 = sumIterator.period1();
+				} catch (Exception e) {
+					incomeDetail.period1 = 0;
+				}
+				
+				try {
+					incomeDetail.period2 = sumIterator.period2();
+				} catch (Exception e) {
+					incomeDetail.period2 = 0;
+				}
+				
+				try {
+					incomeDetail.period3 = sumIterator.period3();
+				} catch (Exception e) {
+					incomeDetail.period3 = 0;
+				}
+				
+				try {
+					incomeDetail.period4 = sumIterator.period4();
+				} catch (Exception e) {
+					incomeDetail.period4 = 0;
+				}
+				
+				try {
+					incomeDetail.counts = sumIterator.counts();
+				} catch (Exception e) {
+					incomeDetail.counts = 0;
+				}
+			}
+			sumIterator.close();
+		}
+		else
+		{
+			throw new NoConnection();
+		}
+		closeDefaultContext(myCtx);
+		return incomeDetail;
+	}
+	
+	public IncomeDetail monthSum(String startDate,String endDate,String shopC)
+			throws NoPrivilegeException,SQLException,NoConnection	{
+		
+		IncomeDetail incomeDetail = new IncomeDetail();
+		DefaultContext myCtx = getDefaultContext();
+		SumIterator sumIterator = null;
+		if (myCtx != null)
+		{
+			#sql [myCtx] sumIterator = {
+			SELECT
+				    SUM(period1) period1 ,
+				    SUM(period2) period2 ,
+				    SUM(period3) period3 ,
+				    SUM(period4) period4,
+				    SUM(counts)     counts
+				FROM
+				    (
+							SELECT
+						    TO_CHAR(DBUSINESS, 'yyyy-MM') businessMonth,
+						    CATEGORY_ID,
+						    CATEGORY_NAME categoryN,
+						    SUM(
+						        CASE
+						            WHEN b.CPERIOD_N = '01'
+						            THEN bs.nAmt
+						            ELSE 0
+						        END)  period1,
+						    SUM(
+						        CASE
+						            WHEN b.CPERIOD_N = '02'
+						            THEN bs.nAmt
+						            ELSE 0
+						        END)  period2,
+						    SUM(
+						        CASE
+						            WHEN b.CPERIOD_N = '03'
+						            THEN bs.nAmt
+						            ELSE 0
+						        END)  period3,
+						    SUM(
+						        CASE
+						            WHEN b.CPERIOD_N = '04'
+						            THEN bs.nAmt
+						            ELSE 0
+						        END)  period4,
+						    SUM(bs.nAmt) counts
+						FROM
+							:{Com_("d_t2_item_category")} c
+						LEFT JOIN
+							:{Com_("d_t_food_bills")} bs
+						ON
+						    c.CATEGORY_ID = bs.cLitCls_c
+						LEFT JOIN
+						    :{Com_("d_t_food_bill")} b
+						ON
+						    b.CBILL_C = bs.CBILL_C
+						WHERE
+						    TO_CHAR(DBUSINESS, 'yyyy-MM') IN
+						    (
+						        SELECT
+						            TO_CHAR(DBUSINESS, 'yyyy-MM')
+						        FROM
+						            :{Com_("d_t_food_bill")} d
+						        WHERE
+						            DBUSINESS >= to_date(:startDate, 'yyyy-mm')
+						        AND DBUSINESS <= to_date(:endDate, 'yyyy-mm')
+						        GROUP BY
+						            TO_CHAR(DBUSINESS, 'yyyy-MM') )
+						AND b.CBRANCH_C LIKE :shopC
+						AND c.ITEM_TYPE = 'PRODUCT'
+						AND c.PARENT_ID = '*'
+						GROUP BY
+						    TO_CHAR(DBUSINESS, 'yyyy-MM'),
+						    CATEGORY_ID,
+						    CATEGORY_NAME
+						ORDER BY
+						    TO_CHAR(DBUSINESS, 'yyyy-MM'),
+						    c.CATEGORY_ID) t};
+			
+			while(sumIterator.next()) {
+				try {
+					incomeDetail.period1 = sumIterator.period1();
+				} catch (Exception e) {
+					incomeDetail.period1 = 0;
+				}
+				
+				try {
+					incomeDetail.period2 = sumIterator.period2();
+				} catch (Exception e) {
+					incomeDetail.period2 = 0;
+				}
+				
+				try {
+					incomeDetail.period3 = sumIterator.period3();
+				} catch (Exception e) {
+					incomeDetail.period3 = 0;
+				}
+				
+				try {
+					incomeDetail.period4 = sumIterator.period4();
+				} catch (Exception e) {
+					incomeDetail.period4 = 0;
+				}
+				
+				try {
+					incomeDetail.counts = sumIterator.counts();
+				} catch (Exception e) {
+					incomeDetail.counts = 0;
+				}
+			}
+			sumIterator.close();
+		}
+		else
+		{
+			throw new NoConnection();
+		}
+		closeDefaultContext(myCtx);
+		return incomeDetail;
+	}
+	public List<IncomeDetail> monthIncomeDetail(String startDate,String endDate,String shopC)
+			throws NoPrivilegeException,SQLException,NoConnection	{
+		
+		List<IncomeDetail> result = new ArrayList<IncomeDetail>();
+		DefaultContext myCtx = getDefaultContext();
+		MonthIterator monthIterator = null;
+		if (myCtx != null)
+		{
+			#sql [myCtx] monthIterator = {
+			SELECT
+				    TO_CHAR(DBUSINESS, 'yyyy-MM') businessMonth,
+				    CATEGORY_ID,
+				    CATEGORY_NAME categoryN,
+				    SUM(
+				        CASE
+				            WHEN b.CPERIOD_N = '01'
+				            THEN bs.nAmt
+				            ELSE 0
+				        END) period1,
+				    SUM(
+				        CASE
+				            WHEN b.CPERIOD_N = '02'
+				            THEN bs.nAmt
+				            ELSE 0
+				        END) period2,
+				    SUM(
+				        CASE
+				            WHEN b.CPERIOD_N = '03'
+				            THEN bs.nAmt
+				            ELSE 0
+				        END) period3,
+				    SUM(
+				        CASE
+				            WHEN b.CPERIOD_N = '04'
+				            THEN bs.nAmt
+				            ELSE 0
+				        END) period4,
+				    SUM(bs.nAmt) counts
+				FROM
+				    :{Com_("d_t2_item_category")} c
+				LEFT JOIN
+				    :{Com_("d_t_food_bills")} bs
+				ON
+				    c.CATEGORY_ID = bs.cLitCls_c
+				LEFT JOIN
+				    :{Com_("d_t_food_bill")} b
+				ON
+				    b.CBILL_C = bs.CBILL_C
+				WHERE
+				    TO_CHAR(DBUSINESS, 'yyyy-MM') IN
+				    (
+				        SELECT
+				            TO_CHAR(DBUSINESS, 'yyyy-MM')
+				        FROM
+				            :{Com_("d_t_food_bill")} d
+				        WHERE
+				            DBUSINESS >= to_date(:startDate, 'yyyy-mm')
+				        AND DBUSINESS <= to_date(:endDate, 'yyyy-mm')
+				        GROUP BY
+				            TO_CHAR(DBUSINESS, 'yyyy-MM') )
+				AND b.CBRANCH_C LIKE :shopC
+				AND c.ITEM_TYPE = 'PRODUCT'
+				AND c.PARENT_ID = '*'
+				GROUP BY
+				    TO_CHAR(DBUSINESS, 'yyyy-MM'),
+				    CATEGORY_ID,
+				    CATEGORY_NAME
+				ORDER BY
+				    TO_CHAR(DBUSINESS, 'yyyy-MM'),
+				    c.CATEGORY_ID};
+			
+			while(monthIterator.next()) {
+				IncomeDetail incomeDetail = new IncomeDetail();
+				incomeDetail.businessMonth = monthIterator.businessMonth();
+				incomeDetail.categoryN = monthIterator.categoryN();
+				incomeDetail.period1 = monthIterator.period1();
+				incomeDetail.period2 = monthIterator.period2();
+				incomeDetail.period3 = monthIterator.period3();
+				incomeDetail.period4 = monthIterator.period4();
+				incomeDetail.counts = monthIterator.counts();
+				
+				result.add(incomeDetail);
+			}
+			monthIterator.close();
+		}
+		else
+		{
+			throw new NoConnection();
+		}
+		closeDefaultContext(myCtx);
+		return result;
+	}
+	
+	public List<IncomeDetail> dayIncomeDetail(String startDate,String endDate,String shopC)
+			throws NoPrivilegeException,SQLException,NoConnection	{
+		
+		List<IncomeDetail> result = new ArrayList<IncomeDetail>();
+		DefaultContext myCtx = getDefaultContext();
+		DayIterator dayIterator = null;
+		if (myCtx != null)
+		{
+			#sql [myCtx] dayIterator = {
+			SELECT
+				    TO_CHAR(DBUSINESS, 'yyyy-MM-dd') businessDate,
+				    CATEGORY_ID,
+				    CATEGORY_NAME categoryN,
+				    SUM(
+				        CASE
+				            WHEN b.CPERIOD_N = '01'
+				            THEN bs.nAmt
+				            ELSE 0
+				        END)  period1,
+				    SUM(
+				        CASE
+				            WHEN b.CPERIOD_N = '02'
+				            THEN bs.nAmt
+				            ELSE 0
+				        END)  period2,
+				    SUM(
+				        CASE
+				            WHEN b.CPERIOD_N = '03'
+				            THEN bs.nAmt
+				            ELSE 0
+				        END)  period3,
+				    SUM(
+				        CASE
+				            WHEN b.CPERIOD_N = '04'
+				            THEN bs.nAmt
+				            ELSE 0
+				        END) period4,
+				    SUM(bs.nAmt)  counts
+				FROM
+					:{Com_("d_t2_item_category")} c
+				LEFT JOIN
+					:{Com_("d_t_food_bills")} bs
+				ON
+				    c.CATEGORY_ID = bs.cLitCls_c
+				LEFT JOIN
+				    :{Com_("d_t_food_bill")} b
+				ON
+				    b.CBILL_C = bs.CBILL_C
+				WHERE
+				    TO_CHAR(DBUSINESS, 'yyyy-MM-dd') IN
+				    (
+				        SELECT
+				            TO_CHAR(DBUSINESS, 'yyyy-MM-dd')
+				        FROM
+				            :{Com_("d_t_food_bill")} d
+				        WHERE
+				        	DBUSINESS >= to_date(:startDate, 'yyyy-mm-dd')
+						AND DBUSINESS <= to_date(:endDate, 'yyyy-mm-dd')
+				        GROUP BY
+				            TO_CHAR(DBUSINESS, 'yyyy-MM-dd') )
+				AND b.CBRANCH_C LIKE :shopC
+				AND c.ITEM_TYPE = 'PRODUCT'
+				AND c.PARENT_ID = '*'
+				GROUP BY
+				    TO_CHAR(DBUSINESS, 'yyyy-MM-dd'),
+				    CATEGORY_ID,
+				    CATEGORY_NAME
+				ORDER BY
+				    TO_CHAR(DBUSINESS, 'yyyy-MM-dd'),
+				    c.CATEGORY_ID};
+			
+			while(dayIterator.next()) {
+				IncomeDetail incomeDetail = new IncomeDetail();
+				incomeDetail.businessDate = dayIterator.businessDate();
+				incomeDetail.categoryN = dayIterator.categoryN();
+				incomeDetail.period1 = dayIterator.period1();
+				incomeDetail.period2 = dayIterator.period2();
+				incomeDetail.period3 = dayIterator.period3();
+				incomeDetail.period4 = dayIterator.period4();
+				incomeDetail.counts = dayIterator.counts();
+				
+				result.add(incomeDetail);
+			}
+			dayIterator.close();
+		}
+		else
+		{
+			throw new NoConnection();
+		}
+		closeDefaultContext(myCtx);
+		return result;
+	}
+	
+}

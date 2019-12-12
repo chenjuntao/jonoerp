@@ -1,0 +1,168 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on Wed Sep 17 15:20:13 CST 2014 by lyz
+ * Last edited on Wed Sep 17 15:20:13 CST 2014 by lyz
+ * 
+ * comment: 餐厅配送反审核单表明细
+ */
+package logic.form;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import pojo.form.ShippingAntiauditDetail;
+import sqlj.runtime.ref.DefaultContext;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.TextUtil;
+import com.tanry.framework.acl.NoPrivilegeException;
+
+public class ShippingAntiauditDetailBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(ShippingAntiauditDetailBean.class);
+	
+	#sql private iterator DetailIter(String form_ref_id, String item_id, Double receive_count, 
+			Double pay_amt, Double antiaudit_receive_count, Double antiaudit_pay_amt,
+			String item_name,
+			String item_dimension,
+			String item_specification,
+			String item_category,
+			Double request_count,
+			Double shipping_count,
+			Double delivery_count,
+			Double item_unit_price,
+			Date expired_time);
+	
+	public int saveEntity(ShippingAntiauditDetail detail)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		String formRefId = detail.getFormRefId();
+		String itemId = detail.getItemId();
+		Double antiauditReceiveCount = detail.getAntiauditReceiveCount();
+		Double antiauditPayAmt = detail.getAntiauditPayAmt();
+
+		#sql [myCtx] {
+			INSERT INTO :{Com_("D_T1_SHIPPING_ANTIAUDIT_DETAIL")} 
+				(FORM_REF_ID, ITEM_ID, ANTIAUDIT_RECEIVE_COUNT, ANTIAUDIT_PAY_AMT) 
+			VALUES (:formRefId, :itemId, :antiauditReceiveCount, :antiauditPayAmt)
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public int updateEntity(ShippingAntiauditDetail detail)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		String formRefId = detail.getFormRefId();
+		String itemId = detail.getItemId();
+		Double antiauditReceiveCount = detail.getAntiauditReceiveCount();
+		Double antiauditPayAmt = detail.getAntiauditPayAmt();
+
+		#sql [myCtx] {
+			UPDATE
+			:{Com_("D_T1_SHIPPING_ANTIAUDIT_DETAIL")}
+			SET
+				ANTIAUDIT_RECEIVE_COUNT = :antiauditReceiveCount,
+				ANTIAUDIT_PAY_AMT = :antiauditPayAmt
+			WHERE 
+				FORM_REF_ID = :formRefId
+			AND ITEM_ID = :itemId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+
+	public int deleteByForm(String formRefId)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		#sql [myCtx] {
+			DELETE
+			FROM
+			:{Com_("D_T1_SHIPPING_ANTIAUDIT_DETAIL")}
+			WHERE
+				FORM_REF_ID = :formRefId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public List<ShippingAntiauditDetail> query(String formId)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		DetailIter detailIter = null;
+		#sql [myCtx] detailIter = {
+			SELECT
+			    ad.*,
+			    d.ITEM_NAME,
+			    d.ITEM_DIMENSION,
+			    d.ITEM_SPECIFICATION,
+			    d.ITEM_CATEGORY,
+			    d.PACKAGING_FACTOR,
+			    d.PACKAGING_UNIT,
+			    d.REQUEST_COUNT,
+			    d.SHIPPING_COUNT,
+			    d.DELIVERY_COUNT,
+			    d.ITEM_UNIT_PRICE,
+			    d.EXPIRED_TIME,
+			    d.RECEIVE_COUNT,
+			    d.PAY_AMT
+			FROM
+				:{Com_("D_T1_SHIPPING_DETAIL")} d,
+				:{Com_("D_T1_SHIPPING_ANTIAUDIT_DETAIL")} ad
+			WHERE
+			    d.FORM_ID = ad.FORM_REF_ID
+			AND d.item_id = ad.ITEM_ID
+			AND ad.FORM_REF_ID = :formId
+			ORDER BY
+			    d.ITEM_ID
+		};
+		List<ShippingAntiauditDetail> detailLst = processIter(detailIter);
+		detailIter.close();
+		closeDefaultContext(myCtx);
+		return detailLst;
+	}
+
+	private List<ShippingAntiauditDetail> processIter(DetailIter detailIter) 
+			throws SQLException {
+		List<ShippingAntiauditDetail> detailLst = new ArrayList<ShippingAntiauditDetail>();
+		while(detailIter.next()) {
+			ShippingAntiauditDetail detail = new ShippingAntiauditDetail();
+			detail.setFormRefId(detailIter.form_ref_id());
+			detail.setItemId(detailIter.item_id());
+			detail.setReceiveCount(detailIter.receive_count());
+			detail.setPayAmt(detailIter.pay_amt());
+			detail.setAntiauditReceiveCount(detailIter.antiaudit_receive_count());
+			detail.setAntiauditPayAmt(detailIter.antiaudit_pay_amt());
+			
+			detail.setItemName(detailIter.item_name());
+			detail.setItemDimension(detailIter.item_dimension());
+			detail.setItemSpecification(detailIter.item_specification());
+			detail.setItemCategory(detailIter.item_category());
+			detail.setRequestCount(detailIter.request_count());
+			detail.setShippingCount(detailIter.shipping_count());
+			detail.setDeliveryCount(detailIter.delivery_count());
+			detail.setItemUnitPrice(detailIter.item_unit_price());
+			detail.setExpiredTime(SqlDateUtil.getUtilDate(detailIter.expired_time()));
+			
+			detailLst.add(detail);
+		}
+		return detailLst;
+	}
+}

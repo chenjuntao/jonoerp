@@ -1,0 +1,129 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on Dec 21, 2014 by liyzh
+ * Last edited on Dec 21, 2014 by liyzh
+ * 
+ * 说明： 物流中心手动生成配送单
+ */
+package logic.module.lc;
+
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import sqlj.runtime.ref.DefaultContext;
+
+import com.tanry.framework.acl.NoPrivilegeException;
+import com.tanry.framework.util.constant.PriceType;
+
+public class ManualDistributionBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(ManualDistributionBean.class);
+	
+	#sql private iterator DetailIter(
+			String item_id, String item_name, String item_dimension,
+			String item_specification, String category_id, Double item_unit_price,
+			String delivery_unit, Double delivery_factor);
+	
+	public List<Map> queryMaterial(String categoryId)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		String priceType = PriceType.BENCHMARK;
+		DefaultContext myCtx = getDefaultContext();
+		DetailIter detailIter = null;
+		#sql [myCtx] detailIter = {
+			SELECT
+			    m.*,
+			    p.ITEM_PRICE AS ITEM_UNIT_PRICE,
+			    u.DELIVERY_UNIT,
+			    u.DELIVERY_FACTOR
+			FROM
+			:{Com_("D_T2_ITEM_META")} m
+			LEFT JOIN
+			:{Com_("D_T2_ITEM_PRICE")} p
+			ON
+			    p.ITEM_ID = m.ITEM_ID
+			AND p.PRICE_TYPE = :priceType
+			AND p.IS_CURRENT = 1
+			LEFT JOIN
+			:{Com_("D_T2_DELIVERY_UNIT")} u
+			ON
+			    u.ITEM_ID = m.ITEM_ID
+			WHERE
+			    m.CATEGORY_ID = :categoryId
+			ORDER BY
+			    m.ITEM_ID
+		};
+		List<Map> detailLst = processDetailIter(detailIter);
+		detailIter.close();
+		closeDefaultContext(myCtx);
+		return detailLst;
+	}
+
+	
+	public List<Map> queryItem(String itemName)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		itemName = "%" + itemName + "%";
+		String priceType = PriceType.BENCHMARK;
+		DefaultContext myCtx = getDefaultContext();
+		DetailIter detailIter = null;
+		#sql [myCtx] detailIter = {
+			SELECT
+			    m.*,
+			    p.ITEM_PRICE AS ITEM_UNIT_PRICE,
+			    u.DELIVERY_UNIT,
+			    u.DELIVERY_FACTOR
+			FROM
+			:{Com_("D_T2_ITEM_META")} m
+			LEFT JOIN
+			:{Com_("D_T2_ITEM_PRICE")} p
+			ON
+			    p.ITEM_ID = m.ITEM_ID
+			AND p.PRICE_TYPE = :priceType
+			AND p.IS_CURRENT = 1
+			LEFT JOIN
+			:{Com_("D_T2_DELIVERY_UNIT")} u
+			ON
+			    u.ITEM_ID = m.ITEM_ID
+			WHERE
+			1=1 AND (
+	                    m.ITEM_ID LIKE :itemName
+	                OR  m.ITEM_NAME LIKE :itemName)
+			ORDER BY
+			    m.ITEM_ID
+		};
+		List<Map> detailLst = processDetailIter(detailIter);
+		detailIter.close();
+		closeDefaultContext(myCtx);
+		return detailLst;
+	}
+	
+	private List<Map> processDetailIter(DetailIter detailIter) 
+			throws SQLException {
+		List<Map> detailLst = new ArrayList<Map>();
+		while(detailIter.next()) {
+			Map<String, Object> detail = new HashMap<String, Object>();
+			detail.put("itemId", detailIter.item_id());
+			detail.put("itemName", detailIter.item_name());
+			detail.put("itemCategory", detailIter.category_id());
+			detail.put("itemDimension", detailIter.item_dimension());
+			detail.put("itemSpecification", detailIter.item_specification());
+			detail.put("itemUnitPrice", detailIter.item_unit_price());
+			detail.put("deliveryUnit", detailIter.delivery_unit());
+			detail.put("unitConvertFactor", detailIter.delivery_factor());
+			detailLst.add(detail);
+		}
+		return detailLst;
+	}
+}

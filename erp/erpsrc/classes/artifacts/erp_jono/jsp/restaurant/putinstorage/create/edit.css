@@ -1,0 +1,116 @@
+.editGrid {
+	position: absolute;
+	right: 0;
+	top: 30px;
+	bottom: 30px;
+	width: 100%;
+	height: auto; /* override default height: 30em; in dgrid.css */
+}
+
+.scanGrid {
+	position: absolute;
+	right: 0;
+	top: 120px;
+	bottom: 0px;
+	width: 100%;
+	height: auto; /* override default height: 30em; in dgrid.css */
+}
+
+.auditGrid {
+	position: absolute;
+	right: 0;
+	top: 120px;
+	bottom: 61px;
+	width: 100%;
+	height: auto; /* override default height: 30em; in dgrid.css */
+}
+
+#commandTable {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+}
+
+.scanGrid1 {
+	position: absolute;
+	right: 0;
+	top: 150px;
+	bottom: 0px;
+	width: 100%;
+	height: auto; /* override default height: 30em; in dgrid.css */
+}
+
+.inCreateGrid {
+    position: absolute;
+    top: 122px;
+    bottom: 25px;
+    width: 100%;
+    height: auto;
+}
+
+#commandTable {
+	position: absolute;
+	bottom: 0;
+	height: auto;
+	width: 100%;
+}
+
+th[role="columnheader"] {
+	text-align: center;
+}
+
+.dgrid-cell {
+	/* 	width: 80px; make all the columns 80px wide */
+	vertical-align: middle;
+}
+
+.field-rownumber, .field-itemId, .field-itemDimension,
+	.field-expiredTime {
+	text-align: center;
+}
+
+.field-rownumber {
+	width: 70px;
+}
+
+.field-itemId {
+	width: 70px;
+}
+
+.field-itemName {
+	width: 130px;
+}
+
+.field-itemCategory {
+	width: 55px;
+}
+
+.field-itemDimension {
+	width: 50px;
+}
+
+.field-itemSpecification {
+	width: 55px;
+}
+
+.field-orderCount, .field-receiveCount, .field-differentCount,
+	.field-itemUnitPrice, .field-payAmt {
+	width: 50px;
+}
+
+.field-batch {
+	width: 105px;
+}
+
+.field-expiredTime {
+	width: 80px;
+}
+
+.field-none {
+		width: 60px;
+}
+
+.grid-number {
+	width: 68px;
+	text-align: right;
+}

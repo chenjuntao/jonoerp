@@ -1,0 +1,124 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on Aug 24, 2015 by liyzh
+ * Last edited on Aug 24, 2015 by liyzh
+ * 
+ * 说明： 餐厅查看出品，获取售卖价（优先查看餐厅所属品牌的价格，如果没有，则查询出品的默认价格）
+ */
+package logic.module.restaurant;
+
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import sqlj.runtime.ref.DefaultContext;
+
+import com.tanry.business.module.hq.config.item.vo.ItemVO;
+import com.tanry.framework.acl.NoPrivilegeException;
+import com.tanry.framework.util.TextUtil;
+import com.tanry.framework.util.constant.ItemType;
+import com.tanry.framework.util.constant.PriceType;
+
+public class ProductQueryBean extends ConnectionPool {
+	
+	public static Logger log = Logger.getLogger(ProductQueryBean.class);
+	
+	#sql private iterator ItemIter(
+			String item_id,
+			String item_name, String query_code,
+			String category_id, String category_name,
+			String item_dimension,
+			String item_specification, Double item_price, Double brand_price);
+	
+	/**
+	 * 根据名称或编码模糊查询，或者根据出品分类查询
+	 */
+	public List<ItemVO> query(String branchId, String priceType,String itemName, String categoryId)   
+			throws NoPrivilegeException,SQLException,NoConnection {
+		itemName = "%" + itemName + "%";
+		
+		String query = " m.ITEM_ID LIKE '%" + itemName 
+				+ "%' OR  m.ITEM_NAME LIKE '%" + itemName + "%'";
+		if (!TextUtil.isEmpty(categoryId)) {
+			query = " m.CATEGORY_ID = '" + categoryId + "'";
+		}
+		
+		String itemType = ItemType.PRODUCT;
+		DefaultContext myCtx = getDefaultContext();
+		ItemIter itemIter = null;
+		#sql [myCtx] itemIter = {
+			SELECT
+			    m.ITEM_ID,
+			    m.ITEM_NAME, 
+			    m.QUERY_CODE,
+			    m.CATEGORY_ID,
+			    c.CATEGORY_NAME,
+			    m.ITEM_DIMENSION,
+			    m.ITEM_SPECIFICATION,
+			    p.ITEM_PRICE,
+			    pb.ITEM_PRICE as brand_price
+			FROM
+			:{Com_("d_t2_item_meta")} m
+			LEFT JOIN
+			:{Com_("D_T2_ITEM_CATEGORY")} c
+			ON
+			    c.CATEGORY_ID = m.CATEGORY_ID
+			LEFT JOIN
+			:{Com_("D_T2_ITEM_PRICE")} p
+			ON
+			    p.ITEM_ID = m.ITEM_ID
+			AND p.PRICE_TYPE = :priceType
+			LEFT JOIN
+			    (
+			        SELECT
+			            p.ITEM_ID ,
+			            p.ITEM_PRICE
+			        FROM
+			        :{Com_("D_T2_BRAND_BRANCH")} b
+			        LEFT JOIN
+			        :{Com_("D_T2_ITEM_PRICE")} p
+			        ON
+			            p.PRICE_TYPE = (b.BRAND_ID||'_default')
+			        WHERE
+			            b.BRANCH_ID = :branchId) pb
+			ON
+			    pb.item_id = m.ITEM_ID
+			WHERE
+			    m.ITEM_TYPE = :itemType
+            AND :{query :: 1=1}
+			ORDER BY
+			    m.ITEM_ID
+		};
+		List<ItemVO> itemLst = new ArrayList<ItemVO>();
+		while(itemIter.next()) {
+			ItemVO item = new ItemVO();
+			item.setItemId(itemIter.item_id());
+			item.setItemName(itemIter.item_name());
+			item.setQueryCode(itemIter.query_code());
+			item.setCategoryId(itemIter.category_id());
+			item.setCategoryName(itemIter.category_name());
+			item.setItemDimension(itemIter.item_dimension());
+			item.setItemSpecification(itemIter.item_specification());
+			item.setSalePrice(itemIter.item_price());
+			
+			Double brandPrice = itemIter.brand_price();
+			if (brandPrice != null) {
+				item.setSalePrice(brandPrice);
+			}
+			itemLst.add(item);
+		}
+		itemIter.close();
+		closeDefaultContext(myCtx);
+		return itemLst;
+	}
+}

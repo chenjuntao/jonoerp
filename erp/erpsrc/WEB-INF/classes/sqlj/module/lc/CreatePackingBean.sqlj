@@ -1,0 +1,112 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on Dec 15, 2014 by liyzh
+ * Last edited on Dec 15, 2014 by liyzh
+ * 
+ * 说明： 创建装箱单
+ */
+package logic.module.lc;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import pojo.form.PackingDetail;
+import sqlj.runtime.ref.DefaultContext;
+import com.tanry.business.form.FormConstant;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.TextUtil;
+import com.tanry.framework.acl.NoPrivilegeException;
+
+public class CreatePackingBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(CreatePackingBean.class);
+
+	#sql private iterator DetailIter(String branch_id, String branch_name, String box_type_id, String box_type_name, 
+			String item_id, String item_name, String item_dimension, Double item_count, 
+			Double unit_volume, Double unit_weight, Double box_volume, Double box_weight, String item_category);
+	
+	/**
+	 * 根据捡货单构造装箱需要的信息
+	 */
+	public List<PackingDetail> queryPacking(String formId)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		DetailIter detailIter = null;
+		#sql [myCtx] detailIter = {
+			SELECT
+			    d.*,
+			    b.BRANCH_NAME,
+			    u.UNIT_VOLUME,
+			    u.UNIT_WEIGHT,
+			    b.TYPE_ID AS BOX_TYPE_ID,
+			    b.TYPE_NAME AS BOX_TYPE_NAME,
+			    b.VOLUME AS BOX_VOLUME,
+			    b.WEIGHT AS BOX_WEIGHT
+			FROM
+			:{Com_("D_T1_PICKING_DETAIL")} d
+			LEFT JOIN
+			:{Com_("D_T2_BRANCH")} b
+			ON
+			    b.BRANCH_ID = d.BRANCH_ID
+			LEFT JOIN
+			:{Com_("D_T2_ITEM_META")} m
+			ON
+			    m.ITEM_ID = d.ITEM_ID
+			LEFT JOIN
+			:{Com_("D_T2_DELIVERY_UNIT")} u
+			ON
+			    u.ITEM_ID= m.ITEM_ID
+			LEFT JOIN
+			:{Com_("D_T2_BOX_TYPE")} b
+			ON
+			    b.TYPE_ID = m.BOX_TYPE
+			WHERE
+			    d.FORM_ID = :formId
+			ORDER BY
+			    d.BRANCH_ID,
+			    m.BOX_TYPE,
+			    d.ITEM_ID
+		};
+		List<PackingDetail> detailLst = processIter(detailIter);
+		detailIter.close();
+		closeDefaultContext(myCtx);
+		return detailLst;
+	}
+
+	private List<PackingDetail> processIter(DetailIter detailIter) 
+			throws SQLException {
+		List<PackingDetail> detailLst = new ArrayList<PackingDetail>();
+		while(detailIter.next()) {
+			PackingDetail detail = new PackingDetail();
+			detail.setBranchId(detailIter.branch_id());
+			detail.setBranchName(detailIter.branch_name());
+			detail.setBoxTypeId(detailIter.box_type_id());
+			detail.setBoxTypeName(detailIter.box_type_name());
+			detail.setItemId(detailIter.item_id());
+			detail.setItemName(detailIter.item_name());
+			detail.setItemDimension(detailIter.item_dimension());
+			detail.setItemCount(detailIter.item_count());
+			detail.setUnitVolume(detailIter.unit_volume());
+			detail.setUnitWeight(detailIter.unit_weight());
+			detail.setBoxVolume(detailIter.box_volume());
+			detail.setBoxWeight(detailIter.box_weight());
+			detail.setItemCategory(detailIter.item_category());
+			detailLst.add(detail);
+		}
+		return detailLst;
+	}
+}

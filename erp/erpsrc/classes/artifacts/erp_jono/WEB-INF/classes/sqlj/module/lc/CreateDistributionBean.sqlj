@@ -1,0 +1,326 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on Dec 2, 2014 by liyzh
+ * Last edited on Dec 2, 2014 by liyzh
+ * 
+ * 说明： 物流中心生成配送单
+ */
+package logic.module.lc;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import pojo.form.CollectDetail;
+import pojo.form.RequestHeader;
+import sqlj.runtime.ref.DefaultContext;
+
+import com.tanry.business.form.FormConstant;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.TextUtil;
+import com.tanry.framework.acl.NoPrivilegeException;
+
+public class CreateDistributionBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(CreateDistributionBean.class);
+	
+	#sql private iterator HeaderIter(String form_id,
+			String form_type,
+			String buyer_id,
+			String buyer_name,
+			String buyer_address,
+			Date receive_time,
+			String form_maker,
+			Date form_time,
+			String auditor,
+			Date audit_time,
+			String form_note,
+			Double all_pay_amt,
+			String max_pay_item,
+			Integer arrive_period,
+			String delivery_type,
+			String form_status,
+			String template_name);
+	
+	public List<RequestHeader> query(java.util.Date startDate, java.util.Date endDate, String branchId)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		String query = " 1=1";
+		if (!"-1".equals(branchId)) {
+			query = query + " AND h.BUYER_ID = '" + branchId + "'";
+		}
+		Date sDate = SqlDateUtil.getSqlDate(startDate);
+		Date eDate = SqlDateUtil.getSqlDate(endDate);
+		
+		DefaultContext myCtx = getDefaultContext();
+		HeaderIter headerIter = null;
+		#sql [myCtx] headerIter = {
+			WITH
+			    request AS
+			    (
+			        SELECT
+			            h.FORM_ID,
+			            h.BUYER_ID,
+			            h.BUYER_NAME,
+			            h.FORM_TYPE,
+			            h.template_name,
+			            h.RECEIVE_TIME,
+			            h.ARRIVE_PERIOD,
+			            d.ITEM_ID,
+			            d.ITEM_NAME,
+			            d.ORDER_COUNT,
+			            rb.REGION_ID,
+			            dt.DELIVERY_TYPE
+			        FROM
+			        :{Com_("D_T1_REQUEST_HEADER")} h
+			        INNER JOIN
+			        :{Com_("D_T1_REQUEST_DETAIL")} d
+			        ON
+			            h.FORM_ID = d.FORM_ID
+			        LEFT JOIN
+			        :{Com_("D_T2_DELIVERY_REGION_BRANCH")} rb
+			        ON
+			            rb.BRANCH_ID = h.BUYER_ID
+			        LEFT JOIN
+			        :{Com_("D_T2_DELIVERY_TYPE")} dt
+			        ON
+			            dt.REGION_ID = rb.REGION_ID
+			        AND dt.ITEM_ID = d.item_id
+			        WHERE
+			            dt.DELIVERY_TYPE IN( 'UNIFIED')
+			        AND h.FORM_TYPE = 'request'
+	        		AND (h.AUDIT_TIME >= :sDate or :sDate is null)
+	    			AND (h.AUDIT_TIME <= :eDate or :eDate is null)
+			    )
+			SELECT
+            	h.*, s.STATUS AS FORM_STATUS
+			FROM
+			:{Com_("D_T1_REQUEST_HEADER")} h
+			LEFT JOIN
+			:{Com_("D_T0_FORM_STATUS")} s
+			ON
+			    s.FORM_ID = h.FORM_ID
+			AND s.IS_CURRENT = 1
+			WHERE
+			 :{query ::}
+			 AND   h.FORM_ID IN
+			    (
+			        SELECT
+			            r.form_id
+			        FROM
+			            request r
+			        GROUP BY
+			            r.form_id)
+			AND	NVL(s.STATUS, 'null') = '已审核'
+	  	--	AND NVL(h.PURCHASE_STATUS, 'null') = '已汇总'
+	  		AND NVL(h.SHIPPING_STATUS, 'null') != '已配送处理'
+			ORDER BY
+			    h.FORM_TIME DESC,
+			    h.form_id
+		};
+		List<RequestHeader> headerLst = processIter(headerIter);
+		headerIter.close();
+		closeDefaultContext(myCtx);
+		return headerLst;
+	}
+	
+	public List<RequestHeader> queryByReceiveTime(java.util.Date startDate, java.util.Date endDate, String branchId)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		String query = " 1=1";
+		if (!"-1".equals(branchId)) {
+			query = query + " AND h.BUYER_ID = '" + branchId + "'";
+		}
+		Date sDate = SqlDateUtil.getSqlDate(startDate);
+		Date eDate = SqlDateUtil.getSqlDate(endDate);
+		
+		DefaultContext myCtx = getDefaultContext();
+		HeaderIter headerIter = null;
+		#sql [myCtx] headerIter = {
+			WITH
+			    request AS
+			    (
+			        SELECT
+			            h.FORM_ID,
+			            h.BUYER_ID,
+			            h.BUYER_NAME,
+			            h.template_name,
+			            h.FORM_TYPE,
+			            h.RECEIVE_TIME,
+			            h.ARRIVE_PERIOD,
+			            d.ITEM_ID,
+			            d.ITEM_NAME,
+			            d.ORDER_COUNT,
+			            rb.REGION_ID,
+			            dt.DELIVERY_TYPE
+			        FROM
+			        :{Com_("D_T1_REQUEST_HEADER")} h
+			        INNER JOIN
+			        :{Com_("D_T1_REQUEST_DETAIL")} d
+			        ON
+			            h.FORM_ID = d.FORM_ID
+			        LEFT JOIN
+			        :{Com_("D_T2_DELIVERY_REGION_BRANCH")} rb
+			        ON
+			            rb.BRANCH_ID = h.BUYER_ID
+			        LEFT JOIN
+			        :{Com_("D_T2_DELIVERY_TYPE")} dt
+			        ON
+			            dt.REGION_ID = rb.REGION_ID
+			        AND dt.ITEM_ID = d.item_id
+			        WHERE
+			            dt.DELIVERY_TYPE IN( 'UNIFIED')
+			        AND h.FORM_TYPE = 'request'
+	                AND (h.RECEIVE_TIME >= :sDate or :sDate is null)
+	    			AND (h.RECEIVE_TIME <= :eDate or :eDate is null)
+			    )
+			SELECT
+            	h.*, s.STATUS AS FORM_STATUS
+			FROM
+			:{Com_("D_T1_REQUEST_HEADER")} h
+			LEFT JOIN
+			:{Com_("D_T0_FORM_STATUS")} s
+			ON
+			    s.FORM_ID = h.FORM_ID
+			AND s.IS_CURRENT = 1
+			WHERE
+			 :{query ::}
+			 AND   h.FORM_ID IN
+			    (
+			        SELECT
+			            r.form_id
+			        FROM
+			            request r
+			        GROUP BY
+			            r.form_id)
+	  		AND NVL(h.PURCHASE_STATUS, 'null') = '已汇总'
+	  		AND NVL(h.SHIPPING_STATUS, 'null') != '已配送处理'
+			ORDER BY
+			    h.FORM_TIME DESC,
+			    h.form_id
+		};
+		List<RequestHeader> headerLst = processIter(headerIter);
+		headerIter.close();
+		closeDefaultContext(myCtx);
+		return headerLst;
+	}
+	
+	private List<RequestHeader> processIter(HeaderIter headerIter) 
+			throws SQLException {
+		List<RequestHeader> headerLst = new ArrayList<RequestHeader>();
+		while(headerIter.next()) {
+			RequestHeader header = new RequestHeader();
+			header.setFormId(headerIter.form_id());
+			header.setFormType(headerIter.form_type());
+			header.setBuyerId(headerIter.buyer_id());
+			header.setBuyerName(headerIter.buyer_name());
+			header.setBuyerAddress(headerIter.buyer_address());
+			header.setReceiveTime(SqlDateUtil.getUtilDate(headerIter.receive_time()));
+			header.setFormMaker(headerIter.form_maker());
+			header.setFormTime(SqlDateUtil.getUtilDate(headerIter.form_time()));
+			header.setAuditor(headerIter.auditor());
+			header.setAuditTime(SqlDateUtil.getUtilDate(headerIter.audit_time()));
+			header.setFormNote(headerIter.form_note());
+			header.setTemplateName(headerIter.template_name());
+			
+			header.setAllPayAmt(headerIter.all_pay_amt());
+			header.setMaxPayItem(headerIter.max_pay_item());
+			header.setArrivePeriod(headerIter.arrive_period());
+			header.setDeliveryType(headerIter.delivery_type());
+			header.setFormStatus(headerIter.form_status());
+			headerLst.add(header);
+		}
+		return headerLst;
+	}
+
+	#sql private iterator DetailIter(String form_id,
+			String delivery_type, String region_id, 
+			String item_id, String item_name, String item_dimension,
+			String item_specification, String item_category, 
+			Double item_unit_price, Double order_count, Double pay_amt,
+			String delivery_unit, Double delivery_factor);
+	
+	public List<Map> queryDetail(String formId)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		DetailIter detailIter = null;
+		#sql [myCtx] detailIter = {
+			SELECT
+			    h.FORM_ID,
+			    d.ITEM_ID,
+			    d.ITEM_NAME,
+			    d.ITEM_DIMENSION,
+			    d.ITEM_SPECIFICATION,
+			    d.ITEM_CATEGORY,
+			    d.ITEM_UNIT_PRICE,
+			    d.ORDER_COUNT,
+			    d.PAY_AMT,
+			    rb.REGION_ID,
+			    dt.DELIVERY_TYPE,
+			    u.DELIVERY_UNIT,
+			    u.delivery_factor
+			FROM
+			:{Com_("D_T1_REQUEST_HEADER")} h
+			INNER JOIN
+			:{Com_("D_T1_REQUEST_DETAIL")} d
+			ON
+			    h.FORM_ID = d.FORM_ID
+			LEFT JOIN
+			:{Com_("D_T2_DELIVERY_REGION_BRANCH")} rb
+			ON
+			    rb.BRANCH_ID = h.BUYER_ID
+			LEFT JOIN
+			:{Com_("D_T2_DELIVERY_TYPE")} dt
+			ON
+			    dt.REGION_ID = rb.REGION_ID
+			AND dt.ITEM_ID = d.ITEM_ID
+			LEFT JOIN
+			:{Com_("D_T2_DELIVERY_UNIT")} u
+			ON
+			    u.ITEM_ID = d.ITEM_ID
+			WHERE
+			    h.FORM_ID = :formId
+			ORDER BY
+			    dt.DELIVERY_TYPE,
+			    d.ITEM_ID
+		};
+		List<Map> detailLst = processDetailIter(detailIter);
+		detailIter.close();
+		closeDefaultContext(myCtx);
+		return detailLst;
+	}
+	
+	private List<Map> processDetailIter(DetailIter detailIter) 
+			throws SQLException {
+		List<Map> detailLst = new ArrayList<Map>();
+		while(detailIter.next()) {
+			Map<String, Object> detail = new HashMap<String, Object>();
+			detail.put("formId", detailIter.form_id());
+			detail.put("itemId", detailIter.item_id());
+			detail.put("itemName", detailIter.item_name());
+			detail.put("itemCategory", detailIter.item_category());
+			detail.put("itemDimension", detailIter.item_dimension());
+			detail.put("itemSpecification", detailIter.item_specification());
+			detail.put("orderCount", detailIter.order_count());
+			detail.put("itemUnitPrice", detailIter.item_unit_price());
+			detail.put("payAmt", detailIter.pay_amt());
+			detail.put("regionId", detailIter.region_id());
+			detail.put("deliveryType", detailIter.delivery_type());
+			detail.put("deliveryUnit", detailIter.delivery_unit());
+			detail.put("unitConvertFactor", detailIter.delivery_factor());
+			detailLst.add(detail);
+		}
+		return detailLst;
+	}
+}

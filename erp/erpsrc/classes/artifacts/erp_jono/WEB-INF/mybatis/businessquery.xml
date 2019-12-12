@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+	http://www.springframework.org/schema/beans/spring-beans-4.0.xsd" 
+	default-autowire="byName">
+
+	<bean id="billDao" class="dao.businessquery.BillDao" />
+    <bean id="billMapper" class="org.mybatis.spring.mapper.MapperFactoryBean">  
+        <property name="mapperInterface" value="mapper.businessquery.BillMapper"/>  
+        <property name="sqlSessionFactory" ref="mybatisSF"/>  
+    </bean>  
+    
+    <bean id="freeBillDao" class="dao.businessquery.FreeBillDao" />
+    <bean id="freeBillMapper" class="org.mybatis.spring.mapper.MapperFactoryBean">  
+        <property name="mapperInterface" value="mapper.businessquery.FreeBillMapper"/>  
+        <property name="sqlSessionFactory" ref="mybatisSF"/>  
+    </bean>
+    
+    <bean id="billPayDetailDao" class="dao.businessquery.BillPayDetailDao" />
+    <bean id="billPayDetailMapper" class="org.mybatis.spring.mapper.MapperFactoryBean">  
+        <property name="mapperInterface" value="mapper.businessquery.BillPayDetailMapper"/>  
+        <property name="sqlSessionFactory" ref="mybatisSF"/>  
+    </bean>  
+    
+    <bean id="businessCountDao" class="dao.businessquery.BusinessCountDao" />
+    <bean id="businessCountMapper" class="org.mybatis.spring.mapper.MapperFactoryBean">  
+        <property name="mapperInterface" value="mapper.businessquery.BusinessCountMapper"/>  
+        <property name="sqlSessionFactory" ref="mybatisSF"/>  
+    </bean>  
+    
+    <bean id="DiscountReasonDao" class="dao.businessquery.DiscountReasonDao" />
+    <bean id="DiscountReasonMapper" class="org.mybatis.spring.mapper.MapperFactoryBean">  
+        <property name="mapperInterface" value="mapper.businessquery.DiscountReasonMapper"/>  
+        <property name="sqlSessionFactory" ref="mybatisSF"/>  
+    </bean>  
+	
+	<bean id="DiscountDao" class="dao.businessquery.DiscountDao" />
+    <bean id="DiscountMapper" class="org.mybatis.spring.mapper.MapperFactoryBean">  
+        <property name="mapperInterface" value="mapper.businessquery.DiscountMapper"/>  
+        <property name="sqlSessionFactory" ref="mybatisSF"/>  
+    </bean> 
+    
+  	<bean id="FoodDao" class="dao.businessquery.FoodDao" />
+    <bean id="FoodMapper" class="org.mybatis.spring.mapper.MapperFactoryBean">  
+        <property name="mapperInterface" value="mapper.businessquery.FoodMapper"/>  
+        <property name="sqlSessionFactory" ref="mybatisSF"/>  
+    </bean> 
+    
+    <bean id="FoodAmtTTCNYDao" class="dao.businessquery.FoodAmtTTCNYDao" />
+    <bean id="FoodAmtTTCNYMapper" class="org.mybatis.spring.mapper.MapperFactoryBean">  
+        <property name="mapperInterface" value="mapper.businessquery.FoodAmtTTCNYMapper"/>  
+        <property name="sqlSessionFactory" ref="mybatisSF"/>  
+    </bean> 
+    
+    <bean id="FoodCategoryDao" class="dao.businessquery.FoodCategoryDao" />
+    <bean id="FoodCategoryMapper" class="org.mybatis.spring.mapper.MapperFactoryBean">  
+        <property name="mapperInterface" value="mapper.businessquery.FoodCategoryMapper"/>  
+        <property name="sqlSessionFactory" ref="mybatisSF"/>  
+    </bean> 
+    
+    <bean id="FoodRawMaterialDao" class="dao.businessquery.FoodRawMaterialDao" />
+    <bean id="FoodRawMaterialMapper" class="org.mybatis.spring.mapper.MapperFactoryBean">  
+        <property name="mapperInterface" value="mapper.businessquery.FoodRawMaterialMapper"/>  
+        <property name="sqlSessionFactory" ref="mybatisSF"/>  
+    </bean> 
+    
+    <bean id="FoodSellCountDao" class="dao.businessquery.FoodSellCountDao" />
+    <bean id="FoodSellCountMapper" class="org.mybatis.spring.mapper.MapperFactoryBean">  
+        <property name="mapperInterface" value="mapper.businessquery.FoodSellCountMapper"/>  
+        <property name="sqlSessionFactory" ref="mybatisSF"/>  
+    </bean>
+     
+    <bean id="FoodSummaryDao" class="dao.businessquery.FoodSummaryDao" />
+    <bean id="FoodSummaryMapper" class="org.mybatis.spring.mapper.MapperFactoryBean">  
+        <property name="mapperInterface" value="mapper.businessquery.FoodSummaryMapper"/>  
+        <property name="sqlSessionFactory" ref="mybatisSF"/>  
+    </bean>
+    
+    <bean id="IncomeDetailDao" class="dao.businessquery.IncomeDetailDao" />
+    <bean id="IncomeDetailMapper" class="org.mybatis.spring.mapper.MapperFactoryBean">  
+        <property name="mapperInterface" value="mapper.businessquery.IncomeDetailMapper"/>  
+        <property name="sqlSessionFactory" ref="mybatisSF"/>  
+    </bean>
+    
+    <bean id="PeopleDao" class="dao.businessquery.PeopleDao" />
+    <bean id="PeopleMapper" class="org.mybatis.spring.mapper.MapperFactoryBean">  
+        <property name="mapperInterface" value="mapper.businessquery.PeopleMapper"/>  
+        <property name="sqlSessionFactory" ref="mybatisSF"/>  
+    </bean>
+    
+    <bean id="PeoplePayDao" class="dao.businessquery.PeoplePayDao" />
+    <bean id="PeoplePayMapper" class="org.mybatis.spring.mapper.MapperFactoryBean">  
+        <property name="mapperInterface" value="mapper.businessquery.PeoplePayMapper"/>  
+        <property name="sqlSessionFactory" ref="mybatisSF"/>  
+    </bean>
+    
+    <bean id="PeriodBusinessDao" class="dao.businessquery.PeriodBusinessDao" />
+    <bean id="PeriodBusinessMapper" class="org.mybatis.spring.mapper.MapperFactoryBean">  
+        <property name="mapperInterface" value="mapper.businessquery.PeriodBusinessMapper"/>  
+        <property name="sqlSessionFactory" ref="mybatisSF"/>  
+    </bean>
+    
+    <bean id="PresentDao" class="dao.businessquery.PresentDao" />
+    <bean id="PresentMapper" class="org.mybatis.spring.mapper.MapperFactoryBean">  
+        <property name="mapperInterface" value="mapper.businessquery.PresentMapper"/>  
+        <property name="sqlSessionFactory" ref="mybatisSF"/>  
+    </bean>
+    
+    <bean id="PresentReasonDao" class="dao.businessquery.PresentReasonDao" />
+    <bean id="PresentReasonMapper" class="org.mybatis.spring.mapper.MapperFactoryBean">  
+        <property name="mapperInterface" value="mapper.businessquery.PresentReasonMapper"/>  
+        <property name="sqlSessionFactory" ref="mybatisSF"/>  
+    </bean>
+    
+    <bean id="ReturnReasonDao" class="dao.businessquery.ReturnReasonDao" />
+    <bean id="ReturnReasonMapper" class="org.mybatis.spring.mapper.MapperFactoryBean">  
+        <property name="mapperInterface" value="mapper.businessquery.ReturnReasonMapper"/>  
+        <property name="sqlSessionFactory" ref="mybatisSF"/>  
+    </bean>
+    
+    <bean id="ReturnDao" class="dao.businessquery.ReturnDao" />
+    <bean id="ReturnMapper" class="org.mybatis.spring.mapper.MapperFactoryBean">  
+        <property name="mapperInterface" value="mapper.businessquery.ReturnMapper"/>  
+        <property name="sqlSessionFactory" ref="mybatisSF"/>  
+    </bean>
+    
+    <bean id="ShopDao" class="dao.businessquery.ShopDao" />
+    <bean id="ShopMapper" class="org.mybatis.spring.mapper.MapperFactoryBean">  
+        <property name="mapperInterface" value="mapper.businessquery.ShopMapper"/>  
+        <property name="sqlSessionFactory" ref="mybatisSF"/>  
+    </bean>
+    
+    <bean id="ShopPayDao" class="dao.businessquery.ShopPayDao" />
+    <bean id="ShopPayMapper" class="org.mybatis.spring.mapper.MapperFactoryBean">  
+        <property name="mapperInterface" value="mapper.businessquery.ShopPayMapper"/>  
+        <property name="sqlSessionFactory" ref="mybatisSF"/>  
+    </bean>
+    
+    <bean id="ShopPaymentDao" class="dao.businessquery.ShopPaymentDao" />
+    <bean id="ShopPaymentMapper" class="org.mybatis.spring.mapper.MapperFactoryBean">  
+        <property name="mapperInterface" value="mapper.businessquery.ShopPaymentMapper"/>  
+        <property name="sqlSessionFactory" ref="mybatisSF"/>  
+    </bean>
+    
+    <bean id="TableDao" class="dao.businessquery.TableDao" />
+    <bean id="TableMapper" class="org.mybatis.spring.mapper.MapperFactoryBean">  
+        <property name="mapperInterface" value="mapper.businessquery.TableMapper"/>  
+        <property name="sqlSessionFactory" ref="mybatisSF"/>  
+    </bean>
+    
+    <bean id="TablePayDao" class="dao.businessquery.TablePayDao" />
+    <bean id="TablePayMapper" class="org.mybatis.spring.mapper.MapperFactoryBean">  
+        <property name="mapperInterface" value="mapper.businessquery.TablePayMapper"/>  
+        <property name="sqlSessionFactory" ref="mybatisSF"/>  
+    </bean>
+    
+</beans>
+

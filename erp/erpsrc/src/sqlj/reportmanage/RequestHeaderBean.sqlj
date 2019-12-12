@@ -1,0 +1,299 @@
+package logic.reportmanage;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import java.util.Map;
+import java.util.HashMap;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import sqlj.runtime.ref.DefaultContext;
+
+import com.tanry.business.form.FormConstant;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.TextUtil;
+import com.tanry.framework.acl.NoPrivilegeException;
+
+public class RequestHeaderBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(RequestHeaderBean.class);
+	
+	#sql private iterator HeaderIter(
+				String buyer_id,
+				String buyer_name,
+				String storage_id,
+				String storage,
+				String provider_id,
+				String provider,
+				String item_id,
+				String item_name,
+				String item_dimension,
+				String item_specification,
+				String item_category,
+				String category_name,
+				Double inventory,
+				Double order_count,
+				Double pay_amt
+			);
+	
+	#sql private iterator SumIter(
+			Double order_count,
+			Double pay_amt);
+	
+	public Map getColmunType(){
+		Map map  = new HashMap();
+		map.put("buyer_name", "String");
+		map.put("buyer_id", "String");
+		map.put("storage_id", "String");
+		map.put("storage", "String");
+		map.put("provider_id", "String");
+		map.put("provider", "String");
+		map.put("item_id", "String");
+		map.put("item_name", "String");
+		map.put("item_dimension", "String");
+		map.put("item_specification", "String");
+		map.put("item_category", "String");
+		map.put("category_name", "String");
+		map.put("inventory", "Number");
+		map.put("order_count", "Number");
+		map.put("pay_amt", "Number");
+		return map;
+	}
+	
+	public Map getColmunPrefix(){
+		Map map  = new HashMap();
+		map.put("buyer_name", "h");
+		map.put("buyer_id", "h");
+		map.put("storage_id", "h");
+		map.put("storage", "h");
+		map.put("provider_id", "h");
+		map.put("provider", "h");
+		map.put("item_id", "d");
+		map.put("item_name", "d");
+		map.put("item_dimension", "d");
+		map.put("item_specification", "d");
+		map.put("item_category", "d");
+		map.put("category_name", "c");
+		map.put("inventory", "d");
+		map.put("order_count", "d");
+		map.put("pay_amt", "d");
+		return map;
+	}
+	
+	
+	public int count(String queryStr, String sortStr)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		
+		DefaultContext myCtx = getDefaultContext();
+		int total = 0;
+		#sql [myCtx] {
+		SELECT
+		    COUNT(*)
+		INTO
+		    :total
+		FROM
+		    (
+		        SELECT
+		            COUNT(*)
+		        FROM
+		            :{Com_("D_T1_REQUEST_HEADER")} h
+		        INNER JOIN
+		            :{Com_("D_T0_FORM_STATUS")} s
+		        ON
+		            h.FORM_ID = s.FORM_ID
+		        AND s.IS_CURRENT = 1
+		        INNER JOIN
+		            :{Com_("D_T1_REQUEST_DETAIL")} d
+		        ON
+		            h.FORM_ID = d.FORM_ID
+		        LEFT JOIN
+		            :{Com_("D_T2_ITEM_CATEGORY")} c
+		        ON
+		            c.CATEGORY_ID = d.ITEM_CATEGORY
+		        WHERE
+		            1 = 1
+		        AND s.STATUS = '已审核' :{queryStr :: ''}
+		        GROUP BY
+		            h.BUYER_ID,
+		            h.BUYER_NAME,
+		            h.STORAGE_ID,
+		            h.STORAGE,
+		            h.PROVIDER_ID,
+		            h.PROVIDER,
+		            d.ITEM_ID,
+		            d.ITEM_NAME,
+		            d.ITEM_DIMENSION,
+		            d.ITEM_SPECIFICATION,
+		            d.ITEM_CATEGORY,
+		            c.CATEGORY_NAME ) a};
+		closeDefaultContext(myCtx);
+		return total;
+	}
+	
+	
+	public List<Map> query(int startRow, int endRow,String queryStr,  String sortStr)  
+			throws NoPrivilegeException,SQLException,NoConnection {
+		
+		DefaultContext myCtx = getDefaultContext();
+		HeaderIter headerIter = null;
+		#sql [myCtx] headerIter = {
+			SELECT
+			    *
+			    FROM
+			        (
+			            SELECT
+			                t.*,
+			                ROWNUM rowNumber
+			            FROM
+			                (
+			                    SELECT
+			                        h.BUYER_ID,
+			                        h.BUYER_NAME,
+			                        h.STORAGE_ID,
+			                        h.STORAGE,
+			                        h.PROVIDER_ID,
+			                        h.PROVIDER,
+			                        d.ITEM_ID,
+			                        d.ITEM_NAME,
+			                        d.ITEM_DIMENSION,
+			                        d.ITEM_SPECIFICATION,
+			                        d.ITEM_CATEGORY,
+			                        c.CATEGORY_NAME,
+			                        SUM(NVL(INVENTORY,0))  INVENTORY,
+			                        SUM(NVL(ORDER_COUNT,0))ORDER_COUNT,
+			                        SUM(NVL(PAY_AMT,0))    PAY_AMT
+			                    FROM
+			                        :{Com_("D_T1_REQUEST_HEADER")} h
+			                    INNER JOIN
+			                        :{Com_("D_T1_REQUEST_DETAIL")} d
+			                    ON
+			                        h.FORM_ID = d.FORM_ID
+			                    LEFT JOIN
+			                        :{Com_("D_T2_ITEM_CATEGORY")} c
+			                    ON
+			                        c.CATEGORY_ID = d.ITEM_CATEGORY
+			                    WHERE
+			                        1 = 1
+                        		AND h.AUDIT_TIME IS NOT NULL :{queryStr :: ''}
+			                    GROUP BY
+			                        h.BUYER_ID,
+			                        h.BUYER_NAME,
+			                        h.STORAGE_ID,
+			                        h.STORAGE,
+			                        h.PROVIDER_ID,
+			                        h.PROVIDER,
+			                        d.ITEM_ID,
+			                        d.ITEM_NAME,
+			                        d.ITEM_DIMENSION,
+			                        d.ITEM_SPECIFICATION,
+			                        d.ITEM_CATEGORY,
+			                        c.CATEGORY_NAME :{sortStr :: ''}) t
+			            WHERE
+			                ROWNUM < :endRow)
+			    WHERE
+			        rowNumber >= :startRow};
+		List<Map> headerLst = processIter(headerIter);
+		headerIter.close();
+		closeDefaultContext(myCtx);
+		return headerLst;
+	}
+	
+	public Map sum( String queryStr, String sortStr) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		SumIter sumIter = null;
+		
+		#sql [myCtx] sumIter = {
+			SELECT
+			    SUM (ORDER_COUNT) ORDER_COUNT,
+			    SUM(PAY_AMT)      PAY_AMT
+			FROM
+			    (
+			        SELECT
+			            SUM(NVL(ORDER_COUNT,0))ORDER_COUNT,
+			            SUM(NVL(PAY_AMT,0))    PAY_AMT
+			        FROM
+			            :{Com_("D_T1_REQUEST_HEADER")} h
+			        INNER JOIN
+			            :{Com_("D_T0_FORM_STATUS")} s
+			        ON
+			            h.FORM_ID = s.FORM_ID
+			        AND s.IS_CURRENT = 1
+			        INNER JOIN
+			            :{Com_("D_T1_REQUEST_DETAIL")} d
+			        ON
+			            h.FORM_ID = d.FORM_ID
+			        LEFT JOIN
+			            :{Com_("D_T2_ITEM_CATEGORY")} c
+			        ON
+			            c.CATEGORY_ID = d.ITEM_CATEGORY
+			        WHERE
+			            1 = 1
+			        AND s.STATUS = '已审核' :{queryStr :: ''}
+			        GROUP BY
+			            h.BUYER_ID,
+			            h.BUYER_NAME,
+			            h.STORAGE_ID,
+			            h.STORAGE,
+			            h.PROVIDER_ID,
+			            h.PROVIDER,
+			            d.ITEM_ID,
+			            d.ITEM_NAME,
+			            d.ITEM_DIMENSION,
+			            d.ITEM_SPECIFICATION,
+			            d.ITEM_CATEGORY,
+			            c.CATEGORY_NAME ) a};
+		
+		closeDefaultContext(myCtx);
+		
+		Map sumMap = processSumIter(sumIter);
+		sumIter.close();
+		
+		return sumMap;
+	}
+
+	private Map processSumIter(SumIter sumIter) 
+			throws SQLException {
+		Map sumMap = new HashMap();
+		
+		while(sumIter.next()) {
+			sumMap.put("order_count", sumIter.order_count());
+			sumMap.put("pay_amt", sumIter.pay_amt());
+		}
+			
+		return sumMap;
+	}
+	
+	private List<Map> processIter(HeaderIter headerIter) 
+			throws SQLException {
+		List<Map> headerLst = new ArrayList<Map>();
+		
+		while(headerIter.next()) {
+			Map header = new HashMap();
+			header.put("buyer_name", headerIter.buyer_name());
+			header.put("buyer_id", headerIter.buyer_id());
+			header.put("storage_id", headerIter.storage_id());
+			header.put("storage", headerIter.storage());
+			header.put("provider_id", headerIter.provider_id());
+			header.put("provider", headerIter.provider());
+			header.put("item_id", headerIter.item_id());
+			header.put("item_name", headerIter.item_name());
+			header.put("item_dimension", headerIter.item_dimension());
+			header.put("item_specification", headerIter.item_specification());
+			header.put("item_category", headerIter.item_category());
+			header.put("category_name", headerIter.category_name());
+			header.put("inventory", headerIter.inventory());
+			header.put("order_count", headerIter.order_count());
+			header.put("pay_amt", headerIter.pay_amt());
+			
+			headerLst.add(header);
+		}
+		return headerLst;
+	}
+}

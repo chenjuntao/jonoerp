@@ -1,0 +1,69 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html >
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=gb2312"/>
+	<link rel="stylesheet" href="common/lib/dojo/resources/dojo.css" />
+	<link rel="stylesheet" href="common/lib/dijit/themes/claro/claro.css">
+	<script>dojoConfig = {parseOnLoad: true}</script>
+	<script src='common/lib/dojo/dojo.js'></script>
+	<script type='text/javascript' src='common/lib/util/Math.uuid.js'></script>
+	<script type='text/javascript' src='common/js/tab.js'></script>
+	
+	<style type="text/css">
+	#TabContainer {
+		position: absolute;
+		right: 0;
+		top: 0;
+		bottom: 0;
+		width: 100%;
+		height: 100%;
+	}
+	
+	.loading{
+		position: absolute;left: 0px;top: 0px;z-index: 300;
+		width: 100%;height: 100%;
+		padding: 8px 0px 0px 8px;
+ 		background: white; 
+	}
+	
+	.iframe_wrapper {
+		width: 100%;height: 100%;
+	}
+	
+	.tab_iframe {
+		border: 0px;padding: 0px;margin: 0px;
+		width: 100%;height: 100%;
+	}
+	
+	.dijitTabPane {
+		padding: 0px !important;
+	}
+	</style>
+	<script type="text/javascript">
+	function test(){
+		var _url = 'http://www.baidu.com';
+		var _title = 'lsdfj';
+		addTab(_title, _url);
+	}
+
+	require([ "dojo/ready", "dojo/window" ], function(ready, win) {
+		ready(80, function(){
+            // Runs before parser, which is priority == 90
+            var vs = win.getBox();
+			var gridHeight = vs.h - 5;
+// 			dojo.byId("TabContainer").style.height = gridHeight + "px";
+	    });
+	});
+	</script>
+</head>
+<body class="claro" style="overflow: hidden;">
+<!-- 	<input type="button" onclick="test()" value="test" /> -->
+	<div data-dojo-type="dijit/layout/TabContainer" id="TabContainer" style="width: 100%; height: 100%;">
+		<div data-dojo-type="dijit/layout/ContentPane" title="欢迎" data-dojo-props="selected:true">
+			<div align="center">
+				<img src="common/img/welcome.jpg">
+			</div>
+		</div>
+	</div>
+</body>
+</html>

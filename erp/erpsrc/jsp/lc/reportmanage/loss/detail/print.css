@@ -1,0 +1,15 @@
+.print-only {
+        display: block;
+}
+.print-only table {
+        width: 100%;
+        table-layout: fixed;
+}
+.print-only table th {
+        border: 1px solid #000;
+        font-weight: bolder;
+}
+
+.print-only,.page-break {
+        display:none;
+}

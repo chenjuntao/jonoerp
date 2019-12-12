@@ -1,0 +1,24 @@
+.dgrid {
+	position: absolute;
+	right: 0;
+	top: 33px;
+	bottom: 0px;
+	width: 100%;
+	height: auto;
+}
+
+.dgrid-cell {
+	width: 70px;
+}
+
+.field-item_name{
+	width: 120px;
+}
+
+.field-business_name{
+	width: 200px;
+}
+
+.field-none {
+	width: 250px;
+}

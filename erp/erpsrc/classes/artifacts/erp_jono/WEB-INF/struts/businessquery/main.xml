@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!-- Copyright (c) 2014 Tanry Electronic Technology Co., Ltd. ChangSha, China 
+	All Rights Reserved. First created on Aug 2, 2014 by liyzh Last edited on 
+	Aug 6, 2014 by liyzh 说明： 数据查询模块，路径配置分管 -->
+<!DOCTYPE struts PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN"
+    "http://struts.apache.org/dtds/struts-2.0.dtd">
+
+<struts>
+	<include file="../struts/businessquery/shopListQuery.xml" />
+	<include file="../struts/businessquery/tableListQuery.xml" />
+	<include file="../struts/businessquery/billInfoQuery.xml" />
+	<include file="../struts/businessquery/foodRawQuery.xml" />
+
+	<include file="../struts/businessquery/paymentquery.xml" />
+	<include file="../struts/businessquery/foodAmtQuery.xml" />
+	<include file="../struts/businessquery/costvariance.xml" />
+
+	<include file="../struts/businessquery/billCodeQuery.xml" />
+
+	<include file="../struts/businessquery/foodListQuery.xml" />
+	<include file="../struts/businessquery/peopleBillQuery.xml" />
+	<include file="../struts/businessquery/shoppayment.xml" />
+	<include file="../struts/businessquery/billReason.xml" />
+	<include file="../struts/businessquery/billPayDetail.xml" />
+
+	<include file="../struts/businessquery/businesscount.xml" />
+	<include file="../struts/businessquery/foodSellCount.xml" />
+	<include file="../struts/businessquery/foodSummary.xml" />
+	<include file="../struts/businessquery/incomeDetail.xml" />
+	<include file="../struts/businessquery/peoplepay.xml" />
+
+	<package name="restaurant" namespace="/jsp/restaurant" extends="trust-default">
+		<action name="shopInfo" method="listShopInfo" class="action.restaurant.ShopInfoAction">
+			<result name="success">/jsp/restaurant/shopInfo.jsp</result>
+		</action>
+		<action name="shopSource" method="listShopSource" class="action.restaurant.ShopSourceAction">
+			<result name="success">/jsp/restaurant/shopSource.jsp</result>
+		</action>
+		<action name="shopSourceResult" method="shopSourceRsult" class="action.restaurant.ShopSourceResultAction">
+			<result name="success">/jsp/restaurant/shopSourceResult.jsp</result>
+		</action>
+		<action name="shopDish" method="shopDishInfo" class="action.restaurant.ShopDishAction">
+			<result name="success">/jsp/restaurant/shopDish.jsp</result>
+		</action>
+		<action name="shopCostCard" method="shopCostCardInfo" class="action.restaurant.ShopCostCardAction">
+			<result name="success">/jsp/restaurant/shopCostCard.jsp</result>
+		</action>
+		<action name="queryTheoryStock" method="theoryStockInfo" class="action.restaurant.QueryTheoryStockAction">
+			<result name="success">/jsp/restaurant/queryTheoryStock.jsp</result>
+		</action>
+		<action name="queryPurchaseBill" method="purchaseBillInfo" class="action.restaurant.QueryPurchaseBillAction">
+			<result name="success">/jsp/restaurant/queryPurchaseBill.jsp</result>
+		</action>
+		<action name="speciallyPurchaseBill" method="purchaseBillInfo" class="action.restaurant.SpeciallyPurchaseBillAction">
+			<result name="success">/jsp/restaurant/speciallyPurchaseBill.jsp</result>
+		</action>
+	</package>
+
+</struts>
+

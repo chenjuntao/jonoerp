@@ -1,0 +1,194 @@
+package logic.form;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import pojo.form.FoodBills;
+import sqlj.runtime.ref.DefaultContext;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.TextUtil;
+import com.tanry.framework.acl.NoPrivilegeException;
+
+public class FoodBillsBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(FoodBillsBean.class);
+	
+	#sql private iterator HeaderIter(
+			String cbill_c,
+			String cfood_c, 
+			String cfood_n, 
+			String sunit, 
+			Double nprc, 
+			Double nqty, 
+			Double namt,
+			String esuitflag, 
+			String csuitbill, 
+			String eretsendflag, 
+			String sretsendremark,
+			Double ndisamt,	
+			String csuitname,
+			String clitcls_c, 
+			String clitcls_n,
+			String cPresentBackMan);
+	
+	/**
+	 * companyId由调用者通过参数指定,by cjt
+	 */
+	public int saveEntity(FoodBills header, String comId)
+			throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getComContext(comId);
+
+		String cbillC = header.getCbillC();
+		String cfoodC = header.getCfoodC();
+		String cfoodN = header.getCfoodN();
+		String sunit = header.getSunit();
+		Double nprc = header.getNprc();
+		Double nqty = header.getNqty();
+		Double namt = header.getNamt();
+		String esuitflag = header.getEsuitflag();
+		String csuitbill = header.getCsuitbill();
+		String eretsendflag = header.getEretsendflag();
+		String sretsendremark = header.getSretsendremark();
+		Double ndisamt = header.getNdisamt();
+		String csuitname = header.getCsuitname();
+		String clitclsC = header.getClitclsC();
+		String clitclsN = header.getClitclsN();
+		String cpresentbackman = header.getPresentBackMan();
+
+		String comTb = comId + ".d_t_food_bills";
+		
+		#sql [myCtx] {
+			INSERT INTO :{comTb}
+				(cBill_c, cFood_c, cFood_n, sUnit, nPrc, nQty, nAmt,
+						eSuitFlag, cSuitBill, eRetSendFlag, sRetSendReMark,
+						nDisAmt, cSuitName, cLitCls_c, clitCls_n, cPresentBackMan) 
+			VALUES (:cbillC, :cfoodC, :cfoodN, :sunit, :nprc, :nqty, :namt,
+					:esuitflag, :csuitbill, :eretsendflag, :sretsendremark,
+					:ndisamt, :csuitname, :clitclsC, :clitclsN, :cpresentbackman)
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+
+	public int deleteEntity(java.util.Date startDate, java.util.Date endDate, String branchId)
+		throws NoPrivilegeException, SQLException, NoConnection {
+        DefaultContext myCtx = getDefaultContext();
+		
+		Date sDate = SqlDateUtil.getSqlDate(startDate);
+		Date eDate = SqlDateUtil.getSqlDate(endDate);
+
+		#sql [myCtx] {
+			DELETE FROM
+			(
+					SELECT
+				    h.*
+				FROM
+				:{Com_("d_t_food_bills")} h
+				LEFT JOIN
+				:{Com_("d_t_food_bill")} s
+				ON
+				    s.CBILL_C = h.CBILL_C
+				WHERE
+				 s.DBUSINESS >= :sDate 
+				AND s.DBUSINESS <= :eDate
+				AND s.CBRANCH_C = :branchId
+				)
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+
+  public int count(java.util.Date startDate, java.util.Date endDate, String branchId)
+			throws NoPrivilegeException,SQLException,NoConnection {
+
+		Date sDate = SqlDateUtil.getSqlDate(startDate);
+		Date eDate = SqlDateUtil.getSqlDate(endDate);
+		
+		DefaultContext myCtx = getDefaultContext();
+		int total = 0;
+		#sql [myCtx] {
+			SELECT
+			  count(*) into :total
+			FROM
+			:{Com_("d_t_food_bills")} h
+			LEFT JOIN
+			:{Com_("d_t_food_bill")} s
+			ON
+			    s.CBILL_C = h.CBILL_C
+			WHERE
+			s.DBUSINESS >= :sDate
+			AND s.DBUSINESS <= :eDate
+			AND s.CBRANCH_C = :branchId
+		};
+		closeDefaultContext(myCtx);
+		return total;
+	}
+	
+	public List<FoodBills> query(java.util.Date startDate, java.util.Date endDate, String branchId)
+			throws NoPrivilegeException,SQLException,NoConnection {
+//		String query = formQuery(branchId, queryType);
+		Date sDate = SqlDateUtil.getSqlDate(startDate);
+		Date eDate = SqlDateUtil.getSqlDate(endDate);
+		
+		DefaultContext myCtx = getDefaultContext();
+		HeaderIter headerIter = null;
+		#sql [myCtx] headerIter = {
+			SELECT
+			h.cBill_c, h.cFood_c, h.cFood_n, h.sUnit, h.nPrc, h.nQty, h.nAmt,
+			h.eSuitFlag, h.cSuitBill, h.eRetSendFlag, h.sRetSendReMark,
+			 h.nDisAmt, h.cSuitName, h.cLitCls_c, h.clitCls_n,h.cPresentBackMan,
+			    s.DBUSINESS,
+				s.CBRANCH_C,
+				s.CBRANCH_N
+			FROM
+			:{Com_("d_t_food_bills")} h
+			LEFT JOIN
+			:{Com_("d_t_food_bill")} s
+			ON
+			    s.CBILL_C = h.CBILL_C
+			WHERE
+			 s.DBUSINESS >= :sDate 
+			AND s.DBUSINESS <= :eDate
+			AND s.CBRANCH_C = :branchId
+		};
+		List<FoodBills> headerLst = processIter(headerIter);
+		headerIter.close();
+		closeDefaultContext(myCtx);
+		return headerLst;
+	}
+
+	private List<FoodBills> processIter(HeaderIter headerIter) 
+			throws SQLException {
+		List<FoodBills> headerLst = new ArrayList<FoodBills>();
+		while(headerIter.next()) {
+			FoodBills header = new FoodBills();
+			header.setCbillC(headerIter.cbill_c());
+			header.setCfoodC(headerIter.cfood_c());
+			header.setCfoodN(headerIter.cfood_n());
+			header.setSunit(headerIter.sunit());
+			header.setNprc(headerIter.nprc());
+			header.setNqty(headerIter.nqty());
+			header.setNamt(headerIter.namt());
+			header.setEsuitflag(headerIter.esuitflag());
+			header.setCsuitbill(headerIter.csuitbill());
+			header.setEretsendflag(headerIter.eretsendflag());
+			header.setSretsendremark(headerIter.sretsendremark());
+			header.setNdisamt(headerIter.ndisamt());
+			header.setCsuitname(headerIter.csuitname());
+			header.setClitclsC(headerIter.clitcls_c());
+			header.setClitclsN(headerIter.clitcls_n());
+			header.setPresentBackMan(headerIter.cPresentBackMan());		
+			headerLst.add(header);
+		}
+		return headerLst;
+	}
+}

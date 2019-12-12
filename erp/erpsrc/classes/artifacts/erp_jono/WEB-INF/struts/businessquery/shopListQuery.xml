@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE struts PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN"
+    "http://struts.apache.org/dtds/struts-2.0.dtd">
+
+<struts>
+	<package name="businessquery_shopListQuery" namespace="/businessquery/shopListQuery" extends="trust-default">
+		<action name="mainView" class="action.businessquery.ShopAction">
+			<result name="success">/jsp/businessquery/shopListQuery/main.jsp</result>
+		</action>
+		
+		<action name="mobileView" class="action.businessquery.ShopAction">
+			<result name="success">/mobile/module/businessquery/shopListQuery/main.jsp</result>
+		</action>
+
+		<action name="result" method="listShop" class="action.businessquery.ShopAction">
+			<result name="success">/jsp/businessquery/shopListQuery/result.jsp</result>
+			<result name="mobile">/mobile/module/businessquery/shopListQuery/result.jsp</result>
+		</action>
+		
+		<action name="dayResult" method="listByDay" class="action.businessquery.ShopAction">
+			<result name="success">/jsp/businessquery/shopListQuery/dayResult.jsp</result>
+			<result name="mobile">/mobile/module/businessquery/shopListQuery/dayResult.jsp</result>
+		</action>
+	</package>
+	
+	<package name="bq_shop_export" namespace="/bq/shop/export" extends="trust-default">
+		<action name="doQuery" method="doQuery" class="action.businessquery.export.ShopExportAction">
+			<result type="json" />
+		</action>
+		
+		<action name="byDay" method="byDay" class="action.businessquery.export.ShopExportAction">
+			<result type="json" />
+		</action>
+	</package>
+</struts>
+

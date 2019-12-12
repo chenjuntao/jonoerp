@@ -1,0 +1,110 @@
+#dataGrid {
+	position: absolute;
+	right: 0;
+	top: 150px;
+	bottom: 0px;
+	width: 100%;
+	height: auto; /* override default height: 30em; in dgrid.css */
+}
+
+#commandTable {
+	position: absolute;
+	bottom: 0;
+	width: 100%;
+}
+
+th[role="columnheader"] {
+	text-align: center;
+}
+
+.dgrid-cell {
+	/* 	width: 80px; make all the columns 80px wide */
+	vertical-align: middle;
+}
+
+.field-rownumber, .field-formStatus, .field-operate,
+	.field-qualificationPic, .field-samplePic {
+	text-align: center;
+}
+
+.field-minimumOrderQuantity, .field-orderCycle, .field-useCycle,
+	.field-price, .field-grossPrice, .field-grossWeight, .field-netWeight,
+	.field-netRatio, .field-shelfLife, .field-deliveryTime {
+	text-align: right;
+}
+
+.field-rownumber {
+	width: 40px;
+}
+
+.field-productName {
+	width: 120px;
+}
+
+.field-minimumOrderQuantity {
+	width: 80px;
+}
+
+.field-producePlace {
+	width: 80px;
+}
+
+.field-orderCycle {
+	width: 80px;
+}
+
+.field-useCycle {
+	width: 80px;
+}
+
+.field-qualificationPic, .field-samplePic {
+	width: 100px;
+}
+
+.field-price {
+	width: 80px;
+}
+
+.field-grossPrice {
+	width: 80px;
+}
+
+.field-grossWeight {
+	width: 80px;
+}
+
+.field-netWeight {
+	width: 80px;
+}
+
+.field-netRatio {
+	width: 80px;
+}
+
+.field-shelfLife {
+	width: 80px;
+}
+
+.field-deliveryTime {
+	width: 80px;
+}
+
+.field-accptanceCriteria {
+	width: 150px;
+}
+
+.field-supplier {
+	width: 130px;
+}
+
+.field-formStatus {
+	width: 80px;
+}
+
+.field-operate {
+	width: 80px;
+}
+
+.grid-number {
+	text-align: right;
+}

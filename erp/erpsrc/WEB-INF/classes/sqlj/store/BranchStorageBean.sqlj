@@ -1,0 +1,346 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on Tue Dec 16 11:43:26 CST 2014 by pw
+ * Last edited on Tue Dec 16 11:43:26 CST 2014 by pw
+ * 
+ * comment: 仓库部门关联表
+ */
+package logic.store;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import pojo.store.BranchStorage;
+import sqlj.runtime.ref.DefaultContext;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.TextUtil;
+import com.tanry.framework.acl.NoPrivilegeException;
+
+public class BranchStorageBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(BranchStorageBean.class);
+	
+	#sql private iterator StoreIter(
+			String branch_type, 
+			String branch_id, 
+			String storage_id, 
+			String storage_name, 
+			Integer priority);
+	
+	public int updateEntity(BranchStorage store)
+			throws NoPrivilegeException, SQLException, NoConnection {
+			DefaultContext myCtx = getDefaultContext();
+
+			String storageId = store.getStorageId();
+			String storageName = store.getStorageName();
+
+			#sql [myCtx] {
+				UPDATE
+				:{Com_("D_T2_BRANCH_STORAGE")}
+				SET
+					STORAGE_NAME = :storageName
+				WHERE 
+					STORAGE_ID = :storageId
+			};
+			closeDefaultContext(myCtx);
+			
+			return 1;
+		}
+	
+	public int setMainStorage(BranchStorage store)
+			throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		String storageId = store.getStorageId();
+		String branchId = store.getBranchId();
+		Integer priority = store.getPriority();
+		
+		//更新主仓
+		#sql [myCtx] {
+			UPDATE
+			:{Com_("D_T2_BRANCH_STORAGE")} bs
+			SET
+				priority = :priority
+			WHERE 
+				bs.PRIORITY = 0
+		    AND bs.BRANCH_ID = :branchId
+		};
+		
+		//设置主仓
+		#sql [myCtx] {
+			UPDATE
+			:{Com_("D_T2_BRANCH_STORAGE")} bs
+			SET
+				priority = 0
+			WHERE 
+				bs.STORAGE_ID = :storageId
+		};
+		
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public int saveEntity(BranchStorage store)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		return saveEntityImp(store, myCtx);
+	}
+	
+	public int saveEntity(BranchStorage store, String comId)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getComContext(comId);
+		return saveEntityImp(store, myCtx);
+	}
+	
+	private int saveEntityImp(BranchStorage store, DefaultContext myCtx)
+		throws NoPrivilegeException, SQLException, NoConnection {
+
+		String branchId = store.getBranchId();
+		String storageId = store.getStorageId();
+		String storageName = store.getStorageName();
+		Integer priority = store.getPriority();
+	
+		#sql [myCtx] {
+			MERGE INTO :{Com_("D_T2_BRANCH_STORAGE")} USING dual 
+			ON (BRANCH_ID=:branchId AND STORAGE_ID=:storageId)
+			WHEN MATCHED THEN UPDATE SET STORAGE_NAME=:storageName, PRIORITY=:priority
+			WHEN NOT MATCHED THEN INSERT (BRANCH_ID, STORAGE_ID, STORAGE_NAME, PRIORITY) 
+			    VALUES (:branchId, :storageId, :storageName, :priority)
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public int delete(String branchId,String storageId)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		#sql [myCtx] {
+			DELETE
+			FROM
+			:{Com_("D_T2_BRANCH_STORAGE")}
+			WHERE
+				BRANCH_ID = :branchId
+			AND
+				STORAGE_ID = :storageId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public int delete(String storageId)
+			throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		#sql [myCtx] {
+			DELETE
+				FROM
+				:{Com_("D_T2_BRANCH_STORAGE")}
+			WHERE
+				STORAGE_ID = :storageId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public int count(String storageId)
+			throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		int count = 0;
+		
+		#sql [myCtx] {
+		SELECT
+		    COUNT(*) into :count
+		FROM
+		:{Com_("D_T2_STORAGE")} s
+		WHERE
+		    s.STORAGE_ID = :storageId
+		    AND s.ITEM_COUNT != 0
+		};
+		closeDefaultContext(myCtx);
+		
+		return count;
+	}
+	
+	public int getMaxPriority(String branchId)
+			throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		Integer priority = 0;
+		
+		#sql [myCtx] {
+			SELECT
+		    	MAX(bs.PRIORITY) into : priority
+		    FROM
+		    :{Com_("D_T2_BRANCH_STORAGE")} bs
+		    WHERE
+		        bs.BRANCH_ID = :branchId
+		};
+		closeDefaultContext(myCtx);
+		
+		if(priority != null){
+			return priority + 1;
+		}else{
+			return 0;
+		}
+	}
+	
+	private String queryCondition(String branchId, String branchType){
+		String query = " 1=1";
+		
+		// storageId 仓库ID
+		if (!TextUtil.isEmpty(branchId) && !"-1".equals(branchId)) {
+			query += " AND sd.BRANCH_ID = '" + branchId + "'";
+		}
+		
+		if (!TextUtil.isEmpty(branchType)) {
+			if(branchType.indexOf(",") != -1){
+				query += "AND b.BRANCH_TYPE in ('" + branchType.replaceAll(",", "','") + "')";
+			}else{
+				query += "AND b.BRANCH_TYPE = '" + branchType + "'";
+			}
+		}
+		
+		return query;
+	}
+	
+	public String getStorageName(String branchId,String storageId)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		String storageName = "";
+		
+		DefaultContext myCtx = getDefaultContext();
+		#sql [myCtx] {
+			SELECT
+		    	'['|| sd.STORAGE_ID || ']'|| sd.STORAGE_NAME into: storageName
+		    FROM
+		    :{Com_("D_T2_BRANCH_STORAGE")} sd
+		    WHERE
+		        sd.BRANCH_ID = :branchId
+		    AND sd.STORAGE_ID = :storageId
+		};
+		closeDefaultContext(myCtx);
+		return storageName;
+	}
+	
+	/**
+	 * 根据部门查询对应的主仓库
+	 */
+	public BranchStorage queryMainStore(String branchId)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		StoreIter storeIter = null;
+		#sql [myCtx] storeIter = {
+			SELECT
+			    bs.*,
+			    '' as branch_type
+			FROM
+			:{Com_("D_T2_BRANCH_STORAGE")} bs
+		    WHERE
+		    	bs.BRANCH_ID = :branchId
+		    AND PRIORITY = 0
+		};
+		BranchStorage store = new BranchStorage();
+		while(storeIter.next()) {
+			store.setBranchId(storeIter.branch_id());
+			store.setStorageId(storeIter.storage_id());
+			store.setStorageName(storeIter.storage_name());
+			store.setPriority(storeIter.priority());
+			break;
+		}
+		storeIter.close();
+		closeDefaultContext(myCtx);
+		return store;
+	}
+
+	/**
+	 * 根据部门编号或部门类型查询对应的仓库列表
+	 */
+	public List<BranchStorage> query(String branchId, String branchType)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		String query = queryCondition(branchId,branchType);
+		
+		DefaultContext myCtx = getDefaultContext();
+		StoreIter storeIter = null;
+		#sql [myCtx] storeIter = {
+			SELECT
+			    b.BRANCH_TYPE,
+			    sd.BRANCH_ID,
+			    sd.STORAGE_ID,
+			    '['|| sd.STORAGE_ID || ']'|| sd.STORAGE_NAME STORAGE_NAME,
+			    sd.PRIORITY
+		    FROM
+		    	:{Com_("D_T2_BRANCH_STORAGE")} sd
+		    LEFT JOIN
+		    	:{Com_("D_T2_BRANCH")} b 
+		    ON
+		        sd.BRANCH_ID = b.BRANCH_ID
+		    WHERE
+		    	:{query :: 1=1} AND b.ENABLED = 1
+		    ORDER BY
+		    	sd.BRANCH_ID,
+		    	sd.PRIORITY
+		};
+		List<BranchStorage> storeLst = processIter(storeIter);
+		storeIter.close();
+		closeDefaultContext(myCtx);
+		return storeLst;
+	}
+	
+	public BranchStorage queryByStorageId(String storageId)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		
+		DefaultContext myCtx = getDefaultContext();
+		StoreIter storeIter = null;
+		#sql [myCtx] storeIter = {
+			SELECT
+			    bs.*,'' branch_type
+			    FROM
+			    :{Com_("D_T2_BRANCH_STORAGE")} bs
+			    WHERE
+			        bs.STORAGE_ID = :storageId};
+		
+		BranchStorage store = null;
+		if(storeIter.next()) {
+			store = new BranchStorage();
+			store.setBranchType(storeIter.branch_type());
+			store.setBranchId(storeIter.branch_id());
+			store.setStorageId(storeIter.storage_id());
+			store.setStorageName(storeIter.storage_name());
+			store.setPriority(storeIter.priority());
+		}
+		
+		storeIter.close();
+		closeDefaultContext(myCtx);
+		return store;
+	}
+	
+	private List<BranchStorage> processIter(StoreIter storeIter) 
+			throws SQLException {
+		List<BranchStorage> storeLst = new ArrayList<BranchStorage>();
+		while(storeIter.next()) {
+			BranchStorage store = new BranchStorage();
+			store.setBranchType(storeIter.branch_type());
+			store.setBranchId(storeIter.branch_id());
+			store.setStorageId(storeIter.storage_id());
+			store.setStorageName(storeIter.storage_name());
+			store.setPriority(storeIter.priority());
+			storeLst.add(store);
+		}
+		return storeLst;
+	}
+}

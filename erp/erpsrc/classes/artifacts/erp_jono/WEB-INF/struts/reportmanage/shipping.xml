@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE struts PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN"
+    "http://struts.apache.org/dtds/struts-2.0.dtd">
+
+<struts>
+<!-- 	餐厅 -->
+	<package name="reportmanage_shipping_restaurant_form" namespace="/reportmanage/shipping/restaurant/form" extends="trust-default">
+		<action name="mainView" class="action.reportmanage.ReportManageAction">
+			<result name="success">/jsp/restaurant/reportmanage/shipping/form/main.jsp</result>
+			<result name="mobile">/mobile/module/restaurant/shipping/form/main.jsp</result>
+		</action>
+	</package>
+	
+	<package name="reportmanage_shipping_restaurant_collect" namespace="/reportmanage/shipping/restaurant/collect" extends="trust-default">
+		<action name="mainView" class="action.reportmanage.ReportManageAction">
+			<result name="success">/jsp/restaurant/reportmanage/shipping/collect/main.jsp</result>
+			<result name="mobile">/mobile/module/shipping/collect/main.jsp</result>
+		</action>
+	</package>
+	
+	<package name="reportmanage_shipping_restaurant_detail" namespace="/reportmanage/shipping/restaurant/detail" extends="trust-default">
+		<action name="mainView" class="action.reportmanage.ReportManageAction">
+			<result name="success">/jsp/restaurant/reportmanage/shipping/detail/main.jsp</result>
+			<result name="mobile">/mobile/module/shipping/detail/main.jsp</result>
+		</action>
+	</package>
+	
+<!-- 	物流中心 -->
+	<package name="reportmanage_shipping_lc_form" namespace="/reportmanage/shipping/lc/form" extends="trust-default">
+		<action name="mainView" class="action.reportmanage.ReportManageAction">
+			<result name="success">/jsp/lc/reportmanage/shipping/form/main.jsp</result>
+			<result name="mobile">/mobile/module/lc/shipping/main.jsp</result>
+		</action>
+	</package>
+	
+	<package name="reportmanage_shipping_lc_collect" namespace="/reportmanage/shipping/lc/collect" extends="trust-default">
+		<action name="mainView" class="action.reportmanage.ReportManageAction">
+			<result name="success">/jsp/lc/reportmanage/shipping/collect/main.jsp</result>
+			<result name="mobile">/mobile/module/lc/shipping/collect/main.jsp</result>
+		</action>
+	</package>
+	
+	<package name="reportmanage_shipping_lc_detail" namespace="/reportmanage/shipping/lc/detail" extends="trust-default">
+		<action name="mainView" class="action.reportmanage.ReportManageAction">
+			<result name="success">/jsp/lc/reportmanage/shipping/detail/main.jsp</result>
+				<result name="mobile">/mobile/module/lc/shipping/detail/main.jsp</result>
+		</action>
+	</package>
+	
+	<package name="reportmanage_shipping_lc_month" namespace="/reportmanage/shipping/lc/month" extends="trust-default">
+		<action name="mainView" class="action.reportmanage.ReportManageAction">
+			<result name="success">/jsp/lc/reportmanage/shipping/month/main.jsp</result>
+			<result name="mobile">/mobile/module/lc/shipping/month/main.jsp</result>
+		</action>
+	</package>
+</struts>
+

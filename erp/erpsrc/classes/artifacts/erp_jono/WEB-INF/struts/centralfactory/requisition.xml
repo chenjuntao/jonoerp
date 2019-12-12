@@ -1,0 +1,271 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE struts PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN"
+    "http://struts.apache.org/dtds/struts-2.0.dtd">
+
+<struts>
+	<package name="centralfactory_requisition_create" namespace="/cf/requisition/create" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.cf.requisition.CreateRequisitionAction">
+			<result name="success">/jsp/centralfactory/requisition/create/main.jsp</result>
+		</action>
+		
+		<action name="batchMainView" class="com.tanry.business.module.cf.requisition.CreateRequisitionAction">
+			<result name="success">/jsp/centralfactory/requisition/create/batchMain.jsp</result>
+		</action>
+		
+		<action name="createView" method="createView" class="com.tanry.business.module.cf.requisition.CreateRequisitionAction">
+			<result name="success">/jsp/centralfactory/requisition/create/requisitionCreate.jsp</result>
+		</action>
+		
+		<action name="doQuery" method="doQuery" class="com.tanry.business.module.cf.requisition.CreateRequisitionAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doBatchQuery" method="doBatchQuery" class="com.tanry.business.module.cf.requisition.CreateRequisitionAction">
+			<result type="json" />
+		</action>
+		<action name="getCounts" method="getCounts" class="com.tanry.business.module.cf.requisition.CreateRequisitionAction">
+			<result type="json" />
+		</action>
+		
+		<action name="transformToDetail" method="transformToDetail" class="com.tanry.business.module.cf.requisition.CreateRequisitionAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doCommit" method="doCommit" class="com.tanry.business.module.cf.requisition.CreateRequisitionAction">
+			<interceptor-ref name="defaultStack" />
+			<interceptor-ref name="token" />
+			<result type="json" />
+		</action>
+		
+		<action name="doBatch" method="doBatch" class="com.tanry.business.module.cf.requisition.CreateRequisitionAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doSave" method="doSave" class="com.tanry.business.module.cf.requisition.CreateRequisitionAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doDelete" method="doDelete" class="com.tanry.business.module.cf.requisition.CreateRequisitionAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="centralfactory_requisition_export" namespace="/cf/requisition/export" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.cf.requisition.CreateRequisitionAction">
+			<result name="success">/jsp/centralfactory/requisition/export/main.jsp</result>
+		</action>
+		
+		<action name="doBatchExportQuery" method="doBatchExportQuery" class="com.tanry.business.module.cf.requisition.CreateRequisitionAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="cf_requisition_manage" namespace="/cf/requisition/manage" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.cf.requisition.BillManageAction">
+			<result name="success">/jsp/centralfactory/requisition/manage/main.jsp</result>
+		</action>
+		
+		<action name="scanView"  method="scanView" class="com.tanry.business.module.cf.requisition.BillManageAction">
+			<result name="success">/jsp/centralfactory/requisition/manage/scan.jsp</result>
+		</action>
+		
+		<action name="editView" method="editView" class="com.tanry.business.module.cf.requisition.BillManageAction">
+			<result name="success">/jsp/centralfactory/requisition/manage/edit.jsp</result>
+		</action>
+		
+		<action name="doQuery" method="doQuery" class="com.tanry.business.module.cf.requisition.BillManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="queryDetail" method="queryDetail" class="com.tanry.business.module.cf.requisition.BillManageAction">
+			<result type="json" />
+		</action>
+
+	</package>
+	
+	<package name="cf_requisition_confirm" namespace="/cf/requisition/confirm" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.cf.requisition.BillManageAction">
+			<result name="success">/jsp/centralfactory/requisition/confirm/main.jsp</result>
+		</action>
+		
+		<action name="confirmView"  method="scanView" class="com.tanry.business.module.cf.requisition.BillManageAction">
+			<result name="success">/jsp/centralfactory/requisition/confirm/confirm.jsp</result>
+		</action>
+		
+		<action name="doConfirm" method="doConfirm" class="com.tanry.business.module.cf.requisition.BillManageAction">
+			<interceptor-ref name="defaultStack" />
+			<interceptor-ref name="token" />
+			<result type="json" />
+		</action>
+	</package>
+	
+	<!-- extra -->
+	<package name="cf_extra_requisition_create" namespace="/cf/requisition/extra/create" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.cf.requisition.CreateRequisitionAction">
+			<result name="success">/jsp/centralfactory/requisition/extra/create/main.jsp</result>
+		</action>
+		
+		<action name="createView"  method="createView" class="com.tanry.business.module.cf.requisition.CreateRequisitionAction">
+			<result name="success">/jsp/centralfactory/requisition/extra/create/create.jsp</result>
+		</action>
+	</package>
+	
+	<package name="cf_extra_requisition_audit" namespace="/cf/requisition/extra/audit" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.cf.requisition.BillManageAction">
+			<result name="success">/jsp/centralfactory/requisition/extra/audit/main.jsp</result>
+		</action>
+		
+		<action name="auditView"  method="scanView" class="com.tanry.business.module.cf.requisition.BillManageAction">
+			<result name="success">/jsp/centralfactory/requisition/extra/audit/audit.jsp</result>
+		</action>
+		
+		<action name="doAudit" method="doAudit" class="com.tanry.business.module.cf.requisition.BillManageAction">
+			<interceptor-ref name="defaultStack" />
+			<interceptor-ref name="token" />
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="cf_extra_requisition_confirm" namespace="/cf/requisition/extra/confirm" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.cf.requisition.BillManageAction">
+			<result name="success">/jsp/centralfactory/requisition/extra/confirm/main.jsp</result>
+		</action>
+		
+		<action name="confirmView"  method="scanView" class="com.tanry.business.module.cf.requisition.BillManageAction">
+			<result name="success">/jsp/centralfactory/requisition/extra/confirm/confirm.jsp</result>
+		</action>
+	</package>
+	
+	<package name="cf_extra_requisition_manage" namespace="/cf/requisition/extra/manage" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.cf.requisition.BillManageAction">
+			<result name="success">/jsp/centralfactory/requisition/extra/manage/main.jsp</result>
+		</action>
+		
+		<action name="scanView"  method="scanView" class="com.tanry.business.module.cf.requisition.BillManageAction">
+			<result name="success">/jsp/centralfactory/requisition/extra/manage/scan.jsp</result>
+		</action>
+	</package>
+	
+	<!-- return material -->
+	<package name="cf_return_requisition_create" namespace="/cf/requisition/return/create" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.cf.requisition.CreateRequisitionAction">
+			<result name="success">/jsp/centralfactory/requisition/return/create/main.jsp</result>
+		</action>
+		
+		<action name="createView"  method="createView" class="com.tanry.business.module.cf.requisition.CreateRequisitionAction">
+			<result name="success">/jsp/centralfactory/requisition/return/create/create.jsp</result>
+		</action>
+	</package>
+	
+	<package name="cf_return_requisition_confirm" namespace="/cf/requisition/return/confirm" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.cf.requisition.BillManageAction">
+			<result name="success">/jsp/centralfactory/requisition/return/confirm/main.jsp</result>
+		</action>
+		
+		<action name="confirmView"  method="scanView" class="com.tanry.business.module.cf.requisition.BillManageAction">
+			<result name="success">/jsp/centralfactory/requisition/return/confirm/confirm.jsp</result>
+		</action>
+	</package>
+	
+	<package name="cf_return_requisition_manage" namespace="/cf/requisition/return/manage" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.cf.requisition.BillManageAction">
+			<result name="success">/jsp/centralfactory/requisition/return/manage/main.jsp</result>
+		</action>
+		
+		<action name="scanView"  method="scanView" class="com.tanry.business.module.cf.requisition.BillManageAction">
+			<result name="success">/jsp/centralfactory/requisition/return/manage/scan.jsp</result>
+		</action>
+		
+		<action name="editView"  method="editView" class="com.tanry.business.module.cf.requisition.BillManageAction">
+			<result name="success">/jsp/centralfactory/requisition/return/manage/edit.jsp</result>
+		</action>
+	</package>
+	
+	<!-- manual -->
+	<package name="cf_manual_requisition_create" namespace="/cf/requisition/manual/create" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.cf.requisition.CreateRequisitionAction">
+			<result name="success">/jsp/centralfactory/requisition/manual/create/main.jsp</result>
+		</action>
+		
+		<action name="createView"  method="createView" class="com.tanry.business.module.cf.requisition.CreateRequisitionAction">
+			<result name="success">/jsp/centralfactory/requisition/manual/create/create.jsp</result>
+		</action>
+	</package>
+	
+	<package name="cf_manual_requisition_audit" namespace="/cf/requisition/manual/audit" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.cf.requisition.BillManageAction">
+			<result name="success">/jsp/centralfactory/requisition/manual/audit/main.jsp</result>
+		</action>
+		
+		<action name="auditView"  method="scanView" class="com.tanry.business.module.cf.requisition.BillManageAction">
+			<result name="success">/jsp/centralfactory/requisition/manual/audit/audit.jsp</result>
+		</action>
+		
+		<action name="doAudit" method="doAudit" class="com.tanry.business.module.cf.requisition.BillManageAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="cf_manual_requisition_confirm" namespace="/cf/requisition/manual/confirm" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.cf.requisition.BillManageAction">
+			<result name="success">/jsp/centralfactory/requisition/manual/confirm/main.jsp</result>
+		</action>
+		
+		<action name="confirmView"  method="scanView" class="com.tanry.business.module.cf.requisition.BillManageAction">
+			<result name="success">/jsp/centralfactory/requisition/manual/confirm/confirm.jsp</result>
+		</action>
+	</package>
+	
+	<package name="cf_manual_requisition_manage" namespace="/cf/requisition/manual/manage" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.cf.requisition.BillManageAction">
+			<result name="success">/jsp/centralfactory/requisition/manual/manage/main.jsp</result>
+		</action>
+		
+		<action name="editView"  method="scanView" class="com.tanry.business.module.cf.requisition.BillManageAction">
+			<result name="success">/jsp/centralfactory/requisition/manual/manage/edit.jsp</result>
+		</action>
+		
+		<action name="scanView"  method="scanView" class="com.tanry.business.module.cf.requisition.BillManageAction">
+			<result name="success">/jsp/centralfactory/requisition/manual/manage/scan.jsp</result>
+		</action>
+		
+				
+		<action name="doSave" method="doSave" class="com.tanry.business.module.cf.requisition.BillManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doDelete" method="doDelete" class="com.tanry.business.module.cf.requisition.BillManageAction">
+			<result type="json" />
+		</action>
+	</package>
+		
+	<package name="cf_manual_requisition_detail" namespace="/reportmanage/manual/cf/detail" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.cf.requisition.BillManageAction">
+			<result name="success">/jsp/centralfactory/reportmanage/manual/detail/main.jsp</result>
+			<result name="mobile">/mobile/module/cf/manual/detail/main.jsp</result>
+		</action>
+	</package>
+	
+	<package name="cf_manual_requisition_collect" namespace="/reportmanage/manual/cf/collect" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.cf.requisition.BillManageAction">
+			<result name="success">/jsp/centralfactory/reportmanage/manual/collect/main.jsp</result>
+			<result name="mobile">/mobile/module/cf/manual/collect/main.jsp</result>
+		</action>
+	</package>
+	
+	<package name="cf_produce_requisition_detail" namespace="/reportmanage/produce/cf/detail" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.cf.requisition.BillManageAction">
+			<result name="success">/jsp/centralfactory/reportmanage/produce/detail/main.jsp</result>
+			<result name="mobile">/mobile/module/cf/produce/detail/main.jsp</result>
+		</action>
+	</package>
+	
+	<package name="cf_produce_requisition_collect" namespace="/reportmanage/produce/cf/collect" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.cf.requisition.BillManageAction">
+			<result name="success">/jsp/centralfactory/reportmanage/produce/collect/main.jsp</result>
+			<result name="mobile">/mobile/module/cf/produce/collect/main.jsp</result>
+		</action>
+	</package>
+</struts>
+

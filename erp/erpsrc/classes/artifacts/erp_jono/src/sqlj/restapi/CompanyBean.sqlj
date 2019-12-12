@@ -1,0 +1,122 @@
+/**
+ * Copyright (c) 2013
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on 2016年1月25日 by cjt
+ * Last edited on 2016年1月25日 by cjt
+ */
+
+package logic.restapi;
+
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.HashMap;
+import java.sql.SQLException;
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+import sqlj.runtime.ref.DefaultContext;
+import com.tanry.framework.acl.NoPrivilegeException;
+
+/**
+ * 公司/企业dao
+ */
+public class CompanyBean extends ConnectionPool {
+	
+	private String comId = "com";
+	
+	#sql public static iterator ComIter(
+			String COMPANY_ID,
+			String COMPANY_NAME,
+			String DB_NAME,
+			String CREATOR,
+			String REMARK
+		);
+	
+	public int saveEntity(Map map) throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getComContext(comId);
+
+		String companyId = map.get("companyId").toString();
+		String companyName = map.get("companyName").toString();
+		String dbName = map.get("dbName").toString();
+		String creator = map.get("creator").toString();
+		String remark = map.get("remark").toString();
+		
+		#sql [myCtx] {
+			INSERT INTO :{Com_("D_T_COMPANY")}
+				(COMPANY_ID, COMPANY_NAME, DB_NAME, CREATOR, REMARK) 
+			VALUES 
+				(:companyId, :companyName, :dbName, :creator, :remark)
+			};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public List<Map> listCompany() throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getComContext(comId);
+		ComIter comIter = null;
+		List<Map> comLst = new ArrayList<Map>();
+		
+		#sql [myCtx] comIter = {
+			SELECT * FROM :{Com_("D_T_COMPANY")}
+		};
+
+		while(comIter.next()){
+			Map com = new HashMap();
+			com.put("companyId", comIter.COMPANY_ID());
+			com.put("companyName", comIter.COMPANY_NAME());
+			com.put("dbName", comIter.DB_NAME());
+			com.put("creator", comIter.CREATOR());
+			com.put("remark", comIter.REMARK());
+			comLst.add(com);
+		}
+		comIter.close();
+		
+		closeDefaultContext(myCtx);
+		return comLst;
+	}
+	
+	#sql public static iterator DBNameIter(
+			String COMPANY_ID,
+			String DB_NAME
+		);
+	public Map<String,String> mapDbName() throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getComContext(comId);
+		DBNameIter dbNameIter = null;
+		
+		#sql [myCtx] dbNameIter = {
+			SELECT COMPANY_ID,DB_NAME FROM :{Com_("D_T_COMPANY")}
+		};
+
+		Map<String,String> com = new HashMap<String,String>();
+		while(dbNameIter.next()){
+			com.put( dbNameIter.COMPANY_ID(),dbNameIter.DB_NAME());
+		}
+		dbNameIter.close();
+		
+		closeDefaultContext(myCtx);
+		return com;
+	}
+	
+	public String getDbNameByComId(String companyId) throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getComContext(comId);
+		String result = null;
+		ComIter comIter = null;
+		#sql [myCtx] comIter = {
+			SELECT * FROM :{Com_("D_T_COMPANY")}
+			WHERE COMPANY_ID = :companyId
+		};
+
+		while(comIter.next()){
+			result = comIter.DB_NAME();
+		}
+		comIter.close();
+		
+		closeDefaultContext(myCtx);
+		return result;
+	}
+}

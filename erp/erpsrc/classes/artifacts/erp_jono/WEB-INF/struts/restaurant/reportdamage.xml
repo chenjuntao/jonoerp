@@ -1,0 +1,221 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE struts PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN"
+    "http://struts.apache.org/dtds/struts-2.0.dtd">
+
+<struts>
+	<package name="restaurant_reportdamage_selmaterial" namespace="/restaurant/reportdamage/selmaterial" extends="trust-default">
+		<action name="mainView" class="action.restaurant.goodsbill.SelMaterialAction">
+			<result name="success">/jsp/restaurant/reportdamage/selmaterial/main.jsp</result>
+		</action>
+		
+		<action name="queryItem" method="queryItem" class="action.restaurant.reportdamage.SelMaterialAction">
+			<result type="json" />
+		</action>
+		
+		<action name="queryInventory" method="queryInventory" class="action.restaurant.reportdamage.SelMaterialAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="restaurant_reportdamage_selproduct" namespace="/restaurant/reportdamage/selproduct" extends="trust-default">
+		<action name="mainView" class="action.restaurant.reportdamage.SelProductAction">
+			<result name="success">/jsp/restaurant/reportdamage/selproduct/main.jsp</result>
+		</action>
+		
+		<action name="queryProduct" method="queryProduct" class="action.restaurant.reportdamage.SelProductAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="restaurant_reportdamage_create" namespace="/restaurant/reportdamage/createloss" extends="trust-default">
+		<action name="mainView" class="action.restaurant.reportdamage.CreateLossAction">
+			<result name="success">/jsp/restaurant/reportdamage/createloss/mainLoss.jsp</result>
+		</action>
+		
+		<action name="commitView" method="commitView" class="action.restaurant.reportdamage.CreateLossAction">
+			<result name="success">/jsp/restaurant/reportdamage/createloss/commitLoss.jsp</result>
+			<result name="input" type="json" />
+		</action>
+		
+		<action name="doCommit" method="doCommit" class="action.restaurant.reportdamage.CreateLossAction">
+			<interceptor-ref name="defaultStack" />
+			<interceptor-ref name="token" />
+			<result type="json" />
+		</action>
+	</package>
+
+	<package name="restaurant_reportdamage_createdish" namespace="/restaurant/reportdamage/createdishloss" extends="trust-default">
+		<action name="mainView" class="action.restaurant.reportdamage.CreateLossAction">
+			<result name="success">/jsp/restaurant/reportdamage/createdishloss/createDishLossBill.jsp</result>
+		</action>
+		
+		<action name="commitView" method="commitDishView" class="action.restaurant.reportdamage.CreateLossAction">
+			<result name="success">/jsp/restaurant/reportdamage/createdishloss/commitDishLossBill.jsp</result>
+			<result name="input" type="json" />
+		</action>
+		
+		<action name="doCommit" method="doDishCommit" class="action.restaurant.reportdamage.CreateLossAction">
+			<interceptor-ref name="defaultStack" />
+			<interceptor-ref name="token" />
+			<result type="json" />
+		</action>
+	</package>
+
+	<package name="restaurant_reportdamage_confirm" namespace="/restaurant/reportdamage/confirmloss" extends="trust-default">
+		<action name="mainView" class="action.restaurant.reportdamage.ConfirmLossAction">
+			<result name="success">/jsp/restaurant/reportdamage/confirmloss/listLossBill.jsp</result>
+		</action>
+		
+		<action name="doQuery" method="doQuery" class="action.restaurant.reportdamage.ConfirmLossAction">
+			<result type="json" />
+		</action>
+		
+		<action name="auditView" method="auditView" class="action.restaurant.reportdamage.ConfirmLossAction">
+			<result name="success">/jsp/restaurant/reportdamage/confirmloss/confirmLossBill.jsp</result>
+		</action>
+		
+		<action name="doAudit" method="doAudit" class="action.restaurant.reportdamage.ConfirmLossAction">
+			<interceptor-ref name="defaultStack" />
+			<interceptor-ref name="token" />
+			<result type="json" />
+		</action>
+		
+		<action name="auditById" method="auditById" class="action.restaurant.reportdamage.ConfirmLossAction">
+			<result type="json" />
+		</action>
+	</package>
+
+	<package name="restaurant_reportdamage_confirmdish" namespace="/restaurant/reportdamage/confirmdishloss" extends="trust-default">
+		<action name="mainView" class="action.restaurant.reportdamage.ConfirmLossAction">
+			<result name="success">/jsp/restaurant/reportdamage/confirmdishloss/listDishLossBill.jsp</result>
+		</action>
+		
+		<action name="doQuery" method="doQueryDish" class="action.restaurant.reportdamage.ConfirmLossAction">
+			<result type="json" />
+		</action>
+		
+		<action name="auditView" method="auditView" class="action.restaurant.reportdamage.ConfirmLossAction">
+			<result name="success">/jsp/restaurant/reportdamage/confirmdishloss/confirmDishLossBill.jsp</result>
+		</action>
+		
+		<action name="auditCommitView" method="auditCommitView" class="action.restaurant.reportdamage.ConfirmLossAction">
+			<result name="success">/jsp/restaurant/reportdamage/confirmdishloss/commitDishLossBill.jsp</result>
+		</action>
+		
+		<action name="doAudit" method="doAuditDish" class="action.restaurant.reportdamage.ConfirmLossAction">
+			<interceptor-ref name="defaultStack" />
+			<interceptor-ref name="token" />
+			<result type="json" />
+		</action>
+	
+		<action name="auditById" method="auditById" class="action.restaurant.reportdamage.ConfirmLossAction">
+			<result type="json" />
+		</action>
+	</package>
+
+
+	<package name="restaurant_reportdamage_processdish" namespace="/restaurant/reportdamage/processdishloss" extends="trust-default">
+		<action name="mainView" class="action.restaurant.reportdamage.ProcessLossAction">
+			<result name="success">/jsp/restaurant/reportdamage/processdishloss/listDishLossBill.jsp</result>
+		</action>
+		
+		<action name="doQuery" method="doQueryDish" class="action.restaurant.reportdamage.ProcessLossAction">
+			<result type="json" />
+		</action>
+		
+		<action name="processView" method="processView" class="action.restaurant.reportdamage.ProcessLossAction">
+			<result name="success">/jsp/restaurant/reportdamage/processdishloss/processDishLossBill.jsp</result>
+		</action>
+		
+		<action name="doProcess" method="doProcess" class="action.restaurant.reportdamage.ProcessLossAction">
+			<result type="json" />
+		</action>
+	</package>
+
+	<package name="restaurant_reportdamage_query" namespace="/restaurant/reportdamage/queryloss" extends="trust-default">
+		<action name="mainView" class="action.restaurant.reportdamage.ManageLossAction">
+			<result name="success">/jsp/restaurant/reportdamage/queryloss/listLossBill.jsp</result>
+		</action>
+		
+		<action name="doQuery" method="doQuery" class="action.restaurant.reportdamage.ManageLossAction">
+			<result type="json" />
+		</action>
+		
+		<action name="queryByStatus" method="queryByStatus" class="action.restaurant.reportdamage.ManageLossAction">
+			<result type="json" />
+		</action>
+		
+		<action name="refreshStorage" method="refreshStorage" class="action.restaurant.reportdamage.ManageLossAction">
+			<result type="json" />
+		</action>
+		
+		<action name="showView" method="showView" class="action.restaurant.reportdamage.ManageLossAction">
+			<result name="success">/jsp/restaurant/reportdamage/queryloss/showLossBill.jsp</result>
+		</action>
+		
+		<action name="queryRawDetail" method="queryRawDetail" class="action.restaurant.reportdamage.ManageLossAction">
+			<result type="json" />
+		</action>
+		
+		<action name="editView" method="editView" class="action.restaurant.reportdamage.ManageLossAction">
+			<result name="success">/jsp/restaurant/reportdamage/queryloss/modifyLossBill.jsp</result>
+		</action>
+		
+		<action name="doSave" method="doSave" class="action.restaurant.reportdamage.ManageLossAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doDelete" method="doDelete" class="action.restaurant.reportdamage.ManageLossAction">
+			<result type="json" />
+		</action>
+	</package>
+
+	<package name="restaurant_reportdamage_querydish" namespace="/restaurant/reportdamage/querydishloss" extends="trust-default">
+		<action name="mainView" class="action.restaurant.reportdamage.ManageLossAction">
+			<result name="success">/jsp/restaurant/reportdamage/querydishloss/listDishLossBill.jsp</result>
+		</action>
+		
+		<action name="doQuery" method="doDishQuery" class="action.restaurant.reportdamage.ManageLossAction">
+			<result type="json" />
+		</action>
+		
+		<action name="showView" method="showView" class="action.restaurant.reportdamage.ManageLossAction">
+			<result name="success">/jsp/restaurant/reportdamage/querydishloss/showDishLossBill.jsp</result>
+		</action>
+		
+		
+		<action name="queryDishDetail" method="queryDishDetail" class="action.restaurant.reportdamage.ManageLossAction">
+			<result type="json" />
+		</action>
+		
+		<action name="queryDishHeader" method="queryDishHeader" class="action.restaurant.reportdamage.ManageLossAction">
+			<result type="json" />
+		</action>
+		
+		<action name="queryDish" method="queryDish" class="action.restaurant.reportdamage.ManageLossAction">
+			<result type="json" />
+		</action>
+		
+		<action name="editCommitView" method="editCommitView" class="action.restaurant.reportdamage.ConfirmLossAction">
+			<result name="success">/jsp/restaurant/reportdamage/querydishloss/commitDishLossBill.jsp</result>
+		</action>
+		
+		<action name="editView" method="editView" class="action.restaurant.reportdamage.ManageLossAction">
+			<result name="success">/jsp/restaurant/reportdamage/querydishloss/editDishLossBill.jsp</result>
+		</action>
+		
+		<action name="doSave" method="doSave" class="action.restaurant.reportdamage.ManageLossAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doDishSave" method="doDishSave" class="action.restaurant.reportdamage.ManageLossAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doDelete" method="doDelete" class="action.restaurant.reportdamage.ManageLossAction">
+			<result type="json" />
+		</action>
+	</package>
+</struts>
+

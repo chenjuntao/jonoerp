@@ -1,0 +1,4 @@
+eclipse.preferences.version=1
+encoding//business/business.sql=UTF-8
+encoding//store/user.sql=UTF-8
+encoding//views/d_v_mrp_amount_lc.sql=UTF-8

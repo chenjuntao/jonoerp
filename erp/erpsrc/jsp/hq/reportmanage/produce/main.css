@@ -1,0 +1,42 @@
+#dataGrid {
+	position: absolute;
+	right: 0;
+	top: 30px;
+	bottom: 0px;
+	width: 100%;
+	height: auto; /* override default height: 30em; in dgrid.css */
+}
+
+#commandTable {
+	position: absolute;
+	bottom: 0;
+	width: 100%;
+}
+
+th[role="columnheader"] {
+	text-align: center;
+}
+
+.dgrid-cell {
+	/* 	width: 80px; make all the columns 80px wide */
+	vertical-align: middle;
+	width: 80px;
+}
+
+.field-item_id ,.field-item_dimension{
+	text-align: center;
+}
+
+.field-getAmt,.field-extraAmt,.field-returnAmt
+,.field-standardCount,.field-actualCount,.field-diff {
+	text-align: right;
+}
+
+.field-item_name {
+	width: 150px;
+}
+
+.field-none {
+	width: 120px;
+}
+

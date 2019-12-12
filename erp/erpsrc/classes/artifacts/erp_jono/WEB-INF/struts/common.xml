@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE struts PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN"
+    "http://struts.apache.org/dtds/struts-2.0.dtd">
+
+<struts>
+	<package name="common-business" namespace="/common" extends="trust-default">
+		<action name="listShop" method="listShop" class="action.common.CommonBusinessAction">
+			<result type="json" />
+		</action>
+		
+		<action name="listStorage" method="listStorage" class="action.common.CommonBusinessAction">
+			<result type="json" />
+		</action>
+		
+		<action name="listBs" method="listBs" class="action.common.CommonBusinessAction">
+			<result type="json" />
+		</action>
+		
+		<action name="queryArrivePeriod" method="queryArrivePeriod" class="action.common.CommonBusinessAction">
+			<result type="json" />
+		</action>
+		
+		<action name="queryDeliveryCycle" method="queryDeliveryCycle" class="action.common.CommonBusinessAction">
+			<result type="json" />
+		</action>
+		
+		<action name="getRegionByBranch" method="getRegionByBranch" class="action.common.CommonBusinessAction">
+			<result type="json" />
+		</action>
+		
+		<action name="queryBusinessDate" method="queryBusinessDate" class="action.common.CommonBusinessAction">
+			<result type="json" />
+		</action>
+		
+		<action name="loadImage" method="loadImage" class="com.tanry.business.store.PicAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="common-function" namespace="/common/function" extends="trust-default">
+		<action name="export" method="export" class="com.tanry.business.function.ExportAction">
+			<result type="json" />
+		</action>
+		
+		<action name="exportPdf" method="exportPdf" class="com.tanry.business.function.ExportAction">
+			<result type="json" />
+		</action>
+		
+		<action name="isFinish" method="isFinish" class="com.tanry.business.function.ExportAction">
+			<result type="json" />
+		</action>
+		
+		<action name="progressBar" method="progressBar" class="com.tanry.business.function.ExportAction">
+			<result type="json" />
+		</action>
+		
+		<action name="getCurrentVeriosn" method="getCurrentVeriosn" class="action.restaurant.goodsbill.ConfirmBillAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="common-mrp" namespace="/common/mrp" extends="trust-default">
+		<action name="mainView"  class="com.tanry.business.store.MRPQueryAction">
+			<result name="success">/jsp/restaurant/common/mrp/detail/main.jsp</result>
+		</action>
+		
+		<action name="query" method="query" class="com.tanry.business.store.MRPQueryAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	
+	<package name="login" namespace="/" extends="json-default">
+		<action name="login" method="doCheck" class="action.common.LoginAction">
+			<result type="json" />
+		</action>
+		
+		<action name="selectDept" method="selectDept" class="action.common.LoginAction">
+			<result type="json" />
+		</action>
+		
+		<action name="logout" method="logout" class="action.common.LoginAction">
+          	<result name="success" type="redirect">/jsp/login/main.jsp</result>
+		</action>
+		
+<!-- 		<action name="exchange" method="exchange" class="action.common.ExchangeAction"> -->
+<!--           	<result name="success" type="redirect">/jsp/setting/password/main.jsp</result> -->
+<!-- 		</action> -->
+		
+<!-- 		special treatment, we have to release the form lock after the session timeout,  -->
+<!-- 		otherwise when login again, the form record has been locked, it's not right -->
+		<action name="releaseLock" method="releaseLock" class="action.restaurant.goodsbill.BillManageAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="desktop" namespace="/desktop" extends="trust-default">
+		<action name="mainView" class="action.common.DesktopAction">
+			<result name="success" type="dispatcher">/jsp/desktop/main.jsp</result>
+		</action>
+		
+		<action name="topView" method="topView" class="action.common.DesktopAction">
+			<result name="success" type="dispatcher">/jsp/desktop/top.jsp</result>
+		</action>
+		
+		<action name="listMenu" method="listMenu" class="action.common.DesktopAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="welcome" namespace="/welcome" extends="trust-default">
+		<action name="getCounts" method="getCounts" class="com.tanry.business.special.TodoAction">
+			<result type="json" />
+		</action>
+		
+		<action name="getVisiable" method="getVisiable" class="com.tanry.business.special.TodoAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="help" namespace="/help" extends="trust-default">
+		<action name="mainView" class="action.common.DesktopAction">
+			<result name="success">/jsp/common/jsp/help.jsp</result>
+		</action>
+	</package>
+	
+	<package name="publish" namespace="/publish" extends="trust-default">
+		<action name="mainView" class="action.common.DesktopAction">
+			<result name="success">/jsp/common/jsp/publish.jsp</result>
+		</action>
+	</package>
+</struts>
+

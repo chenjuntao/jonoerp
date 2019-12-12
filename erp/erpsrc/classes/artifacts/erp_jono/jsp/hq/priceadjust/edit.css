@@ -1,0 +1,30 @@
+#dataGrid {
+	position: absolute;
+	right: 0;
+	top: 92px;
+	bottom: 0;
+	width: 100%;
+	height: auto;
+}
+
+
+th.edit-note {
+	color: red;
+}
+
+.dgrid-cell {
+	width: 80px;
+}
+
+.field-newPrice{
+	width: 90px;
+}
+
+.field-itemName {
+	width: 180px;
+}
+
+.field-itemDimension {
+	width: 60px;
+}
+

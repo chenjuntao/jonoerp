@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE struts PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN"
+    "http://struts.apache.org/dtds/struts-2.0.dtd">
+
+<struts>
+	<package name="hq_storage_set" namespace="/hq/storage/set" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.hq.config.storage.StorageSetAction">
+			<result name="success">/jsp/hq/config/storage/main.jsp</result>
+		</action>
+		
+		<action name="addView" method="addView" class="com.tanry.business.module.hq.config.storage.StorageSetAction">
+			<result name="success">/jsp/hq/config/storage/add.jsp</result>
+		</action>
+		
+		<action name="queryStorage" method="queryStorage" class="com.tanry.business.module.hq.config.storage.StorageSetAction">
+			<result type="json" />
+		</action>
+		
+		<action name="checkId" method="checkId" class="com.tanry.business.module.hq.config.storage.StorageSetAction">
+			<result type="json" />
+		</action>
+		
+		<action name="save" method="save" class="com.tanry.business.module.hq.config.storage.StorageSetAction">
+			<result type="json" />
+		</action>
+		
+		<action name="setMain" method="setMain" class="com.tanry.business.module.hq.config.storage.StorageSetAction">
+			<result type="json" />
+		</action>
+		
+		<action name="del" method="del" class="com.tanry.business.module.hq.config.storage.StorageSetAction">
+			<result type="json" />
+		</action>
+		
+		<action name="saveStorage" method="saveStorage" class="com.tanry.business.module.hq.config.storage.StorageSetAction">
+			<result type="json" />
+		</action>
+	</package>
+</struts>
+

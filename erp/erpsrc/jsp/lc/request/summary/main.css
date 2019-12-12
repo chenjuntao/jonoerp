@@ -1,0 +1,21 @@
+.dataGrid {
+	width: 100%;
+	height: 220px; /* override default height: 30em; in dgrid.css */
+}
+
+.input-provider {
+	width: 160px !important;
+}
+
+/* for observable warn,sort consideration */
+.field-rownumber {
+	width: 40px !important;
+}
+
+#outerGrid .field-formId {
+	width : 180px;
+}
+
+#outerGrid .field-buyerName {
+	width : 160px;
+}

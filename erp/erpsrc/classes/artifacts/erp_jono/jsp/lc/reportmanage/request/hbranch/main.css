@@ -1,0 +1,29 @@
+#dataGrid {
+	position: absolute;
+    top: 35px;
+    bottom: 0px;
+    width: 100%;
+    height: auto;
+}
+
+
+.dgrid-cell {
+	width: 100px;
+}
+
+.dgrid-column-set-0 {
+	width: 350px;
+}
+
+.field-item_id {
+	width: 65px;
+}
+
+.field-item_dimension {
+	width: 50px;
+}
+
+.field-item_name {
+	width: 150px;
+}
+

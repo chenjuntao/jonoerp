@@ -1,0 +1,1071 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on Mar 19, 2015 by liyzh
+ * Last edited on Mar 19, 2015 by liyzh
+ * 
+ * 说明： 根据分类获取原料基础信息，各种价格等
+ */
+package logic.module.hq;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
+import com.tanry.framework.util.TextUtil;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import sqlj.runtime.ref.DefaultContext;
+
+import com.tanry.business.module.hq.config.item.vo.ItemVO;
+import pojo.store.ShelfItem;
+
+import com.tanry.framework.acl.NoPrivilegeException;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.constant.ItemType;
+import com.tanry.framework.util.TextUtil;
+
+public class ItemMetaQueryBean extends ConnectionPool {
+	
+	public static Logger log = Logger.getLogger(ItemMetaQueryBean.class);
+	#sql private static iterator ItemIter(
+			String item_id, String item_name,String shelf_name,
+			String item_type, String category_id, String category_name, String item_dimension, 
+			String query_code, String item_specification, String box_type, Integer enabled, 
+			String infos,String mainSuppiler);
+	
+	public int countItem(String categoryId) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		return countItem(categoryId,null);
+	}
+	
+	public int countItem(String categoryId,String displayAllFlag) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		int counts = 0;
+		
+		String queryStr = "";
+		if(TextUtil.isEmpty(displayAllFlag)){
+			queryStr = " AND m.ENABLED = 1 ";
+		}
+		
+		DefaultContext myCtx = getDefaultContext();
+		#sql [myCtx]{
+		SELECT
+		    COUNT(*)
+		INTO
+		    :counts
+		FROM
+		    :{Com_("D_T2_ITEM_META")} m
+		WHERE
+		    m.CATEGORY_ID = :categoryId :{queryStr ::}};
+		closeDefaultContext(myCtx);
+		return counts;
+	}
+	
+	public List<Map> queryItem(String categoryId) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		ItemIter itemIter = null;
+		#sql [myCtx] itemIter = {
+			WITH
+			    d AS
+			    (
+			        SELECT
+			            ITEM_ID,
+			            listagg('('||PRICE_TYPE||'|' || ITEM_PRICE ||')',',') within GROUP (ORDER BY PRICE_TYPE
+			            ) infos
+			        FROM
+			            (
+			                SELECT DISTINCT
+			                    ps.ITEM_ID,
+			                    ps.PRICE_TYPE,
+			                    '供应商价'                PRICE_GROUP_NAME,
+			                    NVL(ps.ITEM_PRICE, 0) ITEM_PRICE
+			                FROM
+			                    :{Com_("D_T2_ITEM_PRICE")} ps
+			                INNER JOIN
+			                    :{Com_("D_T2_SUPPLIER_BRANCH_ITEM")} s
+			                ON
+			                    s.ITEM_ID = ps.ITEM_ID
+			                WHERE
+			                    ps.PRICE_TYPE ='SUPPLIER'
+			                AND s.PRIORITY =0
+			                AND s.BRANCH_ID='L00'
+			                AND s.SUPPLIER_ID=ps.SUPPLIER_ID
+			                UNION ALL
+			                SELECT
+			                    p.ITEM_ID,
+			                    p.PRICE_TYPE,
+			                    g.PRICE_GROUP_NAME,
+			                    NVL(p.ITEM_PRICE, 0) ITEM_PRICE
+			                FROM
+			                    :{Com_("D_T2_ITEM_PRICE")} p
+			                LEFT JOIN
+			                    :{Com_("D_T2_PRICE_GROUP")} g
+			                ON
+			                    p.PRICE_TYPE = g.PRICE_GROUP_ID
+			                WHERE
+			                    (
+			                        p.SUPPLIER_ID IS NULL
+			                    OR  p.SUPPLIER_ID='NULL'))
+			        GROUP BY
+			            ITEM_ID
+			    )
+			SELECT
+			    m.*,
+			    c.CATEGORY_NAME,
+			    sf.SHELF_NAME,
+			    d.infos,
+			    b.BRANCH_NAME mainSuppiler
+			FROM
+			    :{Com_("D_T2_ITEM_META")} m
+			LEFT JOIN
+			    :{Com_("D_T2_ITEM_CATEGORY")} c
+			ON
+			    c.CATEGORY_ID = m.CATEGORY_ID
+			LEFT JOIN
+			    :{Com_("D_T2_SHELF_ITEM")} si
+			ON
+			    si.ITEM_ID= m.ITEM_ID
+			AND si.PRIORITY = '0'
+			LEFT JOIN
+			    :{Com_("D_T2_SHELF")} sf
+			ON
+			    si.SHELF_ID= sf.SHELF_ID
+			LEFT JOIN
+			    :{Com_("D_T2_SUPPLIER_BRANCH_ITEM")} bi
+			ON
+			    m.ITEM_ID = bi.ITEM_ID
+			AND bi.BRANCH_ID = 'L00'
+			AND bi.PRIORITY = 0
+			LEFT JOIN
+			    :{Com_("D_T2_BRANCH")} b
+			ON
+			    b.BRANCH_ID = bi.SUPPLIER_ID
+			LEFT JOIN
+			    d
+			ON
+			    d.ITEM_ID = m.ITEM_ID
+			WHERE
+			    m.CATEGORY_ID = :categoryId
+			AND m.ENABLED = 1
+			ORDER BY
+			    m.ITEM_ID};
+		List<Map> itemLst =processIter(itemIter);
+		itemIter.close();
+		closeDefaultContext(myCtx);
+		return itemLst;
+	}
+	
+	public int countByItemName(String itemName) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		return countByItemName(itemName,null);
+	}
+	
+	public int countByItemName(String itemName,String displayAllFlag) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		int counts = 0;
+		
+		String queryStr = "";
+		if(TextUtil.isEmpty(displayAllFlag)){
+			queryStr = " AND m.ENABLED = 1 ";
+		}
+		
+		itemName = "%" + itemName + "%";
+		DefaultContext myCtx = getDefaultContext();
+		#sql [myCtx]{
+				SELECT
+        			COUNT(*)
+    			INTO
+    				:counts
+        	    FROM
+        	    :{Com_("D_T2_ITEM_META")} m
+    			WHERE
+    				(
+    			        m.ITEM_ID LIKE :itemName
+    			    OR  m.ITEM_NAME LIKE :itemName)
+    			AND m.ITEM_TYPE IN ('RAW')
+        	    :{queryStr ::}
+		};
+		closeDefaultContext(myCtx);
+		return counts;
+	}
+	
+	public List<Map> queryByItemName(String itemName) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		itemName = "%" + itemName + "%";
+		
+		ItemIter itemIter = null;
+		#sql [myCtx] itemIter = {
+				WITH
+	    	    d AS
+	    	    (
+	    	    		 SELECT
+	    	             ITEM_ID,
+	    	            listagg('('||PRICE_TYPE||'|' || ITEM_PRICE ||')',',') within GROUP
+	    	            (ORDER BY PRICE_TYPE) infos
+	    	        FROM
+	    	            (
+	    	            		 SELECT DISTINCT
+ 	    	                    ps.ITEM_ID,
+ 	    	                    ps.PRICE_TYPE,
+ 	    	                   '供应商价' PRICE_GROUP_NAME,
+ 	    	                   nvl(ps.ITEM_PRICE, 0) ITEM_PRICE
+ 	    	                FROM
+ 	    	                :{Com_("D_T2_ITEM_PRICE")} ps
+ 	    	               INNER JOIN 
+ 	    	              :{Com_("D_T2_SUPPLIER_BRANCH_ITEM")} s
+ 	    	              ON
+ 	    	              s.ITEM_ID = ps.ITEM_ID
+ 	            		  WHERE
+	    	                      ps.PRICE_TYPE ='SUPPLIER'
+	    	                  AND s.PRIORITY =0
+	    	                  AND s.BRANCH_ID='L00'
+	    	                  AND s.SUPPLIER_ID=ps.SUPPLIER_ID
+ 	    	             UNION ALL
+	    	            		SELECT
+	    	                    p.ITEM_ID,
+	    	                    p.PRICE_TYPE,
+	    	                    g.PRICE_GROUP_NAME,
+	    	                    nvl(p.ITEM_PRICE, 0) ITEM_PRICE
+	    	                FROM
+	    	                :{Com_("D_T2_ITEM_PRICE")} p
+	    	                LEFT JOIN
+	    	                :{Com_("D_T2_PRICE_GROUP")}  g
+	    	                ON
+	    	                    p.PRICE_TYPE = g.PRICE_GROUP_ID
+ 	                    WHERE
+ 	                   (p.SUPPLIER_ID IS NULL or p.SUPPLIER_ID='NULL'))
+	    	        GROUP BY
+	    	          ITEM_ID
+	    	    )
+			SELECT
+			    m.*,
+			    c.CATEGORY_NAME,
+			    sf.SHELF_NAME,
+			    d.infos,
+			    b.BRANCH_NAME    mainSuppiler
+			FROM
+			:{Com_("D_T2_ITEM_META")} m
+			LEFT JOIN
+			:{Com_("D_T2_ITEM_CATEGORY")} c
+			ON
+			    c.CATEGORY_ID = m.CATEGORY_ID
+    		LEFT JOIN
+    			d
+    		ON 
+    			d.ITEM_ID = m.ITEM_ID
+			LEFT JOIN
+			:{Com_("D_T2_SHELF_ITEM")} si
+			ON
+			    si.ITEM_ID= m.ITEM_ID AND si.PRIORITY = '0'
+			LEFT JOIN
+			:{Com_("D_T2_SHELF")} sf
+			ON
+			    si.SHELF_ID= sf.SHELF_ID
+			LEFT JOIN
+			:{Com_("D_T2_SUPPLIER_BRANCH_ITEM")} bi
+			ON
+			    m.ITEM_ID = bi.ITEM_ID
+			AND bi.BRANCH_ID = 'L00'
+			AND bi.PRIORITY = 0
+			LEFT JOIN
+			:{Com_("D_T2_BRANCH")} b
+			ON
+			    b.BRANCH_ID = bi.SUPPLIER_ID
+			WHERE
+			    1=1
+			AND (
+			        m.ITEM_ID LIKE :itemName
+			    OR  m.ITEM_NAME LIKE :itemName)
+			AND m.ITEM_TYPE IN ('RAW')
+			AND m.ENABLED = 1 
+			ORDER BY
+			    m.ITEM_ID};
+		List<Map> itemLst =processIter(itemIter);
+		itemIter.close();
+		closeDefaultContext(myCtx);
+		return itemLst;
+	}
+	
+	
+	public List<Map> queryItem(String categoryId, int startRow,int endRow) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		return queryItem(categoryId,null,startRow,endRow);
+	}
+	
+	
+	public List<Map> queryItem(String categoryId, String displayAllFlag,int startRow,int endRow) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		String queryStr = "";
+		if(TextUtil.isEmpty(displayAllFlag)){
+			queryStr = " AND m.ENABLED = 1 ";
+		}
+		
+		ItemIter itemIter = null;
+		#sql [myCtx] itemIter = {
+			SELECT
+			    *
+			    FROM
+			        (
+			            SELECT
+			                t.*,
+			                ROWNUM rowNumber
+			            FROM
+			                (
+			        				WITH
+			        	    	    d AS
+			        	    	    (
+			        	    	    		 SELECT
+			        	    	             ITEM_ID,
+			        	    	            listagg('('||PRICE_TYPE||'|' || ITEM_PRICE ||')',',') within GROUP
+			        	    	            (ORDER BY PRICE_TYPE) infos
+			        	    	        FROM
+			        	    	            (
+		        	    	            		 SELECT DISTINCT
+				        	    	                    ps.ITEM_ID,
+				        	    	                    ps.PRICE_TYPE,
+				        	    	                   '供应商价' PRICE_GROUP_NAME,
+				        	    	                   nvl(ps.ITEM_PRICE, 0) ITEM_PRICE
+				        	    	                FROM
+				        	    	                :{Com_("D_T2_ITEM_PRICE")} ps
+				        	    	               INNER JOIN 
+				        	    	              :{Com_("D_T2_SUPPLIER_BRANCH_ITEM")} s
+				        	    	              ON
+				        	    	              s.ITEM_ID = ps.ITEM_ID
+		        	    	            		  WHERE
+			        	    	                      ps.PRICE_TYPE ='SUPPLIER'
+			        	    	                  AND s.PRIORITY =0
+			        	    	                  AND s.BRANCH_ID='L00'
+			        	    	                  AND s.SUPPLIER_ID=ps.SUPPLIER_ID
+				        	    	             UNION ALL
+			        	    	            		SELECT
+			        	    	                    p.ITEM_ID,
+			        	    	                    p.PRICE_TYPE,
+			        	    	                    g.PRICE_GROUP_NAME,
+			        	    	                    nvl(p.ITEM_PRICE, 0) ITEM_PRICE
+			        	    	                FROM
+			        	    	                :{Com_("D_T2_ITEM_PRICE")} p
+			        	    	                LEFT JOIN
+			        	    	                :{Com_("D_T2_PRICE_GROUP")}  g
+			        	    	                ON
+			        	    	                    p.PRICE_TYPE = g.PRICE_GROUP_ID
+		        	    	                    WHERE
+		        	    	                    (p.SUPPLIER_ID IS NULL or p.SUPPLIER_ID='NULL'))
+			        	    	        GROUP BY
+			        	    	          ITEM_ID
+			        	    	    )
+			        			SELECT
+			        			    m.*,
+			        			    c.CATEGORY_NAME,
+			        			    sf.SHELF_NAME,
+			        			    d.infos,
+			        			    b.BRANCH_NAME    mainSuppiler
+			        			FROM
+			        			:{Com_("D_T2_ITEM_META")} m
+			        			LEFT JOIN
+			        			:{Com_("D_T2_ITEM_CATEGORY")} c
+			        			ON
+			        			    c.CATEGORY_ID = m.CATEGORY_ID
+			        			LEFT JOIN
+			        			:{Com_("D_T2_SHELF_ITEM")} si 
+			        			ON
+			        			    si.ITEM_ID= m.ITEM_ID  AND si.PRIORITY = '0'
+			        			LEFT JOIN
+			        			:{Com_("D_T2_SHELF")} sf
+			        			ON
+			        			    si.SHELF_ID= sf.SHELF_ID
+			        			LEFT JOIN
+			        			:{Com_("D_T2_SUPPLIER_BRANCH_ITEM")} bi
+			        			ON
+			        			    m.ITEM_ID = bi.ITEM_ID
+			        			AND bi.BRANCH_ID = 'L00'
+			        			AND bi.PRIORITY = 0
+			        			LEFT JOIN
+			        			:{Com_("D_T2_BRANCH")} b
+			        			ON
+			        			    b.BRANCH_ID = bi.SUPPLIER_ID
+			            		LEFT JOIN
+			            			d
+			            		ON 
+			            			d.ITEM_ID = m.ITEM_ID
+			        			WHERE
+			        			    m.CATEGORY_ID = :categoryId
+        			    		AND m.ITEM_TYPE IN ('RAW')
+			        			:{queryStr ::}
+			        			ORDER BY
+			        			    m.ITEM_ID) t
+			            WHERE
+			                ROWNUM < :endRow)
+			    WHERE
+			        rowNumber >= :startRow};
+		List<Map> itemLst =processIter(itemIter);
+		itemIter.close();
+		closeDefaultContext(myCtx);
+		return itemLst;
+	}
+	
+	public List<Map> queryByItemName(String itemName, int startRow,int endRow) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		return queryByItemName(itemName,null,startRow,endRow);
+	}
+	
+	public List<Map> queryByItemName(String itemName,String displayAllFlag, int startRow,int endRow) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		itemName = "%" + itemName + "%";
+		
+		String queryStr = "";
+		if(TextUtil.isEmpty(displayAllFlag)){
+			queryStr = " AND m.ENABLED = 1 ";
+		}
+		
+		ItemIter itemIter = null;
+		#sql [myCtx] itemIter = {
+			SELECT
+			    *
+			    FROM
+			        (
+			            SELECT
+			                t.*,
+			                ROWNUM rowNumber
+			            FROM
+			                (
+			        				WITH
+			        	    	    d AS
+			        	    	    (
+			        	    	    		 SELECT
+			        	    	             ITEM_ID,
+			        	    	            listagg('('||PRICE_TYPE||'|' || ITEM_PRICE ||')',',') within GROUP
+			        	    	            (ORDER BY PRICE_TYPE) infos
+			        	    	        FROM
+			        	    	            (
+			        	    	            		 SELECT DISTINCT
+				        	    	                    ps.ITEM_ID,
+				        	    	                    ps.PRICE_TYPE,
+				        	    	                   '供应商价' PRICE_GROUP_NAME,
+				        	    	                   nvl(ps.ITEM_PRICE, 0) ITEM_PRICE
+				        	    	                FROM
+				        	    	                :{Com_("D_T2_ITEM_PRICE")} ps
+				        	    	               INNER JOIN 
+				        	    	              :{Com_("D_T2_SUPPLIER_BRANCH_ITEM")} s
+				        	    	              ON
+				        	    	              s.ITEM_ID = ps.ITEM_ID
+		        	    	            		  WHERE
+			        	    	                      ps.PRICE_TYPE ='SUPPLIER'
+			        	    	                  AND s.PRIORITY =0
+			        	    	                  AND s.BRANCH_ID='L00'
+			        	    	                  AND s.SUPPLIER_ID=ps.SUPPLIER_ID
+				        	    	             UNION ALL
+			        	    	            		SELECT
+			        	    	                    p.ITEM_ID,
+			        	    	                    p.PRICE_TYPE,
+			        	    	                    g.PRICE_GROUP_NAME,
+			        	    	                    nvl(p.ITEM_PRICE, 0) ITEM_PRICE
+			        	    	                FROM
+			        	    	                :{Com_("D_T2_ITEM_PRICE")} p
+			        	    	                LEFT JOIN
+			        	    	                :{Com_("D_T2_PRICE_GROUP")}  g
+			        	    	                ON
+			        	    	                    p.PRICE_TYPE = g.PRICE_GROUP_ID
+		        	    	                    WHERE
+		        	    	                    (p.SUPPLIER_ID IS NULL or p.SUPPLIER_ID='NULL'))
+			        	    	        GROUP BY
+			        	    	          ITEM_ID
+			        	    	    )
+			        			SELECT
+			        			    m.*,
+			        			    c.CATEGORY_NAME,
+			        			    sf.SHELF_NAME,
+			        			    d.infos,
+			        			    b.BRANCH_NAME    mainSuppiler
+			        			FROM
+			        			:{Com_("D_T2_ITEM_META")} m
+			        			LEFT JOIN
+			        			:{Com_("D_T2_ITEM_CATEGORY")} c
+			        			ON
+			        			    c.CATEGORY_ID = m.CATEGORY_ID
+			            		LEFT JOIN
+			            			d
+			            		ON 
+			            			d.ITEM_ID = m.ITEM_ID
+			        			LEFT JOIN
+			        			:{Com_("D_T2_SHELF_ITEM")} si
+			        			ON
+			        			    si.ITEM_ID= m.ITEM_ID AND si.PRIORITY = '0'
+			        			LEFT JOIN
+			        			:{Com_("D_T2_SHELF")} sf
+			        			ON
+			        			    si.SHELF_ID= sf.SHELF_ID
+			        			LEFT JOIN
+			        			:{Com_("D_T2_SUPPLIER_BRANCH_ITEM")} bi
+			        			ON
+			        			    m.ITEM_ID = bi.ITEM_ID
+			        			AND bi.BRANCH_ID = 'L00'
+			        			AND bi.PRIORITY = 0
+			        			LEFT JOIN
+			        			:{Com_("D_T2_BRANCH")} b
+			        			ON
+			        			    b.BRANCH_ID = bi.SUPPLIER_ID
+			        			WHERE
+			        				(
+			        			        m.ITEM_ID LIKE :itemName
+			        			    OR  m.ITEM_NAME LIKE :itemName)
+			        			AND m.ITEM_TYPE = 'RAW' :{queryStr ::}
+			        			ORDER BY
+			        			    m.ITEM_ID) t
+			            WHERE
+			                ROWNUM < :endRow)
+			    WHERE
+			        rowNumber >= :startRow};
+		List<Map> itemLst =processIter(itemIter);
+		itemIter.close();
+		closeDefaultContext(myCtx);
+		return itemLst;
+	}
+	
+	private List<Map> processIter(ItemIter itemIter) 
+			throws SQLException {
+		List<Map> headerLst = new ArrayList<Map>();
+		
+		while(itemIter.next()) {
+			Map header = new HashMap();
+			header.put("itemId", itemIter.item_id());
+			header.put("itemName", itemIter.item_name());
+			header.put("itemDimension", itemIter.item_dimension());
+			header.put("shelfName",itemIter.shelf_name());
+			header.put("itemType",itemIter.item_type());
+			header.put("categoryId",itemIter.category_id());
+			header.put("categoryName",itemIter.category_name());
+			header.put("queryCode",itemIter.query_code());
+			header.put("itemSpecification",itemIter.item_specification());
+			header.put("boxType",itemIter.box_type());
+			header.put("enabled",itemIter.enabled());
+			header.put("mainSuppiler",itemIter.mainSuppiler());
+			String info = itemIter.infos();
+			if(!TextUtil.isEmpty(info)){
+				String[] infos = info.toString().split(",");
+				for (int i = 0; i < infos.length; i++) {
+					String[] temp = infos[i].replace("(", "").replace(")", "").split("\\|");
+					
+					for (int j = 0; j < temp.length; j++) {
+						header.put(temp[0], temp[1]);
+					}
+				}
+			}
+			headerLst.add(header);
+		}
+		return headerLst;
+	}
+	
+	#sql private static iterator ProductIter(String item_id, String item_name,
+		String item_type, String category_id, String item_dimension, String category_name,
+		String query_code, Integer enabled, Date effect_date, String item_specification,Integer item_count,String infos,
+		Double cost_price);
+	
+	public int countProduct(String categoryId) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		return countProduct(categoryId,null);
+	}
+	
+	public int countProduct(String categoryId,String displayAllFlag) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		int counts = 0;
+		
+		String queryStr = "";
+		if(TextUtil.isEmpty(displayAllFlag)){
+			queryStr = " AND m.ENABLED = 1 ";
+		}
+		
+		DefaultContext myCtx = getDefaultContext();
+		#sql [myCtx]{
+		SELECT
+		    COUNT(*)
+		INTO
+		    :counts
+		FROM
+		    :{Com_("D_T2_ITEM_META")} m
+		WHERE
+			1=1	:{queryStr ::}
+			AND m.CATEGORY_ID = :categoryId 
+			AND m.ITEM_TYPE = 'PRODUCT'};
+		closeDefaultContext(myCtx);
+		return counts;
+	}
+	
+	
+	public List<Map> queryProduct(String categoryId, int startRow,int endRow) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		return queryProduct(categoryId,null,startRow,endRow);
+	}
+	
+	public List<Map> queryProduct(String categoryId,String displayAllFlag,  int startRow,int endRow) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		String queryStr ="";
+		
+		if(TextUtil.isEmpty(displayAllFlag)){
+			queryStr = " AND m.ENABLED = 1 ";
+		}
+		
+		ProductIter productIter = null;
+		#sql [myCtx] productIter = {
+		SELECT
+	    *
+	    FROM
+	        (
+	            SELECT
+	                t.*,
+	                ROWNUM rowNumber
+	            FROM
+	                (
+			WITH
+			    ty AS
+			    (
+			        SELECT
+			            t.THERAPY_ID,
+			            COUNT(*) AS item_count
+			        FROM
+			        :{Com_("D_T2_THERAPY")} t
+			        WHERE
+			            1=1
+			        GROUP BY
+			            t.THERAPY_ID
+			        ORDER BY
+			            t.THERAPY_ID
+			    ),
+			    fs AS
+			    (
+				        SELECT
+				            s.FOOD_SUIT_ID,
+				            COUNT(*) AS item_count
+				        FROM
+				        :{Com_("D_T2_ITEM_FOOD_SUIT")} s
+				        WHERE
+				            1=1
+				        GROUP BY
+				            s.FOOD_SUIT_ID
+				        ORDER BY
+				            s.FOOD_SUIT_ID
+				    ),
+	    	    d AS
+	    	    (
+    	    		 SELECT
+	    	            ITEM_ID,
+	    	            listagg('('||PRICE_TYPE||'|' || ITEM_PRICE ||')',',') within GROUP
+	    	            (ORDER BY PRICE_TYPE) infos
+            		FROM
+            	    :{Com_("D_T2_ITEM_PRICE")} p
+	            	WHERE
+	            	    p.PRICE_TYPE LIKE 'SALE%'
+	            	GROUP BY
+	            	    ITEM_ID
+	    	    )
+			SELECT
+			    m.*,
+			    c.CATEGORY_NAME,
+			    d.infos,
+			    nvl(t.cost_price,0.0) cost_price,
+			    nvl(ty.item_count,fs.item_count) item_count
+			FROM
+			:{Com_("D_T2_ITEM_META")} m
+			LEFT JOIN
+			:{Com_("D_T2_ITEM_CATEGORY")} c
+			ON
+			    c.CATEGORY_ID = m.CATEGORY_ID
+    		LEFT JOIN
+				d
+			ON 
+				d.ITEM_ID = m.ITEM_ID
+			LEFT JOIN
+			    (
+			        SELECT
+			            t.THERAPY_ID,
+			            nvl(ROUND(SUM(t.ITEM_GROSS_COUNT*p.ITEM_PRICE), 2),0.0) AS cost_price
+			        FROM
+			        :{Com_("D_T2_THERAPY")} t
+			        LEFT JOIN
+			        :{Com_("D_T2_ITEM_PRICE")} p
+			        ON
+			            p.ITEM_ID = t.ITEM_ID
+			        AND p.PRICE_TYPE = 'PURCHASE'
+			        GROUP BY
+			            t.THERAPY_ID) t
+			ON
+			    t.THERAPY_ID = m.ITEM_ID
+			LEFT JOIN
+			    ty
+			ON
+			    m.ITEM_ID = ty.THERAPY_ID
+	    	LEFT JOIN
+			    fs
+			ON
+			    m.ITEM_ID = fs.FOOD_SUIT_ID
+			WHERE
+				1=1	:{queryStr ::}
+				AND  m.CATEGORY_ID = :categoryId
+				AND m.ITEM_TYPE = 'PRODUCT'
+			ORDER BY
+			    m.ITEM_ID
+			    ) t
+	            WHERE
+	                ROWNUM < :endRow)
+	    WHERE
+	        rowNumber >= :startRow};
+		List<Map> itemLst = new ArrayList<Map>();
+		while (productIter.next()) {
+			itemLst.add(iterateProduct(productIter));
+		}
+		productIter.close();
+		closeDefaultContext(myCtx);
+		return itemLst;
+	}
+	
+	public int countByProduct(String condition) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		return countByProduct(condition,null);
+	}
+	
+	public int countByProduct(String condition,String displayAllFlag) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		int counts = 0;
+		condition = "%" + condition + "%";
+		
+		String queryStr ="";
+		
+		if(TextUtil.isEmpty(displayAllFlag)){
+			queryStr = " AND m.ENABLED = 1 ";
+		}
+		
+		DefaultContext myCtx = getDefaultContext();
+		#sql [myCtx]{
+		SELECT
+		    COUNT(*)
+		INTO
+		    :counts
+		FROM
+		    :{Com_("D_T2_ITEM_META")} m
+		WHERE
+		 m.ITEM_TYPE = 'PRODUCT'
+		:{queryStr :: }
+		AND (
+		        m.ITEM_ID LIKE :condition
+		    OR  m.ITEM_NAME LIKE :condition)};
+		closeDefaultContext(myCtx);
+		return counts;
+	}
+	
+	public List<Map> queryByProduct(String condition, int startRow,int endRow) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		return queryByProduct(condition,null,startRow,endRow);
+	}
+	
+	public List<Map> queryByProduct(String condition, String displayAllFlag,int startRow,int endRow) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		ProductIter productIter = null;
+		
+		condition = "%" + condition + "%";
+		
+		String queryStr = "";
+		
+		if(TextUtil.isEmpty(displayAllFlag)){
+			queryStr = " AND m.ENABLED = 1 ";
+		}
+		
+		#sql [myCtx] productIter = {
+		SELECT
+	    *
+	    FROM
+	        (
+	            SELECT
+	                t.*,
+	                ROWNUM rowNumber
+	            FROM
+	                (
+			WITH
+			    ty AS
+			    (
+			        SELECT
+			            t.THERAPY_ID,
+			            COUNT(*) AS item_count
+			        FROM
+			        :{Com_("D_T2_THERAPY")} t
+			        GROUP BY
+			            t.THERAPY_ID
+			        ORDER BY
+			            t.THERAPY_ID
+			    ),
+	    	    d AS
+	    	    (
+    	    		 SELECT
+	    	            ITEM_ID,
+	    	            listagg('('||PRICE_TYPE||'|' || ITEM_PRICE ||')',',') within GROUP
+	    	            (ORDER BY PRICE_TYPE) infos
+            		FROM
+            	    :{Com_("D_T2_ITEM_PRICE")} p
+	            	WHERE
+	            	    p.PRICE_TYPE LIKE 'SALE%'
+	            	GROUP BY
+	            	    ITEM_ID
+	    	    )
+			SELECT
+			    m.*,
+			    c.CATEGORY_NAME,
+			    d.infos,
+			    nvl(t.cost_price,0.0) cost_price,
+			    ty.item_count
+			FROM
+				:{Com_("D_T2_ITEM_META")} m
+			LEFT JOIN
+				:{Com_("D_T2_ITEM_CATEGORY")} c
+			ON
+			    c.CATEGORY_ID = m.CATEGORY_ID
+    		LEFT JOIN
+				d
+			ON 
+				d.ITEM_ID = m.ITEM_ID
+			LEFT JOIN
+			    (
+			        SELECT
+			            t.THERAPY_ID,
+			            nvl(ROUND(SUM(t.ITEM_GROSS_COUNT*p.ITEM_PRICE), 2),0.0) AS cost_price
+			        FROM
+			        	:{Com_("D_T2_THERAPY")} t
+			        LEFT JOIN
+			        	:{Com_("D_T2_ITEM_PRICE")} p
+			        ON
+			            p.ITEM_ID = t.ITEM_ID
+			        AND p.PRICE_TYPE = 'PURCHASE'
+			        GROUP BY
+			            t.THERAPY_ID) t
+			ON
+			    t.THERAPY_ID = m.ITEM_ID
+			LEFT JOIN
+			    ty
+			ON
+			    m.ITEM_ID = ty.THERAPY_ID
+			WHERE
+			m.ITEM_TYPE = 'PRODUCT' 
+			:{queryStr ::}
+			AND (
+			        m.ITEM_ID LIKE :condition
+			    OR  m.ITEM_NAME LIKE :condition)
+			ORDER BY
+			    m.ITEM_ID) t
+	            WHERE
+                ROWNUM < :endRow)
+    WHERE
+        rowNumber >= :startRow};
+
+		List<Map> itemLst = new ArrayList<Map>();
+		while (productIter.next()) {
+			itemLst.add(iterateProduct(productIter));
+		}
+		productIter.close();
+		closeDefaultContext(myCtx);
+		return itemLst;
+	}
+	
+	#sql private iterator CountIter(
+			int total);
+	
+	public int countRaw(String condition) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		CountIter countIter =null;
+		DefaultContext myCtx = getDefaultContext();
+		#sql [myCtx] countIter = {
+			WITH
+			    filter AS
+			    (
+			        SELECT DISTINCT
+			            t.THERAPY_ID
+			        FROM
+			        :{Com_("D_T2_THERAPY")} t
+			        WHERE
+			            1=1
+			        AND (
+			                t.ITEM_ID = :condition
+			            OR  t.ITEM_NAME = :condition)
+			        ORDER BY
+			            t.THERAPY_ID
+			    )
+				SELECT
+        			COUNT(*) total
+        	    FROM
+        	    filter
+        	    INNER JOIN
+        	    :{Com_("D_T2_ITEM_META")} m
+			ON
+			    filter.THERAPY_ID = m.ITEM_ID
+        	    WHERE
+			    m.ITEM_TYPE = 'PRODUCT'
+		};
+		
+		int total = 0;
+		while(countIter.next()) {
+			total= countIter.total();
+		}
+		countIter.close();
+		closeDefaultContext(myCtx);
+		return total;
+	}
+	
+	public List<Map> queryByRaw(String condition, int startRow,int endRow) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		ProductIter productIter = null;
+		
+		#sql [myCtx] productIter = {
+		SELECT
+	    *
+	    FROM
+	        (
+	            SELECT
+	                t.*,
+	                ROWNUM rowNumber
+	            FROM
+	                (
+			WITH
+			    filter AS
+			    (
+			        SELECT DISTINCT
+			            t.THERAPY_ID
+			        FROM
+			        :{Com_("D_T2_THERAPY")} t
+			        WHERE
+			            1=1
+			        AND (
+			                t.ITEM_ID = :condition
+			            OR  t.ITEM_NAME = :condition)
+			        ORDER BY
+			            t.THERAPY_ID
+			    ),
+	    	    d AS
+	    	    (
+    	    		 SELECT
+	    	            ITEM_ID,
+	    	            listagg('('||PRICE_TYPE||'|' || ITEM_PRICE ||')',',') within GROUP
+	    	            (ORDER BY PRICE_TYPE) infos
+            		FROM
+            	    :{Com_("D_T2_ITEM_PRICE")} p
+	            	WHERE
+	            	    p.PRICE_TYPE LIKE 'SALE%'
+	            	GROUP BY
+	            	    ITEM_ID
+	    	    )
+			SELECT
+			    m.*,
+			    c.CATEGORY_NAME,
+			    d.infos,
+			    nvl(t.cost_price,0.0) cost_price,
+			    1 item_count
+			FROM
+			:{Com_("D_T2_ITEM_META")} m
+    		LEFT JOIN
+				d
+			ON 
+				d.ITEM_ID = m.ITEM_ID
+			INNER JOIN
+			    filter
+			ON
+			    filter.THERAPY_ID = m.ITEM_ID
+    		LEFT JOIN
+			:{Com_("D_T2_ITEM_CATEGORY")} c
+			ON
+			    c.CATEGORY_ID = m.CATEGORY_ID
+			LEFT JOIN
+			    (
+			        SELECT
+			            t.THERAPY_ID,
+			            nvl(ROUND(SUM(t.ITEM_GROSS_COUNT*p.ITEM_PRICE), 2),0.0) AS cost_price
+			        FROM
+			        :{Com_("D_T2_THERAPY")} t
+			        LEFT JOIN
+			        :{Com_("D_T2_ITEM_PRICE")} p
+			        ON
+			            p.ITEM_ID = t.ITEM_ID
+			        AND p.PRICE_TYPE = 'PURCHASE'
+			        GROUP BY
+			            t.THERAPY_ID) t
+			ON
+			    t.THERAPY_ID = m.ITEM_ID
+			WHERE
+			    m.ITEM_TYPE = 'PRODUCT'
+			ORDER BY
+			    m.ITEM_ID) t
+	            WHERE
+                ROWNUM < :endRow)
+    WHERE
+        rowNumber >= :startRow};
+
+		List<Map> itemLst = new ArrayList<Map>();
+		while (productIter.next()) {
+			itemLst.add(iterateProduct(productIter));
+		}
+		productIter.close();
+		closeDefaultContext(myCtx);
+		return itemLst;
+	}
+	
+	private Map iterateProduct(ProductIter itemIter) throws SQLException {
+		Map header = new HashMap();
+		header.put("itemId", itemIter.item_id());
+		header.put("itemName", itemIter.item_name());
+		header.put("itemType",itemIter.item_type());
+		header.put("categoryId",itemIter.category_id());
+		header.put("itemDimension", itemIter.item_dimension());
+		header.put("queryCode",itemIter.query_code());
+		header.put("categoryName",itemIter.category_name());
+		header.put("enabled",itemIter.enabled());
+		header.put("effectDate",SqlDateUtil.getUtilDate(itemIter.effect_date()));
+		header.put("costPrice",itemIter.cost_price());
+		Integer itemCount = itemIter.item_count();
+		if (itemCount != null) {
+			header.put("hasTherapy",true);
+		}else{
+			header.put("hasTherapy",false);
+		}
+		String itemSpecification=itemIter.item_specification();
+		if(itemIter.item_type().equals(ItemType.PRODUCT)){
+			try{
+				header.put("bInHandPro",Integer.parseInt(itemSpecification.substring(0,1)));//手持下载
+				header.put("bDisFood",Integer.parseInt(itemSpecification.substring(1,2)));//出品折扣
+				header.put("bDisCount",Integer.parseInt(itemSpecification.substring(2,3)));//照单折扣
+			}catch(Exception ex){
+				header.put("bInHandPro",0);
+				header.put("bDisFood",0);
+				header.put("bDisCount",0);
+			}
+		}
+		String info = itemIter.infos();
+		if(!TextUtil.isEmpty(info)){
+			String[] infos = info.toString().split(",");
+			for (int i = 0; i < infos.length; i++) {
+				String[] temp = infos[i].replace("(", "").replace(")", "").split("\\|");
+				
+				for (int j = 0; j < temp.length; j++) {
+					header.put(temp[0], temp[1]);
+				}
+			}
+		}
+		
+		return header;
+}
+}

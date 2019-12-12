@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE struts PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN"
+    "http://struts.apache.org/dtds/struts-2.0.dtd">
+
+<struts>
+	<package name="hq_priceadjust" namespace="/hq/priceadjust" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.hq.priceadjust.BillManageAction">
+			<result name="success">/jsp/hq/priceadjust/main.jsp</result>
+		</action>
+		
+		<action name="addView" method="addView" class="com.tanry.business.module.hq.priceadjust.BillManageAction">
+			<result name="success">/jsp/hq/priceadjust/add.jsp</result>
+		</action>
+		
+		<action name="editView" method="editView" class="com.tanry.business.module.hq.priceadjust.BillManageAction">
+			<result name="success">/jsp/hq/priceadjust/edit.jsp</result>
+		</action>
+		
+		<action name="scanView" method="scanView" class="com.tanry.business.module.hq.priceadjust.BillManageAction">
+			<result name="success">/jsp/hq/priceadjust/scan.jsp</result>
+		</action>
+		
+		<action name="createBill" method="createBill" class="com.tanry.business.module.hq.priceadjust.BillManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doDelete" method="doDelete" class="com.tanry.business.module.hq.priceadjust.BillManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doInvalid" method="doInvalid" class="com.tanry.business.module.hq.priceadjust.BillManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="updateBill" method="updateBill" class="com.tanry.business.module.hq.priceadjust.BillManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doQuery" method="doQuery" class="com.tanry.business.module.hq.priceadjust.BillManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="queryEffect" method="queryEffect" class="com.tanry.business.module.hq.priceadjust.BillManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="queryDetail" method="queryDetail" class="com.tanry.business.module.hq.priceadjust.BillManageAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="hq_priceadjust_audit" namespace="/hq/priceadjust/audit" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.hq.priceadjust.BillManageAction">
+			<result name="success">/jsp/hq/priceadjust/audit/main.jsp</result>
+		</action>
+		
+		<action name="auditView" method="editView" class="com.tanry.business.module.hq.priceadjust.BillManageAction">
+			<result name="success">/jsp/hq/priceadjust/audit/audit.jsp</result>
+		</action>
+		
+		<action name="doAudit" method="doAudit" class="com.tanry.business.module.hq.priceadjust.BillManageAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="hq_priceadjust_selitem" namespace="/hq/priceadjust/selitem" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.hq.priceadjust.BillManageAction">
+			<result name="success">/jsp/hq/priceadjust/selitem/main.jsp</result>
+		</action>
+		
+		<action name="queryItem" method="queryItem" class="com.tanry.business.module.hq.priceadjust.BillManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="queryBySupplier" method="queryBySupplier" class="com.tanry.business.module.hq.priceadjust.BillManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doImport" method="doImport" class="com.tanry.business.module.hq.priceadjust.BillManageAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="hq_priceadjust_queryStorage" namespace="/hq/priceadjust/queryStorage" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.hq.priceadjust.PurchasePriceAction">
+			<result name="success">/jsp/hq/priceadjust/queryStorage/main.jsp</result>
+		</action>
+		
+		<action name="queryItemId" method="queryItemId" class="com.tanry.business.module.hq.priceadjust.PurchasePriceAction">
+			<result type="json" />
+		</action>
+		
+	</package>
+	
+	<package name="hq_priceadjust_purchase" namespace="/hq/priceadjust/purchase" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.hq.priceadjust.PurchasePriceAction">
+			<result name="success">/jsp/hq/priceadjust/purchase/main.jsp</result>
+		</action>
+		
+		<action name="addView" method="addView" class="com.tanry.business.module.hq.priceadjust.PurchasePriceAction">
+			<result name="success">/jsp/hq/priceadjust/purchase/add.jsp</result>
+		</action>
+		
+		<action name="addPurchView" method="addView" class="com.tanry.business.module.hq.priceadjust.PurchasePriceAction">
+			<result name="success">/jsp/hq/priceadjust/purchase/addPurch.jsp</result>
+		</action>
+		
+		<action name="editView" method="editView" class="com.tanry.business.module.hq.priceadjust.PurchasePriceAction">
+			<result name="success">/jsp/hq/priceadjust/purchase/edit.jsp</result>
+		</action>
+		
+		<action name="scanView" method="scanView" class="com.tanry.business.module.hq.priceadjust.PurchasePriceAction">
+			<result name="success">/jsp/hq/priceadjust/purchase/scan.jsp</result>
+		</action>
+		
+		<action name="updateBill" method="updateBill" class="com.tanry.business.module.hq.priceadjust.BillManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doQuery" method="doQuery" class="com.tanry.business.module.hq.priceadjust.PurchasePriceAction">
+			<result type="json" />
+		</action>
+		
+		<action name="queryPItem" method="queryPItem" class="com.tanry.business.module.hq.priceadjust.PurchasePriceAction">
+			<result type="json" />
+		</action>
+		
+		<action name="queryZItem" method="queryZItem" class="com.tanry.business.module.hq.priceadjust.PurchasePriceAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doDelete" method="doDelete" class="com.tanry.business.module.hq.priceadjust.PurchasePriceAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="hq_priceadjust_purchase_audit" namespace="/hq/priceadjust/purchase/audit" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.hq.priceadjust.PurchasePriceAction">
+			<result name="success">/jsp/hq/priceadjust/purchase/audit/main.jsp</result>
+		</action>
+		
+		<action name="auditView" method="editView" class="com.tanry.business.module.hq.priceadjust.PurchasePriceAction">
+			<result name="success">/jsp/hq/priceadjust/purchase/audit/audit.jsp</result>
+		</action>
+		
+		<action name="doAudit" method="doAudit" class="com.tanry.business.module.hq.priceadjust.PurchasePriceAction">
+			<result type="json" />
+		</action>
+	</package>
+</struts>
+

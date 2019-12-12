@@ -1,0 +1,114 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on Tue Apr 07 16:28:24 CST 2015 by lyz
+ * Last edited on Tue Apr 07 16:28:24 CST 2015 by lyz
+ * 
+ * comment: 原材料/半成品/成品类别表
+ */
+package logic.module.hq;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import pojo.store.ItemCategory;
+import sqlj.runtime.ref.DefaultContext;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.TextUtil;
+import com.tanry.framework.acl.NoPrivilegeException;
+
+public class SetupCategoryBean extends ConnectionPool {
+	
+	public static Logger log = Logger.getLogger(SetupCategoryBean.class);
+	
+	public int saveEntity(ItemCategory category)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		String categoryId = category.getCategoryId();
+		String categoryName = category.getCategoryName();
+		String parentId = category.getParentId();
+		String path = category.getPath();
+		String categoryLevel = category.getCategoryLevel();
+		String itemType = category.getItemType();
+
+		#sql [myCtx] {
+			INSERT INTO :{Com_("D_T2_ITEM_CATEGORY")} 
+				(CATEGORY_ID, CATEGORY_NAME, PARENT_ID, PATH, CATEGORY_LEVEL, ITEM_TYPE) 
+			VALUES (:categoryId, :categoryName, :parentId, :path, :categoryLevel, :itemType)
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public int updateEntity(ItemCategory category)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		String categoryId = category.getCategoryId();
+		String categoryName = category.getCategoryName();
+		String parentId = category.getParentId();
+		String categoryLevel = category.getCategoryLevel();
+		String itemType = category.getItemType();
+
+		#sql [myCtx] {
+			UPDATE
+			:{Com_("D_T2_ITEM_CATEGORY")}
+			SET
+				CATEGORY_NAME = :categoryName
+			WHERE 
+				CATEGORY_ID = :categoryId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+
+	public boolean deletable(String cateId) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		int total = 0;
+		#sql [myCtx] {
+			SELECT
+			    COUNT(*) into :total
+			FROM
+			:{Com_("D_T2_ITEM_META")} m
+			WHERE
+			    m.CATEGORY_ID = :cateId
+		};
+		closeDefaultContext(myCtx);
+		
+		if (total > 0) {
+			return false;
+		}
+		return true;
+	}
+	
+	public int deleteEntity(String categoryId)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		#sql [myCtx] {
+			DELETE
+			FROM
+			:{Com_("D_T2_ITEM_CATEGORY")}
+			WHERE
+				CATEGORY_ID = :categoryId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+}

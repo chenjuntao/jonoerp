@@ -1,0 +1,619 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on Sat Feb 07 11:17:04 CST 2015 by lyz
+ * Last edited on Sat Feb 07 11:17:04 CST 2015 by lyz
+ * 
+ * comment: 供应商与门店以及商品的对应关系
+ */
+package logic.store;
+
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import pojo.store.SupplierBranchItem;
+import sqlj.runtime.ref.DefaultContext;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.TextUtil;
+import com.tanry.framework.acl.NoPrivilegeException;
+
+public class SupplierBranchItemBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(SupplierBranchItemBean.class);
+	
+	public int saveEntity(SupplierBranchItem sbiRelation)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		String supplierId = sbiRelation.getSupplierId();
+		String branchId = sbiRelation.getBranchId();
+		String itemId = sbiRelation.getItemId();
+		Integer priority = sbiRelation.getPriority();
+
+		#sql [myCtx] {
+			INSERT INTO :{Com_("D_T2_SUPPLIER_BRANCH_ITEM")} 
+				(SUPPLIER_ID, BRANCH_ID, ITEM_ID, PRIORITY) 
+			VALUES (:supplierId, :branchId, :itemId, :priority)
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public int updateEntity(String supplierId, String branchId, String itemId)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		if (exist(supplierId, branchId, itemId, myCtx)) {
+			// 设置新的主供应商
+			#sql [myCtx] {
+				UPDATE
+				:{Com_("D_T2_SUPPLIER_BRANCH_ITEM")} sbi
+				SET
+					PRIORITY = 0
+				WHERE
+					sbi.SUPPLIER_ID = :supplierId
+				AND sbi.BRANCH_ID = :branchId
+				AND sbi.ITEM_ID = :itemId
+			};
+		} else {
+			//插入一条记录
+			#sql [myCtx] {
+				INSERT INTO :{Com_("D_T2_SUPPLIER_BRANCH_ITEM")} 
+					(SUPPLIER_ID, BRANCH_ID, ITEM_ID, PRIORITY) 
+				VALUES (:supplierId, :branchId, :itemId, 0)
+			};
+			// 使用进货价初始化供应商的价格
+			initSupplierPrice(myCtx, itemId, supplierId);
+		}
+		// 取消以前的主供应商
+		#sql [myCtx] {
+			UPDATE
+			:{Com_("D_T2_SUPPLIER_BRANCH_ITEM")} sbi
+			SET
+				PRIORITY = 1
+			WHERE
+				sbi.SUPPLIER_ID != :supplierId
+			AND sbi.BRANCH_ID = :branchId
+			AND sbi.ITEM_ID = :itemId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	/**
+	 * 使用进货价初始化供应商的价格
+	 */
+	private void initSupplierPrice(DefaultContext myCtx, String itemId, String supplierId)
+			throws NoPrivilegeException, SQLException, NoConnection {
+		int total = 0;
+		#sql [myCtx] {
+			SELECT
+				count(*) into :total 
+			FROM
+			:{Com_("D_T2_ITEM_PRICE")} 
+			WHERE
+				ITEM_ID = :itemId 
+			AND PRICE_TYPE = 'SUPPLIER'
+			AND SUPPLIER_ID = :supplierId
+		};
+		if (total == 0) { // 如果数据不存在
+			Double itemPrice = queryPurchasePrice(myCtx, itemId);
+			#sql [myCtx] {
+				INSERT INTO :{Com_("D_T2_ITEM_PRICE")} 
+					(ITEM_ID, ITEM_PRICE, PRICE_TYPE, SUPPLIER_ID, IS_CURRENT) 
+				VALUES (:itemId, :itemPrice, 'SUPPLIER', :supplierId, 1)
+			};
+		}
+	}
+
+	#sql public static iterator PriceIter(Double item_price);
+	
+	/**
+	 * 获取相应的进货价
+	 */
+	private Double queryPurchasePrice(DefaultContext myCtx, String itemId)
+			throws NoPrivilegeException, SQLException, NoConnection {
+		PriceIter priceIter = null;
+		#sql [myCtx] priceIter = {
+			SELECT
+				ITEM_PRICE
+			FROM
+			:{Com_("D_T2_ITEM_PRICE")} 
+			WHERE
+				ITEM_ID = :itemId 
+			AND PRICE_TYPE = 'PURCHASE'
+		};
+		Double itemPrice = 0.0;
+		while (priceIter.next()) {
+			itemPrice = priceIter.item_price();
+			break;
+		}
+		priceIter.close();
+		
+		return itemPrice;
+	}
+
+	public int deleteEntity(String supplierId)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		#sql [myCtx] {
+			DELETE
+			FROM
+			:{Com_("D_T2_SUPPLIER_BRANCH_ITEM")}
+			WHERE
+				SUPPLIER_ID = :supplierId
+		};
+		#sql [myCtx] {
+			DELETE
+			FROM
+			:{Com_("D_T2_ITEM_PRICE")}
+			WHERE
+				SUPPLIER_ID = :supplierId
+			AND
+				PRICE_TYPE = 'SUPPLIER'
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public int deleteUniqueEntity(String branchId,String itemId,String supplierId)
+			throws NoPrivilegeException, SQLException, NoConnection {
+			DefaultContext myCtx = getDefaultContext();
+
+			#sql [myCtx] {
+				DELETE
+					FROM
+				:{Com_("D_T2_SUPPLIER_BRANCH_ITEM")}
+				WHERE
+					SUPPLIER_ID = :supplierId and BRANCH_ID = :branchId and ITEM_ID = :itemId
+			};
+			closeDefaultContext(myCtx);
+			
+			return 1;
+		}
+	
+	
+	public int deleteItemEntity(String itemId)
+			throws NoPrivilegeException, SQLException, NoConnection {
+			DefaultContext myCtx = getDefaultContext();
+
+			#sql [myCtx] {
+				DELETE
+				FROM
+				:{Com_("D_T2_SUPPLIER_BRANCH_ITEM")}
+				WHERE
+					ITEM_ID = :itemId
+			};
+			closeDefaultContext(myCtx);
+			
+			return 1;
+		}
+	
+	public int deleteByBranchId(String branchId)
+			throws NoPrivilegeException, SQLException, NoConnection {
+			DefaultContext myCtx = getDefaultContext();
+
+			#sql [myCtx] {
+				DELETE
+				FROM
+					:{Com_("D_T2_SUPPLIER_BRANCH_ITEM")}
+				WHERE
+					BRANCH_ID = :branchId
+			};
+			closeDefaultContext(myCtx);
+			
+			return 1;
+		}
+	
+	public int deleteBySupplierId(String supplierId)
+			throws NoPrivilegeException, SQLException, NoConnection {
+			DefaultContext myCtx = getDefaultContext();
+
+			#sql [myCtx] {
+				DELETE
+				FROM
+					:{Com_("D_T2_SUPPLIER_BRANCH_ITEM")}
+				WHERE
+					SUPPLIER_ID = :supplierId
+			};
+			closeDefaultContext(myCtx);
+			
+			return 1;
+		}
+	
+	public boolean exist(String supplierId, String branchId, String itemId) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		Integer total = 0;
+		#sql [myCtx] {
+			SELECT
+			    count(*) into :total
+			FROM
+			:{Com_("D_T2_SUPPLIER_BRANCH_ITEM")} sbi
+			WHERE
+				sbi.SUPPLIER_ID = :supplierId
+			AND sbi.BRANCH_ID = :branchId
+			AND sbi.ITEM_ID = :itemId
+		};
+		closeDefaultContext(myCtx);
+		
+		if (total > 0) {
+			return true;
+		}
+		return false;
+	}
+	
+	public boolean exist(String supplierId, String branchId, String itemId, DefaultContext myCtx) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		Integer total = 0;
+		#sql [myCtx] {
+			SELECT
+			    count(*) into :total
+			FROM
+			:{Com_("D_T2_SUPPLIER_BRANCH_ITEM")} sbi
+			WHERE
+				sbi.SUPPLIER_ID = :supplierId
+			AND sbi.BRANCH_ID = :branchId
+			AND sbi.ITEM_ID = :itemId
+		};
+		
+		if (total > 0) {
+			return true;
+		}
+		return false;
+	}
+	
+	#sql public static iterator SupplierIter(String supplier_id, 
+			String supplier_name, 
+			String query_code,
+			String address, 
+			String contact_man, 
+			String telephone, 
+			Integer priority,
+			Double item_price);
+	
+	public List<Map> querySupplier(String branchId, String itemId) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		SupplierIter supplierIter = null;
+		#sql [myCtx] supplierIter = {
+			WITH
+			    a AS
+			    (
+			        SELECT
+			            s.BRANCH_ID      AS supplier_id,
+			            s.BRANCH_NAME    AS supplier_name,
+			            s.QUERY_CODE     AS query_code,
+			            s.BRANCH_ADDRESS AS address,
+			            s.CONTACT_MAN,
+			            s.TELEPHONE,
+			            sbi.PRIORITY
+			        FROM
+			        :{Com_("D_T2_SUPPLIER_BRANCH_ITEM")} sbi
+			        LEFT JOIN
+			        :{Com_("D_T2_BRANCH")} s
+			        ON
+			            sbi.SUPPLIER_ID = s.BRANCH_ID
+			        WHERE
+			            sbi.BRANCH_ID = :branchId
+			        AND sbi.ITEM_ID = :itemId
+			    )
+			    ,
+			    b AS
+			    (
+			        SELECT
+			            ITEM_ID,
+			            SUM(ITEM_PRICE) AS ITEM_PRICE,
+			            SUPPLIER_ID
+			        FROM
+			            (
+			                SELECT
+			                    sbi.ITEM_ID,
+			                    0 AS ITEM_PRICE,
+			                    sbi.SUPPLIER_ID
+			                FROM
+			                :{Com_("D_T2_SUPPLIER_BRANCH_ITEM")} sbi
+			                INNER JOIN
+			                    a
+			                ON
+			                    a.supplier_id = sbi.SUPPLIER_ID
+			                WHERE
+			                    sbi.ITEM_ID = :itemId
+			                GROUP BY
+			                    sbi.supplier_id,
+			                    sbi.ITEM_ID
+			                UNION ALL
+			                SELECT
+			                    p.ITEM_ID,
+			                    p.ITEM_PRICE,
+			                    p.SUPPLIER_ID
+			                FROM
+			                :{Com_("D_T2_ITEM_PRICE")} p
+			                INNER JOIN
+			                    a
+			                ON
+			                    a.supplier_id = p.SUPPLIER_ID
+			                WHERE
+			                    p.PRICE_TYPE = 'SUPPLIER'
+			                AND p.ITEM_ID = :itemId)
+			        GROUP BY
+			            supplier_id,
+			            ITEM_ID
+			    )
+			SELECT
+			    a.*,
+			    b.item_price
+			FROM
+			    a
+			LEFT JOIN
+			    b
+			ON
+			    a.supplier_id = b.supplier_id};
+		List<Map> supplierLst = processIter(supplierIter);
+		supplierIter.close();
+		closeDefaultContext(myCtx);
+		return supplierLst;
+	}
+	
+	private List<Map> processIter(SupplierIter supplierIter) 
+			throws SQLException {
+		List<Map> supplierLst = new ArrayList<Map>();
+		while(supplierIter.next()) {
+			Map<String, Object> supplier = new HashMap<String, Object>();
+			supplier.put("supplierId", supplierIter.supplier_id());
+			supplier.put("supplierName", supplierIter.supplier_name());
+			supplier.put("queryCode", supplierIter.query_code());
+			supplier.put("address", supplierIter.address());
+			supplier.put("contactMan", supplierIter.contact_man());
+			supplier.put("telephone", supplierIter.telephone());
+			supplier.put("priority", supplierIter.priority());
+			supplier.put("itemPrice", supplierIter.item_price());
+			supplierLst.add(supplier);
+		}
+		return supplierLst;
+	}
+
+	#sql public static iterator mainSupplierIter(String supplier_id, String supplier);
+	
+	public Map<String, Object> queryMainSupplier(String branchId, String itemId) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		Map<String, Object> supplier = new HashMap<String, Object>();
+		mainSupplierIter supplierIter =null;
+		#sql [myCtx] supplierIter = {
+				SELECT 
+					sbi.SUPPLIER_ID,
+					s.BRANCH_NAME supplier
+				 FROM
+			        :{Com_("D_T2_SUPPLIER_BRANCH_ITEM")} sbi
+			      LEFT JOIN
+			      :{Com_("D_T2_BRANCH")} s
+			      ON
+			      	sbi.SUPPLIER_ID = s.BRANCH_ID
+			        WHERE 
+			        sbi.BRANCH_ID = :branchId
+					AND sbi.ITEM_ID = :itemId
+					AND sbi.PRIORITY = 0
+		};
+		while (supplierIter.next()) {
+			supplier.put("supplierId", supplierIter.supplier_id());
+			supplier.put("supplierName", supplierIter.supplier());
+		}
+		supplierIter.close();
+		closeDefaultContext(myCtx);
+		return supplier;
+	}
+	
+		
+	#sql public static iterator ItemIter(String item_id, 
+			String item_name, 
+			String category_id, 
+			String item_dimension, 
+			String query_code,
+			String item_specification);
+	
+	public List<Map> queryItem(String supplierId) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		ItemIter itemIter = null;
+		#sql [myCtx] itemIter = {
+			SELECT
+			    m.*
+			FROM
+			    (
+			        SELECT
+			            sbi.ITEM_ID
+			        FROM
+			        :{Com_("D_T2_SUPPLIER_BRANCH_ITEM")} sbi
+			        WHERE
+			            sbi.SUPPLIER_ID = :supplierId
+			        GROUP BY
+			            sbi.ITEM_ID ) i
+			INNER JOIN
+			:{Com_("D_T2_ITEM_META")} m
+			ON
+			    i.ITEM_ID = m.ITEM_ID
+		};
+
+		List<Map> itemLst = new ArrayList<Map>();
+		while (itemIter.next()) {
+			Map<String, Object> item = new HashMap<String, Object>();
+			item.put("itemId", itemIter.item_id());
+			item.put("itemName", itemIter.item_name());
+			item.put("itemDimension", itemIter.item_dimension());
+			item.put("queryCode", itemIter.query_code());
+			item.put("categoryId", itemIter.category_id());
+			item.put("itemSpecification", itemIter.item_specification());
+			itemLst.add(item);
+		}
+		itemIter.close();
+		closeDefaultContext(myCtx);
+		return itemLst;
+	}
+	
+	
+	//----------------------------------------------------------------------------------
+	#sql public static iterator BranchIter(String branch_id, 
+			String branch_name, 
+			String query_code,
+			String address, 
+			String contact_man, 
+			String telephone, Integer priority);
+	
+	public List<Map> queryBranch(String supplierId, String itemId) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		BranchIter branchIter = null;
+		#sql [myCtx] branchIter = {
+			SELECT
+			    b.BRANCH_ID,
+			    b.BRANCH_NAME,
+			    b.QUERY_CODE,
+			    b.BRANCH_ADDRESS AS address,
+			    b.CONTACT_MAN,
+			    b.TELEPHONE,
+			    sbi.PRIORITY
+			FROM
+				:{Com_("D_T2_SUPPLIER_BRANCH_ITEM")} sbi
+			LEFT JOIN
+				:{Com_("D_T2_BRANCH")} b
+			ON
+			    sbi.BRANCH_ID = b.BRANCH_ID
+			WHERE
+			    sbi.SUPPLIER_ID = :supplierId
+			AND sbi.ITEM_ID = :itemId
+		};
+
+		List<Map> branchLst = new ArrayList<Map>();
+		while(branchIter.next()) {
+			Map<String, Object> branch = new HashMap<String, Object>();
+			branch.put("branchId", branchIter.branch_id());
+			branch.put("branchName", branchIter.branch_name());
+			branch.put("queryCode", branchIter.query_code());
+			branch.put("address", branchIter.address());
+			branch.put("contactMan", branchIter.contact_man());
+			branch.put("telephone", branchIter.telephone());
+			branch.put("priority", branchIter.priority());
+			branchLst.add(branch);
+		}
+		branchIter.close();
+		closeDefaultContext(myCtx);
+		return branchLst;
+	}
+	
+	
+	//-------------------------------------------------------------------------------
+	#sql public static iterator SupplierItemsIter(
+			String supplierId, 
+			String supplier, 
+			String itemId,
+			String itemName);
+	
+	public List<Map> querySupplierItemsByBranchId(String branchId) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		SupplierItemsIter supplierItemsIter = null;
+		#sql [myCtx] supplierItemsIter = {
+			SELECT
+			    i.SUPPLIER_ID supplierId,
+			    b.BRANCH_NAME supplier,
+			    i.ITEM_ID itemId,
+			    m.ITEM_NAME itemName
+			FROM
+				:{Com_("D_T2_SUPPLIER_BRANCH_ITEM")} i 
+			INNER JOIN
+				:{Com_("D_T2_BRANCH")} b 
+			ON
+			    i.SUPPLIER_ID = b.BRANCH_ID
+			INNER JOIN
+				:{Com_("D_T2_ITEM_META")} m 
+			ON
+			    i.ITEM_ID = m.ITEM_ID
+			WHERE
+			    i.BRANCH_ID = :branchId
+			AND i.PRIORITY = 0
+			ORDER BY
+			    1 ,
+			    3};
+
+		List<Map> branchLst = new ArrayList<Map>();
+		while(supplierItemsIter.next()) {
+			Map<String, Object> branch = new HashMap<String, Object>();
+			branch.put("supplierId", supplierItemsIter.supplierId());
+			branch.put("supplier", supplierItemsIter.supplier());
+			branch.put("itemId", supplierItemsIter.itemId());
+			branch.put("itemName", supplierItemsIter.itemName());
+			branchLst.add(branch);
+		}
+		supplierItemsIter.close();
+		closeDefaultContext(myCtx);
+		return branchLst;
+	}
+	
+	//-----------------------------------------------------
+	#sql public static iterator BranchItemsIter(
+			String branchId, 
+			String branchName, 
+			String itemId,
+			String itemName,
+			Integer priority);
+	
+	public List<Map> queryBranchItemsBySupplier(String supplierId) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		BranchItemsIter branchItemsIter = null;
+		#sql [myCtx] branchItemsIter = {
+			SELECT
+			    i.BRANCH_ID   branchId,
+			    b.BRANCH_NAME branchName,
+			    i.ITEM_ID     itemId,
+			    m.ITEM_NAME   itemName,
+			    i.PRIORITY
+			FROM
+				:{Com_("D_T2_SUPPLIER_BRANCH_ITEM")} i 
+			INNER JOIN
+				:{Com_("D_T2_BRANCH")} b 
+			ON
+			    i.BRANCH_ID = b.BRANCH_ID
+			INNER JOIN
+				:{Com_("D_T2_ITEM_META")} m 
+			ON
+			    i.ITEM_ID = m.ITEM_ID
+			WHERE
+			    i.SUPPLIER_ID = :supplierId
+			ORDER BY
+			    1 ,
+			    3};
+
+		List<Map> branchLst = new ArrayList<Map>();
+		while(branchItemsIter.next()) {
+			Map<String, Object> branch = new HashMap<String, Object>();
+			branch.put("branchId", branchItemsIter.branchId());
+			branch.put("branchName", branchItemsIter.branchName());
+			branch.put("itemId", branchItemsIter.itemId());
+			branch.put("itemName", branchItemsIter.itemName());
+			branch.put("priority", branchItemsIter.priority());
+			branchLst.add(branch);
+		}
+		branchItemsIter.close();
+		closeDefaultContext(myCtx);
+		return branchLst;
+	}
+	
+	
+}

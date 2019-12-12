@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:aop = "http://www.springframework.org/schema/aop"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+	http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+	http://www.springframework.org/schema/aop 
+	http://www.springframework.org/schema/aop/spring-aop-2.5.xsd"
+	default-autowire="byName">
+
+	<bean id="requestHeaderBean" class="logic.form.RequestHeaderBean" />
+	<bean id="requestDetailBean" class="logic.form.RequestDetailBean" />
+	<bean id="purchasingHeaderBean" class="logic.form.PurchasingHeaderBean" />
+	<bean id="purchasingDetailBean" class="logic.form.PurchasingDetailBean" />
+	<bean id="purchasingMappingBean" class="logic.form.PurchasingMappingBean" />
+	<bean id="inputHeaderBean" class="logic.form.InputHeaderBean" />
+	<bean id="inputDetailBean" class="logic.form.InputDetailBean" />
+	<bean id="shippingHeaderBean" class="logic.form.ShippingHeaderBean" />
+	<bean id="shippingDetailBean" class="logic.form.ShippingDetailBean" />
+	<bean id="shippingAntiauditHeaderBean" class="logic.form.ShippingAntiauditHeaderBean" />
+	<bean id="shippingAntiauditDetailBean" class="logic.form.ShippingAntiauditDetailBean" />
+	
+	<bean id="returnGoodsHeaderBean" class="logic.form.ReturnGoodsHeaderBean" />
+	<bean id="returnGoodsDetailBean" class="logic.form.ReturnGoodsDetailBean" />
+	<bean id="checkLockBean" class="logic.form.CheckLockBean" />
+	<bean id="checkHeaderBean" class="logic.form.CheckHeaderBean" />
+	<bean id="checkDetailBean" class="logic.form.CheckDetailBean" />
+	
+	<bean id="lossHeaderBean" class="logic.form.LossHeaderBean" />
+	<bean id="lossDetailBean" class="logic.form.LossDetailBean" />
+	<bean id="selfSemisHeaderBean" class="logic.form.SelfSemisHeaderBean"/>
+	<bean id="selfSemisDetailBean" class="logic.form.SelfSemisDetailBean"/>
+	
+	<bean id="formStatusBean" class="logic.form.FormStatusBean" />
+	<bean id="formLockBean" class="logic.form.FormLockBean" />
+	<bean id="templateMetaBean" class="logic.form.TemplateMetaBean" />
+	<bean id="templateItemBean" class="logic.form.TemplateItemBean" />
+	
+	<bean id="transferHeaderBean" class="logic.form.TransferHeaderBean" />
+	<bean id="transferDetailBean" class="logic.form.TransferDetailBean" />
+	
+	<bean id="storageInOutBean" class="logic.form.StorageInOutBean" />
+	<bean id="billSupplementService" class="service.form.BillSupplementService" />
+	<bean id="pickingHeaderBean" class="logic.form.PickingHeaderBean" />
+	<bean id="pickingDetailBean" class="logic.form.PickingDetailBean" />
+	<bean id="packingHeaderBean" class="logic.form.PackingHeaderBean" />
+	<bean id="packingDetailBean" class="logic.form.PackingDetailBean" />
+	
+	<bean id="priceAdjustHeaderBean" class="logic.form.PriceAdjustHeaderBean" />
+	<bean id="priceAdjustDetailBean" class="logic.form.PriceAdjustDetailBean" />
+	
+	<bean id="pickingRefBean" class="logic.form.PickingRefBean" />
+	<bean id="statementHeadBean" class="logic.form.StatementHeadBean" />
+	<bean id="statementDetailBean" class="logic.form.StatementDetailBean" />
+	<bean id="workOrderItemBean" class="logic.form.WorkOrderItemBean" />
+	
+	<bean id="importFSDao" class="dao.importdata.ImportFSDao" />
+
+	<bean id="observationHeaderBean" class="logic.form.ObservationHeaderBean" />
+	<bean id="observationDetailBean" class="logic.form.ObservationDetailBean" />
+	
+	<bean id="operationVersionBean" class="logic.form.OperationVersionBean" />
+	<bean id="foodBillBean" class="logic.form.FoodBillBean" />
+	<bean id="foodBillsBean" class="logic.form.FoodBillsBean" />
+	<bean id="billPayBean" class="logic.form.BillPayBean" />
+</beans>
+

@@ -1,0 +1,183 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on Tue Mar 17 15:05:29 CST 2015 by lyz
+ * Last edited on Tue Mar 17 15:05:29 CST 2015 by lyz
+ * 
+ * comment: 系统权限表
+ */
+package logic.module.setting;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import com.tanry.business.module.setting.user.pojo.Permission;
+import sqlj.runtime.ref.DefaultContext;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.TextUtil;
+import com.tanry.framework.acl.NoPrivilegeException;
+
+public class PermissionBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(PermissionBean.class);
+	
+	#sql private iterator PermissionIter(String id, String resource_type, String principal_type, Integer operate, String resource_id, String principal_id);
+	
+	public int saveEntity(Permission permission)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		String id = permission.getId();
+		String resourceType = permission.getResourceType();
+		String principalType = permission.getPrincipalType();
+		Integer operate = permission.getOperate();
+		String resourceId = permission.getResourceId();
+		String principalId = permission.getPrincipalId();
+
+		//插入数据前先判断是否存在相同的项
+		#sql [myCtx] {
+			MERGE INTO :{Com_("D_T0_PERMISSION")} 
+			USING dual ON (RESOURCE_ID = :resourceId
+					AND	RESOURCE_TYPE = :resourceType
+			    	AND	PRINCIPAL_ID = :principalId
+			    	AND PRINCIPAL_TYPE = :principalType)
+			WHEN NOT MATCHED THEN INSERT 
+				(ID, RESOURCE_TYPE, PRINCIPAL_TYPE, OPERATE, RESOURCE_ID, PRINCIPAL_ID) 
+			VALUES 
+				(:id, :resourceType, :principalType, :operate, :resourceId, :principalId)
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	/**
+	 * 根据四个参数删除一条记录：principalId，principalType，resourceId，resourceType
+	 */
+	public int deleteEntity(String principalId, String principalType, String resourceId, String resourceType)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		#sql [myCtx] {
+			DELETE
+			FROM
+			:{Com_("D_T0_PERMISSION")}
+			WHERE
+				RESOURCE_TYPE = :resourceType
+			AND
+				PRINCIPAL_TYPE = :principalType
+			AND
+				RESOURCE_ID = :resourceId
+			AND
+				PRINCIPAL_ID = :principalId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	/**
+	 * 删除除此之外的其它记录
+	 */
+	public int deleteExcept(String principalId, String principalType, String menuIds) 
+			throws NoPrivilegeException, SQLException, NoConnection {
+		String query = " 1=1 ";
+		if (!TextUtil.isEmpty(menuIds)) { // 非空处理
+			query = " RESOURCE_ID NOT IN ('" + menuIds.replaceAll(",", "','") + "') ";
+		}
+		
+		DefaultContext myCtx = getDefaultContext();
+		#sql [myCtx] {
+			DELETE
+			FROM
+			:{Com_("D_T0_PERMISSION")}
+			WHERE
+				PRINCIPAL_TYPE = :principalType
+			AND	PRINCIPAL_ID = :principalId
+			AND	:{query :: 1=1}
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+
+	#sql private iterator MenuIter(String id);
+	/**
+	 * 根据权限主体和权限类型查询所有权限菜单
+	 */
+	public List<String> queryAllow(String principalId, String principalType) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		MenuIter menuIter = null;
+		#sql [myCtx] menuIter = {
+			SELECT
+				p.RESOURCE_ID id
+			FROM
+				:{Com_("D_T0_PERMISSION")} p
+			WHERE	p.PRINCIPAL_TYPE = :principalType
+			AND	p.PRINCIPAL_ID = :principalId
+		};
+		List<String> menuLst = new ArrayList<String>();
+		while(menuIter.next()) {
+			menuLst.add(menuIter.id());
+		}
+		menuIter.close();
+		closeDefaultContext(myCtx);
+		return menuLst;
+	}
+	
+	private List<Permission> processIter(PermissionIter permissionIter) 
+			throws SQLException {
+		List<Permission> permissionLst = new ArrayList<Permission>();
+		while(permissionIter.next()) {
+			Permission permission = new Permission();
+			permission.setId(permissionIter.id());
+			permission.setResourceType(permissionIter.resource_type());
+			permission.setPrincipalType(permissionIter.principal_type());
+			permission.setOperate(permissionIter.operate());
+			permission.setResourceId(permissionIter.resource_id());
+			permission.setPrincipalId(permissionIter.principal_id());
+			permissionLst.add(permission);
+		}
+		return permissionLst;
+	}
+	
+	#sql private iterator VisiableIter(int sum);
+	public Integer queryVisi(String userId, String menuId) throws SQLException {
+		DefaultContext ctx = getDefaultContext();
+		VisiableIter iter = null;
+		int result = 0;
+		#sql [ctx] iter = {
+				SELECT 
+					count(*) sum
+				FROM
+					:{Com_("D_T0_USERTOROLE")} U
+				INNER JOIN
+					:{Com_("D_T0_PERMISSION")} P
+				ON
+					U.ROLE_ID = P.PRINCIPAL_ID
+				WHERE
+					U.USER_ID = :userId
+				AND
+					P.RESOURCE_ID = :menuId
+		};
+		while(iter.next()) {
+			result = iter.sum();
+			break;
+		}
+		iter.close();
+		closeDefaultContext(ctx);
+		return result;
+	}
+}

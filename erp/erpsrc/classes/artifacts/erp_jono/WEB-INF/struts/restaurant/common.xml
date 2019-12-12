@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE struts PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN"
+    "http://struts.apache.org/dtds/struts-2.0.dtd">
+
+<struts>
+	<package name="restaurant_common_selproduct" namespace="/restaurant/common/selproduct" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.store.SelProductAction">
+			<result name="success">/jsp/restaurant/common/selproduct/main.jsp</result>
+		</action>
+	</package>
+	
+	<package name="restaurant_common_selmaterial" namespace="/restaurant/common/selmaterial" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.store.SelProductAction">
+			<result name="success">/jsp/restaurant/common/selmaterial/main.jsp</result>
+		</action>
+	</package>
+	
+	<package name="restaurant_common_selmaterialRadio" namespace="/restaurant/common/selmaterialRadio" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.store.SelProductAction">
+			<result name="success">/jsp/restaurant/common/selmaterialRadio/main.jsp</result>
+		</action>
+	</package>
+	
+	<package name="restaurant_common_selcategory" namespace="/restaurant/common/selcategory" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.store.SelProductAction">
+			<result name="success">/jsp/restaurant/common/selcategory/main.jsp</result>
+		</action>
+	</package>
+	
+	<package name="restaurant_common_selbranch" namespace="/common/selbranch" extends="trust-default">
+		<action name="mainViewBranch" class="com.tanry.business.store.SelBranchAction">
+			<result name="success">/jsp/restaurant/common/selbranch/main.jsp</result>
+		</action>
+		
+		<action name="mainViewStore" class="com.tanry.business.store.SelBranchAction">
+			<result name="success">/jsp/restaurant/common/selStore/main.jsp</result>
+		</action>
+		
+		<action name="queryAllTree" method="queryAllTree" class="com.tanry.business.store.SelBranchAction">
+			<result type="json"/>
+		</action>
+		
+		<action name="queryGroupTree" method="queryGroupTree" class="com.tanry.business.store.SelBranchAction">
+			<result type="json" />
+		</action>
+		
+		<action name="queryStore" method="queryStore" class="com.tanry.business.store.SelBranchAction">
+			<result type="json" />
+		</action>
+		
+		<action name="queryTheStore" method="queryTheStore" class="com.tanry.business.store.SelBranchAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="restaurant_common_selStore" namespace="/common/selStore" extends="trust-default">
+		
+	</package>
+	
+	<package name="restaurant_common_selsupplier" namespace="/common/selsupplier" extends="trust-default">
+		<action name="mainView" class="action.restaurant.ShopInfoAction">
+			<result name="success">/jsp/restaurant/common/selsupplier/main.jsp</result>
+		</action>
+	</package>
+	
+	<package name="restaurant_common_selPurchase" namespace="/common/selPurchase" extends="trust-default">
+		<action name="mainView" class="action.restaurant.ShopInfoAction">
+			<result name="success">/jsp/restaurant/common/selPurchase/main.jsp</result>
+		</action>
+	</package>
+	
+	
+	<package name="restaurant_common_branch_supplier_item" namespace="/common/branch_s_items" extends="trust-default">
+		<action name="mainView" class="action.restaurant.ShopInfoAction">
+			<result name="success">/jsp/restaurant/common/branch_s_items/main.jsp</result>
+		</action>
+	</package>
+	
+	<package name="restaurant_common_branch_supplier_item_reverse" namespace="/common/s_branch_items" extends="trust-default">
+		<action name="mainView" class="action.restaurant.ShopInfoAction">
+			<result name="success">/jsp/restaurant/common/s_branch_items/main.jsp</result>
+		</action>
+	</package>
+	
+	<package name="restaurant_common_stock_category" namespace="/restaurant/common/stock/category" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.store.StockQueryAction">
+			<result name="success">/jsp/restaurant/common/stock/category/main.jsp</result>
+		</action>
+		
+		<action name="doQuery" method="doQuery" class="com.tanry.business.store.StockQueryAction">
+			<result type="json" />
+		</action>
+		
+		<action name="export" method="export" class="com.tanry.business.store.StockQueryAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="restaurant_common_mrp_lc" namespace="/restaurant/common/mrp/lc" extends="trust-default">
+		<action name="lcMrpView" class="com.tanry.business.store.StockQueryAction">
+			<result name="success">/jsp/restaurant/common/mrp/lc/main.jsp</result>
+		</action>
+		
+		<action name="doLcMrpQuery" method="doLcMrpQuery" class="com.tanry.business.store.StockQueryAction">
+			<result type="json" />
+		</action>
+		
+	</package>
+	
+	<package name="restaurant_common_mrp_cf" namespace="/restaurant/common/mrp/cf" extends="trust-default">
+		<action name="cfMrpView" class="com.tanry.business.store.StockQueryAction">
+			<result name="success">/jsp/restaurant/common/mrp/cf/main.jsp</result>
+		</action>
+		
+		<action name="doCfMrpQuery" method="doCfMrpQuery" class="com.tanry.business.store.StockQueryAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="restaurant_common_test" namespace="/restaurant/common/test" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.store.SelProductAction">
+			<result name="success">/jsp/restaurant/common/test/main.jsp</result>
+		</action>
+	</package>
+	
+	
+	<package name="restaurant_common_template" namespace="/restaurant/common/template" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.form.template.TemplateManageAction">
+			<result name="success">/jsp/restaurant/common/template/main.jsp</result>
+		</action>
+		
+		<action name="addView" method="addView" class="com.tanry.business.form.template.TemplateManageAction">
+			<result name="success">/jsp/restaurant/common/template/add.jsp</result>
+		</action>
+		
+		<action name="editView" method="editView" class="com.tanry.business.form.template.TemplateManageAction">
+			<result name="success">/jsp/restaurant/common/template/edit.jsp</result>
+		</action>
+		
+		<action name="scanView" method="scanView" class="com.tanry.business.form.template.TemplateManageAction">
+			<result name="success">/jsp/restaurant/common/template/scan.jsp</result>
+		</action>
+		
+		<action name="copyView" method="copyView" class="com.tanry.business.form.template.TemplateManageAction">
+			<result name="success">/jsp/restaurant/common/template/copy.jsp</result>
+		</action>
+		
+		<action name="pickModelView" method="pickModelView" class="com.tanry.business.form.template.TemplateManageAction">
+			<result name="success">/jsp/restaurant/common/template/pickmodel.jsp</result>
+		</action>
+		
+		<action name="saveModelView" method="saveModelView" class="com.tanry.business.form.template.TemplateManageAction">
+			<result name="success">/jsp/restaurant/common/template/savemodel.jsp</result>
+		</action>
+		
+		<action name="doQuery" method="doQuery" class="com.tanry.business.form.template.TemplateManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="queryItem" method="queryItem" class="com.tanry.business.form.template.TemplateManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="queryItemByCF" method="queryItemByCF" class="com.tanry.business.form.template.TemplateManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doSave" method="doSave" class="com.tanry.business.form.template.TemplateManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doDelete" method="doDelete" class="com.tanry.business.form.template.TemplateManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doCopy" method="doCopy" class="com.tanry.business.form.template.TemplateManageAction">
+			<result type="json" />
+		</action>
+	</package>
+</struts>
+

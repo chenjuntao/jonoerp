@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE struts PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN"
+    "http://struts.apache.org/dtds/struts-2.0.dtd">
+
+<struts>
+<!-- 餐厅 -->
+	<package name="reportmanage_restaurant_cost-jono" namespace="/reportmanage/restaurant/cost/jono" extends="trust-default">
+		<action name="mainView" class="action.restaurant.cost.jono.RestaurantCostAction">
+			<result name="success">/jsp/restaurant/reportmanage/jono/cost/main.jsp</result>
+		</action>
+		
+		<action name="detailView" method="detailView" class="action.restaurant.cost.jono.RestaurantCostAction">
+			<result name="success">/jsp/restaurant/reportmanage/jono/cost/detail/main.jsp</result>
+		</action>
+		
+		<action name="doQuery" method="doQuery" class="action.restaurant.cost.jono.RestaurantCostAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doDetailQuery" method="doDetailQuery" class="action.restaurant.cost.jono.RestaurantCostAction">
+			<result type="json" />
+		</action>
+		
+		<action name="export" method="export" class="action.restaurant.cost.jono.RestaurantCostAction">
+			<result type="json" />
+		</action>
+		
+		<action name="detailExport" method="detailExport" class="action.restaurant.cost.jono.RestaurantCostAction">
+			<result type="json" />
+		</action>
+	</package>
+</struts>
+

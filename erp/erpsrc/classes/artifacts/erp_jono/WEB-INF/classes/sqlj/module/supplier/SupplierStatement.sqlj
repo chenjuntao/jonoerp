@@ -1,0 +1,512 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on Thu Mar 05 10:28:15 CST 2015 by pw
+ * Last edited on Thu Mar 05 10:28:15 CST 2015 by pw
+ * 
+ * comment: 供应商 总部财务 对账单 相关功能
+ */
+package logic.module.supplier;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import pojo.form.InputHeader;
+
+import com.tanry.business.form.FormConstant;
+import sqlj.runtime.ref.DefaultContext;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.TextUtil;
+import com.tanry.framework.acl.NoPrivilegeException;
+
+public class SupplierStatement extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(SupplierStatement.class);
+	
+	//入库单
+	 #sql private iterator InIter(
+			   String form_id, 
+			   String form_ref_id, 
+	           String input_department, 
+	           String operater, 
+	           Date operateTime, 
+	           String provider_id,
+	           String provider,
+	           String form_note, 
+	           Double all_pay_amt, 
+	           String status
+	        );
+	 
+	 /**
+		 * startDate  入库开始时间
+		 * endDate	  入库结束时间
+		 * supplierId 供应商Id
+		 * formIdText 单据编号 以供单据号模糊查询使用
+		 * branchId 门店ID 餐厅 物流中心 中央工厂
+		 * 
+		 * 功能：查询满足条件的入库单以及采购退货单，合并生成对账单。 入库单金额之和减去采购退货单之和的结果等于对账单金额的总数。
+		 * 
+		 */
+		public List<InputHeader> queryInReturn(java.util.Date startDate, java.util.Date endDate, String supplierId,String formIdText,String branchId, int startRow, int endRow) 
+				throws NoPrivilegeException,SQLException,NoConnection {
+			Date sDate = SqlDateUtil.getSqlDate(startDate);
+			Date eDate = SqlDateUtil.getSqlDate(endDate);
+			
+			String query = formQuery(supplierId,formIdText,branchId,"");
+			String returnQuery =  returnFormQuery(supplierId,formIdText,branchId,"");
+			
+			DefaultContext myCtx = getDefaultContext();
+			InIter headerIter = null;
+			#sql [myCtx] headerIter = {
+			SELECT
+				    *
+				    FROM
+				        (
+				            SELECT
+				                t.*,
+				                ROWNUM rowNumber
+				            FROM
+				                (
+				                    SELECT
+				                        *
+				                    FROM
+				                        (
+				                            WITH
+				                                inform AS
+				                                (
+				                                    SELECT
+				                                    	h.INPUT_DEPARTMENT_ID,
+				                                    	h.PROVIDER_ID,
+				                                        h.FORM_ID,
+				                                        h.FORM_REF_ID,
+				                                        h.INPUT_DEPARTMENT,
+				                                        h.INPUTER    operater,
+				                                        h.INPUT_TIME operateTime,
+				                                        h.PROVIDER,
+				                                        h.FORM_NOTE,
+				                                        NVL( h.ALL_PAY_AMT,0) ALL_PAY_AMT,
+				                                        s1.STATUS
+				                                    FROM
+				                                    :{Com_("D_T1_INPUT_HEADER")} h
+				                                    LEFT JOIN
+				                                    :{Com_("D_T0_FORM_STATUS")} s
+				                                    ON
+				                                        h.FORM_ID = s.FORM_ID
+				                                    LEFT JOIN
+				                                    :{Com_("D_T2_BRANCH")} b
+				                                    ON
+				                                        h.PROVIDER_ID = b.BRANCH_ID
+	                                        		LEFT JOIN
+	                                    			:{Com_("D_T0_FORM_STATUS")} s1
+	                	                        	ON
+	                	                        		s1.FORM_ID = h.FORM_ID
+	                                        		AND s1.IS_CURRENT = 2
+				                                    WHERE
+				                                    :{query ::}
+				                                    AND b.BRANCH_TYPE = 'SUPPLIER'
+				                                    AND s.STATUS IN('已审核')
+				                                    AND s.IS_CURRENT = 1
+		                                    		 AND (
+			         				                            h.INPUT_TIME >= :sDate
+			         				                        OR  :sDate IS NULL)
+			         				                    AND (
+			         				                            h.INPUT_TIME <= :eDate
+			         				                        OR  :eDate IS NULL)
+				                                    AND h.FORM_ID NOT IN
+				                                                          ( SELECT DISTINCT
+				                                                                  d.SUB_FORM_ID
+				                                                                  FROM
+				                                                                  :{Com_("D_T1_STATEMENT_HEADER")} h
+				                                                                  LEFT JOIN
+				                                                                  :{Com_("D_T1_STATEMENT_DETAIL")} d
+				                                                                  ON
+				                                                                      h.FORM_ID = d.FORM_ID WHERE d.SUB_FORM_ID is not NULL )
+				                                )
+				                            SELECT
+				                                *
+				                            FROM
+				                                inform
+				                            UNION ALL
+				                            SELECT
+				                            	i.INPUT_DEPARTMENT_ID,
+				                                i.PROVIDER_ID,
+				                                gh.FORM_ID,
+				                                gh.FORM_REF_ID,
+				                                i.INPUT_DEPARTMENT,
+				                                gh.RETURNER    operater,
+				                                gh.RETURN_TIME operateTime,
+				                                i.PROVIDER ,
+				                                gh.FORM_NOTE,
+				                                NVL( -gh.ALL_PAY_AMT,0) ALL_PAY_AMT,
+				                                s1.STATUS
+				                            FROM
+				                            :{Com_("D_T1_RETURN_GOODS_HEADER")} gh
+				                            LEFT JOIN
+				                            :{Com_("D_T1_INPUT_HEADER")} i
+				                            ON
+				                                gh.FORM_REF_ID = i.FORM_ID
+				                            LEFT JOIN
+				                            :{Com_("D_T0_FORM_STATUS")} s
+				                            ON
+				                                gh.FORM_ID = s.FORM_ID
+	                                		LEFT JOIN
+	                            			:{Com_("D_T0_FORM_STATUS")} s1
+	        	                        	ON
+	        	                        		s1.FORM_ID = gh.FORM_ID
+	                                		AND s1.IS_CURRENT = 2
+				                            WHERE
+				                            :{returnQuery ::}
+				                            AND (
+         				                            gh.RETURN_TIME >= :sDate
+         				                        OR  :sDate IS NULL)
+         				                    AND (
+         				                            gh.RETURN_TIME <= :eDate
+         				                        OR  :eDate IS NULL)
+				                            AND    s.IS_CURRENT = 1
+				                            AND s.STATUS IN( '已处理'
+				                                             )
+	                                         AND gh.FORM_ID NOT IN
+	                                          ( SELECT DISTINCT
+	                                                  d.SUB_FORM_ID
+	                                                  FROM
+	                                                  :{Com_("D_T1_STATEMENT_HEADER")} h
+	                                                  LEFT JOIN
+	                                                  :{Com_("D_T1_STATEMENT_DETAIL")} d
+	                                                  ON
+	                                                      h.FORM_ID = d.FORM_ID WHERE d.SUB_FORM_ID is not NULL ))
+				                    ORDER BY
+				                        operateTime,
+				                        FORM_ID) t
+				            WHERE
+				                ROWNUM < :endRow)
+				    WHERE
+				        rowNumber >= :startRow};
+			List<InputHeader> headerLst = processInIter(headerIter);
+			headerIter.close();
+			closeDefaultContext(myCtx);
+			return headerLst;
+		}
+		
+	/**
+	 * 入库单动态条件
+	 */
+	private String formQuery(String supplierId, String formIdText,String branchId,String status) {
+		String query = " 1=1";
+		if (!TextUtil.isEmpty(supplierId)) {
+			query = query + " AND h.PROVIDER_ID = '" + supplierId + "'";
+		}
+		
+		if (!TextUtil.isEmpty(formIdText)) {
+			query = query + " AND upper(h.FORM_ID) like '%" + formIdText + "%'";
+		}
+		
+		if (!TextUtil.isEmpty(status)) {
+			query = query + " AND s.STATUS in ('" + status.replaceAll(",", "'") + "')";
+		}
+		
+		if (!TextUtil.isEmpty(branchId)) {
+			query = query + " AND h.INPUT_DEPARTMENT_ID = '" + branchId + "'";
+		}
+		return query;
+	}
+	
+	/**
+	 * 采购退货单动态条件
+	 */
+	private String returnFormQuery(String supplierId, String formIdText,String branchId,String status) {
+		String query = " 1=1";
+		if (!TextUtil.isEmpty(supplierId)) {
+			query = query + " AND i.PROVIDER_ID = '" + supplierId + "'";
+		}
+		
+		if (!TextUtil.isEmpty(formIdText)) {
+			query = query + " AND upper(gh.FORM_ID) like '%" + formIdText + "%'";
+		}
+		
+		if (!TextUtil.isEmpty(status)) {
+			query = query + " AND s.STATUS in ('" + status.replaceAll(",", "'") + "')";
+		}
+		
+		if (!TextUtil.isEmpty(branchId)) {
+			query = query + " AND i.INPUT_DEPARTMENT_ID = '" + branchId + "'";
+		}
+		return query;
+	}
+	
+	/**
+	 * 入库单以及采购退货单的总单数之和，以供分页
+	 */
+	public int inReturnCount(java.util.Date startDate, java.util.Date endDate, String supplierId,String formIdText,String branchId)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		Date sDate = SqlDateUtil.getSqlDate(startDate);
+		Date eDate = SqlDateUtil.getSqlDate(endDate);
+		
+		String query = formQuery(supplierId,formIdText,branchId,"");
+		String returnQuery =  returnFormQuery(supplierId,formIdText,branchId,"");
+		
+		
+		DefaultContext myCtx = getDefaultContext();
+		int total = 0;
+		#sql [myCtx] {
+		SELECT
+		    COUNT(*)
+		INTO
+		    :total
+		FROM
+		    (
+		        WITH
+		            inform AS
+		            (
+		                SELECT
+		                    h.INPUT_DEPARTMENT_ID,
+		                    h.PROVIDER_ID,
+		                    h.FORM_ID,
+		                    h.FORM_REF_ID,
+		                    h.INPUT_DEPARTMENT,
+		                    h.INPUTER    operater,
+		                    h.INPUT_TIME operateTime,
+		                    h.PROVIDER,
+		                    h.FORM_NOTE,
+		                    NVL( h.ALL_PAY_AMT,0) ALL_PAY_AMT,
+		                    s.STATUS
+		                FROM
+		                :{Com_("D_T1_INPUT_HEADER")} h
+		                LEFT JOIN
+		                :{Com_("D_T0_FORM_STATUS")} s
+		                ON
+		                    h.FORM_ID = s.FORM_ID
+		                LEFT JOIN
+		                :{Com_("D_T2_BRANCH")} b
+		                ON
+		                    h.PROVIDER_ID = b.BRANCH_ID
+		                WHERE
+		                    :{query ::}
+		                AND b.BRANCH_TYPE = 'SUPPLIER'
+		                AND s.STATUS IN('已审核')
+		                AND s.IS_CURRENT = 1
+		                AND (
+		                        h.INPUT_TIME >= :sDate
+		                    OR  :sDate IS NULL)
+		                AND (
+		                        h.INPUT_TIME <= :eDate
+		                    OR  :eDate IS NULL)
+		                AND s.FORM_ID NOT IN
+		                                      ( SELECT DISTINCT
+                                                      d.SUB_FORM_ID
+                                                      FROM
+                                                      :{Com_("D_T1_STATEMENT_HEADER")} h
+                                                      LEFT JOIN
+                                                      :{Com_("D_T1_STATEMENT_DETAIL")} d
+                                                      ON
+                                                          h.FORM_ID = d.FORM_ID WHERE d.SUB_FORM_ID is not NULL)
+		            )
+		        SELECT
+		            *
+		        FROM
+		            inform
+		        UNION ALL
+		        SELECT
+            	i.INPUT_DEPARTMENT_ID,
+                i.PROVIDER_ID,
+                gh.FORM_ID,
+                gh.FORM_REF_ID,
+                i.INPUT_DEPARTMENT,
+                gh.RETURNER    operater,
+                gh.RETURN_TIME operateTime,
+                i.PROVIDER ,
+                gh.FORM_NOTE,
+                NVL( -gh.ALL_PAY_AMT,0) ALL_PAY_AMT,
+                s1.STATUS
+            FROM
+            :{Com_("D_T1_RETURN_GOODS_HEADER")} gh
+            LEFT JOIN
+            :{Com_("D_T1_INPUT_HEADER")} i
+            ON
+                gh.FORM_REF_ID = i.FORM_ID
+            LEFT JOIN
+            :{Com_("D_T0_FORM_STATUS")} s
+            ON
+                gh.FORM_ID = s.FORM_ID
+    		LEFT JOIN
+			:{Com_("D_T0_FORM_STATUS")} s1
+        	ON
+        		s1.FORM_ID = gh.FORM_ID
+    		AND s1.IS_CURRENT = 2
+            WHERE
+            :{returnQuery ::}
+            AND (
+                     gh.RETURN_TIME >= :sDate
+                 OR  :sDate IS NULL)
+             AND (
+                     gh.RETURN_TIME <= :eDate
+                 OR  :eDate IS NULL)
+            AND    s.IS_CURRENT = 1
+            AND s.STATUS IN( '已处理'
+                             )
+             AND gh.FORM_ID NOT IN
+              ( SELECT DISTINCT
+                      d.SUB_FORM_ID
+                      FROM
+                      :{Com_("D_T1_STATEMENT_HEADER")} h
+                      LEFT JOIN
+                      :{Com_("D_T1_STATEMENT_DETAIL")} d
+                      ON
+                          h.FORM_ID = d.FORM_ID WHERE d.SUB_FORM_ID is not NULL ))};
+		closeDefaultContext(myCtx);
+		return total;
+	}
+	
+	/**
+	 * 对账单总金额：入库单总金额之和减去采购退货单总金额之和
+	 */
+	public Double inReturnSum(java.util.Date startDate, java.util.Date endDate, String supplierId,String formIdText,String branchId)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		Date sDate = SqlDateUtil.getSqlDate(startDate);
+		Date eDate = SqlDateUtil.getSqlDate(endDate);
+		
+		String query = formQuery(supplierId,formIdText,branchId,"");
+		String returnQuery =  returnFormQuery(supplierId,formIdText,branchId,"");
+		
+		DefaultContext myCtx = getDefaultContext();
+		Double total = 0.0;
+		#sql [myCtx] {
+		SELECT
+		    sum(ALL_PAY_AMT)
+		INTO
+		    :total
+		FROM
+		    (
+		        WITH
+		            inform AS
+		            (
+		                SELECT
+		                    h.INPUT_DEPARTMENT_ID,
+		                    h.PROVIDER_ID,
+		                    h.FORM_ID,
+		                    h.FORM_REF_ID,
+		                    h.INPUT_DEPARTMENT,
+		                    h.INPUTER    operater,
+		                    h.INPUT_TIME operateTime,
+		                    h.PROVIDER,
+		                    h.FORM_NOTE,
+		                    NVL( h.ALL_PAY_AMT,0) ALL_PAY_AMT,
+		                    s.STATUS
+		                FROM
+		                :{Com_("D_T1_INPUT_HEADER")} h
+		                LEFT JOIN
+		                :{Com_("D_T0_FORM_STATUS")} s
+		                ON
+		                    h.FORM_ID = s.FORM_ID
+		                LEFT JOIN
+		                :{Com_("D_T2_BRANCH")} b
+		                ON
+		                    h.PROVIDER_ID = b.BRANCH_ID
+		                WHERE
+		                    :{query ::}
+		                AND b.BRANCH_TYPE = 'SUPPLIER'
+		                AND s.STATUS IN('已审核')
+		                AND s.IS_CURRENT = 1
+		                AND (
+		                        h.INPUT_TIME >= :sDate
+		                    OR  :sDate IS NULL)
+		                AND (
+		                        h.INPUT_TIME <= :eDate
+		                    OR  :eDate IS NULL)
+		                AND s.FORM_ID NOT IN
+		                                      ( SELECT DISTINCT
+                                                      d.SUB_FORM_ID
+                                                      FROM
+                                                      :{Com_("D_T1_STATEMENT_HEADER")} h
+                                                      LEFT JOIN
+                                                      :{Com_("D_T1_STATEMENT_DETAIL")} d
+                                                      ON
+                                                          h.FORM_ID = d.FORM_ID WHERE d.SUB_FORM_ID is not NULL)
+		            )
+		        SELECT
+		            *
+		        FROM
+		            inform
+		        UNION ALL
+		        SELECT
+            	i.INPUT_DEPARTMENT_ID,
+                i.PROVIDER_ID,
+                gh.FORM_ID,
+                gh.FORM_REF_ID,
+                i.INPUT_DEPARTMENT,
+                gh.RETURNER    operater,
+                gh.RETURN_TIME operateTime,
+                i.PROVIDER ,
+                gh.FORM_NOTE,
+                NVL( -gh.ALL_PAY_AMT,0) ALL_PAY_AMT,
+                s1.STATUS
+            FROM
+            :{Com_("D_T1_RETURN_GOODS_HEADER")} gh
+            LEFT JOIN
+            :{Com_("D_T1_INPUT_HEADER")} i
+            ON
+                gh.FORM_REF_ID = i.FORM_ID
+            LEFT JOIN
+            :{Com_("D_T0_FORM_STATUS")} s
+            ON
+                gh.FORM_ID = s.FORM_ID
+    		LEFT JOIN
+			:{Com_("D_T0_FORM_STATUS")} s1
+        	ON
+        		s1.FORM_ID = gh.FORM_ID
+    		AND s1.IS_CURRENT = 2
+            WHERE
+            :{returnQuery ::}
+            AND (
+                     gh.RETURN_TIME >= :sDate
+                 OR  :sDate IS NULL)
+             AND (
+                     gh.RETURN_TIME <= :eDate
+                 OR  :eDate IS NULL)
+            AND    s.IS_CURRENT = 1
+            AND s.STATUS IN( '已处理'
+                             )
+             AND gh.FORM_ID NOT IN
+              ( SELECT DISTINCT
+                      d.SUB_FORM_ID
+                      FROM
+                      :{Com_("D_T1_STATEMENT_HEADER")} h
+                      LEFT JOIN
+                      :{Com_("D_T1_STATEMENT_DETAIL")} d
+                      ON
+                          h.FORM_ID = d.FORM_ID WHERE d.SUB_FORM_ID is not NULL ))};
+			closeDefaultContext(myCtx);
+			return total;
+	}
+
+	private List<InputHeader> processInIter(InIter headerIter) 
+			throws SQLException {
+		List<InputHeader> headerLst = new ArrayList<InputHeader>();
+		while(headerIter.next()) {
+			InputHeader header = new InputHeader();
+			header.setFormId(headerIter.form_id());
+			header.setFormRefId(headerIter.form_ref_id());
+			header.setInputDepartment(headerIter.input_department());
+			header.setInputer(headerIter.operater());
+            header.setInputTime(SqlDateUtil.getUtilDate(headerIter.operateTime()));
+			header.setProvider("["+headerIter.provider_id()+"]"+headerIter.provider());
+			header.setFormNote(headerIter.form_note());
+			header.setAllPayAmt(headerIter.all_pay_amt());
+			
+			header.setStatus(headerIter.status());
+
+			headerLst.add(header);
+		}
+		return headerLst;
+	}
+}

@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"   
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">  
+
+<mapper namespace="mapper.businessquery.FreeBillMapper">  
+
+<!-- pojo对象与数据列映射 -->
+<resultMap id="freebillResultMap" type="pojo.businessquery.FreeBill">
+  <id property="billC" column="cBill_C"/>
+  <result property="businessDate" column="DBUSINESS"/>
+  <result property="payAmt" column="nPayAmt"/>
+  <result property="foodAmt" column="nFoodAmt"/>
+  <result property="table" column="cTable_N"/>
+  <result property="period" column="cPeriod_N"/>
+  <result property="shift" column="cShift_N"/>
+  <result property="shopC" column="cBranch_C"/>
+  <result property="shopN" column="cBranch_N"/>
+  <result property="rownumber" column="cCreateMan"/>
+  <result property="foodC" column="cFood_C"/>
+  <result property="foodN" column="cFood_N"/>
+  <result property="price" column="nPrc"/>
+  <result property="qty" column="nQty"/>
+  <result property="amt" column="nAmt"/>
+  <result property="unit" column="sUnit"/>
+  <result property="smallC" column="cLitCls_C"/>
+  <result property="smallN" column="cLitCls_N"/>
+</resultMap>
+
+<!-- 获取表头 -->
+<select id="getHead" resultMap="freebillResultMap">
+<!-- 	 SELECT DBUSINESS,p.nPayAmt,b.cSettleMan,b.nFoodAmt,p.cBill_C,b.cTable_N,b.cPeriod_N,b.cShift_N,b.cBranch_C,b.cBranch_N -->
+	SELECT DBUSINESS,b.cSettleMan,b.nFoodAmt,b.cTable_N,b.cPeriod_N,b.cShift_N,b.cBranch_C,b.cBranch_N
+	 FROM ${com}.D_T_FOOD_BILL b,
+		  ${com}.d_t_bill_pay p
+	 where b.CBILL_C = p.CBILL_C
+	 AND b.CBRANCH_C = #{shopC}
+	 <if test="period != null">  
+        AND b.CPERIOD_N = #{period}
+    </if>
+    <if test="shift != null">  
+        AND b.CSHIFT_N = #{shift}
+    </if>
+<!-- 	 AND p.cPay_C = '1' -->
+	 AND b.DBUSINESS &gt;=#{startDate}
+	 AND b.DBUSINESS &lt;=#{endDate}
+	 ORDER BY b.DBUSINESS DESC, b.CBILL_C DESC
+	 limit #{startRow}, #{pageNum}
+</select>
+
+<select id="getHeadCount" resultType="int">
+	SELECT count(*)
+	 FROM ${com}.D_T_FOOD_BILL b,
+		  ${com}.d_t_bill_pay p
+	 where b.CBILL_C = p.CBILL_C
+	 AND b.CBRANCH_C = #{shopC}
+	 <if test="period != null">  
+        AND b.CPERIOD_N = #{period}
+    </if>
+    <if test="shift != null">  
+        AND b.CSHIFT_N = #{shift}
+    </if>
+	 AND b.DBUSINESS &gt;=#{startDate}
+	 AND b.DBUSINESS &lt;=#{endDate}
+	 order by b.DBUSINESS,b.CBILL_C
+</select>
+
+<select id="getDetail" resultMap="freebillResultMap">
+	SELECT  b.cBill_C,b.DBUSINESS,b.cTable_N,bs.nPrc,SUM(bs.nQty),SUM(bs.nAmt)
+	FROM
+		${com}.D_T_FOOD_BILL b
+	INNER JOIN
+		${com}.d_t_food_Bills bs
+	ON
+		b.cBill_C = bs.cBill_C  
+	<if test="queryText != null">
+		${queryText}
+	</if>
+	INNER JOIN
+		${com}.d_t_bill_pay p
+	ON
+		b.CBILL_C = p.CBILL_C  
+	where
+		b.CBRANCH_C = #{shopC}
+	<if test="period != null">  
+        AND b.CPERIOD_N = #{period}
+    </if>
+    <if test="shift != null">  
+        AND b.CSHIFT_N = #{shift}
+    </if>
+	 AND b.DBUSINESS &gt;=#{startDate}
+	 AND b.DBUSINESS &lt;=#{endDate}
+	AND p.CPAY_N = '尊礼卡' 
+	GROUP BY
+		b.cBill_C,b.DBUSINESS,b.cTable_N,bs.nPrc
+	order by  b.cBill_C,b.DBUSINESS,b.cTable_N
+<!-- 		, b.DBUSINESS,bs.cFood_C,bs.cFood_N, b.cTable_N,b.cPeriod_N, b.cShift_N, b.cBranch_C,b.cBranch_N, bs.nPrc, bs.nQty, bs.nAmt, bs.sUnit,bs.cLitCls_C, bs.cLitCls_N ),NULL) -->
+<!-- 	ORDER BY -->
+<!-- 		b.DBUSINESS,b.CBILL_C -->
+	limit #{startRow}, #{pageNum} 
+</select>
+
+</mapper>

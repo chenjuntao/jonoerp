@@ -1,0 +1,172 @@
+package logic.reportmanage;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import java.util.Map;
+import java.util.HashMap;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import sqlj.runtime.ref.DefaultContext;
+
+import com.tanry.business.form.FormConstant;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.TextUtil;
+import com.tanry.framework.acl.NoPrivilegeException;
+
+public class OperateLogQueryBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(OperateLogQueryBean.class);
+	
+	#sql private iterator HeaderIter(
+			String id, 
+			String menu_id, 
+			String menu_name, 
+			String url,
+			String business_id, 
+			String operate_type, 
+			String title, 
+			String operate_desc, 
+			String operator_id, 
+			String operator_name, 
+			String branch_id, 
+			String branch_name, 
+			Date operate_time
+	 );
+	
+	public Map getColmunType(){
+		Map map  = new HashMap();
+		map.put("id", "String");
+		map.put("menu_id", "String");
+		map.put("menu_name", "String");
+		map.put("url", "String");
+		map.put("business_id", "String");
+		map.put("operate_type", "String");
+		map.put("title", "String");
+		map.put("operate_desc", "String");
+		map.put("operator_id", "String");
+		map.put("operator_name", "String");
+		map.put("branch_id", "String");
+		map.put("branch_name", "String");
+		map.put("operate_time", "Date");
+		
+		return map;
+	}
+	
+	public Map getColmunPrefix(){
+		Map map  = new HashMap();
+		map.put("id", "o");
+		map.put("menu_id", "o");
+		map.put("menu_name", "o");
+		map.put("url", "o");
+		map.put("business_id", "o");
+		map.put("operate_type", "o");
+		map.put("title", "o");
+		map.put("operate_desc", "o");
+		map.put("operator_id", "o");
+		map.put("operator_name", "o");
+		map.put("operate_time", "o");
+		map.put("branch_id", "o");
+		map.put("branch_name", "b");
+		return map;
+	}
+	
+	
+	public int count(String queryStr, String sortStr)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		
+		DefaultContext myCtx = getDefaultContext();
+		int total = 0;
+		#sql [myCtx] {
+		SELECT
+			count(*) into :total
+    	FROM
+    	:{Com_("D_T0_OPERATELOG")} o
+    	LEFT JOIN
+    	:{Com_("D_T2_BRANCH")} b
+    	ON
+    	    o.BRANCH_ID = b.BRANCH_ID
+	    WHERE
+	    	1 = 1  :{queryStr :: ''} };
+		closeDefaultContext(myCtx);
+		return total;
+	}
+	
+	
+	public List<Map> query(int startRow, int endRow,String queryStr,  String sortStr)  
+			throws NoPrivilegeException,SQLException,NoConnection {
+		
+		DefaultContext myCtx = getDefaultContext();
+		HeaderIter headerIter = null;
+		#sql [myCtx] headerIter = {
+			SELECT
+			    *
+			    FROM
+			        (
+			            SELECT
+			                t.*,
+			                ROWNUM rowNumber
+			            FROM 
+			                (SELECT
+			                	    o.ID,
+			                	    o.MENU_ID,
+			                	    o.MENU_NAME,
+			                	    o.URL,
+			                	    decode(o.BUSINESS_ID,'qualificationSupplier','',o.BUSINESS_ID) BUSINESS_ID,
+			                	    o.OPERATE_TYPE,
+			                	    o.TITLE,
+			                	    o.OPERATE_DESC,
+			                	    o.OPERATOR_ID,
+			                	    o.OPERATOR_NAME,
+			                	    o.BRANCH_ID,
+			                	    o.OPERATE_TIME,
+			                	    b.BRANCH_NAME
+			                	FROM
+			                	:{Com_("D_T0_OPERATELOG")} o
+			                	LEFT JOIN
+			                	:{Com_("D_T2_BRANCH")} b
+			                	ON
+			                	    o.BRANCH_ID = b.BRANCH_ID 
+			                	WHERE      1 = 1  :{queryStr :: ''} :{sortStr :: ''}) t
+			            WHERE
+			                ROWNUM < :endRow)
+			    WHERE
+			        rowNumber >= :startRow};
+		List<Map> headerLst = processIter(headerIter);
+		headerIter.close();
+		closeDefaultContext(myCtx);
+		return headerLst;
+	}
+	
+
+	private List<Map> processIter(HeaderIter headerIter) 
+			throws SQLException {
+		List<Map> headerLst = new ArrayList<Map>();
+		
+		while(headerIter.next()) {
+			Map header = new HashMap();
+			header.put("id", headerIter.id());
+			header.put("menu_id", headerIter.menu_id());
+			header.put("menu_name", headerIter.menu_name());
+			header.put("url", headerIter.url());
+			header.put("business_id", headerIter.business_id());
+			header.put("operate_type", headerIter.operate_type());
+			header.put("title", headerIter.title());
+			header.put("operate_desc", headerIter.operate_desc());
+			header.put("operator_id", headerIter.operator_id());
+			header.put("operator_name", headerIter.operator_name());
+			header.put("branch_id", headerIter.branch_id());
+			header.put("branch_name", headerIter.branch_name());
+			header.put("operate_time", headerIter.operate_time());
+			
+			headerLst.add(header);
+		}
+		return headerLst;
+	}
+}

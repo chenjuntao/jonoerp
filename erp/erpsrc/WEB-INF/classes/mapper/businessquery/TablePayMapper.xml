@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"   
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">  
+
+<mapper namespace="mapper.businessquery.TablePayMapper">  
+<resultMap id="TablePayResultMap" type="pojo.businessquery.TablePay">
+		<id property="table" column="tableN" />
+		<result property="payAmt" column="payAmt" />
+<!-- 		<result property="pay" column="pay" /> -->
+		<result property="cbillc" column="cbillc" />
+		<result property="cPayN" column="cPayN" />
+</resultMap>
+
+<select id="listTablePay" resultType="String">
+	select 
+		distinct cTable_N tableN
+	from 
+		${com}.d_t_food_bill
+	where 
+		DBUSINESS &gt;= #{startTime}
+	and DBUSINESS &lt;= #{endTime}
+	and cBranch_C = #{shopC} 
+	order by 
+		cTable_N
+</select>
+
+<select id="listTablePay1" resultMap="TablePayResultMap">
+	select 
+		cBill_C cbillc,
+		nPayAmt payAmt
+	from 
+		${com}.d_t_food_bill
+	where 
+		DBUSINESS &gt;= #{startTime}
+	and DBUSINESS &lt;= #{endTime}
+	and cBranch_C = #{shopC} 
+<if test="table_N != null">
+	and cTable_N = #{table_N}
+</if>
+</select>
+
+<select id="listTablePay2" resultMap="TablePayResultMap">
+	select 
+		cPay_N cPayN,
+		nPayAmt payAmt
+	from 
+		${com}.d_t_bill_pay
+	where 
+		cBill_C = #{billC}
+</select>
+</mapper>

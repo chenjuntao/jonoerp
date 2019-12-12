@@ -1,0 +1,97 @@
+package logic.form;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import pojo.form.StatementDetail;
+import sqlj.runtime.ref.DefaultContext;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.TextUtil;
+import com.tanry.framework.acl.NoPrivilegeException;
+
+public class StatementManageBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(StatementManageBean.class);
+	
+	#sql private iterator DetailIter(String form_id, String sub_form_id, Double all_pay_amt, String form_operate_id, String form_operate, Date form_operate_time, String form_note);
+	
+	public int saveEntity(StatementDetail detail)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		String formId = detail.getFormId();
+		String subFormId = detail.getSubFormId();
+		Double allPayAmt = detail.getAllPayAmt();
+		String formOperateId = detail.getFormOperateId();
+		String formOperate = detail.getFormOperate();
+		Date formOperateTime = SqlDateUtil.getSqlDate(detail.getFormOperateTime());
+		String formNote = detail.getFormNote();
+
+		#sql [myCtx] {
+			INSERT INTO :{Com_("D_T1_STATEMENT_DETAIL")} 
+				(FORM_ID, SUB_FORM_ID, ALL_PAY_AMT, FORM_OPERATE_ID, FORM_OPERATE, FORM_OPERATE_TIME, FORM_NOTE) 
+			VALUES (:formId, :subFormId, :allPayAmt, :formOperateId, :formOperate, :formOperateTime, :formNote)
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+
+	public int deleteByForm(String formId)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		#sql [myCtx] {
+			DELETE
+			FROM
+			:{Com_("D_T1_STATEMENT_DETAIL")}
+			WHERE
+				FORM_ID = :formId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public List<StatementDetail> query(String formId)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		DetailIter detailIter = null;
+		#sql [myCtx] detailIter = {
+			SELECT
+			    *
+			FROM
+			:{Com_("D_T1_STATEMENT_DETAIL")} d
+			WHERE
+			    d.FORM_ID = :formId
+		};
+		List<StatementDetail> detailLst = processIter(detailIter);
+		detailIter.close();
+		closeDefaultContext(myCtx);
+		return detailLst;
+	}
+
+	private List<StatementDetail> processIter(DetailIter detailIter) 
+			throws SQLException {
+		List<StatementDetail> detailLst = new ArrayList<StatementDetail>();
+		while(detailIter.next()) {
+			StatementDetail detail = new StatementDetail();
+			detail.setFormId(detailIter.form_id());
+			detail.setSubFormId(detailIter.sub_form_id());
+			detail.setAllPayAmt(detailIter.all_pay_amt());
+			detail.setFormOperateId(detailIter.form_operate_id());
+			detail.setFormOperate(detailIter.form_operate());
+			detail.setFormOperateTime(SqlDateUtil.getUtilDate(detailIter.form_operate_time()));
+			detail.setFormNote(detailIter.form_note());
+			detailLst.add(detail);
+		}
+		return detailLst;
+	}
+}

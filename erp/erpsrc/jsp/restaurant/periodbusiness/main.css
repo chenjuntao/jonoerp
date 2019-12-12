@@ -1,0 +1,17 @@
+.dgrid {
+	position: absolute;
+	right: 0;
+	top: 33px;
+	bottom: 0px;
+	width: 100%;
+	height: auto;
+}
+
+
+.field-shopName {
+	width: 120px;
+}
+
+.field-none {
+	width: 100px;
+}

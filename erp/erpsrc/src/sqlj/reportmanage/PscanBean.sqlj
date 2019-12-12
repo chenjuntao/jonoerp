@@ -1,0 +1,194 @@
+package logic.reportmanage;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import java.util.Map;
+import java.util.HashMap;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import sqlj.runtime.ref.DefaultContext;
+
+import com.tanry.business.form.FormConstant;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.TextUtil;
+import com.tanry.framework.acl.NoPrivilegeException;
+
+public class PscanBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(PscanBean.class);
+	
+	
+	#sql private iterator HeaderIter(
+		    String form_id,  //单据编号
+			String provider, // 供应商
+			String requester, //订货部门
+			Date receive_time, // 到货日期
+			String auditor, // 审核人员
+			Date audit_time, // 审核日期
+			String form_note, //备注
+			Double all_pay_amt, //总金额
+			String max_pay_item //主要采购品 
+		); 
+	
+	#sql private iterator SumIter(
+			Double all_pay_amt);
+	
+	public Map getColmunType(){
+		Map map  = new HashMap();
+		map.put("form_id", "String");
+		map.put("provider", "String");
+		map.put("requester", "String");
+		map.put("receive_time", "Date");
+		map.put("auditor", "String");
+		map.put("audit_time", "Date");
+		map.put("form_note", "String");
+		map.put("all_pay_amt", "Number");
+		map.put("max_pay_item", "String");
+		
+		return map;
+	}
+	
+	public Map getColmunPrefix(){
+		Map map  = new HashMap();
+		map.put("form_id", "h");
+		map.put("provider", "h");
+		map.put("requester", "h");
+		map.put("receive_time", "h");
+		map.put("auditor", "h");
+		map.put("audit_time", "h");
+		map.put("form_note", "h");
+		map.put("all_pay_amt", "h");
+		map.put("max_pay_item", "h");
+		return map;
+	}
+	
+	
+	public int count(String queryStr, String sortStr)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		
+		DefaultContext myCtx = getDefaultContext();
+		int total = 0;
+		#sql [myCtx] {
+			SELECT
+				count(*) into :total
+		    FROM
+		    :{Com_("D_T1_PURCHASING_HEADER")} h
+		    JOIN
+		    :{Com_("D_T0_FORM_STATUS")} s
+		    ON
+		        h.FORM_ID = s.FORM_ID    AND IS_CURRENT = '1'  
+		    WHERE
+		    	s.STATUS = '已审核' 
+		    :{queryStr :: ''} 
+		    };
+		closeDefaultContext(myCtx);
+		return total;
+	}
+	
+	
+	public List<Map> query(int startRow, int endRow,String queryStr,  String sortStr)  
+			throws NoPrivilegeException,SQLException,NoConnection {
+		
+		DefaultContext myCtx = getDefaultContext();
+		HeaderIter headerIter = null;
+		#sql [myCtx] headerIter = {
+			SELECT
+			    *
+			    FROM
+			        (
+			            SELECT
+			                t.*,
+			                ROWNUM rowNumber
+			            FROM 
+			                (
+		        				SELECT
+									h.*
+							    FROM
+							    :{Com_("D_T1_PURCHASING_HEADER")} h
+							    JOIN
+							    :{Com_("D_T0_FORM_STATUS")} s
+							    ON
+							        h.FORM_ID = s.FORM_ID    AND IS_CURRENT = '1'  
+							    WHERE
+					    	     s.STATUS = '已审核' 
+				    		    :{queryStr :: ''}  :{sortStr :: ''}
+							    ) t
+			            WHERE
+			                ROWNUM < :endRow)
+			    WHERE
+			        rowNumber >= :startRow};
+		List<Map> headerLst = processIter(headerIter);
+		headerIter.close();
+		closeDefaultContext(myCtx);
+		return headerLst;
+	}
+	
+	public Map sum( String queryStr, String sortStr) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		
+		DefaultContext myCtx = getDefaultContext();
+		
+		SumIter sumIter = null;
+		
+		#sql [myCtx] sumIter = {
+			SELECT
+				sum(nvl(all_pay_amt,0)) all_pay_amt
+		    FROM
+		    :{Com_("D_T1_PURCHASING_HEADER")} h
+		    JOIN
+		    :{Com_("D_T0_FORM_STATUS")} s
+		    ON
+		        h.FORM_ID = s.FORM_ID    AND IS_CURRENT = '1'  
+		    WHERE
+		    	s.STATUS = '已审核' 
+		    	:{queryStr :: ''} 
+		    };
+		
+		closeDefaultContext(myCtx);
+		
+		Map sumMap = processSumIter(sumIter);
+		sumIter.close();
+		
+		return sumMap;
+	}
+	
+
+	private Map processSumIter(SumIter sumIter) 
+			throws SQLException {
+		Map sumMap = new HashMap();
+		
+		while(sumIter.next()) {
+			sumMap.put("all_pay_amt", sumIter.all_pay_amt());
+		}
+			
+		return sumMap;
+	}
+	
+	private List<Map> processIter(HeaderIter headerIter) 
+			throws SQLException {
+		List<Map> headerLst = new ArrayList<Map>();
+		
+		while(headerIter.next()) {
+			Map header = new HashMap();
+			header.put("form_id", headerIter.form_id());
+			header.put("provider", headerIter.provider());
+			header.put("requester", headerIter.requester());
+			header.put("receive_time", headerIter.receive_time());
+			header.put("auditor", headerIter.auditor());
+			header.put("audit_time", headerIter.audit_time());
+			header.put("form_note", headerIter.form_note());
+			header.put("all_pay_amt", headerIter.all_pay_amt());
+			header.put("max_pay_item", headerIter.max_pay_item());
+			
+			headerLst.add(header);
+		}
+		return headerLst;
+	}
+}

@@ -1,0 +1,18 @@
+1. tab 中载入的 <script> 代码不起作用，因为 tab 里的 <head>回被dojo去掉，起作用的是tab外边frame的script代码，因此tab中页面需要的script需要在frame加载的外层代码引入，在现在的代码里需要放大content.html的head部分，否则就想要按照require规范设计js库
+
+2. 当通过script引入dojo代码后(根据页面和dojo的相对路径引入)，reqiure需要的路径应当是以dijit、dojo、dojox开始的路径而不是页面相对dijit、dojo的相对路径 
+
+3. require.js 能够很好的解决因为tab导致的脚本代码无法在head引入的问题，但需要被引入的js按照require的规范设计代码
+
+4.
+被ajax加载的script不能制动执行，需要为script设置一个id，通过getElementById().innerHTML获得脚本文本，并通过eval执行
+
+5. IE 中 div中异步加载的script不要直接放在div下，否则通过getElementById无法获得脚本,放在form下可以获得
+
+6. css要放到外部frame的html中，ajax动态加载的页面中css在IE中不起作用
+
+7. IE 中注意javascript属性定义，最后一个 属性后不能有逗号，否则javascript出错不能执行
+
+
+
+

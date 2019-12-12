@@ -1,0 +1,580 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on Sep 17, 2015 by liyzh
+ * Last edited on Sep 17, 2015 by liyzh
+ * 
+ * 说明： 餐厅配送入库，或物流中心半成品入库（由央厂配送）
+ */
+package logic.module.restaurant;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import pojo.form.ShippingHeader;
+import sqlj.runtime.ref.DefaultContext;
+
+import com.tanry.framework.acl.NoPrivilegeException;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.constant.BillStatus;
+import com.tanry.framework.util.constant.BranchType;
+
+public class DistriStockInBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(DistriStockInBean.class);
+
+	#sql private iterator HeaderIter(
+			String form_id, String form_ref_id, String form_type,
+			String provider_id,
+			String provider,
+			String out_storage_id,
+			String out_storage,
+			Date receive_time,
+			String requester_id,
+			String requester,
+			String request_address,
+			String form_maker_id,
+			String form_maker,
+			Date form_time,
+			Date form_time_actual,
+			String auditor_id,
+			String auditor,
+			Date audit_time,
+			String form_note,
+			Double all_pay_amt,
+			String max_pay_item, String form_status);
+	
+	#sql private iterator CountIter(
+			int total);
+	
+
+	public int count(java.util.Date startDate, java.util.Date endDate, String requesterId)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		Date sDate = SqlDateUtil.getSqlDate(startDate);
+		Date eDate = SqlDateUtil.getSqlDate(endDate);
+
+		String query = " NVL(h.INPUT_STATUS, 'null') != '" + BillStatus.STORED_CN + "'";
+		
+		DefaultContext myCtx = getDefaultContext();
+		CountIter countIter = null;
+		#sql [myCtx] countIter = {WITH
+    	    a AS
+    	    (
+    	        SELECT DISTINCT
+    	            h.form_id,
+    	            p.form_id                        form_id2,
+    	            DECODE(s.STATUS,'未审核',0,'已审核',1) flag
+    	        FROM
+    	           :{Com_("D_T1_SHIPPING_HEADER")} h
+    	        INNER JOIN
+    	           :{Com_("D_T1_PICKING_REF")} p
+    	        ON
+    	            p.FORM_REF_ID = h.FORM_ID
+    	        INNER JOIN
+    	           :{Com_("D_T0_FORM_STATUS")} s
+    	        ON
+    	            s.FORM_ID = p.FORM_ID
+    	        AND s.IS_CURRENT = 1
+    	        WHERE
+    	        :{query :: 1=1}
+    			AND h.REQUESTER_ID = :requesterId
+				AND (
+    			        h.RECEIVE_TIME >= :sDate
+    			    OR  :sDate IS NULL)
+    			AND (
+    			        h.RECEIVE_TIME <= :eDate
+    			    OR  :eDate IS NULL)
+    	        ), b as(
+    	SELECT
+    	    *
+    	FROM
+    	    (
+    	        SELECT
+    	            a.*,
+    	            row_number() over(partition BY a.form_id ORDER BY a.flag ) rn
+    	        FROM
+    	            a )
+    	WHERE
+    	    rn=1
+    	),c as(
+    	SELECT
+    	  sh. * ,
+    	   '' FORM_STATUS 
+    	FROM
+    	       :{Com_("D_T1_SHIPPING_HEADER")} sh
+    	INNER JOIN
+    	      b
+    	ON 
+    	   b.FORM_ID= sh.FORM_ID
+    	WHERE
+    	       b.FLAG = 1
+	   union all 
+	   select 
+    	   s. *,
+    	   '' FORM_STATUS
+    	FROM
+    	       :{Com_("D_T1_SHIPPING_HEADER")} s
+        WHERE  
+    	        s.AUDIT_TIME is not null 
+	        AND s.FORM_TYPE = 'INNER_CROSS'
+			AND s.REQUESTER_ID = :requesterId
+			AND (
+					s.RECEIVE_TIME >= :sDate
+			    OR  :sDate IS NULL)
+			AND (
+					s.RECEIVE_TIME <= :eDate
+			    OR  :eDate IS NULL))
+		    SELECT
+			    COUNT(*) total
+			FROM
+			    c
+		};
+		
+		int total = 0;
+		while(countIter.next()) {
+			total= countIter.total();
+		}
+		countIter.close();
+		closeDefaultContext(myCtx);
+		return total;
+	}
+	
+	public int countByAuditTime(java.util.Date startDate, java.util.Date endDate, String requesterId, String branchType)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		Date sDate = SqlDateUtil.getSqlDate(startDate);
+		Date eDate = SqlDateUtil.getSqlDate(endDate);
+
+		String query = " NVL(h.INPUT_STATUS, 'null') != '" + BillStatus.STORED_CN + "'";
+		query += formQuery(branchType);
+		
+		DefaultContext myCtx = getDefaultContext();
+		int total = 0;
+		#sql [myCtx] {
+			SELECT
+			    COUNT(*)
+			INTO
+			    :total
+			FROM
+			:{Com_("D_T1_SHIPPING_HEADER")} h
+			LEFT JOIN
+			:{Com_("D_T0_FORM_STATUS")} s
+			ON
+			    s.FORM_ID = h.FORM_ID
+			AND s.IS_CURRENT = 1
+			WHERE
+			    :{query :: 1=1}
+			AND h.REQUESTER_ID = :requesterId
+			AND (
+			        h.AUDIT_TIME >= :sDate
+			    OR  :sDate IS NULL)
+			AND (
+			        h.AUDIT_TIME <= :eDate
+			    OR  :eDate IS NULL)
+		};
+		closeDefaultContext(myCtx);
+		return total;
+	}
+	
+	public int inputCount(java.util.Date startDate, java.util.Date endDate, String requesterId, String branchType)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		Date sDate = SqlDateUtil.getSqlDate(startDate);
+		Date eDate = SqlDateUtil.getSqlDate(endDate);
+
+		String query = "h.INPUT_STATUS= '" + BillStatus.STORED_CN + "'";
+		query += formQuery(branchType);
+		
+		DefaultContext myCtx = getDefaultContext();
+		int total = 0;
+		#sql [myCtx] {
+			SELECT
+			    COUNT(*)
+			INTO
+			    :total
+			FROM
+			:{Com_("D_T1_SHIPPING_HEADER")} h
+			LEFT JOIN
+			:{Com_("D_T0_FORM_STATUS")} s
+			ON
+			    s.FORM_ID = h.FORM_ID
+			AND s.IS_CURRENT = 1
+			WHERE
+			    :{query :: 1=1}
+			AND h.REQUESTER_ID = :requesterId
+			AND (
+			        h.RECEIVE_TIME >= :sDate
+			    OR  :sDate IS NULL)
+			AND (
+			        h.RECEIVE_TIME <= :eDate
+			    OR  :eDate IS NULL)
+		};
+		closeDefaultContext(myCtx);
+		return total;
+	}
+	public List<ShippingHeader> inputQuery(java.util.Date startDate, java.util.Date endDate, String requesterId, String branchType, int startRow, int endRow) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		Date sDate = SqlDateUtil.getSqlDate(startDate);
+		Date eDate = SqlDateUtil.getSqlDate(endDate);
+
+		String query = " h.INPUT_STATUS = '" + BillStatus.STORED_CN + "'";
+		query += formQuery(branchType);
+		
+		DefaultContext myCtx = getDefaultContext();
+		HeaderIter headerIter = null;
+		#sql [myCtx] headerIter = {
+				SELECT
+				    *
+			    FROM
+			        (
+			            SELECT
+			                t.*,
+			                ROWNUM rowNumber
+			            FROM
+			                (
+			                		SELECT
+			        			    h.*,
+			        			    s.STATUS AS FORM_STATUS
+			        			FROM
+			        			:{Com_("D_T1_SHIPPING_HEADER")} h
+			        			LEFT JOIN
+			        			:{Com_("D_T0_FORM_STATUS")} s
+			        			ON
+			        			    s.FORM_ID = h.FORM_ID
+			        			AND s.IS_CURRENT = 1
+			        			WHERE
+			        			    :{query :: 1=1}
+			        			AND h.REQUESTER_ID = :requesterId
+			        			AND (
+			        			        h.RECEIVE_TIME >= :sDate
+			        			    OR  :sDate IS NULL)
+			        			AND (
+			        			        h.RECEIVE_TIME <= :eDate
+			        			    OR  :eDate IS NULL)
+			        			ORDER BY
+			        			    h.FORM_ID DESC ) t
+			            WHERE
+			                ROWNUM < :endRow)
+			    WHERE
+			        rowNumber >= :startRow
+			};
+		List<ShippingHeader> headerLst = processIter(headerIter);
+		headerIter.close();
+		closeDefaultContext(myCtx);
+		return headerLst;
+	}
+	private String formQuery(String branchType) {
+		String query = "";
+		if (BranchType.RESTAURANT.equals(branchType)) {
+			query = " AND NVL( s.STATUS, 'null') = '" + BillStatus.AUDITED_CN + "'";
+		}
+		return query;
+	}
+	
+	public List<ShippingHeader> query(java.util.Date startDate, java.util.Date endDate, String requesterId, int startRow, int endRow) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		Date sDate = SqlDateUtil.getSqlDate(startDate);
+		Date eDate = SqlDateUtil.getSqlDate(endDate);
+
+		String query = " NVL(h.INPUT_STATUS, 'null') != '" + BillStatus.STORED_CN + "'";
+
+		DefaultContext myCtx = getDefaultContext();
+		HeaderIter headerIter = null;
+		#sql [myCtx] headerIter = {
+				SELECT
+				    *
+			    FROM
+			        (
+			            SELECT
+			                t.*,
+			                ROWNUM rowNumber
+			            FROM
+			                (WITH
+			                	    a AS
+			                	    (
+			                	        SELECT DISTINCT
+			                	            h.form_id,
+			                	            p.form_id                        form_id2,
+			                	            DECODE(s.STATUS,'未审核',0,'已审核',1) flag
+			                	        FROM
+			                	           :{Com_("D_T1_SHIPPING_HEADER")} h
+			                	        INNER JOIN
+			                	           :{Com_("D_T1_PICKING_REF")} p
+			                	        ON
+			                	            p.FORM_REF_ID = h.FORM_ID
+			                	        INNER JOIN
+			                	           :{Com_("D_T0_FORM_STATUS")} s
+			                	        ON
+			                	            s.FORM_ID = p.FORM_ID
+			                	        AND s.IS_CURRENT = 1
+			                	        WHERE
+			                	        :{query :: 1=1}
+					        			AND h.REQUESTER_ID = :requesterId
+			        					AND (
+					        			        h.RECEIVE_TIME >= :sDate
+					        			    OR  :sDate IS NULL)
+					        			AND (
+					        			        h.RECEIVE_TIME <= :eDate
+					        			    OR  :eDate IS NULL)
+			                	        ), b as(
+			                	SELECT
+			                	    *
+			                	FROM
+			                	    (
+			                	        SELECT
+			                	            a.*,
+			                	            row_number() over(partition BY a.form_id ORDER BY a.flag ) rn
+			                	        FROM
+			                	            a )
+			                	WHERE
+			                	    rn=1
+			                	)
+
+			                	SELECT
+			                	  sh. * ,
+			                	   '' FORM_STATUS 
+			                	FROM
+			                	       :{Com_("D_T1_SHIPPING_HEADER")} sh
+			                	INNER JOIN
+			                	      b
+			                	ON 
+			                	   b.FORM_ID= sh.FORM_ID
+			                	WHERE
+			                	       b.FLAG = 1
+		                	   union all 
+		                	   select 
+			                	   s. *,
+			                	   '' FORM_STATUS
+			                	FROM
+			                	       :{Com_("D_T1_SHIPPING_HEADER")} s
+	                	        WHERE  
+			                	        s.AUDIT_TIME is not null 
+			                	        AND s.INPUT_TIME IS NULL
+			                	        AND s.FORM_TYPE = 'INNER_CROSS'
+		        			AND s.REQUESTER_ID = :requesterId
+		        			AND (
+		        					s.RECEIVE_TIME >= :sDate
+		        			    OR  :sDate IS NULL)
+		        			AND (
+		        					s.RECEIVE_TIME <= :eDate
+		        			    OR  :eDate IS NULL)) t
+			            WHERE
+			                ROWNUM < :endRow)
+			    WHERE
+			        rowNumber >= :startRow
+			};
+		List<ShippingHeader> headerLst = processIter(headerIter);
+		headerIter.close();
+		closeDefaultContext(myCtx);
+		return headerLst;
+	}
+	
+	public List<ShippingHeader> query(java.util.Date startDate, java.util.Date endDate, String requesterId,String itemName, int startRow, int endRow) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		Date sDate = SqlDateUtil.getSqlDate(startDate);
+		Date eDate = SqlDateUtil.getSqlDate(endDate);
+
+		String query = " NVL(h.INPUT_STATUS, 'null') != '" + BillStatus.STORED_CN + "'";
+
+		DefaultContext myCtx = getDefaultContext();
+		HeaderIter headerIter = null;
+		#sql [myCtx] headerIter = {
+				SELECT
+				    *
+			    FROM
+			        (
+			            SELECT
+			                t.*,
+			                ROWNUM rowNumber
+			            FROM
+			                (WITH   
+			                		header AS(
+		            			        SELECT DISTINCT
+		            			            t.FORM_ID
+		            			        FROM
+		            			        :{Com_("D_T1_SHIPPING_DETAIL")} t
+		            			        WHERE
+		            			            1=1
+		            			        AND (
+		            			                t.ITEM_ID = :itemName
+		            			            OR  t.ITEM_NAME = :itemName)
+		            			        ORDER BY
+		            			            t.FORM_ID
+			                				),
+	                				a AS
+			                	    (
+			                	        SELECT DISTINCT
+			                	            h.form_id,
+			                	            p.form_id                        form_id2,
+			                	            DECODE(s.STATUS,'未审核',0,'已审核',1) flag
+			                	        FROM
+			                	           :{Com_("D_T1_SHIPPING_HEADER")} h
+		                	            INNER JOIN
+		                	            	header
+			                	        ON
+			                	        	header.FORM_ID = h.FORM_ID
+			                	        INNER JOIN
+			                	           :{Com_("D_T1_PICKING_REF")} p
+			                	        ON
+			                	            p.FORM_REF_ID = h.FORM_ID
+			                	        INNER JOIN
+			                	           :{Com_("D_T0_FORM_STATUS")} s
+			                	        ON
+			                	            s.FORM_ID = p.FORM_ID
+			                	        AND s.IS_CURRENT = 1
+			                	        WHERE
+			                	        :{query :: 1=1}
+					        			AND h.REQUESTER_ID = :requesterId
+			        					AND (
+					        			        h.RECEIVE_TIME >= :sDate
+					        			    OR  :sDate IS NULL)
+					        			AND (
+					        			        h.RECEIVE_TIME <= :eDate
+					        			    OR  :eDate IS NULL)
+			                	        ), b as(
+			                	SELECT
+			                	    *
+			                	FROM
+			                	    (
+			                	        SELECT
+			                	            a.*,
+			                	            row_number() over(partition BY a.form_id ORDER BY a.flag ) rn
+			                	        FROM
+			                	            a )
+			                	WHERE
+			                	    rn=1
+			                	)
+
+			                	SELECT
+			                	  sh. * ,
+			                	   '' FORM_STATUS 
+			                	FROM
+			                	       :{Com_("D_T1_SHIPPING_HEADER")} sh
+			                	INNER JOIN
+			                	      b
+			                	ON 
+			                	   b.FORM_ID= sh.FORM_ID
+			                	WHERE
+			                	       b.FLAG = 1
+		                	   union all 
+		                	   select 
+			                	   s. *,
+			                	   '' FORM_STATUS
+			                	FROM
+			                	       :{Com_("D_T1_SHIPPING_HEADER")} s
+	                	        WHERE  
+			                	        s.AUDIT_TIME is not null 
+			                	        AND s.FORM_TYPE = 'INNER_CROSS'
+		        			AND s.REQUESTER_ID = :requesterId
+		        			AND (
+		        					s.RECEIVE_TIME >= :sDate
+		        			    OR  :sDate IS NULL)
+		        			AND (
+		        					s.RECEIVE_TIME <= :eDate
+		        			    OR  :eDate IS NULL)) t
+			            WHERE
+			                ROWNUM < :endRow)
+			    WHERE
+			        rowNumber >= :startRow
+			};
+		List<ShippingHeader> headerLst = processIter(headerIter);
+		headerIter.close();
+		closeDefaultContext(myCtx);
+		return headerLst;
+	}
+	
+	public List<ShippingHeader> queryByAuditTime(java.util.Date startDate, java.util.Date endDate, String requesterId, String branchType, int startRow, int endRow) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		Date sDate = SqlDateUtil.getSqlDate(startDate);
+		Date eDate = SqlDateUtil.getSqlDate(endDate);
+
+		String query = " NVL(h.INPUT_STATUS, 'null') != '" + BillStatus.STORED_CN + "'";
+		query += formQuery(branchType);
+		
+		DefaultContext myCtx = getDefaultContext();
+		HeaderIter headerIter = null;
+		#sql [myCtx] headerIter = {
+				SELECT
+				    *
+			    FROM
+			        (
+			            SELECT
+			                t.*,
+			                ROWNUM rowNumber
+			            FROM
+			                (
+			                		SELECT
+			        			    h.*,
+			        			    s.STATUS AS FORM_STATUS
+			        			FROM
+			        			:{Com_("D_T1_SHIPPING_HEADER")} h
+			        			LEFT JOIN
+			        			:{Com_("D_T0_FORM_STATUS")} s
+			        			ON
+			        			    s.FORM_ID = h.FORM_ID
+			        			AND s.IS_CURRENT = 1
+			        			WHERE
+			        			    :{query :: 1=1}
+			        			AND h.REQUESTER_ID = :requesterId
+			        			AND (
+			        			        h.AUDIT_TIME >= :sDate
+			        			    OR  :sDate IS NULL)
+			        			AND (
+			        			        h.AUDIT_TIME <= :eDate
+			        			    OR  :eDate IS NULL)
+			        			ORDER BY
+			        			    h.FORM_ID DESC ) t
+			            WHERE
+			                ROWNUM < :endRow)
+			    WHERE
+			        rowNumber >= :startRow
+			};
+		List<ShippingHeader> headerLst = processIter(headerIter);
+		headerIter.close();
+		closeDefaultContext(myCtx);
+		return headerLst;
+	}
+	
+	private List<ShippingHeader> processIter(HeaderIter headerIter) 
+			throws SQLException {
+		List<ShippingHeader> headerLst = new ArrayList<ShippingHeader>();
+		while(headerIter.next()) {
+			ShippingHeader header = new ShippingHeader();
+			header.setFormId(headerIter.form_id());
+			header.setFormRefId(headerIter.form_ref_id());
+			header.setFormType(headerIter.form_type());
+			header.setProviderId(headerIter.provider_id());
+			header.setProvider(headerIter.provider());
+			header.setReceiveTime(SqlDateUtil.getUtilDate(headerIter.receive_time()));
+			header.setRequesterId(headerIter.requester_id());
+			header.setRequester(headerIter.requester());
+			header.setRequestAddress(headerIter.request_address());
+			header.setFormMakerId(headerIter.form_maker_id());
+			header.setFormMaker(headerIter.form_maker());
+			header.setFormTime(SqlDateUtil.getUtilDate(headerIter.form_time()));
+			header.setFormTimeActual(SqlDateUtil.getUtilDate(headerIter.form_time_actual()));
+			header.setAuditorId(headerIter.auditor_id());
+			header.setAuditor(headerIter.auditor());
+			header.setAuditTime(SqlDateUtil.getUtilDate(headerIter.audit_time()));
+			header.setFormNote(headerIter.form_note());
+			header.setAllPayAmt(headerIter.all_pay_amt());
+			header.setMaxPayItem(headerIter.max_pay_item());
+			header.setOutStorageId(headerIter.out_storage_id());
+			header.setOutStorage(headerIter.out_storage());
+			header.setFormStatus(headerIter.form_status());
+			headerLst.add(header);
+		}
+		return headerLst;
+	}
+}

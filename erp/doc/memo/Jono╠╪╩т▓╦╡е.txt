@@ -1,0 +1,5 @@
+1、总部经理分析功能->餐厅成本差异分析表
+金牛角王特殊之处：运营物料和包材不参与本期进货计算；查询调味料损耗等
+菜单地址：/reportmanage/restaurant/cost/jono/mainView.action?branchType=RESTAURANT
+
+正常菜单地址：/reportmanage/restaurant/cost/mainView.action?branchType=RESTAURANT

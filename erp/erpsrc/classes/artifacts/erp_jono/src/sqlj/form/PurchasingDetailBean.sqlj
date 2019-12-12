@@ -1,0 +1,475 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on Aug 26, 2014 by liyzh
+ * Last edited on Aug 26, 2014 by liyzh
+ * 
+ * 说明： 物流中心采购单、中央工厂采购单明细
+ */
+package logic.form;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import pojo.form.PurchasingDetail;
+import sqlj.runtime.ref.DefaultContext;
+
+import com.tanry.framework.acl.NoPrivilegeException;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.TextUtil;
+import com.tanry.framework.util.constant.BranchCode;
+
+public class PurchasingDetailBean extends ConnectionPool {
+	
+	public static Logger log = Logger.getLogger(PurchasingDetailBean.class);
+	
+	#sql private iterator DetailIter(
+			String rownumber,
+			String form_id,
+			String item_id,
+			String item_name,
+			String item_dimension,
+			String item_specification,
+			String item_category,
+			String receiver_id,
+			String receiver,
+			Double item_count,
+			Double item_unit_price,
+			Double pay_amt,
+			Double receive_price,
+			Double receive_amt,
+			Date expired_time,
+			Double supply_cycle);
+	
+	#sql private iterator FormIdsIter(String form_id);
+
+	public List<PurchasingDetail> query(String formId)throws NoPrivilegeException,SQLException,NoConnection{
+		return query(formId,null);
+	}
+	
+	public List<PurchasingDetail> query(String formId,String hasSum)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		DetailIter detailIter = null;
+		#sql [myCtx] detailIter = {
+			SELECT
+			    DECODE(FORM_ID,NULL,'合计',ROWNUM)rownumber ,
+			    t.*,
+	            0.0 SUPPLY_CYCLE
+			FROM
+			    (
+			        SELECT
+			            d.FORM_ID,
+			            d.ITEM_ID,
+			            d.ITEM_NAME,
+			            d.ITEM_DIMENSION,
+			            d.ITEM_SPECIFICATION,
+			            c.CATEGORY_NAME ITEM_CATEGORY,
+			            sum(d.ITEM_COUNT) ITEM_COUNT,
+			            d.ITEM_UNIT_PRICE,
+			            sum(d.PAY_AMT) PAY_AMT,
+			            d.RECEIVE_PRICE,
+			            sum(d.RECEIVE_AMT)RECEIVE_AMT,
+			            d.RECEIVER_ID,
+			            d.RECEIVER,
+			            d.EXPIRED_TIME
+			        FROM
+			        :{Com_("D_T1_PURCHASING_DETAIL")} d
+			        LEFT JOIN
+			        :{Com_("D_T2_ITEM_CATEGORY")} c
+			        ON
+			            d.ITEM_CATEGORY = c.CATEGORY_ID
+			        WHERE
+			            d.FORM_ID = :formId
+			        GROUP BY
+			            GROUPING SETS( ( d.FORM_ID, d.ITEM_ID,d.ITEM_NAME,d.ITEM_DIMENSION,d.ITEM_SPECIFICATION,
+			            c.CATEGORY_NAME,d.ITEM_COUNT, d.ITEM_UNIT_PRICE , d.PAY_AMT, d.RECEIVE_PRICE,
+			            d.RECEIVE_AMT,d.RECEIVER_ID,d.RECEIVER,d.EXPIRED_TIME),NULL)
+			        ORDER BY
+			            DECODE(RECEIVER_ID,NULL,'',RECEIVER_ID)  ,DECODE(ITEM_ID,NULL,'',ITEM_ID) ) t};
+		List<PurchasingDetail> detailLst = processIter(detailIter);
+		
+		if (TextUtil.isEmpty(hasSum)) {
+			detailLst.remove(detailLst.size()-1);
+		}
+		
+		detailIter.close();
+		closeDefaultContext(myCtx);
+		return detailLst;
+	}
+	
+	public List<PurchasingDetail> query(String formId,String lcCode,String hasSum)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		DetailIter detailIter = null;
+		#sql [myCtx] detailIter = {
+			SELECT
+			    DECODE(FORM_ID,NULL,'合计',ROWNUM)rownumber ,
+			    t.*
+			FROM
+			    (
+			        SELECT
+			            d.FORM_ID,
+			            d.ITEM_ID,
+			            d.ITEM_NAME,
+			            d.ITEM_DIMENSION,
+			            d.ITEM_SPECIFICATION,
+			            c.CATEGORY_NAME ITEM_CATEGORY,
+			            sum(d.ITEM_COUNT) ITEM_COUNT,
+			            d.ITEM_UNIT_PRICE,
+			            sum(d.PAY_AMT) PAY_AMT,
+			            d.RECEIVE_PRICE,
+			            sum(d.RECEIVE_AMT)RECEIVE_AMT,
+			            d.RECEIVER_ID,
+			            d.RECEIVER,
+			            d.EXPIRED_TIME,
+			            DECODE (ma.SUPPLY_CYCLE, NULL, ma.PRODUCTION_CYCLE,ma.SUPPLY_CYCLE) SUPPLY_CYCLE
+			        FROM
+			        :{Com_("D_T1_PURCHASING_DETAIL")} d
+			        LEFT JOIN
+			        :{Com_("D_V_MRP_AMOUNT_LC")} ma
+			        ON
+			            ma.ITEM_ID = d.ITEM_ID
+			        AND ma.BRANCH_ID = :lcCode
+			        LEFT JOIN
+			        :{Com_("D_T2_ITEM_CATEGORY")} c
+			        ON
+			            d.ITEM_CATEGORY = c.CATEGORY_ID
+			        WHERE
+			            d.FORM_ID = :formId
+			        GROUP BY
+			            GROUPING SETS( ( d.FORM_ID, d.ITEM_ID,d.ITEM_NAME,d.ITEM_DIMENSION,d.ITEM_SPECIFICATION,
+			            c.CATEGORY_NAME,d.ITEM_COUNT, d.ITEM_UNIT_PRICE , d.PAY_AMT, d.RECEIVE_PRICE,
+			            d.RECEIVE_AMT,d.RECEIVER_ID,d.RECEIVER,d.EXPIRED_TIME,ma.SUPPLY_CYCLE,ma.PRODUCTION_CYCLE),NULL)
+			        ORDER BY
+			            DECODE(RECEIVER_ID,NULL,'',RECEIVER_ID)  ,DECODE(ITEM_ID,NULL,'',ITEM_ID) ) t};
+		List<PurchasingDetail> detailLst = processIter(detailIter);
+		
+		if (TextUtil.isEmpty(hasSum)) {
+			detailLst.remove(detailLst.size()-1);
+		}
+		
+		detailIter.close();
+		closeDefaultContext(myCtx);
+		return detailLst;
+	}
+	public List<PurchasingDetail> queryByBranch(String formId, String branchId)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		DetailIter detailIter = null;
+		#sql [myCtx] detailIter = {
+			SELECT
+			    d.*,
+			    '' rownumber,
+	            0.0 SUPPLY_CYCLE
+			FROM
+			:{Com_("D_T1_PURCHASING_DETAIL")} d
+			WHERE
+			    d.FORM_ID = :formId
+			AND d.RECEIVER_ID = :branchId
+			ORDER BY
+				d.ITEM_ID
+		};
+		List<PurchasingDetail> detailLst = processIter(detailIter);
+		detailIter.close();
+		closeDefaultContext(myCtx);
+		return detailLst;
+	}
+	
+	public List<PurchasingDetail> queryByItemId(String itemId ,java.util.Date startDate, java.util.Date endDate)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		
+		Date _startDate = SqlDateUtil.getSqlDate(startDate);
+		Date _endDate = SqlDateUtil.getSqlDate(endDate);
+		
+		DefaultContext myCtx = getDefaultContext();
+		DetailIter detailIter = null;
+		
+		#sql [myCtx] detailIter = {
+		SELECT
+			    d.*,
+			    '' rownumber,
+	            0.0 SUPPLY_CYCLE
+			    FROM
+			    :{Com_("D_T1_PURCHASING_DETAIL")} d
+		        LEFT JOIN
+		        :{Com_("D_T1_PURCHASING_HEADER")} h
+			    ON
+			        d.FORM_ID = h.FORM_ID
+			    LEFT JOIN
+			    :{Com_("D_T0_FORM_STATUS")} s
+			    ON
+			        d.FORM_ID = s.FORM_ID
+			    WHERE
+			        d.ITEM_ID = :itemId
+			    AND (
+			            FORM_TIME >= :_startDate
+			        OR  :_startDate IS NULL)
+			    AND (
+			            FORM_TIME <= :_endDate
+			        OR  :_endDate IS NULL)
+			    AND s.STATUS = '已审核'
+			    AND IS_CURRENT = '1'
+			    ORDER BY
+			        d.FORM_ID};
+		List<PurchasingDetail> detailLst = processIter(detailIter);
+		detailIter.close();
+		closeDefaultContext(myCtx);
+		return detailLst;
+	}
+	
+	public List<String> queryFormIds(String lcCode, String cfCode, java.util.Date startDate, java.util.Date endDate)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		Date _startDate = SqlDateUtil.getSqlDate(startDate);
+		Date _endDate = SqlDateUtil.getSqlDate(endDate);
+		
+		FormIdsIter formIdsIter = null;
+		#sql [myCtx] formIdsIter = {
+			SELECT 
+				DISTINCT d.FORM_ID
+		    FROM
+		    :{Com_("D_T1_PURCHASING_DETAIL")} d
+		    LEFT JOIN
+		    :{Com_("D_T1_PURCHASING_HEADER")} h
+		    ON
+		        d.FORM_ID = h.FORM_ID
+		    LEFT JOIN
+		    :{Com_("D_T0_FORM_STATUS")} s
+		    ON
+		        d.FORM_ID = s.FORM_ID
+		    WHERE
+		    	h.REQUESTER_ID = :lcCode
+		    AND h.PROVIDER_ID = :cfCode
+		    AND
+		        (
+		            FORM_TIME >= :_startDate
+		        OR  :_startDate IS NULL)
+		    AND (
+		            FORM_TIME <= :_endDate
+		        OR  :_endDate IS NULL)
+		    AND s.STATUS = '已审核'  AND IS_CURRENT = '1'
+		    ORDER BY
+		        d.FORM_ID
+		};
+		
+		List<String> formIdLists = new ArrayList<String>();
+		while(formIdsIter.next()) {
+			formIdLists.add(formIdsIter.form_id());
+		}
+		formIdsIter.close();
+		closeDefaultContext(myCtx);
+		
+		return formIdLists;
+	}
+	
+	//单据状态表中已汇总的单据就不能被查询出来
+	public List<PurchasingDetail> queryAllSummary(String lcCode, String cfCode, java.util.Date startDate, java.util.Date endDate)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		Date _startDate = SqlDateUtil.getSqlDate(startDate);
+		Date _endDate = SqlDateUtil.getSqlDate(endDate);
+		
+		DetailIter detailIter = null;
+		#sql [myCtx] detailIter = {
+		SELECT
+				'' rownumber,
+			    d.ITEM_ID,
+			    d.ITEM_ID FORM_ID,
+			    d.ITEM_NAME,
+			    d.ITEM_DIMENSION,
+			    d.ITEM_SPECIFICATION,
+			    c.CATEGORY_NAME    ITEM_CATEGORY,
+			    SUM( d.ITEM_COUNT) ITEM_COUNT,
+			    d.ITEM_UNIT_PRICE,
+			    SUM(d.PAY_AMT) PAY_AMT,
+			    d.RECEIVER_PRICE,
+			    SUM(d.RECEIVE_AMT) RECEIVE_AMT,
+			    d.EXPIRED_TIME,
+			    d.RECEIVER,
+			    d.RECEIVER_ID,
+	            0.0 SUPPLY_CYCLE
+			FROM
+			:{Com_("D_T1_PURCHASING_DETAIL")} d
+			LEFT JOIN
+			:{Com_("D_T1_PURCHASING_HEADER")} h
+			ON
+			    d.FORM_ID = h.FORM_ID
+			LEFT JOIN
+			:{Com_("D_T0_FORM_STATUS")} s
+			ON
+			    d.FORM_ID = s.FORM_ID
+			LEFT JOIN
+			:{Com_("D_T2_ITEM_CATEGORY")} c
+			ON
+			    d.ITEM_CATEGORY = c.CATEGORY_ID
+			WHERE
+			    h.REQUESTER_ID = :lcCode
+			AND h.PROVIDER_ID = :cfCode
+			AND (
+					AUDIT_TIME >= :_startDate
+			    OR  :_startDate IS NULL)
+			AND (
+					AUDIT_TIME <= :_endDate
+			    OR  :_endDate IS NULL)
+			AND s.STATUS = '已审核'
+			AND IS_CURRENT = '1'
+			GROUP BY
+			    d.ITEM_ID,
+			    d.ITEM_NAME,
+			    d.ITEM_DIMENSION,
+			    d.ITEM_SPECIFICATION,
+			    c.CATEGORY_NAME ,
+			    d.ITEM_UNIT_PRICE,
+			    d.RECEIVE_PRICE,
+			    d.EXPIRED_TIME,
+			    d.RECEIVER,
+			    d.RECEIVER_ID
+			ORDER BY
+			    d.ITEM_ID};
+		List<PurchasingDetail> detailLst = processIter(detailIter);
+		detailIter.close();
+		closeDefaultContext(myCtx);
+		return detailLst;
+	}
+
+	private List<PurchasingDetail> processIter(DetailIter detailIter) 
+			throws SQLException {
+		List<PurchasingDetail> detailLst = new ArrayList<PurchasingDetail>();
+		while(detailIter.next()) {
+			PurchasingDetail detail = new PurchasingDetail();
+			detail.setRownumber(detailIter.rownumber());
+			detail.setFormId(detailIter.form_id());
+			detail.setItemId(detailIter.item_id());
+			detail.setItemName(detailIter.item_name());
+			detail.setItemDimension(detailIter.item_dimension());
+			detail.setItemSpecification(detailIter.item_specification());
+			detail.setItemCategory(detailIter.item_category());
+			detail.setReceiverId(detailIter.receiver_id());
+			detail.setReceiver(detailIter.receiver());
+			detail.setItemCount(detailIter.item_count());
+			detail.setItemUnitPrice(detailIter.item_unit_price());
+			detail.setPayAmt(detailIter.pay_amt());
+			detail.setReceivePrice(detailIter.receive_price());
+			detail.setReceiveAmt(detailIter.receive_amt());
+			detail.setExpiredTime(SqlDateUtil.getUtilDate(detailIter.expired_time()));
+			detail.setSupplyCycle(detailIter.supply_cycle());
+			detailLst.add(detail);
+		}
+		return detailLst;
+	}
+	
+	/**
+	 * 保存明细
+	 */
+	public int saveEntity(PurchasingDetail detail)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		String formId = detail.getFormId();
+		String itemId = detail.getItemId();
+		String itemName = detail.getItemName();
+		String itemDimension = detail.getItemDimension();
+		String itemSpecification = detail.getItemSpecification();
+		String itemCategory = detail.getItemCategory();
+		String receiverId = detail.getReceiverId();
+		String receiver = detail.getReceiver();
+		Double itemCount = detail.getItemCount();
+		Double itemUnitPrice = detail.getItemUnitPrice();
+		Double payAmt = detail.getPayAmt();
+		Double receivePrice = detail.getReceivePrice();
+		Double receiveAmt = detail.getReceiveAmt();
+		Date expiredTime = SqlDateUtil.getSqlDate(detail.getExpiredTime());
+	
+		#sql [myCtx] {
+			INSERT INTO :{Com_("D_T1_PURCHASING_DETAIL")} 
+				(FORM_ID, ITEM_ID, ITEM_NAME, ITEM_DIMENSION, 
+					ITEM_SPECIFICATION, ITEM_CATEGORY, ITEM_COUNT, 
+					RECEIVER_ID, RECEIVER, ITEM_UNIT_PRICE, PAY_AMT,RECEIVE_PRICE,RECEIVE_AMT, EXPIRED_TIME)
+			VALUES (:formId, 
+					:itemId, 
+					:itemName, 
+					:itemDimension, 
+					:itemSpecification, 
+					:itemCategory, 
+					:itemCount, :receiverId, :receiver,
+					:itemUnitPrice, 
+					:payAmt,
+					:receivePrice,
+					:receiveAmt,
+					:expiredTime)
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+
+	public int updateEntity(PurchasingDetail detail)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		String formId = detail.getFormId();
+		String itemId = detail.getItemId();
+		String receiverId = detail.getReceiverId();
+		String itemName = detail.getItemName();
+		String itemDimension = detail.getItemDimension();
+		String itemSpecification = detail.getItemSpecification();
+		String itemCategory = detail.getItemCategory();
+		Double itemCount = detail.getItemCount();
+		Double itemUnitPrice = detail.getItemUnitPrice();
+		Double payAmt = detail.getPayAmt();
+		Double receivePrice = detail.getReceivePrice();
+		Double receiveAmt = detail.getReceiveAmt();
+		Date expiredTime = SqlDateUtil.getSqlDate(detail.getExpiredTime());
+		
+		String query = " 1=1";
+		if (!TextUtil.isEmpty(receiverId)) {
+			query = query + " AND RECEIVER_ID = '" + receiverId + "'";
+		}
+		
+		#sql [myCtx] {
+			UPDATE
+			:{Com_("D_T1_PURCHASING_DETAIL")}
+			SET
+			    ITEM_COUNT = :itemCount,
+			    PAY_AMT = :payAmt,
+			    RECEIVE_AMT=:receiveAmt
+			WHERE
+				FORM_ID = :formId
+			AND ITEM_ID = :itemId
+			AND :{query :: 1=1} 
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+
+	public int deleteByForm(String formId)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		#sql [myCtx] {
+			DELETE
+			FROM
+			:{Com_("D_T1_PURCHASING_DETAIL")}
+			WHERE
+				FORM_ID = :formId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+}

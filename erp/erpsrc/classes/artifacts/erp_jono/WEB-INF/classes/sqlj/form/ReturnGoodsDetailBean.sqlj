@@ -1,0 +1,205 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on Sat Sep 20 20:05:30 CST 2014 by lyz
+ * Last edited on Sat Sep 20 20:05:30 CST 2014 by lyz
+ * 
+ * comment: 餐厅退货单表明细
+ */
+package logic.form;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import pojo.form.ReturnGoodsDetail;
+import sqlj.runtime.ref.DefaultContext;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.TextUtil;
+import com.tanry.framework.acl.NoPrivilegeException;
+
+public class ReturnGoodsDetailBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(ReturnGoodsDetailBean.class);
+	
+	#sql private iterator DetailIter(String form_id, String form_ref_id, String item_id, Double return_count,
+			Double return_pay_amt, String return_reason,
+			String item_name,
+			String item_dimension,
+			String item_specification,
+			String item_category,
+			Double request_count,
+			Double shipping_count,
+			Double delivery_count,
+			Double item_unit_price,
+			Date expired_time, Double receive_count);
+	
+	public int saveEntity(ReturnGoodsDetail detail)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		String formId = detail.getFormId();
+		String formRefId = detail.getFormRefId();
+		String itemId = detail.getItemId();
+		Double returnCount = detail.getReturnCount();
+		Double returnPayAmt = detail.getReturnPayAmt();
+		String returnReason = detail.getReturnReason();
+
+		#sql [myCtx] {
+			INSERT INTO :{Com_("D_T1_RETURN_GOODS_DETAIL")} 
+				(FORM_ID, FORM_REF_ID, ITEM_ID, RETURN_COUNT, RETURN_PAY_AMT, RETURN_REASON) 
+			VALUES (:formId, :formRefId, :itemId, :returnCount, :returnPayAmt, :returnReason)
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public int updateEntity(ReturnGoodsDetail detail)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		String formId = detail.getFormId();
+		String formRefId = detail.getFormRefId();
+		String itemId = detail.getItemId();
+		Double returnCount = detail.getReturnCount();
+		Double returnPayAmt = detail.getReturnPayAmt();
+		String returnReason = detail.getReturnReason();
+
+		#sql [myCtx] {
+			UPDATE
+			:{Com_("D_T1_RETURN_GOODS_DETAIL")}
+			SET
+				FORM_ID = :formId,
+				RETURN_COUNT = :returnCount,
+				RETURN_PAY_AMT = :returnPayAmt,
+				RETURN_REASON = :returnReason
+			WHERE 
+				FORM_ID = :formId
+			AND ITEM_ID = :itemId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+
+	public int deleteByForm(String formId)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		#sql [myCtx] {
+			DELETE
+			FROM
+			:{Com_("D_T1_RETURN_GOODS_DETAIL")}
+			WHERE
+				FORM_ID = :formId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public int deleteByItem(String formId,String itemId)
+			throws NoPrivilegeException, SQLException, NoConnection {
+			DefaultContext myCtx = getDefaultContext();
+
+			#sql [myCtx] {
+				DELETE
+				FROM
+				:{Com_("D_T1_RETURN_GOODS_DETAIL")}
+				WHERE
+					FORM_ID = :formId
+					AND ITEM_ID = :itemId
+			};
+			closeDefaultContext(myCtx);
+			
+			return 1;
+		}
+	
+	public int deleteByCount(String formId)
+			throws NoPrivilegeException, SQLException, NoConnection {
+			DefaultContext myCtx = getDefaultContext();
+
+			#sql [myCtx] {
+				DELETE
+				FROM
+				:{Com_("D_T1_RETURN_GOODS_DETAIL")}
+				WHERE
+					FORM_ID = :formId
+					AND RETURN_COUNT = 0
+			};
+			closeDefaultContext(myCtx);
+			
+			return 1;
+		}
+	public List<ReturnGoodsDetail> query(String formId)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		DetailIter detailIter = null;
+		#sql [myCtx] detailIter = {
+			SELECT
+			    rd.*,
+			    d.ITEM_NAME,
+			    d.ITEM_DIMENSION,
+			    d.ITEM_SPECIFICATION,
+			    d.ITEM_CATEGORY,
+			    d.REQUEST_COUNT,
+			    d.SHIPPING_COUNT,
+			    d.DELIVERY_COUNT,
+			    d.ITEM_UNIT_PRICE,
+			    d.EXPIRED_TIME,
+			    d.RECEIVE_COUNT
+			FROM
+			:{Com_("D_T1_RETURN_GOODS_DETAIL")} rd,
+			:{Com_("D_T1_SHIPPING_DETAIL")} d
+			WHERE
+			    d.FORM_ID = rd.FORM_REF_ID
+			AND d.item_id = rd.ITEM_ID
+			AND rd.FORM_ID = :formId
+			ORDER BY
+				rd.ITEM_ID
+		};
+		List<ReturnGoodsDetail> detailLst = processIter(detailIter);
+		detailIter.close();
+		closeDefaultContext(myCtx);
+		return detailLst;
+	}
+
+	private List<ReturnGoodsDetail> processIter(DetailIter detailIter) 
+			throws SQLException {
+		List<ReturnGoodsDetail> detailLst = new ArrayList<ReturnGoodsDetail>();
+		while(detailIter.next()) {
+			ReturnGoodsDetail detail = new ReturnGoodsDetail();
+			detail.setFormId(detailIter.form_id());
+			detail.setFormRefId(detailIter.form_ref_id());
+			detail.setItemId(detailIter.item_id());
+			detail.setReturnCount(detailIter.return_count());
+			detail.setReturnPayAmt(detailIter.return_pay_amt());
+			detail.setReturnReason(detailIter.return_reason());
+
+			detail.setItemName(detailIter.item_name());
+			detail.setItemDimension(detailIter.item_dimension());
+			detail.setItemSpecification(detailIter.item_specification());
+			detail.setItemCategory(detailIter.item_category());
+			detail.setRequestCount(detailIter.request_count());
+			detail.setShippingCount(detailIter.shipping_count());
+			detail.setDeliveryCount(detailIter.delivery_count());
+			detail.setItemUnitPrice(detailIter.item_unit_price());
+			detail.setExpiredTime(SqlDateUtil.getUtilDate(detailIter.expired_time()));
+			detail.setReceiveCount(detailIter.receive_count());
+			
+			detailLst.add(detail);
+		}
+		return detailLst;
+	}
+}

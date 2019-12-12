@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE struts PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN"
+    "http://struts.apache.org/dtds/struts-2.0.dtd">
+
+<struts>
+	<package name="outer_scan" namespace="/outer/outscan" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.lc.request.action.DeliveryAction">
+			<result name="success">/jsp/outerorder/outscan/main.jsp</result>
+		</action>
+		
+		<action name="confirmView" method="scanView" class="action.restaurant.shipping.ShippingManageAction">
+			<result name="success">/jsp/outerorder/outscan/scan.jsp</result>
+		</action>
+	</package>
+</struts>
+

@@ -1,0 +1,105 @@
+#dataGrid {
+	position: absolute;
+    top: 35px;
+    bottom: 0px;
+    width: 100%;
+    height: auto;
+}
+
+td[role="columnheader"] {
+	text-align: center !important; 
+}
+
+td[colid="rownumber"] {
+	text-align: center !important; 
+	min-width: 50px  !important; 
+	max-width: 50px  !important; 
+}
+
+td[colid="form_id"] {
+	text-align: center !important; 
+	min-width: 200px  !important; 
+}
+
+td[colid="form_time"] {
+	text-align: center !important; 
+	min-width: 80px  !important; 
+}
+
+td[colid="produce_time"] {
+	text-align: center !important; 
+	min-width: 80px  !important; 
+}
+
+td[colid="audit_time"] {
+	text-align: center !important; 
+	min-width: 80px  !important; 
+}
+
+td[colid="complete_time"] {
+	text-align: center !important; 
+	min-width: 80px  !important; 
+}
+
+td[colid="item_id"] {
+	text-align: center !important; 
+	min-width: 80px  !important; 
+}
+
+td[colid="production_cycle"] {
+	text-align: right !important; 
+	min-width: 80px  !important; 
+}
+
+td[colid="produce_count"] {
+	text-align: right !important; 
+	min-width: 100px  !important; 
+}
+
+td[colid="work_order_id"] {
+	text-align: center !important; 
+	min-width: 180px  !important; 
+}
+
+td[colid="storage_id"] {
+	text-align: center !important; 
+	min-width: 80px  !important; 
+}
+
+td[colid="workshop"] {
+	min-width: 120px  !important; 
+}
+
+td[colid="category_name"] {
+	text-align: center !important; 
+	min-width: 100px  !important; 
+}
+
+td[colid="item_name"] {
+	min-width: 100px  !important; 
+}
+
+td[colid="item_category"] {
+	text-align: center !important; 
+	min-width: 80px  !important; 
+}
+
+td[colid="item_dimension"] {
+	text-align: center !important; 
+	min-width: 50px  !important; 
+	max-width: 50px  !important; 
+}
+
+td[colid="item_specification"] {
+	min-width: 100px  !important; 
+}
+
+td[colid="item_count"] {
+	text-align: right !important; 
+	min-width: 80px  !important; 
+}
+
+td[colid="note"] {
+	min-width: 120px  !important; 
+}
+

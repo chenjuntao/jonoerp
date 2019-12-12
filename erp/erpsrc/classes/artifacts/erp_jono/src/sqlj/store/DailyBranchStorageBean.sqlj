@@ -1,0 +1,275 @@
+/**
+*
+* Copyright (c) 2014
+* Tanry Electronic Technology Co., Ltd.
+* ChangSha, China
+*
+* All Rights Reserved.
+*
+* First created on Sep 28, 2014 by cjt
+* Last edited on Sep 28, 2014 by cjt
+*
+* 说明： 访问餐厅每日库存表
+*
+*/
+
+package logic.store;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.apache.log4j.Logger;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+import sqlj.runtime.ref.DefaultContext;
+import com.tanry.business.form.FormConstant;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.DateTimeUtil;
+import com.tanry.framework.util.TextUtil;
+import com.tanry.framework.acl.NoPrivilegeException;
+
+import com.tanry.framework.util.DateTimeUtil;
+
+import org.springframework.jdbc.core.JdbcTemplate;
+import java.util.Map;
+
+public class DailyBranchStorageBean extends ConnectionPool {
+	public static Logger log = Logger.getLogger(DailyBranchStorageBean.class);
+	
+    #sql private iterator DBIter(String branch_id, Date business_date, String item_id, Double item_count_theory, Double item_count_actual);
+    #sql private iterator TheoryStorageIter(String item_id, Double item_count, Double useCount, Double resultCount);
+    #sql private iterator ActualStorageIter(String item_id, Double check_count);
+    
+    private JdbcTemplate jdbcTemplate;
+    
+    public void setJdbcTemplate(JdbcTemplate jdbcTemplate) {
+		this.jdbcTemplate = jdbcTemplate;
+	}
+
+    private void theoryBacth(String branchId,String storageId, java.util.Date settleDate) {
+		String theoryBacthSql = "SELECT bill.item_id, nvl(s.item_count,0), bill.useCount, nvl(s.item_count,0) - bill.useCount AS resultCount FROM "
+				+ getCompanyId() + ".D_T2_STORAGE s RIGHT JOIN (SELECT trim(t.item_id) item_id, SUM(t.item_gross_count * d.nqty) AS useCount FROM "
+				+ getCompanyId() + ".d_t_food_bill b, " + getCompanyId() + ".D_T_FOOD_BILLS d, " + getCompanyId() + ".D_T2_THERAPY t "
+			    + "WHERE trim(d.cbill_c) = trim(b.cbill_c) AND trim(t.therapy_id) = trim(d.cfood_c) "
+				+ "AND trim(b.cbranch_c) = ? AND b.dbusiness = ? GROUP BY trim(t.item_id) ORDER BY trim(t.item_id) " 
+			    + ") bill ON trim(s.item_id) = trim(bill.item_id) AND trim(s.storage_id) = ? ";
+		
+		List<Map<String, Object>> itemLst = jdbcTemplate.queryForList(theoryBacthSql,
+				new Object[] {branchId, settleDate, storageId});
+		
+		String insertSql = " INSERT INTO " + getCompanyId() + ".D_T0_STORAGE_IN_OUT (BRANCH_ID, STORAGE_ID,BUSINESS_DATE, OPERATION_TIME, ITEM_ID, ITEM_UNIT_PRICE, ORGI_COUNT, ITEM_COUNT_IN, ITEM_COUNT_OUT, RESULT_COUNT, FORM_ID, REASON) "
+				+ " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+		
+		String updateSql = " UPDATE " + getCompanyId() + ".D_T2_STORAGE SET ITEM_COUNT = ? WHERE ITEM_ID = ? AND STORAGE_ID = ? ";
+		
+		List<Object[]> batchArgsI = new ArrayList<Object[]>();
+		List<Object[]> batchArgsU = new ArrayList<Object[]>();
+		
+		for (Map<String, Object> item : itemLst) {
+			Object[] argsI = new Object[] { branchId,storageId, settleDate, SqlDateUtil.getSqlDate(DateTimeUtil.getNow()),
+					item.get("item_id"), 0,item.get("item_count") ,0,item.get("useCount"),item.get("resultCount"), "", "LLKU" };
+			batchArgsI.add(argsI);
+			
+			Object[] argsU = new Object[] {item.get("resultCount"),item.get("item_id"),storageId};
+			batchArgsU.add(argsU);
+		}
+
+		jdbcTemplate.batchUpdate(insertSql, batchArgsI);
+		jdbcTemplate.batchUpdate(updateSql, batchArgsU);
+	}
+    
+    //计算理论库存与实际库存（查当天的出品-->映射成本卡-->得到出品转换的原料消耗量-->实时库存表更新-->历史库存表添加库存记录）
+    public int calcTheoryStorage(String branchId,String storageId, java.util.Date settleDate) throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		Date sDate = SqlDateUtil.getSqlDate(settleDate);
+		String formType = FormConstant.CHECK_FORM;
+		
+		//判断当天是否进行过理论扣库
+		int checkHeaderCount = 0;
+		
+		try {
+			#sql [myCtx] {
+			SELECT
+			    COUNT(o.BRANCH_ID) into :checkHeaderCount
+			FROM
+				:{Com_("D_T0_STORAGE_IN_OUT")} o 
+			WHERE
+			    o.BRANCH_ID = :branchId
+			AND o.BUSINESS_DATE = :sDate
+			AND o.REASON = 'LLKU'};
+		} catch (SQLException e) {
+			log.debug("Error running the query: " + e);
+			String sqlState = e.getSQLState();
+			log.debug("SQL state = " + sqlState);
+			checkHeaderCount = 0;
+		}
+	
+		if(checkHeaderCount > 0)
+		{
+			//如果当天已经进行理论库存计算，这里直接跳过，不需要再重复计算
+			return 0;
+		}else{
+			String dateStr = DateTimeUtil.getDateStr(settleDate);
+		}
+
+		closeDefaultContext(myCtx);
+		
+		theoryBacth(branchId,storageId, settleDate);
+//		//查询当天根据出品和成本卡进行扣库后的理论库存
+//		TheoryStorageIter theoryStorageIter = null;
+//		#sql [myCtx] theoryStorageIter = {
+//			SELECT 
+//			    bill.item_id,
+//			 	nvl(s.item_count,0),
+//			 	bill.useCount,
+//			    nvl(s.item_count,0) - bill.useCount AS resultCount
+//			FROM
+//			    D_T2_STORAGE s
+//			    
+//			RIGHT JOIN
+//			(
+//				SELECT
+//				    trim(t.item_id) item_id,
+//				    SUM(t.item_gross_count * d.nqty) AS useCount
+//				FROM
+//				    d_t_food_bill b,
+//				    D_T_FOOD_BILLS d,
+//				    D_T2_THERAPY t 
+//				WHERE trim(d.cbill_c) = trim(b.cbill_c)
+//				AND trim(t.therapy_id) = trim(d.cfood_c)
+//				AND trim(b.cbranch_c) = :branchId
+//				AND b.dbusiness = :sDate
+//				GROUP BY trim(t.item_id)
+//				ORDER BY trim(t.item_id)
+//			) bill
+//			ON trim(s.item_id) = trim(bill.item_id)
+//			AND trim(s.storage_id) = :storageId
+//		};
+//
+//		//将上面计算出的结果更新到实时库存表中
+//		while(theoryStorageIter.next()) {
+//			String itemId = theoryStorageIter.item_id();
+//			Double resultCount = theoryStorageIter.resultCount();
+//			Double item_count = theoryStorageIter.item_count();
+//			Double useCount = theoryStorageIter.useCount();
+//			
+//			//-----------------------------------------------------------------------
+//			// 出入库表
+//			
+//		    item_count   = (item_count != null ? item_count : 0);
+//		    useCount   = (useCount != null ? useCount : 0);
+//		    resultCount   = (resultCount != null ? resultCount : 0);
+//			
+//			Date operationTime = SqlDateUtil.getSqlDate(DateTimeUtil.getNow());
+//
+//			#sql [myCtx] {
+//				INSERT INTO D_T0_STORAGE_IN_OUT 
+//					(BRANCH_ID, STORAGE_ID,BUSINESS_DATE, OPERATION_TIME, ITEM_ID, ITEM_UNIT_PRICE, ORGI_COUNT, ITEM_COUNT_IN, ITEM_COUNT_OUT, RESULT_COUNT, FORM_ID, REASON) 
+//				VALUES (:branchId,:storageId, :sDate, :operationTime, :itemId, 0, :item_count, 0, :useCount, :resultCount, '', 'LLKU')
+//			};
+//			
+//			//-----------------------------------------------------------------------
+//			
+//			#sql [myCtx] {
+//				UPDATE 
+//					D_T2_STORAGE 
+//				SET 
+//					ITEM_COUNT = :resultCount
+//				WHERE 
+//					ITEM_ID = :itemId 
+//				AND STORAGE_ID = :storageId
+//			};
+//		}
+		
+//		theoryStorageIter.close();
+//		
+//		//直接从实时库存表中将数据查出来复制到日结历史库存表中
+//		#sql [myCtx] {
+//			INSERT INTO D_T3_DAILY_STORAGE 
+//				SELECT A.STORAGE_ID, :sDate, A.ITEM_ID,	A.ITEM_COUNT, NULL 
+//				FROM D_T2_STORAGE A WHERE A.STORAGE_ID = :branchId
+//		};
+
+
+		return 1;
+	}
+
+	//将实际库存记录保存在日结库存实际记录中
+    public int calcActualStorage(String branchId, java.util.Date settleDate) throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		Date sDate = SqlDateUtil.getSqlDate(settleDate);
+		String formType = FormConstant.CHECK_FORM;
+		
+		//直接从实时库存表中将数据查出来复制到日结历史库存表中
+		#sql [myCtx] {
+		INSERT
+			INTO
+			:{Com_("D_T3_DAILY_STORAGE")}
+		    (
+		        SELECT
+		            A.STORAGE_ID,
+		            :sDate,
+		            A.ITEM_ID,
+		            A.ITEM_COUNT,
+		            actualstorage.CHECK_COUNT
+		        FROM
+		        :{Com_("D_T2_STORAGE")} A
+		        LEFT JOIN
+		            (
+		                --//查询当天盘点过的物料，获取其实际库存
+		                SELECT
+		                    cd.ITEM_ID,
+		                    cd.CHECK_COUNT
+		                FROM
+		                :{Com_("D_T1_CHECK_HEADER")} ch,
+		                :{Com_("D_T1_CHECK_DETAIL")} cd
+		                WHERE
+		                    ch.FORM_ID = cd.FORM_ID
+		                AND ch.FORM_TYPE =  :formType
+		                AND ch.AUDIT_TIME =  :sDate
+		                AND ch.CHECK_BRANCH_ID = :branchId ) actualstorage
+		        ON
+		            a.item_id = actualstorage.item_id
+		        where A.STORAGE_ID = :branchId
+		    )
+		};
+				
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+    
+    public Double getDailyBranchStorage(String branchId, String itemId,java.util.Date date)
+    		throws NoPrivilegeException, SQLException, NoConnection {
+    		
+    		Date sDate = SqlDateUtil.getSqlDate(date);
+    		
+    		Double storage = 0.0;
+    		DefaultContext myCtx = getDefaultContext();
+    		try {
+    			#sql [myCtx] {
+    		SELECT
+    			    CASE
+    		        WHEN s.ITEM_COUNT_ACTUAL IS NULL
+    		        THEN s.ITEM_COUNT_THEORY
+    		        ELSE s.ITEM_COUNT_ACTUAL
+    		    END into :storage
+    		FROM
+    		:{Com_("D_T3_DAILY_STORAGE")} s
+    		WHERE
+    		    s.BRANCH_ID = :branchId
+    		AND s.ITEM_ID = :itemId
+    		AND s.BUSINESS_DATE = :sDate};
+    		} catch (SQLException e) {
+    			String sqlState = e.getSQLState();
+    			e.printStackTrace();
+    		}
+    		closeDefaultContext(myCtx);
+    		
+    		return storage;
+    	}
+}

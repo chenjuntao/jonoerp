@@ -1,0 +1,347 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on Thu Apr 16 10:47:58 CST 2015 by lyz
+ * Last edited on Thu Apr 16 10:47:58 CST 2015 by lyz
+ * 
+ * comment: 库位与物料关系表，主要供物流中心捡货使用
+ */
+package logic.store;
+
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
+
+import pojo.store.ShelfItem;
+import sqlj.runtime.ref.DefaultContext;
+
+import com.tanry.framework.acl.NoPrivilegeException;
+
+public class ShelfItemBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(ShelfItemBean.class);
+	
+	#sql private iterator ShelfItemIter(String shelf_id, String item_id, Integer priority);
+	
+	public int saveEntity(ShelfItem shelfItem)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		String shelfId = shelfItem.getShelfId();
+		String itemId = shelfItem.getItemId();
+
+		// 取消以前的主库位
+		#sql [myCtx] {
+			UPDATE
+			:{Com_("D_T2_SHELF_ITEM")}
+			SET
+				PRIORITY = 1
+			WHERE
+				SHELF_ID != :shelfId
+			AND ITEM_ID = :itemId
+		};
+				
+		#sql [myCtx] {
+			INSERT INTO :{Com_("D_T2_SHELF_ITEM")} 
+				(SHELF_ID, ITEM_ID, PRIORITY) 
+			VALUES (:shelfId, :itemId, 0)
+		};
+		
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public int updateMainShelf(String shelfId, String itemId)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		#sql [myCtx] {
+			UPDATE
+			:{Com_("D_T2_SHELF_ITEM")}
+			SET
+				PRIORITY = 0
+			WHERE 
+				SHELF_ID = :shelfId
+			AND ITEM_ID = :itemId
+		};
+
+		// 取消以前的主库位
+		#sql [myCtx] {
+			UPDATE
+			:{Com_("D_T2_SHELF_ITEM")}
+			SET
+				PRIORITY = 1
+			WHERE
+				SHELF_ID != :shelfId
+			AND ITEM_ID = :itemId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public int updateEntity(ShelfItem shelfItem)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		String shelfId = shelfItem.getShelfId();
+		String itemId = shelfItem.getItemId();
+		Integer priority = shelfItem.getPriority();
+
+		#sql [myCtx] {
+			UPDATE
+			:{Com_("D_T2_SHELF_ITEM")}
+			SET
+				SHELF_ID = :shelfId,
+				ITEM_ID = :itemId,
+				PRIORITY = :priority
+			WHERE 
+				SHELF_ID = :shelfId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+
+	public int deleteEntity(String shelfId, List<String> itemIdLst)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		String query = " ITEM_ID IN ('" + StringUtils.join(itemIdLst, "','") + "') ";
+		#sql [myCtx] {
+			DELETE
+			FROM
+			:{Com_("D_T2_SHELF_ITEM")}
+			WHERE
+				SHELF_ID = :shelfId
+			AND	:{query :: 1=1}
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public int deleteEntity(String itemId)
+			throws NoPrivilegeException, SQLException, NoConnection {
+			DefaultContext myCtx = getDefaultContext();
+			#sql [myCtx] {
+				DELETE
+				FROM
+				:{Com_("D_T2_SHELF_ITEM")} h
+			WHERE
+				h.ITEM_ID = :itemId
+			};
+			closeDefaultContext(myCtx);
+			return 1;
+		}
+
+	public int count(java.util.Date startDate, java.util.Date endDate, String branchId, String queryType)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		int total = 0;
+		#sql [myCtx] {
+			SELECT
+			    count(*) into :total
+			FROM
+			:{Com_("D_T2_SHELF_ITEM")} h
+		};
+		closeDefaultContext(myCtx);
+		return total;
+	}
+	
+	public List<ShelfItem> query() 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		ShelfItemIter shelfItemIter = null;
+		#sql [myCtx] shelfItemIter = {
+			SELECT
+			    *
+			FROM
+			:{Com_("D_T2_SHELF_ITEM")} h
+		};
+		List<ShelfItem> shelfItemLst = processIter(shelfItemIter);
+		shelfItemIter.close();
+		closeDefaultContext(myCtx);
+		return shelfItemLst;
+	}
+	
+	public ShelfItem queryById(String shelfId) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		ShelfItemIter shelfItemIter = null;
+		#sql [myCtx] shelfItemIter = {
+			SELECT
+			    *
+			FROM
+			:{Com_("D_T2_SHELF_ITEM")} h
+			WHERE
+				h.SHELF_ID = :shelfId
+		};
+		List<ShelfItem> shelfItemLst = processIter(shelfItemIter);
+		shelfItemIter.close();
+		closeDefaultContext(myCtx);
+		if (shelfItemLst !=null && !shelfItemLst.isEmpty()) {
+			return shelfItemLst.get(0);
+		}
+		return null;
+	}
+	
+	public ShelfItem queryByItemId(String itemId) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		ShelfItemIter shelfItemIter = null;
+		#sql [myCtx] shelfItemIter = {
+			SELECT
+			    *
+			FROM
+			:{Com_("D_T2_SHELF_ITEM")} h
+			WHERE
+				h.ITEM_ID = :itemId
+		};
+		List<ShelfItem> shelfItemLst = processIter(shelfItemIter);
+		shelfItemIter.close();
+		closeDefaultContext(myCtx);
+		if (shelfItemLst !=null && !shelfItemLst.isEmpty()) {
+			return shelfItemLst.get(0);
+		}
+		return null;
+	}
+	
+	private List<ShelfItem> processIter(ShelfItemIter shelfItemIter) 
+			throws SQLException {
+		List<ShelfItem> shelfItemLst = new ArrayList<ShelfItem>();
+		while(shelfItemIter.next()) {
+			ShelfItem shelfItem = new ShelfItem();
+			shelfItem.setShelfId(shelfItemIter.shelf_id());
+			shelfItem.setItemId(shelfItemIter.item_id());
+			shelfItem.setPriority(shelfItemIter.priority());
+			shelfItemLst.add(shelfItem);
+		}
+		return shelfItemLst;
+	}
+
+	#sql private iterator ItemIter(String item_id, String item_name, String query_code, String category_id, 
+			String category_name, String item_dimension, 
+			String item_specification, Integer priority);
+	
+	/**
+	 * 从关系表中根据库位获取相应的商品列表
+	 */
+	public List<Map> queryItem(String shelfId) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		ItemIter itemIter = null;
+		#sql [myCtx] itemIter = {
+			SELECT
+			    m.ITEM_ID,
+			    m.ITEM_NAME,
+			    m.QUERY_CODE,
+			    m.CATEGORY_ID,
+			    c.CATEGORY_NAME,
+			    m.ITEM_DIMENSION,
+			    m.ITEM_SPECIFICATION,
+			    s.PRIORITY
+			FROM
+			:{Com_("D_T2_SHELF_ITEM")} s
+			INNER JOIN
+			:{Com_("D_T2_ITEM_META")} m
+			ON
+			    m.ITEM_ID = s.ITEM_ID
+			LEFT JOIN
+			:{Com_("D_T2_ITEM_CATEGORY")} c
+			ON
+			    c.CATEGORY_ID = m.CATEGORY_ID
+			WHERE
+				s.SHELF_ID = :shelfId
+			ORDER BY
+				m.ITEM_ID
+		};
+		List<Map> itemLst = new ArrayList<Map>();
+		while(itemIter.next()) {
+			Map<String, Object> item = new HashMap<String, Object>();
+			item.put("itemId", itemIter.item_id());
+			item.put("itemName", itemIter.item_name());
+			item.put("queryCode", itemIter.query_code());
+			item.put("categoryId", itemIter.category_id());
+			item.put("categoryName", itemIter.category_name());
+			item.put("itemDimension", itemIter.item_dimension());
+			item.put("itemSpecification", itemIter.item_specification());
+			item.put("priority", itemIter.priority());
+			itemLst.add(item);
+		}
+		itemIter.close();
+		closeDefaultContext(myCtx);
+		return itemLst;
+	}
+	
+	/**
+	 * 模糊查询商品，属于当前库位的除外
+	 */
+	public List<Map> queryExceptItem(String itemName, String shelfId) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		itemName = "%" + itemName + "%";
+		
+		DefaultContext myCtx = getDefaultContext();
+		ItemIter itemIter = null;
+		#sql [myCtx] itemIter = {
+				SELECT
+			    m.ITEM_ID,
+			    m.ITEM_NAME,
+			    m.QUERY_CODE,
+			    m.CATEGORY_ID,
+			    c.CATEGORY_NAME,
+			    m.ITEM_DIMENSION,
+			    m.ITEM_SPECIFICATION,
+			    1 AS PRIORITY
+			FROM
+			:{Com_("D_T2_ITEM_META")} m
+			LEFT JOIN
+			:{Com_("D_T2_ITEM_CATEGORY")} c
+			ON
+			    c.CATEGORY_ID = m.CATEGORY_ID
+			WHERE
+			    m.ITEM_ID NOT IN --except current shelf
+			    (
+			        SELECT
+			            s.ITEM_ID
+			        FROM
+			        :{Com_("D_T2_SHELF_ITEM")} s
+			        WHERE
+			            s.SHELF_ID = :shelfId
+			    )
+			AND (
+			        m.ITEM_ID LIKE :itemName
+			    OR  m.ITEM_NAME LIKE :itemName)
+			ORDER BY
+			    m.ITEM_ID
+		};
+		List<Map> itemLst = new ArrayList<Map>();
+		while(itemIter.next()) {
+			Map<String, Object> item = new HashMap<String, Object>();
+			item.put("itemId", itemIter.item_id());
+			item.put("itemName", itemIter.item_name());
+			item.put("queryCode", itemIter.query_code());
+			item.put("categoryId", itemIter.category_id());
+			item.put("categoryName", itemIter.category_name());
+			item.put("itemDimension", itemIter.item_dimension());
+			item.put("itemSpecification", itemIter.item_specification());
+			itemLst.add(item);
+		}
+		itemIter.close();
+		closeDefaultContext(myCtx);
+		return itemLst;
+	}
+}

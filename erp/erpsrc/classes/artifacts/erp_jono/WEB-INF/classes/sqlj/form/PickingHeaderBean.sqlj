@@ -1,0 +1,755 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on Thu Dec 11 15:05:12 CST 2014 by lyz
+ * Last edited on Wed July 22 8:17:12 CST 2015 by lyz
+ * 
+ * comment: 捡货单表头
+ */
+package logic.form;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import pojo.form.PickingHeader;
+import sqlj.runtime.ref.DefaultContext;
+
+import com.tanry.business.form.FormConstant;
+import com.tanry.framework.acl.NoPrivilegeException;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.constant.BillStatus;
+
+public class PickingHeaderBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(PickingHeaderBean.class);
+	
+	public int newSerial(java.util.Date businessDate, String branchId) 
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		String maxId = null;
+		Date bDate = SqlDateUtil.getSqlDate(businessDate);
+		#sql [myCtx] {
+			SELECT
+			    MAX(h.FORM_ID) into :maxId
+			FROM
+			:{Com_("D_T1_PICKING_HEADER")} h
+			WHERE
+			    h.FORM_TIME = :bDate
+			AND h.PICKING_BRANCH_ID = :branchId
+		};
+		closeDefaultContext(myCtx);
+
+		int result = 1;
+		if (maxId != null) {
+			maxId = maxId.substring(maxId.length() - FormConstant.DEFAULT_SERIAL_LENGTH);
+			result = Integer.parseInt(maxId) + 1;
+		}
+		return result;
+	}
+	
+	public int saveEntity(PickingHeader header)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		String formId = header.getFormId();
+		String pickingBranchId = header.getPickingBranchId();
+		String storageId = header.getStorageId();
+		String storage = header.getStorage();
+		String formMakerId = header.getFormMakerId();
+		String formMaker = header.getFormMaker();
+		Date formTime = SqlDateUtil.getSqlDate(header.getFormTime());
+		Date formTimeActual = SqlDateUtil.getSqlDate(new java.util.Date());
+		String pickingManId = header.getPickingManId();
+		String pickingMan = header.getPickingMan();
+		Date pickingTime = SqlDateUtil.getSqlDate(header.getPickingTime());
+		String auditorId = header.getAuditorId();
+		String auditor = header.getAuditor();
+		Date auditTime = SqlDateUtil.getSqlDate(header.getAuditTime());
+		String formNote = header.getFormNote();
+
+		#sql [myCtx] {
+			INSERT INTO :{Com_("D_T1_PICKING_HEADER")} 
+				(FORM_ID, PICKING_BRANCH_ID, STORAGE_ID, STORAGE, FORM_MAKER_ID, FORM_MAKER, FORM_TIME, FORM_TIME_ACTUAL,
+						PICKING_MAN_ID, PICKING_MAN, PICKING_TIME, AUDITOR_ID, AUDITOR, AUDIT_TIME, FORM_NOTE) 
+			VALUES (:formId, :pickingBranchId, :storageId, :storage, :formMakerId, :formMaker, :formTime, :formTimeActual,
+					:pickingManId, :pickingMan, :pickingTime, :auditorId, :auditor, :auditTime, :formNote)
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public int updateEntity(PickingHeader header)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		String formId = header.getFormId();
+//		String storageId = header.getStorageId();
+		String formMakerId = header.getFormMakerId();
+		String formMaker = header.getFormMaker();
+		Date formTime = SqlDateUtil.getSqlDate(header.getFormTime());
+		String pickingManId = header.getPickingManId();
+		String pickingMan = header.getPickingMan();
+		Date pickingTime = SqlDateUtil.getSqlDate(header.getPickingTime());
+		String auditorId = header.getAuditorId();
+		String auditor = header.getAuditor();
+		Date auditTime = SqlDateUtil.getSqlDate(header.getAuditTime());
+		String formNote = header.getFormNote();
+
+		#sql [myCtx] {
+			UPDATE
+			:{Com_("D_T1_PICKING_HEADER")}
+			SET
+				FORM_ID = :formId,
+--				STORAGE_ID = :storageId,
+				PICKING_MAN_ID = :pickingManId,
+				PICKING_MAN = :pickingMan,
+				PICKING_TIME = :pickingTime,
+				AUDITOR_ID = :auditorId,
+				AUDITOR = :auditor,
+				AUDIT_TIME = :auditTime,
+				FORM_NOTE = :formNote
+			WHERE 
+				FORM_ID = :formId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+
+	public int deleteEntity(String formId)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		#sql [myCtx] {
+			DELETE
+			FROM
+			:{Com_("D_T1_PICKING_HEADER")}
+			WHERE
+				FORM_ID = :formId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	/**
+	 * 标志是否生成装箱单
+	 */
+	public int savePackStatus(String formId, String status)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		#sql [myCtx] {
+			UPDATE
+			:{Com_("D_T1_PICKING_HEADER")}
+			SET
+				PACK_STATUS = :status
+			WHERE 
+				FORM_ID = :formId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+
+	public int count(java.util.Date startDate, java.util.Date endDate, String branchId, String queryType)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		String query = formQuery(branchId, queryType);
+		Date sDate = SqlDateUtil.getSqlDate(startDate);
+		Date eDate = SqlDateUtil.getSqlDate(endDate);
+		
+		DefaultContext myCtx = getDefaultContext();
+		int total = 0;
+		#sql [myCtx] {
+			SELECT
+			    count(*) into :total
+			FROM
+			:{Com_("D_T1_PICKING_HEADER")} h
+			LEFT JOIN
+			:{Com_("D_T0_FORM_STATUS")} s
+			ON
+			    s.FORM_ID = h.FORM_ID
+			AND s.IS_CURRENT = 1
+			WHERE
+				:{query ::}
+			AND (h.AUDIT_TIME >= :sDate or :sDate is null)
+			AND (h.AUDIT_TIME <= :eDate or :eDate is null)
+		};
+		closeDefaultContext(myCtx);
+		return total;
+	}
+	
+	private String formQuery(String branchId, String queryType) {
+		String query = " 1=1";
+		if (!"-1".equals(branchId)) {
+			query = query + " AND h.REQUESTER_ID = '" + branchId + "'";
+		}
+		if ("unaudit".equals(queryType)) { // 获取未处理记录
+			query = query + " AND NVL( s.STATUS, 'null') = '未处理'"; 
+		}
+		return query;
+	}
+
+	#sql private iterator HeaderIter(String form_id, String picking_branch_id, String storage_id, String storage, String form_maker_id, String form_maker, Date form_time, Date form_time_actual, 
+			String picking_man_id, String picking_man, Date picking_time, String auditor_id, String auditor, Date audit_time, String form_note);
+	
+	#sql private iterator TotalIter(Integer total);
+
+	public List<PickingHeader> query(java.util.Date startDate, java.util.Date endDate, String branchId, String queryType, int startRow, int endRow) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		String query = formQuery(branchId, queryType);
+		Date sDate = SqlDateUtil.getSqlDate(startDate);
+		Date eDate = SqlDateUtil.getSqlDate(endDate);
+		
+		DefaultContext myCtx = getDefaultContext();
+		HeaderIter headerIter = null;
+		#sql [myCtx] headerIter = {
+			SELECT
+			    *
+			FROM
+			:{Com_("D_T1_PICKING_HEADER")} h
+			LEFT JOIN
+			:{Com_("D_T0_FORM_STATUS")} s
+			ON
+			    s.FORM_ID = h.FORM_ID
+			AND s.IS_CURRENT = 1
+			WHERE
+				:{query :: 1=1}
+			AND (h.AUDIT_TIME >= :sDate or :sDate is null)
+			AND (h.AUDIT_TIME <= :eDate or :eDate is null)
+		};
+		List<PickingHeader> headerLst = processIter(headerIter);
+		headerIter.close();
+		closeDefaultContext(myCtx);
+		return headerLst;
+	}
+	
+	public List<PickingHeader> queryByStatus(java.util.Date businessDate, String queryType) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		Date bDate = SqlDateUtil.getSqlDate(businessDate);
+		
+		DefaultContext myCtx = getDefaultContext();
+		HeaderIter headerIter = null;
+		#sql [myCtx] headerIter = {
+				WITH
+			    auditItem --当天已审核的捡货单
+			    AS
+			    (
+			        SELECT
+			            ph.FORM_ID
+			        FROM
+			        :{Com_("D_T1_PICKING_HEADER")} ph
+			        INNER JOIN
+			        :{Com_("D_T0_FORM_STATUS")} s
+			        ON
+			            s.FORM_ID = ph.FORM_ID
+			        AND s.IS_CURRENT = 1
+			        AND s.status ='已审核'
+			        WHERE
+			            ph.AUDIT_TIME=:bDate
+			    )
+			    ,
+			    shippingForm AS
+			    ( --找到已审核的捡货单的前制单据号
+			        SELECT
+			            P.FORM_REF_ID
+			        FROM
+			        	:{Com_("D_T1_PICKING_REF")}  p
+			        INNER JOIN
+			            auditItem a
+			        ON
+			            a.FORM_ID = p.FORM_ID
+			        GROUP BY
+			            P.FORM_REF_ID
+			    )
+			--根据前制单据找未审核的捡货单
+			SELECT DISTINCT
+			    h.*,
+			    s.status
+			FROM
+			:{Com_("D_T1_PICKING_HEADER")} h
+			INNER JOIN
+			:{Com_("D_T1_PICKING_REF")} pr
+			ON
+			    h.FORM_ID = pr.FORM_ID
+			INNER JOIN
+			    shippingForm sf
+			ON
+			    sf.FORM_REF_ID = pr.FORM_REF_ID
+			INNER JOIN
+			:{Com_("D_T0_FORM_STATUS")} s
+			ON
+			    s.FORM_ID = h.FORM_ID
+			AND s.IS_CURRENT = 1
+			AND NVL( s.STATUS, 'null') = '未审核'
+		};
+		List<PickingHeader> headerLst = processIter(headerIter);
+		headerIter.close();
+		closeDefaultContext(myCtx);
+		return headerLst;
+	}
+	
+	public int queryByStatusCount(java.util.Date businessDate, String queryType) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		Date bDate = SqlDateUtil.getSqlDate(businessDate);
+		
+		DefaultContext myCtx = getDefaultContext();
+		TotalIter totalIter = null;
+		Integer total = null;
+		#sql [myCtx] totalIter = {
+				WITH
+			    auditItem --当天已审核的捡货单
+			    AS
+			    (
+			        SELECT
+			            ph.FORM_ID
+			        FROM
+			        :{Com_("D_T1_PICKING_HEADER")} ph
+			        INNER JOIN
+			        :{Com_("D_T0_FORM_STATUS")} s
+			        ON
+			            s.FORM_ID = ph.FORM_ID
+			        AND s.IS_CURRENT = 1
+			        AND s.status ='已审核'
+			        WHERE
+			            ph.AUDIT_TIME=:bDate
+			    )
+			    ,
+			    shippingForm AS
+			    ( --找到已审核的捡货单的前制单据号
+			        SELECT
+			            P.FORM_REF_ID
+			        FROM
+			        	:{Com_("D_T1_PICKING_REF")}  p
+			        INNER JOIN
+			            auditItem a
+			        ON
+			            a.FORM_ID = p.FORM_ID
+			        GROUP BY
+			            P.FORM_REF_ID
+			    )
+			--根据前制单据找未审核的捡货单
+			SELECT 
+			   count(*) total
+			FROM
+			:{Com_("D_T1_PICKING_HEADER")} h
+			INNER JOIN
+			:{Com_("D_T1_PICKING_REF")} pr
+			ON
+			    h.FORM_ID = pr.FORM_ID
+			INNER JOIN
+			    shippingForm sf
+			ON
+			    sf.FORM_REF_ID = pr.FORM_REF_ID
+			INNER JOIN
+			:{Com_("D_T0_FORM_STATUS")} s
+			ON
+			    s.FORM_ID = h.FORM_ID
+			AND s.IS_CURRENT = 1
+			AND NVL( s.STATUS, 'null') = '未审核'
+		};
+		
+		if(totalIter.next()){
+			total = totalIter.total();
+		}
+		
+		totalIter.close();
+		closeDefaultContext(myCtx);
+		return total!=null?total:0;
+	}
+	
+	#sql private iterator NodeIter(String id, String name, String parent, String form_status);
+	
+	/**
+	 * 查询拣货单，以树形控件组织，制单日期-〉拣货单
+	 */
+	public List<Map> queryTree(String queryType) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		String query = " 1=1";
+		if (BillStatus.UNADUIT_US.equals(queryType)) { // 获取未审核记录
+			query = query + " AND NVL( s.STATUS, 'null') = '未审核'"; 
+		} else if (BillStatus.AUDITED_US.equals(queryType)) {
+			query = query + " AND NVL( s.STATUS, 'null') = '" + BillStatus.AUDITED_CN + "'"; 
+		} else if ("unpack".equals(queryType)) {
+			query = query + " AND NVL(s.STATUS, 'null') = '" + BillStatus.AUDITED_CN + "'"; 
+			query = query + " AND NVL(h.PACK_STATUS, 'null') != '已生成'";
+		}
+		
+		DefaultContext myCtx = getDefaultContext();
+		NodeIter nodeIter = null;
+		#sql [myCtx] nodeIter = {
+			WITH
+			    picking_bill AS
+			    (
+			        SELECT
+			            h.*,
+			            s.STATUS AS form_status
+			        FROM
+			        :{Com_("D_T1_PICKING_HEADER")} h
+			        LEFT JOIN
+			        :{Com_("D_T0_FORM_STATUS")} s
+			        ON
+			            s.FORM_ID = h.FORM_ID
+			        AND s.IS_CURRENT = 1
+			        WHERE
+						:{query :: 1=1}
+			    )
+			SELECT
+			    *
+			FROM
+			    (
+			        SELECT
+			            TO_CHAR( h.FORM_TIME, 'yyyy-MM-dd') AS id,
+			            TO_CHAR( h.FORM_TIME, 'yyyy-MM-dd') AS name,
+			            'root'                              AS parent,
+			            ''                                  AS form_status
+			        FROM
+			            picking_bill h
+			        GROUP BY
+			            h.FORM_TIME
+			        ORDER BY
+			            h.FORM_TIME DESC)
+			UNION ALL
+			SELECT
+			    *
+			FROM
+			    (
+			        SELECT
+			            h.form_id                           AS id,
+			            h.form_id                           AS name,
+			            TO_CHAR( h.FORM_TIME, 'yyyy-MM-dd') AS parent,
+			            form_status
+			        FROM
+			            picking_bill h
+			        ORDER BY
+			            h.FORM_ID DESC)
+		};
+		List<Map> nodeLst = new ArrayList<Map>();
+		while(nodeIter.next()) {
+			Map<String, String> node = new HashMap<String, String>();
+			node.put("id", nodeIter.id());
+			node.put("name", nodeIter.name());
+			node.put("parent", nodeIter.parent());
+			node.put("status", nodeIter.form_status());
+			nodeLst.add(node);
+		}
+		nodeIter.close();
+		closeDefaultContext(myCtx);
+		return nodeLst;
+	}
+
+	public List<Map> auditTree(java.util.Date startDate, java.util.Date endDate, String queryType) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		String query = " 1=1";
+		if (BillStatus.UNADUIT_US.equals(queryType)) { // 获取未审核记录
+			query = query + " AND NVL( s.STATUS, 'null') = '未审核'"; 
+		} else if (BillStatus.AUDITED_US.equals(queryType)) {
+			query = query + " AND NVL( s.STATUS, 'null') = '" + BillStatus.AUDITED_CN + "'"; 
+		} else if ("unpack".equals(queryType)) {
+			query = query + " AND NVL(s.STATUS, 'null') = '" + BillStatus.AUDITED_CN + "'"; 
+			query = query + " AND NVL(h.PACK_STATUS, 'null') != '已生成'";
+		}
+		Date sDate = SqlDateUtil.getSqlDate(startDate);
+		Date eDate = SqlDateUtil.getSqlDate(endDate);
+		DefaultContext myCtx = getDefaultContext();
+		NodeIter nodeIter = null;
+		#sql [myCtx] nodeIter = {
+			WITH
+			    picking_bill AS
+			    (
+			        SELECT
+			            h.*,
+			            s.STATUS AS form_status
+			        FROM
+			        :{Com_("D_T1_PICKING_HEADER")} h
+			        LEFT JOIN
+			        :{Com_("D_T0_FORM_STATUS")} s
+			        ON
+			            s.FORM_ID = h.FORM_ID
+			        AND s.IS_CURRENT = 1
+			        WHERE
+						:{query :: 1=1}
+			    )
+			SELECT
+			    *
+			FROM
+			    (
+			        SELECT
+			            TO_CHAR( h.AUDIT_TIME, 'yyyy-MM-dd') AS id,
+			            TO_CHAR( h.AUDIT_TIME, 'yyyy-MM-dd') AS name,
+			            'root'                              AS parent,
+			            ''                                  AS form_status
+			        FROM
+			            picking_bill h
+			            WHERE
+			           (h.AUDIT_TIME >= :sDate or :sDate is null)
+						AND (h.AUDIT_TIME <= :eDate or :eDate is null)
+			        GROUP BY
+			            h.AUDIT_TIME
+			        ORDER BY
+			            h.AUDIT_TIME DESC)
+			UNION ALL
+			SELECT
+			    *
+			FROM
+			    (
+			        SELECT
+			            h.form_id                           AS id,
+			            h.form_id                           AS name,
+			            TO_CHAR( h.AUDIT_TIME, 'yyyy-MM-dd') AS parent,
+			            form_status
+			        FROM
+			            picking_bill h
+			        ORDER BY
+			            h.FORM_ID DESC)
+		};
+		List<Map> nodeLst = new ArrayList<Map>();
+		while(nodeIter.next()) {
+			Map<String, String> node = new HashMap<String, String>();
+			node.put("id", nodeIter.id());
+			node.put("name", nodeIter.name());
+			node.put("parent", nodeIter.parent());
+			node.put("status", nodeIter.form_status());
+			nodeLst.add(node);
+		}
+		nodeIter.close();
+		closeDefaultContext(myCtx);
+		return nodeLst;
+	}
+	/**
+	 * 查询拣货单，以树形控件组织，制单日期-〉拣货单,按时间排序
+	 */
+	public List<Map> queryTree(java.util.Date startDate, java.util.Date endDate, String queryType) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		String query = " 1=1";
+		if (BillStatus.UNADUIT_US.equals(queryType)) { // 获取未审核记录
+			query = query + " AND NVL( s.STATUS, 'null') = '未审核'"; 
+		} else if (BillStatus.AUDITED_US.equals(queryType)) {
+			query = query + " AND NVL( s.STATUS, 'null') = '" + BillStatus.AUDITED_CN + "'"; 
+		} else if ("unpack".equals(queryType)) {
+			query = query + " AND NVL(s.STATUS, 'null') = '" + BillStatus.AUDITED_CN + "'"; 
+			query = query + " AND NVL(h.PACK_STATUS, 'null') != '已生成'";
+		}
+		Date sDate = SqlDateUtil.getSqlDate(startDate);
+		Date eDate = SqlDateUtil.getSqlDate(endDate);
+		DefaultContext myCtx = getDefaultContext();
+		NodeIter nodeIter = null;
+		#sql [myCtx] nodeIter = {
+			WITH
+			    picking_bill AS
+			    (
+			        SELECT
+			            h.*,
+			            s.STATUS AS form_status
+			        FROM
+			        :{Com_("D_T1_PICKING_HEADER")} h
+			        LEFT JOIN
+			        :{Com_("D_T0_FORM_STATUS")} s
+			        ON
+			            s.FORM_ID = h.FORM_ID
+			        AND s.IS_CURRENT = 1
+			        WHERE
+						:{query :: 1=1}
+			    )
+			SELECT
+			    *
+			FROM
+			    (
+			        SELECT
+			            TO_CHAR( h.FORM_TIME, 'yyyy-MM-dd') AS id,
+			            TO_CHAR( h.FORM_TIME, 'yyyy-MM-dd') AS name,
+			            'root'                              AS parent,
+			            ''                                  AS form_status
+			        FROM
+			            picking_bill h
+			            WHERE
+			           (h.FORM_TIME >= :sDate or :sDate is null)
+						AND (h.FORM_TIME <= :eDate or :eDate is null)
+			        GROUP BY
+			            h.FORM_TIME
+			        ORDER BY
+			            h.FORM_TIME DESC)
+			UNION ALL
+			SELECT
+			    *
+			FROM
+			    (
+			        SELECT
+			            h.form_id                           AS id,
+			            h.form_id                           AS name,
+			            TO_CHAR( h.FORM_TIME, 'yyyy-MM-dd') AS parent,
+			            form_status
+			        FROM
+			            picking_bill h
+			        ORDER BY
+			            h.FORM_ID DESC)
+		};
+		List<Map> nodeLst = new ArrayList<Map>();
+		while(nodeIter.next()) {
+			Map<String, String> node = new HashMap<String, String>();
+			node.put("id", nodeIter.id());
+			node.put("name", nodeIter.name());
+			node.put("parent", nodeIter.parent());
+			node.put("status", nodeIter.form_status());
+			nodeLst.add(node);
+		}
+		nodeIter.close();
+		closeDefaultContext(myCtx);
+		return nodeLst;
+	}
+	
+	public List<Map> queryTree(java.util.Date startDate, java.util.Date endDate, String queryType, String itemName) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		String query = " 1=1";
+		if (BillStatus.UNADUIT_US.equals(queryType)) { // 获取未审核记录
+			query = query + " AND NVL( s.STATUS, 'null') = '未审核'"; 
+		} else if (BillStatus.AUDITED_US.equals(queryType)) {
+			query = query + " AND NVL( s.STATUS, 'null') = '" + BillStatus.AUDITED_CN + "'"; 
+		} else if ("unpack".equals(queryType)) {
+			query = query + " AND NVL(s.STATUS, 'null') = '" + BillStatus.AUDITED_CN + "'"; 
+			query = query + " AND NVL(h.PACK_STATUS, 'null') != '已生成'";
+		}
+		Date sDate = SqlDateUtil.getSqlDate(startDate);
+		Date eDate = SqlDateUtil.getSqlDate(endDate);
+		DefaultContext myCtx = getDefaultContext();
+		NodeIter nodeIter = null;
+		#sql [myCtx] nodeIter = {
+				WITH
+				 a AS (
+				        SELECT DISTINCT
+				            t.FORM_ID
+				        FROM
+				        :{Com_("D_T1_PICKING_DETAIL")} t
+				        WHERE
+				            1=1
+				        AND (
+				                t.ITEM_ID = :itemName
+				            OR  t.ITEM_NAME = :itemName)
+				        ORDER BY
+				            t.FORM_ID
+				    ),
+			    picking_bill AS
+			    (
+			        SELECT
+			            h.*,
+			            s.STATUS AS form_status
+			        FROM
+			        :{Com_("D_T1_PICKING_HEADER")} h
+			        INNER JOIN
+		        	a
+		        ON
+		             a.FORM_ID = h.FORM_ID
+			        LEFT JOIN
+			        :{Com_("D_T0_FORM_STATUS")} s
+			        ON
+			            s.FORM_ID = h.FORM_ID
+			        AND s.IS_CURRENT = 1
+			        WHERE
+						:{query :: 1=1}
+			    )
+			SELECT
+			    *
+			FROM
+			    (
+			        SELECT
+			            TO_CHAR( h.FORM_TIME, 'yyyy-MM-dd') AS id,
+			            TO_CHAR( h.FORM_TIME, 'yyyy-MM-dd') AS name,
+			            'root'                              AS parent,
+			            ''                                  AS form_status
+			        FROM
+			            picking_bill h
+			            WHERE
+			           (h.FORM_TIME >= :sDate or :sDate is null)
+						AND (h.FORM_TIME <= :eDate or :eDate is null)
+			        GROUP BY
+			            h.FORM_TIME
+			        ORDER BY
+			            h.FORM_TIME DESC)
+			UNION ALL
+			SELECT
+			    *
+			FROM
+			    (
+			        SELECT
+			            h.form_id                           AS id,
+			            h.form_id                           AS name,
+			            TO_CHAR( h.FORM_TIME, 'yyyy-MM-dd') AS parent,
+			            form_status
+			        FROM
+			            picking_bill h
+			        ORDER BY
+			            h.FORM_ID DESC)
+		};
+		List<Map> nodeLst = new ArrayList<Map>();
+		while(nodeIter.next()) {
+			Map<String, String> node = new HashMap<String, String>();
+			node.put("id", nodeIter.id());
+			node.put("name", nodeIter.name());
+			node.put("parent", nodeIter.parent());
+			node.put("status", nodeIter.form_status());
+			nodeLst.add(node);
+		}
+		nodeIter.close();
+		closeDefaultContext(myCtx);
+		return nodeLst;
+	}
+	public PickingHeader queryById(String formId) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		HeaderIter headerIter = null;
+		#sql [myCtx] headerIter = {
+			SELECT
+			    *
+			FROM
+			:{Com_("D_T1_PICKING_HEADER")} h
+			WHERE
+				h.form_id = :formId
+		};
+		List<PickingHeader> headerLst = processIter(headerIter);
+		headerIter.close();
+		closeDefaultContext(myCtx);
+		if (headerLst !=null && !headerLst.isEmpty()) {
+			return headerLst.get(0);
+		}
+		return null;
+	}
+	
+	private List<PickingHeader> processIter(HeaderIter headerIter) 
+			throws SQLException {
+		List<PickingHeader> headerLst = new ArrayList<PickingHeader>();
+		while(headerIter.next()) {
+			PickingHeader header = new PickingHeader();
+			header.setFormId(headerIter.form_id());
+			header.setPickingBranchId(headerIter.picking_branch_id());
+			header.setStorageId(headerIter.storage_id());
+			header.setStorage(headerIter.storage());
+			header.setFormMakerId(headerIter.form_maker_id());
+			header.setFormMaker(headerIter.form_maker());
+			header.setFormTime(SqlDateUtil.getUtilDate(headerIter.form_time()));
+			header.setFormTimeActual(SqlDateUtil.getUtilDate(headerIter.form_time_actual()));
+			header.setPickingManId(headerIter.picking_man_id());
+			header.setPickingMan(headerIter.picking_man());
+			header.setPickingTime(SqlDateUtil.getUtilDate(headerIter.picking_time()));
+			header.setAuditorId(headerIter.auditor_id());
+			header.setAuditor(headerIter.auditor());
+			header.setAuditTime(SqlDateUtil.getUtilDate(headerIter.audit_time()));
+			header.setFormNote(headerIter.form_note());
+			headerLst.add(header);
+		}
+		return headerLst;
+	}
+}

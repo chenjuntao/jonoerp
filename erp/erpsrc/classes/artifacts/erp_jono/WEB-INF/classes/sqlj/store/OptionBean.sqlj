@@ -1,0 +1,57 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on 2014.12.4 by cjt
+ * Last edited on Dec 4, 2014 by cjt
+ * 
+ * 说明： 读取程序的各种配置属性信息
+ */
+package logic.store;
+
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+import sqlj.runtime.ref.DefaultContext;
+
+import com.tanry.framework.acl.NoPrivilegeException;
+import com.tanry.framework.util.TextUtil;
+
+public class OptionBean extends ConnectionPool {
+	public String getOption(String optionKey) throws NoPrivilegeException,SQLException,NoConnection
+	{
+		String optionValue = ""; 
+		DefaultContext myCtx = getDefaultContext();
+		#sql [myCtx] {select OPTION_VALUE into :optionValue 
+			          from :{Com_("D_T0_OPTION")}
+			          where OPTION_KEY = :optionKey};
+		closeDefaultContext(myCtx);
+		return optionValue;
+	}
+
+	public void setOption(String optionKey, String optionValue) throws NoPrivilegeException,SQLException,NoConnection
+	{
+		DefaultContext myCtx = getDefaultContext();
+		#sql [myCtx] {update :{Com_("D_T0_OPTION")} 
+			          set OPTION_VALUE = :optionValue 
+				      where OPTION_KEY = :optionKey};
+		closeDefaultContext(myCtx);
+	}
+
+	public void saveOption(String optionKey, String optionValue) throws NoPrivilegeException,SQLException,NoConnection
+	{
+		DefaultContext myCtx = getDefaultContext();
+		#sql [myCtx] {INSERT INTO :{Com_("D_T0_OPTION")} 
+		(OPTION_VALUE, OPTION_KEY) 
+		VALUES (:optionValue, :optionKey)};
+		closeDefaultContext(myCtx);
+	}
+}

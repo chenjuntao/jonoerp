@@ -1,0 +1,58 @@
+#dataGrid {
+	position: absolute;
+	right: 0;
+	top: 62px;
+	bottom: 0px;
+	width: 100%;
+	height: auto;
+}
+
+th[role="columnheader"] {
+	text-align: center;
+}
+
+.dgrid-cell {
+	/* 	width: 80px; make all the columns 80px wide */
+	vertical-align: middle;
+}
+
+.field-rownumber, .field-formId, .field-itemId, .field-formTime,.field-auditTime,.field-workshop,
+.field-formMaker, .field-payAmt, .field-allPayAmt,.field-itemDimension,
+.field-requestCount, .field-period,.field-productionCycle,.field-businessDate,.field-completeTime,
+.field-realCount, .field-itemCategory,.field-receiver{
+	text-align: center !important;
+}
+
+.field-itemUnitPrice,.field-suggestAmt,.field-itemCount,.field-orderCount {
+	text-align: right ;
+}
+
+.field-inventory, .field-payAmt, .field-suggestAmt,.field-workshop, .field-payAmt {
+	width: 100px ;
+}
+
+.field-rownumber,.field-itemDimension {
+	width: 65px !important;
+}
+
+.field-itemId {
+	width: 60px ;
+}
+
+
+.input-provider,.field-formId  {
+	width: 160px ;
+}
+
+/* for observable warn,sort consideration */
+ .field-itemUnitPrice ,.field-productionCycle,.field-period{
+	width: 60px ;
+}
+
+.field-itemId,.field-itemCount,.field-businessDate,.field-orderCount ,.field-suggestAmt{
+	width: 80px ;
+}
+
+.field-itemName,.field-itemCategoryName,.field-itemSpecification,.field-itemCategory,.field-completeTime,.field-receiver{
+	width: 120px ;
+}

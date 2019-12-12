@@ -1,0 +1,125 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on Apr 7, 2015 by liyzh
+ * Last edited on Apr 7, 2015 by liyzh
+ * 
+ * 说明： 物流中心生成越库配送单
+ */
+package logic.module.lc;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import pojo.form.CollectDetail;
+import pojo.form.RequestHeader;
+import sqlj.runtime.ref.DefaultContext;
+
+import com.tanry.business.form.FormConstant;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.TextUtil;
+import com.tanry.framework.acl.NoPrivilegeException;
+
+public class CrossDistributionBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(CrossDistributionBean.class);
+	
+	#sql private iterator DetailIter(String form_id,
+			String receiver_id,
+			String receiver,
+			String branch_address,
+			String item_id, String item_name, String item_dimension,
+			String item_specification, String item_category, 
+			Double item_unit_price, Double item_count,
+			String delivery_unit, Double delivery_factor);
+	
+	/**
+	 * 查询越库采购单，使用标准价，用于生成越库形式的配送单
+	 */
+	public List<Map> queryDetail(String formId)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		DetailIter detailIter = null;
+		#sql [myCtx] detailIter = {
+			SELECT
+			    d.FORM_ID,
+			    d.ITEM_ID,
+			    d.ITEM_NAME,
+			    d.ITEM_DIMENSION,
+			    d.ITEM_SPECIFICATION,
+			    c.CATEGORY_NAME ITEM_CATEGORY,
+			    d.ITEM_COUNT,
+			    p.item_price as ITEM_UNIT_PRICE,
+			   -- d.PAY_AMT,
+			    d.RECEIVER_ID,
+			    d.RECEIVER,
+			    b.BRANCH_ADDRESS,
+			    u.DELIVERY_UNIT,
+			    u.delivery_factor
+			FROM
+			:{Com_("D_T1_PURCHASING_DETAIL")} d
+			LEFT JOIN
+			:{Com_("D_T2_ITEM_CATEGORY")} c
+			ON
+			    d.ITEM_CATEGORY = c.CATEGORY_ID
+			LEFT JOIN
+			:{Com_("D_T2_ITEM_PRICE")} p
+			ON
+			    p.ITEM_ID = d.ITEM_ID
+			AND p.PRICE_TYPE = 'BENCHMARK'
+			LEFT JOIN
+			:{Com_("D_T2_DELIVERY_UNIT")} u
+			ON
+			    u.ITEM_ID = d.ITEM_ID
+    		LEFT JOIN
+    		:{Com_("D_T2_BRANCH")} b
+			 ON 
+			 	b.BRANCH_ID=d.RECEIVER_ID
+			WHERE
+			    d.FORM_ID = :formId
+			ORDER BY
+			    d.ITEM_ID
+		};
+		List<Map> detailLst = processIter(detailIter);
+		detailIter.close();
+		closeDefaultContext(myCtx);
+		return detailLst;
+	}
+	
+	private List<Map> processIter(DetailIter detailIter) 
+			throws SQLException {
+		List<Map> detailLst = new ArrayList<Map>();
+		while(detailIter.next()) {
+			Map<String, Object> detail = new HashMap<String, Object>();
+			detail.put("formId", detailIter.form_id());
+			detail.put("receiverId", detailIter.receiver_id());
+			detail.put("receiver", detailIter.receiver());
+			detail.put("branchAddress", detailIter.branch_address());
+			detail.put("itemId", detailIter.item_id());
+			detail.put("itemName", detailIter.item_name());
+			detail.put("itemCategory", detailIter.item_category());
+			detail.put("itemDimension", detailIter.item_dimension());
+			detail.put("itemSpecification", detailIter.item_specification());
+			detail.put("itemCount", detailIter.item_count());
+			detail.put("itemUnitPrice", detailIter.item_unit_price());
+			// detail.put("payAmt", detailIter.pay_amt());
+			detail.put("deliveryUnit", detailIter.delivery_unit());
+			detail.put("unitConvertFactor", detailIter.delivery_factor());
+			detailLst.add(detail);
+		}
+		return detailLst;
+	}
+}

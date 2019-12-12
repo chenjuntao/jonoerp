@@ -1,0 +1,130 @@
+﻿-- 查询mrp计算所需的各个量
+CREATE OR REPLACE VIEW
+    d_v_mrp_count_lc AS
+WITH
+    safe_count AS--遍历所有下属仓库查询安全库存
+    (
+        SELECT
+            st.item_id,
+            0 AS safe_count
+        FROM
+            D_T2_STORAGE st
+        WHERE
+            st.STORAGE_ID IN ('100a',
+                              '100b')
+        GROUP BY
+            st.item_id
+    )
+    ,
+    real_count AS--遍历所有下属仓库查询库存
+    (
+        SELECT
+            st.item_id,
+            SUM(st.ITEM_COUNT) AS real_count
+        FROM
+            D_T2_STORAGE st
+        WHERE
+            st.STORAGE_ID IN ('100a',
+                              '100b')
+        GROUP BY
+            st.item_id
+    )
+    ,
+    on_passage AS -- 查询在途量
+    (
+        SELECT
+            d.item_id,
+            SUM(d.ITEM_COUNT) AS road_count
+        FROM
+            D_T1_PURCHASING_HEADER h
+        LEFT JOIN
+            D_T1_PURCHASING_DETAIL d
+        ON
+            h.FORM_ID = d.FORM_ID
+        LEFT JOIN
+            D_T0_FORM_STATUS s
+        ON
+            h.FORM_ID = s.FORM_ID
+        WHERE
+            h.REQUESTER_ID = '100'
+        AND s.STATUS = '已审核'
+        AND s.IS_CURRENT = 1
+        AND h.DELIVERY_TYPE != 'DIRECT'
+        GROUP BY
+            d.ITEM_ID
+    )
+    ,
+    allocated AS--查询已分配量
+    (
+        SELECT
+            d.ITEM_ID,
+            SUM( d.ORDER_COUNT) AS allocated_COUNT
+        FROM
+            JONO.D_T1_REQUEST_HEADER h
+        INNER JOIN
+            JONO.D_T1_REQUEST_DETAIL d
+        ON
+            h.FORM_ID = d.FORM_ID
+        LEFT JOIN
+            JONO.D_T2_DELIVERY_REGION_BRANCH rb
+        ON
+            rb.BRANCH_ID = h.BUYER_ID
+        LEFT JOIN
+            JONO.D_T2_DELIVERY_TYPE dt
+        ON
+            dt.REGION_ID = rb.REGION_ID
+        AND dt.ITEM_ID = d.item_id
+        WHERE
+            h.FORM_ID IN
+            (
+                SELECT
+                    rh.FORM_ID
+                FROM
+                    JONO.D_T1_SHIPPING_HEADER h
+                RIGHT JOIN
+                    JONO.D_T1_REQUEST_HEADER rh
+                ON
+                    rh.FORM_ID = h.FORM_REF_ID
+                LEFT JOIN
+                    JONO.D_T0_FORM_STATUS s
+                ON
+                    s.FORM_ID = h.FORM_ID
+                AND s.IS_CURRENT = 1
+                LEFT JOIN
+                    JONO.D_T0_FORM_STATUS rs
+                ON
+                    rs.FORM_ID = rh.FORM_ID
+                AND rs.IS_CURRENT = 1
+                WHERE
+                    NVL( s.STATUS, 'null') != '未入库'
+                AND NVL( rs.STATUS, 'null') IN( '已下发采购' ,
+                                               '已配送处理') )
+        AND dt.DELIVERY_TYPE != 'DIRECT'
+        GROUP BY
+            d.ITEM_ID
+    )
+SELECT
+    s.item_id,
+    s.safe_count,
+    r.real_count,
+    o.road_count,
+    a.allocated_count,
+    NVL( a.allocated_count,0) + s.safe_count - r.real_count - NVL( o.road_count, 0) AS add_count --
+    -- 净需求=毛需求+已分配量+安全库存
+    -- -实际库存-在途量
+FROM
+    safe_count s
+LEFT JOIN
+    real_count r
+ON
+    r.item_id = s.item_id
+LEFT JOIN
+    on_passage o
+ON
+    o.item_id = s.item_id
+LEFT JOIN
+    allocated a
+ON
+    a.item_id = s.item_id
+ORDER BY
+    s.item_id

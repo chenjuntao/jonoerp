@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE struts PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN"
+    "http://struts.apache.org/dtds/struts-2.0.dtd">
+
+<struts>
+	<!-- 	@Deprecated -->
+	<package name="centralfactory_productionDemand_purchaseBill_create" namespace="/centralfactory/productionDemand/purchaseBill/create" extends="trust-default">
+		<action name="mainView" class="action.centralfactory.productionDemand.purchasing.CFPurchasingAction">
+			<result name="success">/jsp/centralfactory/productionDemand/purchaseBill/create/main.jsp</result>
+		</action>
+		
+		<action name="checkView" method="checkView" class="action.centralfactory.productionDemand.purchasing.CFPurchasingAction">
+			<result name="success">/jsp/centralfactory/productionDemand/purchaseBill/create/check.jsp</result>
+		</action>
+		
+		<action name="doCommit" method="doCommit" class="action.centralfactory.productionDemand.purchasing.CFPurchasingAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<!-- 	@Deprecated -->
+	<package name="centralfactory_productionDemand_purchaseBill_arrangementCreate" namespace="/centralfactory/productionDemand/purchaseBill/arrangementCreate" extends="trust-default">
+		<action name="mainView" class="action.centralfactory.productionDemand.purchasing.CFPurchasingAction">
+			<result name="success">/jsp/centralfactory/productionDemand/purchaseBill/arrangementCreate/main.jsp</result>
+		</action>
+		
+		<action name="aggregateView" method="aggregateView" class="action.centralfactory.productionDemand.purchasing.CFPurchasingAction">
+			<result name="success">/jsp/centralfactory/productionDemand/purchaseBill/arrangementCreate/summary.jsp</result>
+		</action>
+		
+		<action name="checkView" method="checkView" class="action.centralfactory.productionDemand.purchasing.CFPurchasingAction">
+			<result name="success">/jsp/centralfactory/productionDemand/purchaseBill/arrangementCreate/check.jsp</result>
+		</action>
+		
+		<action name="createSummaryBill" method="createSummaryBill" class="action.centralfactory.productionDemand.purchasing.CFPurchasingAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="centralfactory_productionDemand_purchaseBill_treeCreate" namespace="/centralfactory/productionDemand/purchaseBill/treeCreate" extends="trust-default">
+		<action name="mainView" class="action.centralfactory.productionDemand.purchasing.CFPurchasingAction">
+			<result name="success">/jsp/centralfactory/productionDemand/purchaseBill/treeCreate/main.jsp</result>
+		</action>
+		
+		<action name="treeAggregateView" method="treeAggregateView" class="action.centralfactory.productionDemand.purchasing.CFPurchasingAction">
+			<result name="success">/jsp/centralfactory/productionDemand/purchaseBill/treeCreate/summary.jsp</result>
+		</action>
+
+		<action name="estimateView" method="estimateView" class="action.centralfactory.productionDemand.purchasing.CFPurchasingAction">
+<!-- 			<result name="success">/jsp/centralfactory/productionDemand/purchaseBill/treeCreate/estimate.jsp</result> -->
+		<result name="success">/jsp/centralfactory/productionDemand/purchaseBill/treeCreate/handsontable/estimate.jsp</result>
+		</action>
+		
+		<action name="queryMRP" method="queryMRP" class="action.centralfactory.productionDemand.purchasing.CFPurchasingAction">
+			<result type="json"></result>
+		</action>
+		
+		<action name="queryAverageRequest" method="queryAverageRequest" class="action.centralfactory.productionDemand.purchasing.CFPurchasingAction">
+			<result type="json"></result>
+		</action>
+		
+		<action name="checkView" method="checkView" class="action.centralfactory.productionDemand.purchasing.CFPurchasingAction">
+			<result name="success">/jsp/centralfactory/productionDemand/purchaseBill/treeCreate/check.jsp</result>
+		</action>
+		
+		<action name="createSummaryBill" method="createSummaryBill" class="action.centralfactory.productionDemand.purchasing.CFPurchasingAction">
+			<interceptor-ref name="defaultStack" />
+			<interceptor-ref name="token" />
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="centralfactory_productionDemand_manual_selmaterial" namespace="/centralfactory/productionDemand/purchaseBill/manual/selmaterial" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.lc.request.action.ManualPurchaseAction">
+			<result name="success">/jsp/centralfactory/productionDemand/purchaseBill/manual/selmaterial/main.jsp</result>
+		</action>
+		
+		<action name="listItemMeta" method="listItemMeta" class="com.tanry.business.module.lc.request.action.ManualPurchaseAction">
+			<result type="json" />
+		</action>
+		<action name="doQuery" method="doQuery" class="action.centralfactory.productionDemand.purchasing.CFPurchasingAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="centralfactory_productionDemand_purchaseBill_manual" namespace="/centralfactory/productionDemand/purchaseBill/manual" extends="trust-default">
+		<action name="mainView" class="action.centralfactory.productionDemand.purchasing.CFPurchasingAction">
+			<result name="success">/jsp/centralfactory/productionDemand/purchaseBill/manual/main.jsp</result>
+		</action>
+		
+		<action name="checkView" method="checkCFView" class="action.centralfactory.productionDemand.purchasing.CFPurchasingAction">
+			<result name="success">/jsp/centralfactory/productionDemand/purchaseBill/manual/check.jsp</result>
+		</action>
+		
+		<action name="createPurchaseBill" method="createPurchaseBill" class="action.centralfactory.productionDemand.purchasing.CFPurchasingAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="cf_purchase_manage" namespace="/cf/purchase/manage" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.lc.request.action.PurchaseAction">
+			<result name="success">/jsp/centralfactory/productionDemand/purchaseBill/manage/main.jsp</result>
+		</action>
+		
+		<action name="scanView" method="scanView" class="com.tanry.business.module.lc.request.action.PurchaseManageAction">
+			<result name="success">/jsp/centralfactory/productionDemand/purchaseBill/manage/scan.jsp</result>
+		</action>
+		
+		<action name="refView" method="refView" class="com.tanry.business.module.lc.request.action.PurchaseManageAction">
+			<result name="success">/jsp/centralfactory/productionDemand/purchaseBill/manage/ref.jsp</result>
+		</action>
+	</package>
+	
+	<package name="cf_purchase_audit" namespace="/cf/purchase/audit" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.lc.request.action.PurchaseManageAction">
+			<result name="success">/jsp/centralfactory/productionDemand/purchaseBill/audit/main.jsp</result>
+		</action>
+		
+		<action name="auditView" method="auditView" class="com.tanry.business.module.lc.request.action.PurchaseManageAction">
+			<result name="success">/jsp/centralfactory/productionDemand/purchaseBill/audit/audit.jsp</result>
+		</action>
+	</package>
+</struts>
+

@@ -1,0 +1,234 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on Tue Nov 11 16:14:06 CST 2014 by pw
+ * Last edited on Tue Nov 11 16:14:06 CST 2014 by pw
+ * 
+ * comment: 中央工厂生产领料单表明细
+ */
+package logic.reportmanage;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import java.util.Map;
+import java.util.HashMap;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import pojo.form.RequisitionDetail;
+import sqlj.runtime.ref.DefaultContext;
+import com.tanry.business.form.FormConstant;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.TextUtil;
+import com.tanry.framework.acl.NoPrivilegeException;
+
+public class RequisitionDetailBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(RequisitionDetailBean.class);
+	
+	#sql private iterator HeaderIter( String form_type, String item_id, String item_name,
+			 String storage_id, String storage, String form_maker, String form_note,
+			Date form_time,Double receive_count,String workshop,
+			String form_id, 
+			String item_dimension, 
+			String item_specification,
+			Double item_count,
+			Double different_count, 
+			Date expired_time);
+	
+	#sql private iterator SumIter(
+			Double receive_count);
+	
+	public Map getColmunType(){
+		Map map  = new HashMap();
+		map.put("form_type", "String");
+		map.put("item_name", "String");
+		map.put("item_id", "String");
+		map.put("receive_count", "Number");
+		map.put("workshop","String");
+		map.put("storage_id", "String");
+		map.put("storage", "String");
+		map.put("form_maker", "String");
+		map.put("form_note", "String");
+		map.put("form_time", "Date");
+		map.put("form_id", "String");
+		map.put("item_dimension", "String");
+		map.put("item_specification", "String");
+		map.put("item_count", "Number");
+		map.put("different_count", "Number");
+		map.put("expired_time", "Date");
+		return map;
+	}
+	
+	public Map getColmunPrefix(){
+		Map map  = new HashMap();
+		map.put("form_type", "h");
+		map.put("item_id", "d");
+		map.put("item_name", "d");
+		map.put("receive_count", "d");
+		map.put("workshop","h");
+		map.put("storage_id", "h");
+		map.put("storage", "h");
+		map.put("form_maker", "h");
+		map.put("form_note", "h");
+		map.put("form_time", "h");
+		map.put("form_id", "d");
+		map.put("item_dimension", "d");
+		map.put("item_specification", "d");
+		map.put("item_count", "d");
+		map.put("different_count", "d");
+		map.put("expired_time", "d");
+		return map;
+	}
+	
+	public int count(String queryStr)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		int total = 0;
+		
+        #sql [myCtx] {
+        SELECT
+            COUNT(*)
+        INTO
+            :total
+        FROM
+            :{Com_("D_T1_REQUISITION_HEADER")} h
+        INNER JOIN
+            :{Com_("D_T1_REQUISITION_DETAIL")} d
+        ON
+            h.FORM_ID = d.FORM_ID
+        INNER JOIN
+            :{Com_("D_T0_FORM_STATUS")} s
+        ON
+            s.FORM_ID = d.FORM_ID
+        AND s.IS_CURRENT = 1
+        WHERE
+            1 = 1
+        AND s.STATUS = '已审核' :{queryStr :: ''}};
+		closeDefaultContext(myCtx);
+		return total;
+	}
+	
+	
+	public List<Map> query(int startRow, int endRow,String queryStr,  String sortStr)  
+			throws NoPrivilegeException,SQLException,NoConnection {
+		
+		DefaultContext myCtx = getDefaultContext();
+		HeaderIter headerIter = null;
+		#sql [myCtx] headerIter = {
+			SELECT
+			    *
+			    FROM
+			        (
+			            SELECT
+			                t.*,
+			                ROWNUM rowNumber
+			            FROM 
+			                (SELECT
+			                	    h.FORM_TYPE,
+			                	    h.WORKSHOP,
+			                	    NVL(h.storage_id,' ') storage_id,
+			                	    NVL(h.storage,' ')    STORAGE,
+			                	    '已审核' STATUS,
+			                	    h.FORM_MAKER,
+			                	    h.FORM_TIME,
+			                	    h.FORM_NOTE,
+			                	    d.*
+			                	FROM
+			                	    :{Com_("D_T1_REQUISITION_HEADER")} h
+			                	INNER JOIN
+			                	    :{Com_("D_T1_REQUISITION_DETAIL")} d
+			                	ON
+			                	    h.FORM_ID = d.FORM_ID
+			                	WHERE
+			                	    1 = 1
+			                	AND h.AUDIT_TIME IS NOT NULL :{queryStr :: ''} :{sortStr :: ''}) t
+			            WHERE
+			                ROWNUM < :endRow)
+			    WHERE
+			        rowNumber >= :startRow};
+		List<Map> headerLst = processIter(headerIter);
+		headerIter.close();
+		closeDefaultContext(myCtx);
+		return headerLst;
+	}
+	
+	public Map sum( String queryStr) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		
+		DefaultContext myCtx = getDefaultContext();
+		SumIter sumIter = null;
+		
+		#sql [myCtx] sumIter = {
+			SELECT
+			 	SUM(NVL(RECEIVE_COUNT,0))RECEIVE_COUNT
+        	FROM
+        	    :{Com_("D_T1_REQUISITION_HEADER")} h
+        	INNER JOIN
+        	    :{Com_("D_T1_REQUISITION_DETAIL")} d
+        	ON
+        	    h.FORM_ID = d.FORM_ID
+        	INNER JOIN
+        	    :{Com_("D_T0_FORM_STATUS")} s
+        	ON
+        	    s.FORM_ID = d.FORM_ID
+        	AND s.IS_CURRENT = 1
+        	WHERE
+        	    1 = 1
+        	AND s.STATUS = '已审核' :{queryStr :: ''}};
+		closeDefaultContext(myCtx);
+		
+		Map sumMap = processSumIter(sumIter);
+		sumIter.close();
+		
+		return sumMap;
+	}
+
+	private Map processSumIter(SumIter sumIter) 
+			throws SQLException {
+		Map sumMap = new HashMap();
+		
+		while(sumIter.next()) {
+			sumMap.put("receive_count", sumIter.receive_count());
+		}
+			
+		return sumMap;
+	}
+
+	private List<Map> processIter(HeaderIter headerIter) 
+			throws SQLException {
+		List<Map> headerLst = new ArrayList<Map>();
+		
+		while(headerIter.next()) {
+			Map header = new HashMap();
+			header.put("form_type", headerIter.form_type());
+			header.put("storage_id", headerIter.storage_id());
+			header.put("storage", headerIter.storage());
+			header.put("receive_count", headerIter.receive_count());
+			header.put("workshop", headerIter.workshop());
+			header.put("item_id", headerIter.item_id());
+			header.put("item_name", headerIter.item_name());
+			header.put("form_maker", headerIter.form_maker());
+			header.put("form_note", headerIter.form_note());
+			header.put("form_time", headerIter.form_time());
+			header.put("form_id", headerIter.form_id());
+			header.put("item_dimension", headerIter.item_dimension());
+			header.put("item_specification", headerIter.item_specification());
+			header.put("item_count", headerIter.item_count());
+			header.put("different_count", headerIter.different_count());
+			header.put("expired_time", headerIter.expired_time());
+			headerLst.add(header);
+		}
+		return headerLst;
+	}
+}

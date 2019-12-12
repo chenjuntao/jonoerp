@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE struts PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN"
+    "http://struts.apache.org/dtds/struts-2.0.dtd">
+
+<struts>
+	<package name="hq_orderhandle" namespace="/hq/orderhandle" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.outerorder.action.HandleAction">
+			<result name="success">/jsp/hq/orderhandle/main.jsp</result>
+		</action>
+		
+		<action name="operate" method="operate" class="com.tanry.business.module.outerorder.action.HandleAction">
+			<result name="success">/jsp/hq/orderhandle/operate.jsp</result>
+		</action>
+	</package>
+</struts>
+

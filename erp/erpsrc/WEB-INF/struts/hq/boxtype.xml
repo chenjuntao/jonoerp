@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE struts PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN"
+    "http://struts.apache.org/dtds/struts-2.0.dtd">
+
+<struts>
+	<package name="hq_boxtype" namespace="/hq/boxtype" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.hq.config.box.BoxTypeManageAction">
+			<result name="success">/jsp/hq/config/boxtype/main.jsp</result>
+		</action>
+		
+		<action name="editView" method="editView" class="com.tanry.business.module.hq.config.box.BoxTypeManageAction">
+			<result name="success">/jsp/hq/config/boxtype/edit.jsp</result>
+		</action>
+		
+		<action name="checkCode" method="checkCode" class="com.tanry.business.module.hq.config.box.BoxTypeManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doQuery" method="doQuery" class="com.tanry.business.module.hq.config.box.BoxTypeManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="saveType" method="saveType" class="com.tanry.business.module.hq.config.box.BoxTypeManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doEnable" method="doEnable" class="com.tanry.business.module.hq.config.box.BoxTypeManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doDelete" method="doDelete" class="com.tanry.business.module.hq.config.box.BoxTypeManageAction">
+			<result type="json" />
+		</action>
+	</package>
+</struts>
+

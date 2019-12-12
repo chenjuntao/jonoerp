@@ -1,0 +1,16 @@
+body {
+	overflow: hidden;
+}
+
+#deliveryTc {
+	position: absolute;
+	right: 0;
+	top: 92px;
+	bottom: 0;
+	width: 100%;
+	height: auto;
+}
+
+.dijitTabPane {
+	padding: 0px !important;
+}

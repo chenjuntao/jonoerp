@@ -1,0 +1,208 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on Mon Nov 17 16:26:19 CST 2014 by pw
+ * Last edited on Mon Nov 17 16:26:19 CST 2014 by pw
+ * 
+ * comment: 中央工厂生产工单明细
+ */
+package logic.form;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import pojo.form.WorkOrderDetail;
+import sqlj.runtime.ref.DefaultContext;
+import com.tanry.business.form.FormConstant;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.TextUtil;
+import com.tanry.framework.acl.NoPrivilegeException;
+
+public class WorkOrderDetailBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(WorkOrderDetailBean.class);
+	
+	#sql private iterator DetailIter(String form_id, Integer production_step, String production_name, Date production_time,
+			Double production_count, String production_man, String production_note, Integer is_completed);
+	
+	public int saveEntity(WorkOrderDetail detail)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		String formId = detail.getFormId();
+		Integer productionStep = detail.getProductionStep();
+		String productionName = detail.getProductionName();
+		Date productionTime = SqlDateUtil.getSqlDate(detail.getProductionTime());
+		Double productionCount = detail.getProductionCount();
+		String productionMan = detail.getProductionMan();
+		String productionNote = detail.getProductionNote();
+
+		#sql [myCtx] {
+			INSERT INTO :{Com_("D_T1_WORK_ORDER_DETAIL")} 
+				(FORM_ID, PRODUCTION_STEP, PRODUCTION_NAME, PRODUCTION_TIME, PRODUCTION_COUNT, PRODUCTION_MAN, PRODUCTION_NOTE) 
+			VALUES (:formId, :productionStep, :productionName, :productionTime, :productionCount, :productionMan, :productionNote)
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	/**
+	 * 批量生成生产工单明细信息
+	 */
+	public int batchSave(String formId, String itemId)
+			throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		#sql [myCtx] {
+			INSERT INTO
+			:{Com_("D_T1_WORK_ORDER_DETAIL")}
+			    (
+			        FORM_ID,
+			        PRODUCTION_NAME,
+			        PRODUCTION_STEP,
+			        PRODUCTION_NOTE
+			    )
+			SELECT
+			    :formId FORM_ID,
+			    STEP_OPERATION         PRODUCTION_NAME ,
+			    STEP                   PRODUCTION_STEP,
+			    STEP_NOTE              PRODUCTION_NOTE
+			FROM
+			:{Com_("D_T2_MAKING_PROCESS")} mp
+			WHERE
+			    mp.ITEM_ID = :itemId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+
+	public int updateEntity(WorkOrderDetail detail)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		String formId = detail.getFormId();
+		String productionName = detail.getProductionName();
+		Integer productionStep = detail.getProductionStep();
+		Date productionTime = SqlDateUtil.getSqlDate(detail.getProductionTime());
+		Double productionCount = detail.getProductionCount();
+		String productionMan = detail.getProductionMan();
+		String productionNote = detail.getProductionNote();
+		Integer isCompleted = detail.getIsCompleted();
+		
+		#sql [myCtx] {
+			UPDATE
+			:{Com_("D_T1_WORK_ORDER_DETAIL")}
+			SET
+				PRODUCTION_COUNT = :productionCount,
+				PRODUCTION_TIME = :productionTime,
+				PRODUCTION_MAN = :productionMan,
+				PRODUCTION_NOTE = :productionNote,
+				IS_COMPLETED = :isCompleted
+			WHERE
+				FORM_ID = :formId
+			AND PRODUCTION_STEP = :productionStep
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+
+	public int deleteByForm(String formId)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		#sql [myCtx] {
+			DELETE
+			FROM
+			:{Com_("D_T1_WORK_ORDER_DETAIL")}
+			WHERE
+				FORM_ID = :formId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public List<WorkOrderDetail> query(String formId)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		DetailIter detailIter = null;
+		#sql [myCtx] detailIter = {
+			SELECT
+			    *
+			FROM
+			:{Com_("D_T1_WORK_ORDER_DETAIL")} d
+			WHERE
+			    d.FORM_ID = :formId
+		};
+		List<WorkOrderDetail> detailLst = processIter(detailIter);
+		detailIter.close();
+		closeDefaultContext(myCtx);
+		return detailLst;
+	}
+
+	public WorkOrderDetail getCurrentStep(String formId) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		DetailIter detailIter = null;
+		#sql [myCtx] detailIter = {
+			SELECT
+			    *
+			FROM
+			    (
+			        SELECT
+			            d.*
+			        FROM
+			        :{Com_("D_T1_WORK_ORDER_HEADER")} h
+			        LEFT JOIN
+			        :{Com_("D_T1_WORK_ORDER_DETAIL")} d
+			        ON
+			            d.FORM_ID = h.FORM_ID
+			        WHERE
+			            h.form_id = :formId
+			        AND d.is_completed IS NULL
+			        ORDER BY
+			            d.production_step )
+			WHERE
+			    rownum = 1
+		};
+		List<WorkOrderDetail> detailLst = processIter(detailIter);
+		detailIter.close();
+		closeDefaultContext(myCtx);
+		if (detailLst !=null && !detailLst.isEmpty()) {
+			return detailLst.get(0);
+		}
+		return null;
+	}
+
+	private List<WorkOrderDetail> processIter(DetailIter detailIter) 
+			throws SQLException {
+		List<WorkOrderDetail> detailLst = new ArrayList<WorkOrderDetail>();
+		while(detailIter.next()) {
+			WorkOrderDetail detail = new WorkOrderDetail();
+			detail.setFormId(detailIter.form_id());
+			detail.setProductionStep(detailIter.production_step());
+			detail.setProductionName(detailIter.production_name());
+			detail.setProductionTime(SqlDateUtil.getUtilDate(detailIter.production_time()));
+			detail.setProductionCount(detailIter.production_count());
+			detail.setProductionMan(detailIter.production_man());
+			detail.setProductionNote(detailIter.production_note());
+			detail.setIsCompleted(detailIter.is_completed());
+			detailLst.add(detail);
+		}
+		return detailLst;
+	}
+}

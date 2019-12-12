@@ -1,0 +1,197 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on Jul 15, 2015 by liyzh
+ * Last edited on Jul 15, 2015 by liyzh
+ * 
+ * 说明： 多品牌出品信息
+ */
+package logic.store;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
+
+import pojo.store.BrandProduct;
+import sqlj.runtime.ref.DefaultContext;
+
+import com.tanry.business.module.hq.config.item.vo.ItemVO;
+import com.tanry.framework.acl.NoPrivilegeException;
+import com.tanry.framework.util.SqlDateUtil;
+
+public class BrandProductBean extends ConnectionPool {
+	
+	public static Logger log = Logger.getLogger(BrandProductBean.class);
+	
+	public int saveEntity(BrandProduct product)
+			throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		String brandId = product.getBrandId();
+		String itemId = product.getItemId();
+
+		#sql [myCtx] {
+			INSERT
+			INTO
+			:{Com_("D_T2_BRAND_PRODUCT")}
+			    (
+			        BRAND_ID,
+			        ITEM_ID
+			    )
+			    VALUES
+			    (
+			    	:brandId,
+			    	:itemId
+			    )
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	/**
+	 * 删除除此之外的其它记录
+	 */
+	public int deleteExcept(String brandId, List<String> itemIdLst)
+			throws NoPrivilegeException, SQLException, NoConnection {
+		String query = " 1=1 ";
+		if (!itemIdLst.isEmpty()) {
+			query = " ITEM_ID NOT IN ('" + StringUtils.join(itemIdLst, ",").replaceAll(",", "','") + "') ";
+		}
+		
+		DefaultContext myCtx = getDefaultContext();
+		#sql [myCtx] {
+			DELETE
+			FROM
+			:{Com_("D_T2_BRAND_PRODUCT")}
+			WHERE
+				BRAND_ID = :brandId
+			AND	:{query :: 1=1}
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	/**
+	 * 启停用出品
+	 */
+	public int enableItem(String itemId, String itemType, Integer enabled, java.util.Date effectDate)
+			throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		Date sDate = SqlDateUtil.getSqlDate(effectDate);
+		#sql [myCtx] {
+			UPDATE
+			:{Com_("D_T2_ITEM_META")}
+			SET
+			   	ENABLED = :enabled,
+			   	EFFECT_DATE = :sDate
+			WHERE 
+				ITEM_ID = :itemId
+		};
+		
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+
+	#sql private iterator ProductIter(String brand_id, String item_id, String item_name);
+	
+	public List<Map> query(String brandId) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		ProductIter productIter = null;
+		#sql [myCtx] productIter = {
+			SELECT
+			    p.*,
+			    m.ITEM_NAME
+			FROM
+			:{Com_("D_T2_BRAND_PRODUCT")} p
+			LEFT JOIN
+			:{Com_("D_T2_ITEM_META")} m
+			ON
+				m.ITEM_ID = p.ITEM_ID
+			WHERE
+				p.BRAND_ID = :brandId
+		};
+		List<Map> productLst = new ArrayList<Map>();
+		while(productIter.next()) {
+			Map<String, String> product = new HashMap<String, String>();
+			product.put("brandId", productIter.brand_id());
+			product.put("itemId", productIter.item_id());
+			product.put("itemName", productIter.item_name());
+			productLst.add(product);
+		}
+		productIter.close();
+		closeDefaultContext(myCtx);
+		return productLst;
+	}
+	
+	#sql private iterator ItemIter(
+			String item_id,
+			String item_name, String query_code,
+			String category_id, String category_name,
+			String item_dimension,
+			String item_specification);
+	
+	/**
+	 * 根据名称或编码查询出品
+	 */
+	public List<ItemVO> queryProduct(String itemName)   
+			throws NoPrivilegeException,SQLException,NoConnection {
+		itemName = "%" + itemName + "%";
+		
+		DefaultContext myCtx = getDefaultContext();
+		ItemIter itemIter = null;
+		#sql [myCtx] itemIter = {
+			SELECT
+			    m.ITEM_ID,
+			    m.ITEM_NAME, 
+			    m.QUERY_CODE,
+			    m.CATEGORY_ID,
+			    c.CATEGORY_NAME,
+			    m.ITEM_DIMENSION,
+			    m.ITEM_SPECIFICATION
+			FROM
+			:{Com_("D_T2_ITEM_META")} m
+			LEFT JOIN
+			:{Com_("D_T2_ITEM_CATEGORY")} c
+			ON
+				c.CATEGORY_ID = m.CATEGORY_ID
+			WHERE
+                m.ITEM_ID LIKE :itemName
+            OR  m.ITEM_NAME LIKE :itemName
+			ORDER BY
+			    m.ITEM_ID
+		};
+		List<ItemVO> itemLst = new ArrayList<ItemVO>();
+		while(itemIter.next()) {
+			ItemVO item = new ItemVO();
+			item.setItemId(itemIter.item_id());
+			item.setItemName(itemIter.item_name());
+			item.setQueryCode(itemIter.query_code());
+			item.setCategoryId(itemIter.category_id());
+			item.setCategoryName(itemIter.category_name());
+			item.setItemDimension(itemIter.item_dimension());
+			item.setItemSpecification(itemIter.item_specification());
+			itemLst.add(item);
+		}
+		itemIter.close();
+		closeDefaultContext(myCtx);
+		return itemLst;
+	}
+}

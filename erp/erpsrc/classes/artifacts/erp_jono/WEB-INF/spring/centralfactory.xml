@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:aop = "http://www.springframework.org/schema/aop"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+	http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+	http://www.springframework.org/schema/aop 
+	http://www.springframework.org/schema/aop/spring-aop-2.5.xsd"
+	default-autowire="byName">
+
+	<bean id="cfOrderSummaryService" class="service.centralfactory.productionDemand.OrderSummaryService" />
+	<bean id="summaryService" class="service.centralfactory.productionDemand.SummaryService" />
+	<bean id="arrangementService" class="service.centralfactory.productionDemand.ArrangementService" />
+	<bean id="workOrderService" class="service.centralfactory.productionDemand.WorkOrderService" />
+	<bean id="requisitionService" class="service.centralfactory.productionDemand.RequisitionService" />
+	
+	<bean id="collectDetailBean" class="logic.form.CollectDetailBean" />
+	<bean id="collectHeaderBean" class="logic.form.CollectHeaderBean" />
+	<bean id="collectRefFormBean" class="logic.form.CollectRefFormBean" />
+	
+	<bean id="arrangmentDetailBean" class="logic.form.ArrangmentDetailBean" />
+	<bean id="arrangmentHeaderBean" class="logic.form.ArrangmentHeaderBean" />
+	
+	<bean id="workOrderHeaderBean" class="logic.form.WorkOrderHeaderBean" />
+	
+	<bean id="requisitionDetailBean" class="logic.form.RequisitionDetailBean" />
+	<bean id="requisitionHeaderBean" class="logic.form.RequisitionHeaderBean" />
+	
+	<bean id="makingProcessBean" class="logic.form.MakingProcessBean" />
+	
+	<bean id="outputRecordService" class="com.tanry.business.module.cf.production.service.OutputRecordService" />
+	<bean id="workShopManageService" class="com.tanry.business.module.cf.workShop.service.WorkShopManageService" />
+	
+	<bean id="arrangementQueryBean" class="logic.module.cf.ArrangementQueryBean" />
+	<bean id="purchaseQueryBean" class="logic.module.cf.PurchaseQueryBean" />
+	
+	<bean id="cfRequestSummaryBean" class="logic.module.cf.RequestSummaryBean" />
+	<bean id="requisitionBatchExportBean" class="logic.form.RequisitionBatchExportBean" />
+</beans>
+

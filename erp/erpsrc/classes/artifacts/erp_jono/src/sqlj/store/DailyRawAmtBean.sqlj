@@ -1,0 +1,323 @@
+/**
+*
+* Copyright (c) 2014
+* Tanry Electronic Technology Co., Ltd.
+* ChangSha, China
+*
+* All Rights Reserved.
+*
+* First created on Sep 29, 2014 by cjt
+* Last edited on Sep 29, 2014 by cjt
+*
+* 说明： 访问餐厅每日原料万元用量表
+*
+*/
+
+package logic.store;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+import sqlj.runtime.ref.DefaultContext;
+
+import com.tanry.framework.util.DateTimeUtil;
+import com.tanry.business.form.FormConstant;
+import com.tanry.framework.acl.NoPrivilegeException;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.constant.SysOption;
+
+public class DailyRawAmtBean extends ConnectionPool {
+	
+//    #sql private iterator MaterialIterator(String ITEM_ID, Double nqty,String PRICE_TYPE, Double ITEM_PRICE); 
+    
+    private OptionBean optionBean;
+    public void SetOptionBean(OptionBean optionBean){
+    	this.optionBean = optionBean;
+    }
+
+    //计算理论用量
+    public int calcTheoryRawAmt(String branchId, java.util.Date settleDate) throws NoPrivilegeException, SQLException, NoConnection {
+    	DefaultContext myCtx = getDefaultContext();
+//		MaterialIterator materialIterator = null;
+		Date sDate = SqlDateUtil.getSqlDate(settleDate);
+		if (myCtx != null) {
+			//查询当天所有的原料理论扣库数量
+			#sql [myCtx] {
+				INSERT INTO :{Com_("D_T3_DAILY_RAW_AMT")}
+					(BRANCH_ID, BUSINESS_DATE,ITEM_PRICE, PRICE_TYPE, ITEM_ID, AMT_THEORY, AMT_ACTUAL)
+				(
+					SELECT
+						:branchId,
+						:sDate,
+					    ip.ITEM_PRICE ,
+					    ip.PRICE_TYPE,
+					    trim(t.ITEM_ID) ITEM_ID,
+					    SUM(t.item_gross_count * d.nqty) AS nqty,
+					    NULL
+					FROM
+						:{Com_("D_T_FOOD_BILL")} b,
+					    :{Com_("D_T_FOOD_BILLS")} d,
+					    :{Com_("D_T2_THERAPY")} t,
+					    :{Com_("D_T2_ITEM_PRICE")} ip
+					WHERE
+						trim(d.CBILL_C) = trim(b.CBILL_C)
+					AND trim(b.cbranch_c) = :branchId
+					AND trim(t.THERAPY_ID) = trim(d.cfood_c)
+					AND b.dbusiness = :sDate
+					AND trim(t.ITEM_ID) = trim(ip.ITEM_ID)
+					AND ip.IS_CURRENT = 1
+					AND ip.PRICE_TYPE = 'BENCHMARK'
+					GROUP BY
+					    trim(t.ITEM_ID),
+					    ip.ITEM_PRICE ,
+					    ip.PRICE_TYPE
+				 )
+			};
+		} else {
+            throw new NoConnection();
+        }
+		closeDefaultContext(myCtx);
+		return 1;
+    }
+
+    #sql private iterator ItemUseUpIter(String item_id, Integer dayDiff, Double checkDiff, Double itemOut);
+    //计算实际用量
+    public int calcActualRawAmt(String branchId, java.util.Date settleDate) throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		ItemUseUpIter itemUseUpIter = null;
+		String formType = FormConstant.CHECK_FORM;
+		Date sDate = SqlDateUtil.getSqlDate(settleDate);
+
+		/*-------------------------------------------------------------------------------------------
+		 * 计算实际用量
+		 * 实际用量 = 期初 + ∑入库量 - 期末 = ∑出库量
+		 * 出库量包含：理论扣仓和报损，不包含：调拨、配送退货（统配）、采购退货（直配）
+		 */
+		#sql [myCtx] {
+			INSERT INTO	:{Com_("D_T3_DAILY_RAW_AMT")} 
+				(BRANCH_ID, BUSINESS_DATE, ITEM_ID, AMT_THEORY, AMT_ACTUAL) 
+			(
+				SELECT d.ITEM_ID,
+					   d.BUSINESS_DATE,
+					   d.ITEM_ID,--//当天盘点的物料id
+					   b.checkDiff, --//原料出库量
+				       SUM(d.ITEM_COUNT_OUT) - b.checkDiff --//原料实际用量=原料出库量-盘点差异
+				FROM 
+					 (--//查询当天盘点的物料上一次最近的盘点日期
+					    SELECT a.ITEM_ID,
+					    	   a.checkDiff,
+						       MAX(s.BUSINESS_DATE) AS lastDate,
+						       :sDate - MAX(s.BUSINESS_DATE) AS dayDiff
+					    FROM 
+					    (--//查询当天有哪些物料进行过盘点
+							SELECT 
+							    cd.ITEM_ID,
+							    cd.CHECK_COUNT-cd.THEORY_COUNT AS checkDiff
+							 FROM
+							 	:{Com_("D_T1_CHECK_HEADER")} ch,
+							    :{Com_("D_T1_CHECK_DETAIL")} cd
+							 WHERE
+							    ch.FORM_ID = cd.FORM_ID
+							 AND 
+								ch.FORM_TYPE = :formType
+							 AND
+								ch.AUDIT_TIME = :sDate
+							 AND
+								ch.CHECK_BRANCH_ID = :branchId
+						) a,
+					    :{Com_("D_T0_STORAGE_IN_OUT")} s
+					    WHERE a.ITEM_ID = s.ITEM_ID
+					    AND s.REASON = 'PD'
+					    AND s.BRANCH_ID = :branchId
+					    AND s.BUSINESS_DATE < :sDate
+					    GROUP BY a.ITEM_ID, a.checkDiff
+					) b,
+					:{Com_("D_T0_STORAGE_IN_OUT")} d
+				WHERE d.ITEM_ID = b.ITEM_ID
+				AND d.BRANCH_ID = :branchId
+				AND d.BUSINESS_DATE <= :sDate
+				AND d.BUSINESS_DATE > b.lastDate
+				--//以下为计算原料用量主要考虑的出库因素：理论扣仓和报损
+				AND d.REASON = 'LLKU' --//计算原料用量主要考虑销售扣仓(理论扣库)
+				AND d.REASON = 'YLBS' --//计算原料用量还要考虑原料报损
+				AND d.REASON = 'CPBS' --//计算原料用量还要考虑出品报损
+				--//原料用量不需考虑的出库因素包括：调拨、配送退货（统配）、采购退货（直配）
+				GROUP BY 
+					d.ITEM_ID,
+					d.BUSINESS_DATE,
+					d.ITEM_ID,
+					b.checkDiff
+			)
+    	};
+		
+		closeDefaultContext(myCtx);
+		return 1;
+	}
+    
+    /**
+     * 查询当天的营业日期与之前最近的盘点日期之间所消耗的物料数量
+     */
+    public List<Map> queryUseup(String branchId, java.util.Date settleDate,DefaultContext myCtx) 
+    		throws NoPrivilegeException, SQLException, NoConnection {
+
+		ItemUseUpIter itemUseUpIter = null;
+		String formType = FormConstant.CHECK_FORM;
+		Date sDate = SqlDateUtil.getSqlDate(settleDate);
+
+		#sql [myCtx] itemUseUpIter = {
+			WITH a AS (--//查询当天有哪些物料进行过盘点
+				SELECT 
+				    cd.ITEM_ID,
+				    cd.CHECK_COUNT-cd.THEORY_COUNT AS checkDiff
+				 FROM
+				 	:{Com_("D_T1_CHECK_HEADER")} ch,
+				    :{Com_("D_T1_CHECK_DETAIL")} cd
+				 WHERE
+				    ch.FORM_ID = cd.FORM_ID
+				 AND 
+					ch.FORM_TYPE = :formType
+				 AND
+					ch.AUDIT_TIME = :sDate
+				 AND
+					ch.CHECK_BRANCH_ID = :branchId
+		     ),
+			 b AS (--//查询当天盘点的物料上一次最近的盘点日期
+			    SELECT 
+			    	a.ITEM_ID,
+				    MAX(s.BUSINESS_DATE) AS lastDate,
+				    :sDate - MAX(s.BUSINESS_DATE) AS dayDiff
+			    FROM a,
+			    :{Com_("D_T3_DAILY_STORAGE")} s
+			    WHERE 
+			    	a.ITEM_ID = s.ITEM_ID
+			    AND s.ITEM_COUNT_ACTUAL IS NOT NULL
+			    AND s.BRANCH_ID = :branchId
+			    AND s.BUSINESS_DATE < :sDate
+			    GROUP BY 
+			    	a.ITEM_ID
+	        )
+			SELECT 
+				b.ITEM_ID,--//当天盘点的物料id
+			    b.dayDiff, --//当天的营业日期与上一次最近的盘点日期之间相差的天数
+			    a.checkDiff, --//本次盘点的盘点差异
+			    SUM(d.ITEM_COUNT_OUT) AS itemOut --//当天与上一次最近的盘点日期之间的原料出库量
+		    FROM a, 
+				 b,
+				 :{Com_("D_T0_STORAGE_IN_OUT")} d
+			WHERE 
+				b.ITEM_ID = a.ITEM_ID
+            AND d.ITEM_ID = a.ITEM_ID
+			AND d.BRANCH_ID = :branchId
+			AND d.BUSINESS_DATE <= :sDate
+            AND d.BUSINESS_DATE > b.lastDate
+            GROUP BY 
+            	b.ITEM_ID,
+                b.dayDiff,
+                a.checkDiff
+		};
+		
+		List<Map> itemLst = new ArrayList<Map>();
+		while(itemUseUpIter.next()) {
+			String itemId = itemUseUpIter.item_id();
+			Integer dayDiff = itemUseUpIter.dayDiff();
+			Double itemUseup = itemUseUpIter.itemOut() - itemUseUpIter.checkDiff();
+			Map<String, Object> item = new HashMap<String, Object>();
+			item.put("itemId", itemId);
+			item.put("dayDiff", dayDiff);
+			item.put("itemUseup", itemUseup);
+			itemLst.add(item);
+		}
+		itemUseUpIter.close();
+		
+		return itemLst;
+	}
+
+    #sql private iterator ItemIter(String item_id, Date business_date, Double amt_theory);
+    /**
+     * 查询当天的营业日期与之前最近的盘点日期之间每天的理论用量
+     */
+    public List<Map> queryTheoryAmt(String branchId, java.util.Date startDate, java.util.Date endDate,DefaultContext myCtx) 
+    		throws NoPrivilegeException, SQLException, NoConnection {
+		Date sDate = SqlDateUtil.getSqlDate(startDate);
+		Date eDate = SqlDateUtil.getSqlDate(endDate);
+
+		ItemIter itemIter = null;
+		#sql [myCtx] itemIter = {
+			SELECT 
+            	ITEM_ID,
+            	BUSINESS_DATE,
+            	AMT_THEORY
+            FROM 
+            :{Com_("D_T3_DAILY_RAW_AMT")}
+            WHERE
+     	    	BRANCH_ID = :branchId
+            AND BUSINESS_DATE <= :eDate
+            AND BUSINESS_DATE > :sDate
+		};
+		
+		List<Map> itemLst = new ArrayList<Map>();
+		while(itemIter.next()) {
+			Map<String, Object> item = new HashMap<String, Object>();
+			item.put("itemId", itemIter.item_id());
+			item.put("businessDate", SqlDateUtil.getUtilDate(itemIter.business_date()));
+			item.put("amtTheory", itemIter.amt_theory());
+			itemLst.add(item);
+		}
+		itemIter.close();
+		
+		return itemLst;
+	}
+
+	//查询原材料的万元用量
+	public Double queryRawAmtTTCNY(java.util.Date startDate, java.util.Date endDate, String branchId, String itemId) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		Date sDate = SqlDateUtil.getSqlDate(startDate);
+		Date eDate = SqlDateUtil.getSqlDate(endDate);
+		//查询万元用量类型(理论值:THEORY/实际值:ACTUAL)
+		String amtTTCNYType = optionBean.getOption(SysOption.AMT_TTCNY);
+				
+		DefaultContext myCtx = getDefaultContext();
+		Double rawAmt = 0.0;
+		if(amtTTCNYType == "ACTUAL"){
+			#sql [myCtx] {
+				SELECT SUM(CASE WHEN amt_actual IS NULL then amt_theory ELSE amt_actual END) into :rawAmt
+				FROM :{Com_("D_T3_DAILY_RAW_AMT")} 
+				WHERE BRANCH_ID = : branchId
+			    AND (BUSINESS_DATE >= :sDate or :sDate is null)
+				AND (BUSINESS_DATE <= :eDate or :eDate is null)
+				AND ITEM_ID = :itemId
+			};
+		}else{ //默认为理论值
+			#sql [myCtx] {
+				SELECT SUM(AMT_THEORY) into :rawAmt
+				FROM :{Com_("D_T3_DAILY_RAW_AMT")} 
+				WHERE BRANCH_ID = : branchId
+			    AND (BUSINESS_DATE >= :sDate or :sDate is null)
+				AND (BUSINESS_DATE <= :eDate or :eDate is null)
+				AND ITEM_ID = :itemId
+			};
+		}
+		Double businessAmt = 0.0;
+		#sql [myCtx] {
+			SELECT SUM(BUSINESS_AMT) into : businessAmt
+			FROM :{Com_("D_T3_DAILY_BUSINESS_AMT")} 
+			WHERE BRANCH_ID = : branchId
+		    AND (BUSINESS_DATE >= :sDate or :sDate is null)
+			AND (BUSINESS_DATE <= :eDate or :eDate is null)
+		};
+		closeDefaultContext(myCtx);
+		if(businessAmt == 0.0)
+		{
+			return 0.0;
+		}else{
+		    return rawAmt/businessAmt;
+		}
+	}
+}

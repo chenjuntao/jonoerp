@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE struts PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN"
+    "http://struts.apache.org/dtds/struts-2.0.dtd">
+
+<struts>
+	<package name="cf_checkstorage_lock" namespace="/cf/checkstorage/lock" extends="trust-default">
+		<action name="mainView" class="action.restaurant.checkstorage.LockStorageAction">
+			<result name="success">/jsp/centralfactory/checkstorage/lock/main.jsp</result>
+		</action>
+		
+		<action name="lockView" method="lockView" class="com.tanry.business.module.cf.stock.LockStoreAction">
+			<result name="success">/jsp/centralfactory/checkstorage/lock/lock.jsp</result>
+		</action>
+		
+		<action name="checkBill" method="checkBill" class="com.tanry.business.module.cf.stock.LockStoreAction">
+			<result type="json" />
+		</action>
+		
+		<action name="queryBatch" method="queryBatch" class="action.restaurant.checkstorage.LockStorageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="checkFinish" method="checkFinish" class="action.restaurant.checkstorage.LockStorageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="saveLock" method="saveLock" class="action.restaurant.checkstorage.LockStorageAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="cf_checkstorage_icreate" namespace="/cf/checkstorage/icreate" extends="trust-default">
+		<action name="mainView" class="action.restaurant.checkstorage.CreateItemAction">
+			<result name="success">/jsp/centralfactory/checkstorage/icreate/main.jsp</result>
+		</action>
+		
+		<action name="checkView" method="checkView" class="action.restaurant.checkstorage.CreateItemAction">
+			<result name="success">/jsp/centralfactory/checkstorage/icreate/check.jsp</result>
+		</action>
+		
+		<action name="doSave" method="doSave" class="action.restaurant.checkstorage.CreateItemAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="cf_checkstorage_iteminput" namespace="/cf/checkstorage/iteminput" extends="trust-default">
+		<action name="mainView" class="action.restaurant.checkstorage.ItemManageAction">
+<!-- 			<result name="success">/jsp/centralfactory/checkstorage/iteminput/main.jsp</result> -->
+			<result name="success">/jsp/centralfactory/checkstorage/iteminput/handsontable/main.jsp</result>
+		</action>
+		
+		<action name="checkView" method="checkView" class="action.restaurant.checkstorage.ItemManageAction">
+			<result name="success">/jsp/centralfactory/checkstorage/iteminput/check.jsp</result>
+		</action>
+	</package>
+	
+	<package name="cf_checkstorage_imanage" namespace="/cf/checkstorage/imanage" extends="trust-default">
+		<action name="mainView" class="action.restaurant.checkstorage.ItemManageAction">
+			<result name="success">/jsp/centralfactory/checkstorage/imanage/main.jsp</result>
+		</action>
+		
+		<action name="editView" method="editView" class="action.restaurant.checkstorage.ItemManageAction">
+			<result name="success">/jsp/centralfactory/checkstorage/imanage/edit.jsp</result>
+		</action>
+		
+		<action name="scanView" method="scanView" class="action.restaurant.checkstorage.ItemManageAction">
+			<result name="success">/jsp/centralfactory/checkstorage/imanage/scan.jsp</result>
+		</action>
+		
+		<action name="queryBatch" method="queryBatch" class="action.restaurant.checkstorage.ItemManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="checkRepeat" method="checkRepeat" class="action.restaurant.checkstorage.ItemManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="queryCheckList" method="queryCheckList" class="action.restaurant.checkstorage.ItemManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="queryCheckHeader" method="queryCheckHeader" class="action.restaurant.checkstorage.ItemManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="fillBill" method="fillBill" class="action.restaurant.checkstorage.ItemManageAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="cf_checkstorage_manage" namespace="/cf/checkstorage/manage" extends="trust-default">
+		<action name="queryDetail" method="queryDetail" class="action.restaurant.checkstorage.BillManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doQuery" method="doQuery" class="action.restaurant.checkstorage.BillManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doDelete" method="doDelete" class="action.restaurant.checkstorage.BillManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="deleteBatch" method="deleteBatch" class="action.restaurant.checkstorage.BillManageAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="cf_checkstorage_create" namespace="/cf/checkstorage/create" extends="trust-default">
+		<action name="mainView" class="action.restaurant.checkstorage.CreateBillAction">
+			<result name="success">/jsp/centralfactory/checkstorage/create/main.jsp</result>
+		</action>
+		
+		<action name="editView" method="editView" class="action.restaurant.checkstorage.CreateBillAction">
+			<result name="success">/jsp/centralfactory/checkstorage/create/edit.jsp</result>
+		</action>
+		
+		<action name="queryDetail" method="queryDetail" class="action.restaurant.checkstorage.CreateBillAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doSave" method="doSave" class="action.restaurant.checkstorage.CreateBillAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="cf_checkstorage_audit" namespace="/cf/checkstorage/audit" extends="trust-default">
+		<action name="mainView" class="action.restaurant.checkstorage.BillManageAction">
+			<result name="success">/jsp/centralfactory/checkstorage/audit/main.jsp</result>
+		</action>
+		
+		<action name="auditView" method="auditView" class="action.restaurant.checkstorage.BillManageAction">
+			<result name="success">/jsp/centralfactory/checkstorage/audit/audit.jsp</result>
+		</action>
+		
+		<action name="doAudit" method="doAudit" class="action.restaurant.checkstorage.BillManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="auditById" method="auditById" class="action.restaurant.checkstorage.BillManageAction">
+			<result type="json" />
+		</action>
+	</package>
+</struts>
+

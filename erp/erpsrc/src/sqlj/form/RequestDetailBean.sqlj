@@ -1,0 +1,324 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on Aug 26, 2014 by liyzh
+ * Last edited on Aug 26, 2014 by liyzh
+ * 
+ * 说明： 餐厅要货、外部订货商订货需求表明细
+ */
+package logic.form;
+
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import pojo.form.RequestDetail;
+import sqlj.runtime.ref.DefaultContext;
+import com.tanry.framework.acl.NoPrivilegeException;
+import com.tanry.framework.util.TextUtil;
+
+public class RequestDetailBean extends ConnectionPool {
+	
+	public static Logger log = Logger.getLogger(RequestDetailBean.class);
+
+	#sql private iterator DetailIter(
+			String rownumber,
+			String form_id,
+			String item_id,
+			String intl_bar_code,
+			String item_name,
+			String item_category,
+			String item_dimension,
+			String item_specification,
+			Double amt_tt_cny1,
+			Double amt_tt_cny2,
+			Double amt_tt_cny3,
+			Double require_count1,
+			Double require_count2,
+			Double require_count3,
+			Double inventory,
+			Double suggest_count1,
+			Double suggest_count2,
+			Double suggest_count3,
+			Double order_count,
+			Double item_unit_price,
+			Double pay_amt);
+	
+	public List<RequestDetail> query(String formId)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		return query(formId,null);
+	}
+
+	public List<RequestDetail> query(String formId,String hasSum)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		DetailIter detailIter = null;
+		#sql [myCtx] detailIter = {
+			SELECT
+			    DECODE(FORM_ID,NULL,'合计',ROWNUM) rownumber,
+			    a.*
+			FROM
+			    (
+			        SELECT
+			            d.FORM_ID,
+			            d.ITEM_ID,
+			            d.INTL_BAR_CODE,
+			            d.ITEM_NAME,
+			            d.ITEM_CATEGORY,
+			            d.ITEM_DIMENSION,
+			            d.ITEM_SPECIFICATION,
+			            d.AMT_TT_CNY1,
+			            d.AMT_TT_CNY2,
+			            d.AMT_TT_CNY3,
+			            d.REQUIRE_COUNT1,
+			            d.REQUIRE_COUNT2,
+			            d.REQUIRE_COUNT3,
+			            d.INVENTORY,
+			            d.SUGGEST_COUNT1,
+			            d.SUGGEST_COUNT2,
+			            d.SUGGEST_COUNT3,
+			            SUM(d.ORDER_COUNT) ORDER_COUNT,
+			            d.ITEM_UNIT_PRICE,
+			            SUM(d.PAY_AMT) PAY_AMT
+			        FROM
+			        	:{Com_("D_T1_REQUEST_DETAIL")} d
+			        WHERE
+			        	d.FORM_ID = :formId
+			        GROUP BY
+			            GROUPING SETS( (d.FORM_ID, d.ITEM_ID, d.INTL_BAR_CODE, d.ITEM_NAME, d.ITEM_CATEGORY,
+			            d.ITEM_DIMENSION, d.ITEM_SPECIFICATION, d.AMT_TT_CNY1, d.AMT_TT_CNY2, d.AMT_TT_CNY3,
+			            d.REQUIRE_COUNT1, d.REQUIRE_COUNT2, d.REQUIRE_COUNT3, d.INVENTORY, d.SUGGEST_COUNT1,
+			            d.SUGGEST_COUNT2, d.SUGGEST_COUNT3, d.ORDER_COUNT, d.ITEM_UNIT_PRICE, d.PAY_AMT),NULL)
+			        ORDER BY
+			            d.ITEM_ID)a};
+		List<RequestDetail> detailLst = processIter(detailIter,hasSum);
+		detailIter.close();
+		closeDefaultContext(myCtx);
+		return detailLst;
+	}
+	
+	#sql private iterator ItemIter(String item_id, Double order_count);
+	/**
+	 * 查询统配原料
+	 */
+	public List<RequestDetail> queryUnified(String formId)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		ItemIter itemIter = null;
+		#sql [myCtx] itemIter = {
+			SELECT
+			    d.ITEM_ID,
+			    d.ORDER_COUNT
+			FROM
+			:{Com_("D_T1_REQUEST_HEADER")} h
+			INNER JOIN
+			:{Com_("D_T1_REQUEST_DETAIL")} d
+			ON
+			    h.FORM_ID = d.FORM_ID
+			LEFT JOIN
+			:{Com_("D_T2_DELIVERY_REGION_BRANCH")} rb
+			ON
+			    rb.BRANCH_ID = h.BUYER_ID
+			INNER JOIN
+			:{Com_("D_T2_DELIVERY_TYPE")} dt
+			ON
+			    dt.REGION_ID = rb.REGION_ID
+			AND dt.ITEM_ID = d.item_id
+			AND dt.DELIVERY_TYPE = 'UNIFIED'
+			WHERE
+		    	h.FORM_ID = :formId
+		};
+		List<RequestDetail> detailLst = new ArrayList<RequestDetail>();
+		while(itemIter.next()) {
+			RequestDetail detail = new RequestDetail();
+			detail.setItemId(itemIter.item_id());
+			detail.setOrderCount(itemIter.order_count());
+			detailLst.add(detail);
+		}
+		itemIter.close();
+		closeDefaultContext(myCtx);
+		return detailLst;
+	}
+
+	private List<RequestDetail> processIter(DetailIter detailIter, String hasSum) 
+			throws SQLException {
+		List<RequestDetail> detailLst = new ArrayList<RequestDetail>();
+		while(detailIter.next()) {
+			RequestDetail detail = new RequestDetail();
+			detail.setRownumber(detailIter.rownumber());
+			detail.setFormId(detailIter.form_id());
+			detail.setItemId(detailIter.item_id());
+			detail.setIntlBarCode(detailIter.intl_bar_code());
+			detail.setItemName(detailIter.item_name());
+			detail.setItemCategory(detailIter.item_category());
+			detail.setItemDimension(detailIter.item_dimension());
+			detail.setItemSpecification(detailIter.item_specification());
+			detail.setAmtTTCNY1(detailIter.amt_tt_cny1());
+			detail.setAmtTTCNY2(detailIter.amt_tt_cny2());
+			detail.setAmtTTCNY3(detailIter.amt_tt_cny3());
+			detail.setRequireCount1(detailIter.require_count1());
+			detail.setRequireCount2(detailIter.require_count2());
+			detail.setRequireCount3(detailIter.require_count3());
+			detail.setInventory(detailIter.inventory());
+			detail.setSuggestCount1(detailIter.suggest_count1());
+			detail.setSuggestCount2(detailIter.suggest_count2());
+			detail.setSuggestCount3(detailIter.suggest_count3());
+			detail.setOrderCount(detailIter.order_count());
+			detail.setItemUnitPrice(detailIter.item_unit_price());
+			detail.setPayAmt(detailIter.pay_amt());
+			detailLst.add(detail);
+		}
+		
+		int length = detailLst.size();
+		if(length >0){
+			if(TextUtil.isEmpty(hasSum)){
+				detailLst.remove(length -1);
+			}
+		}
+		
+		return detailLst;
+	}
+	
+	/**
+	 * 保存明细
+	 */
+	public int saveEntity(RequestDetail detail)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		String formId = detail.getFormId();
+		String itemId = detail.getItemId();
+		String intlBarCode = detail.getIntlBarCode();
+		String itemName = detail.getItemName();
+		String itemCategory = detail.getItemCategory();
+		String itemDimension = detail.getItemDimension();
+		String itemSpecification = detail.getItemSpecification();
+		Double amtTTCNY1 = detail.getAmtTTCNY1();
+		Double amtTTCNY2 = detail.getAmtTTCNY2();
+		Double amtTTCNY3 = detail.getAmtTTCNY3();
+		Double requireCount1 = detail.getRequireCount1();
+		Double requireCount2 = detail.getRequireCount2();
+		Double requireCount3 = detail.getRequireCount3();
+		Double inventory = detail.getInventory();
+		Double suggestCount1 = detail.getSuggestCount1();
+		Double suggestCount2 = detail.getSuggestCount2();
+		Double suggestCount3 = detail.getSuggestCount3();
+		Double orderCount = detail.getOrderCount();
+		Double itemUnitPrice = detail.getItemUnitPrice();
+		Double payAmt = detail.getPayAmt();
+	
+		#sql [myCtx] {
+			INSERT INTO :{Com_("D_T1_REQUEST_DETAIL")} 
+				(FORM_ID, ITEM_ID, INTL_BAR_CODE, ITEM_NAME, ITEM_CATEGORY, ITEM_DIMENSION, ITEM_SPECIFICATION,
+						AMT_TT_CNY1, AMT_TT_CNY2, AMT_TT_CNY3, REQUIRE_COUNT1, REQUIRE_COUNT2, REQUIRE_COUNT3, 
+						INVENTORY, SUGGEST_COUNT1, SUGGEST_COUNT2, SUGGEST_COUNT3, ORDER_COUNT, ITEM_UNIT_PRICE, PAY_AMT) 
+						VALUES (:formId, 
+								:itemId, 
+								:intlBarCode, 
+								:itemName, 
+								:itemCategory, 
+								:itemDimension, 
+								:itemSpecification, 
+								:amtTTCNY1, 
+								:amtTTCNY2, 
+								:amtTTCNY3, 
+								:requireCount1, 
+								:requireCount2, 
+								:requireCount3, 
+								:inventory, 
+								:suggestCount1, 
+								:suggestCount2, 
+								:suggestCount3, 
+								:orderCount, 
+								:itemUnitPrice, 
+								:payAmt)
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+
+	public int updateEntity(RequestDetail detail)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		String formId = detail.getFormId();
+		String itemId = detail.getItemId();
+		Double inventory = detail.getInventory();
+		Double orderCount = detail.getOrderCount();
+		Double itemUnitPrice = detail.getItemUnitPrice();
+		Double payAmt = detail.getPayAmt();
+		Double amtTTCNY1 = detail.getAmtTTCNY1();
+		Double amtTTCNY2 = detail.getAmtTTCNY2();
+		Double amtTTCNY3 = detail.getAmtTTCNY3();
+		Double requireCount1 = detail.getRequireCount1();
+		Double requireCount2 = detail.getRequireCount2();
+		Double requireCount3 = detail.getRequireCount3();
+		Double suggestCount1 = detail.getSuggestCount1();
+		Double suggestCount2 = detail.getSuggestCount2();
+		Double suggestCount3 = detail.getSuggestCount3();
+		#sql [myCtx] {
+			UPDATE
+			:{Com_("D_T1_REQUEST_DETAIL")}
+			SET
+--			    INVENTORY = :inventory,
+			    ORDER_COUNT = :orderCount,
+			    PAY_AMT = :payAmt,
+	    		AMT_TT_CNY1 = :amtTTCNY1, 
+				AMT_TT_CNY2 = :amtTTCNY2, 
+				AMT_TT_CNY3 = :amtTTCNY3, 
+				REQUIRE_COUNT1 = :requireCount1, 
+				REQUIRE_COUNT2 = :requireCount2, 
+				REQUIRE_COUNT3 = :requireCount3, 
+				SUGGEST_COUNT1 = :suggestCount1, 
+				SUGGEST_COUNT2 = :suggestCount2, 
+				SUGGEST_COUNT3 = :suggestCount3
+			WHERE
+				FORM_ID = :formId
+			and ITEM_ID = :itemId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+
+	public int deleteByForm(String formId)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		#sql [myCtx] {
+			DELETE
+			FROM
+			:{Com_("D_T1_REQUEST_DETAIL")}
+			WHERE
+				FORM_ID = :formId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public int deleteByForm(String formId,String itemId)
+			throws NoPrivilegeException, SQLException, NoConnection {
+			DefaultContext myCtx = getDefaultContext();
+
+			#sql [myCtx] {
+				DELETE
+				FROM
+				:{Com_("D_T1_REQUEST_DETAIL")}
+				WHERE
+					FORM_ID = :formId
+					AND ITEM_ID = :itemId
+			};
+			closeDefaultContext(myCtx);
+			
+			return 1;
+		}
+}

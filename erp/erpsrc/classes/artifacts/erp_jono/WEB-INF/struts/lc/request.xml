@@ -1,0 +1,399 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE struts PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN"
+    "http://struts.apache.org/dtds/struts-2.0.dtd">
+
+<struts>
+	<package name="lc_request_delivery" namespace="/lc/request/delivery" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.lc.request.action.DeliveryAction">
+			<result name="success">/jsp/lc/request/delivery/main.jsp</result>
+		</action>
+		
+		<action name="createView" method="createView" class="com.tanry.business.module.lc.request.action.DeliveryAction">
+			<result name="success">/jsp/lc/request/delivery/create.jsp</result>
+		</action>
+		
+		<action name="checkView" method="checkView" class="com.tanry.business.module.lc.request.action.DeliveryAction">
+			<result name="success">/jsp/lc/request/delivery/check.jsp</result>
+		</action>
+	</package>
+	
+	<package name="lc_request_delivery_manage" namespace="/lc/request/delivery/manage" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.lc.request.action.DeliveryAction">
+			<result name="success">/jsp/lc/request/delivery/manage/main.jsp</result>
+		</action>
+		
+		<action name="scanView" method="scanView" class="action.restaurant.shipping.ShippingManageAction">
+			<result name="success">/jsp/lc/request/delivery/manage/scan.jsp</result>
+		</action>
+		
+		<action name="editOutView" method="scanView" class="action.restaurant.shipping.ShippingManageAction">
+			<result name="success">/jsp/restaurant/preject/create/editOut.jsp</result>
+		</action>
+		
+		<action name="checkView" method="checkView" class="action.restaurant.shipping.ShippingManageAction">
+			<result name="success">/jsp/restaurant/preject/create/checkOut.jsp</result>
+		</action>
+	</package>
+	
+	<package name="lc_request_distribution" namespace="/lc/request/distribution" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.lc.request.action.DistributionAction">
+			<result name="success">/jsp/lc/request/distribution/main.jsp</result>
+		</action>
+		
+		<action name="createView" method="createView" class="com.tanry.business.module.lc.request.action.DistributionAction">
+			<result name="success">/jsp/lc/request/distribution/create.jsp</result>
+		</action>
+		
+		<action name="checkView" method="checkView" class="com.tanry.business.module.lc.request.action.DistributionAction">
+			<result name="success">/jsp/lc/request/distribution/check.jsp</result>
+		</action>
+		
+		<action name="doQuery" method="doQuery" class="com.tanry.business.module.lc.request.action.DistributionAction">
+			<result type="json" />
+		</action>
+		
+		<action name="queryDetail" method="queryDetail" class="com.tanry.business.module.lc.request.action.DistributionAction">
+			<result type="json" />
+		</action>
+		
+		<action name="exist" method="exist" class="com.tanry.business.module.lc.request.action.DistributionAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doSave" method="doSave" class="com.tanry.business.module.lc.request.action.DistributionAction">
+		    <interceptor-ref name="defaultStack" />
+			<interceptor-ref name="token" />
+			<result type="json" />
+		</action>
+		
+		<action name="doInvalid" method="doInvalid" class="com.tanry.business.module.lc.request.action.DistributionAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doDelete" method="doDelete" class="com.tanry.business.module.lc.request.action.DistributionAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doUpdate" method="doUpdate" class="com.tanry.business.module.lc.request.action.DistributionAction">
+			<result type="json" />
+		</action>
+		
+		<action name="updateDeliveryCount" method="updateDeliveryCount" class="com.tanry.business.module.lc.request.action.DistributionAction">
+			<result type="json" />
+		</action>
+		
+		
+		<action name="doAudit" method="doAudit" class="com.tanry.business.module.lc.request.action.DistributionAction">
+			<interceptor-ref name="defaultStack" />
+			<interceptor-ref name="token" />
+			<result type="json" />
+		</action>
+		
+		<action name="batchCreate" method="batchCreate" class="com.tanry.business.module.lc.request.action.DistributionAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="lc_request_distribution_manual" namespace="/lc/request/distribution/manual" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.lc.request.action.ManualDistributionAction">
+			<result name="success">/jsp/lc/request/distribution/manual/main.jsp</result>
+		</action>
+		
+		<action name="checkView" method="checkView" class="com.tanry.business.module.lc.request.action.ManualDistributionAction">
+			<result name="success">/jsp/lc/request/distribution/manual/check.jsp</result>
+		</action>
+		
+		<action name="doSave" method="doSave" class="com.tanry.business.module.lc.request.action.ManualDistributionAction">
+		    <interceptor-ref name="defaultStack" />
+			<interceptor-ref name="token" />
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="lc_request_distribution_manual_selmaterial" namespace="/lc/request/distribution/manual/selmaterial" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.lc.request.action.ManualDistributionAction">
+			<result name="success">/jsp/lc/request/distribution/manual/selmaterial/main.jsp</result>
+		</action>
+		
+		<action name="listItemMeta" method="listItemMeta" class="com.tanry.business.module.lc.request.action.ManualDistributionAction">
+			<result type="json" />
+		</action>
+			<action name="doQuery" method="doQuery" class="com.tanry.business.module.lc.request.action.ManualDistributionAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="lc_request_distribution_audit" namespace="/lc/request/distribution/audit" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.lc.request.action.ManualDistributionAction">
+			<result name="success">/jsp/lc/request/distribution/audit/main.jsp</result>
+		</action>
+		
+		<action name="auditView" method="auditView" class="com.tanry.business.module.lc.request.action.CrossDistributionAction">
+			<result name="success">/jsp/lc/request/distribution/audit/audit.jsp</result>
+		</action>
+		
+		<action name="doQuery" method="doQuery" class="com.tanry.business.module.lc.request.action.CrossDistributionAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doAudit" method="doAudit" class="com.tanry.business.module.lc.request.action.CrossDistributionAction">
+		    <interceptor-ref name="defaultStack" />
+			<interceptor-ref name="token" />
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="lc_request_estimate" namespace="/lc/request/estimate" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.lc.request.action.EstimateAction">
+			<result name="success">/jsp/lc/request/estimate/main.jsp</result>
+		</action>
+		
+		<action name="checkView" method="checkView" class="com.tanry.business.module.lc.request.action.EstimateAction">
+			<result name="success">/jsp/lc/request/estimate/check.jsp</result>
+		</action>
+	</package>
+	
+	<package name="lc_request_summary" namespace="/lc/request/summary" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.lc.request.action.SummaryAction">
+			<result name="success">/jsp/lc/request/summary/main.jsp</result>
+		</action>
+		
+		<action name="securityView" method="estimateView" class="com.tanry.business.module.lc.request.action.SummaryAction">
+			<result name="success">/jsp/lc/request/summary/handsontable/security.jsp</result>
+		</action>
+		
+			<action name="estimateView" method="estimateView" class="com.tanry.business.module.lc.request.action.SummaryAction">
+<!-- 			<result name="success">/jsp/lc/request/summary/estimate.jsp</result> -->
+			<result name="success">/jsp/lc/request/summary/handsontable/estimate.jsp</result>
+		</action>
+		
+		<action name="aggregateView" method="aggregateView" class="com.tanry.business.module.lc.request.action.SummaryAction">
+			<result name="success">/jsp/lc/request/summary/summary.jsp</result>
+		</action>
+		
+		<action name="checkView" method="checkView" class="com.tanry.business.module.lc.request.action.SummaryAction">
+			<result name="success">/jsp/lc/request/summary/check.jsp</result>
+		</action>
+		
+		<action name="doQuery" method="doQuery" class="com.tanry.business.module.lc.request.action.SummaryAction">
+			<result type="json" />
+		</action>
+		
+		<action name="queryMRP" method="queryMRP" class="com.tanry.business.module.lc.request.action.SummaryAction">
+			<result type="json" />
+		</action>
+		
+		<action name="queryAverageRequest" method="queryAverageRequest" class="com.tanry.business.module.lc.request.action.SummaryAction">
+			<result type="json" />
+		</action>
+		
+		<action name="createSummaryBill" method="createSummaryBill" class="com.tanry.business.module.lc.request.action.SummaryAction">
+		    <interceptor-ref name="defaultStack" />
+			<interceptor-ref name="token" />
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="lc_request_wydemand" namespace="/lc/request/wydemand" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.lc.request.action.DemandTTCNYAction">
+			<result name="success">/jsp/lc/request/wydemand/main.jsp</result>
+		</action>
+		
+		<action name="doQuery" method="doQuery" class="com.tanry.business.module.lc.request.action.DemandTTCNYAction">
+			<result name="success">/jsp/lc/request/wydemand/result.jsp</result>
+		</action>
+		
+		<action name="queryDetail" method="queryDetail" class="com.tanry.business.module.lc.request.action.DemandTTCNYAction">
+			<result name="success">/jsp/lc/request/wydemand/detail.jsp</result>
+		</action>
+	</package>
+	
+	<package name="lc_request_purchase" namespace="/lc/request/purchase" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.lc.request.action.PurchaseAction">
+			<result name="success">/jsp/lc/request/purchase/main.jsp</result>
+		</action>
+		
+		<action name="createView" method="createView" class="com.tanry.business.module.lc.request.action.PurchaseAction">
+			<result name="success">/jsp/lc/request/purchase/create.jsp</result>
+		</action>
+		
+		<action name="queryView" class="action.restaurant.putinstorage.CreateBillAction">
+			<result name="success">/jsp/lc/request/purchase/query.jsp</result>
+		</action>
+		
+		<action name="directView" class="action.restaurant.putinstorage.CreateBillAction">
+			<result name="success">/jsp/lc/request/purchase/direct.jsp</result>
+		</action>
+		
+		<action name="doQuery" method="doQuery" class="com.tanry.business.module.lc.request.action.PurchaseAction">
+			<result type="json" />
+		</action>
+		
+		<action name="queryDetail" method="queryDetail" class="com.tanry.business.module.lc.request.action.PurchaseAction">
+			<result type="json" />
+		</action>
+		
+		<action name="loadTree" method="loadTree" class="com.tanry.business.module.lc.request.action.PurchaseAction">
+			<result type="json" />
+		</action>
+		
+		<action name="createPurchaseBill" method="createPurchaseBill" class="com.tanry.business.module.lc.request.action.PurchaseAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="lc_request_purchase_manual" namespace="/lc/request/purchase/manual" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.lc.request.action.ManualPurchaseAction">
+			<result name="success">/jsp/lc/request/purchase/manual/main.jsp</result>
+		</action>
+		
+		<action name="importMainView" class="com.tanry.business.module.lc.request.action.ManualPurchaseAction">
+			<result name="success">/jsp/lc/request/purchase/manual/importMain.jsp</result>
+		</action>
+		
+		
+		<action name="checkView" method="checkView" class="com.tanry.business.module.lc.request.action.ManualPurchaseAction">
+			<result name="success">/jsp/lc/request/purchase/manual/check.jsp</result>
+		</action>
+		
+		<action name="createPurchaseBill" method="createPurchaseBill" class="com.tanry.business.module.lc.request.action.ManualPurchaseAction">
+		    <interceptor-ref name="defaultStack" />
+			<interceptor-ref name="token" />
+			<result type="json" />
+		</action>
+		
+		<action name="doImport" method="doImport" class="com.tanry.business.module.lc.request.action.ManualPurchaseAction">
+			<result type="json" />
+		</action>
+		
+	</package>
+	
+	<package name="lc_request_purchase_manual_selmaterial" namespace="/lc/request/purchase/manual/selmaterial" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.lc.request.action.ManualPurchaseAction">
+			<result name="success">/jsp/lc/request/purchase/manual/selmaterial/main.jsp</result>
+		</action>
+		
+		<action name="listItemMeta" method="listItemMeta" class="com.tanry.business.module.lc.request.action.ManualPurchaseAction">
+			<result type="json" />
+		</action>
+		<action name="doQuery" method="doQuery" class="com.tanry.business.module.lc.request.action.ManualPurchaseAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="lc_request_purchase_manage" namespace="/lc/request/purchase/manage" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.lc.request.action.PurchaseAction">
+			<result name="success">/jsp/lc/request/purchase/manage/main.jsp</result>
+		</action>
+		
+		<action name="scanView" method="scanView" class="com.tanry.business.module.lc.request.action.PurchaseManageAction">
+			<result name="success">/jsp/lc/request/purchase/manage/scan.jsp</result>
+		</action>
+		
+		<action name="editView" method="editView" class="com.tanry.business.module.lc.request.action.PurchaseManageAction">
+			<result name="success">/jsp/lc/request/purchase/manage/edit.jsp</result>
+		</action>
+		
+		<action name="doUpdate" method="doUpdate" class="com.tanry.business.module.lc.request.action.PurchaseManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doInvalid" method="doInvalid" class="com.tanry.business.module.lc.request.action.PurchaseManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doDelete" method="doDelete" class="com.tanry.business.module.lc.request.action.PurchaseManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="refView" method="refView" class="com.tanry.business.module.lc.request.action.PurchaseManageAction">
+			<result name="success">/jsp/lc/request/purchase/manage/ref.jsp</result>
+		</action>
+		
+		<action name="preview" method="preview" class="com.tanry.business.module.lc.request.action.PurchaseManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="loadTree" method="loadTree" class="com.tanry.business.module.lc.request.action.PurchaseManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="queryPurch" method="queryPurch" class="com.tanry.business.module.lc.request.action.PurchaseManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="queryBill" method="queryBill" class="com.tanry.business.module.lc.request.action.PurchaseManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="queryDirect" method="queryDirect" class="com.tanry.business.module.lc.request.action.PurchaseManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="queryByStatus" method="queryByStatus" class="com.tanry.business.module.lc.request.action.PurchaseManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="queryLittleFormIds" method="queryLittleFormIds" class="com.tanry.business.module.lc.request.action.PurchaseManageAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="lc_request_purchase_audit" namespace="/lc/request/purchase/audit" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.lc.request.action.PurchaseManageAction">
+			<result name="success">/jsp/lc/request/purchase/audit/main.jsp</result>
+		</action>
+		
+		<action name="auditView" method="auditView" class="com.tanry.business.module.lc.request.action.PurchaseManageAction">
+			<result name="success">/jsp/lc/request/purchase/audit/audit.jsp</result>
+		</action>
+		
+		<action name="doAudit" method="doAudit" class="com.tanry.business.module.lc.request.action.PurchaseManageAction">
+		    <interceptor-ref name="defaultStack" />
+			<interceptor-ref name="token" />
+			<result type="json" />
+		</action>
+		
+		<action name="batchAudit" method="batchAudit" class="com.tanry.business.module.lc.request.action.PurchaseManageAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="lc_request_addition" namespace="/lc/request/addition" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.lc.request.action.AdditionAction">
+			<result name="success">/jsp/lc/request/addition/main.jsp</result>
+		</action>
+		
+		<action name="createView" method="createView" class="com.tanry.business.module.lc.request.action.AdditionAction">
+			<result name="success">/jsp/lc/request/addition/create.jsp</result>
+		</action>
+		
+		<action name="doQuery" method="doQuery" class="com.tanry.business.module.lc.request.action.AdditionAction">
+			<result type="json" />
+		</action>
+		
+		<action name="queryDetail" method="queryDetail" class="com.tanry.business.module.lc.request.action.AdditionAction">
+			<result type="json" />
+		</action>
+		
+		<action name="createPurchaseBill" method="createPurchaseBill" class="com.tanry.business.module.lc.request.action.AdditionAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="lc_request_template" namespace="/lc/request/template" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.lc.request.action.TemplateAction">
+			<result name="success">/jsp/lc/request/template/main.jsp</result>
+		</action>
+		
+		<action name="addView" method="addView" class="com.tanry.business.module.lc.request.action.TemplateAction">
+			<result name="success">/jsp/lc/request/template/add.jsp</result>
+		</action>
+		
+		<action name="pickModelView" method="pickModelView" class="com.tanry.business.module.lc.request.action.TemplateAction">
+			<result name="success">/jsp/lc/request/template/pickmodel.jsp</result>
+		</action>
+	</package>
+</struts>
+

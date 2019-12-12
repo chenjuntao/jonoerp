@@ -1,0 +1,192 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on Thu Apr 16 10:36:50 CST 2015 by lyz
+ * Last edited on Thu Apr 16 10:36:50 CST 2015 by lyz
+ * 
+ * comment: 箱子类型(冷藏、非冷藏等)
+ */
+package logic.store;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import pojo.store.BoxType;
+import sqlj.runtime.ref.DefaultContext;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.TextUtil;
+import com.tanry.framework.acl.NoPrivilegeException;
+
+public class BoxTypeBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(BoxTypeBean.class);
+	
+	#sql private iterator BoxTypeIter(String type_id, String type_name, Double volume, Double weight, Integer enabled);
+	
+	public int saveEntity(BoxType boxType)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		String typeId = boxType.getTypeId();
+		String typeName = boxType.getTypeName();
+		Double volume = boxType.getVolume();
+		Double weight = boxType.getWeight();
+
+		#sql [myCtx] {
+			INSERT INTO :{Com_("D_T2_BOX_TYPE")} 
+				(TYPE_ID, TYPE_NAME, VOLUME, WEIGHT) 
+			VALUES (:typeId, :typeName, :volume, :weight)
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public int updateEntity(BoxType boxType)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		String typeId = boxType.getTypeId();
+		String typeName = boxType.getTypeName();
+		Double volume = boxType.getVolume();
+		Double weight = boxType.getWeight();
+
+		#sql [myCtx] {
+			UPDATE
+			:{Com_("D_T2_BOX_TYPE")}
+			SET
+				TYPE_ID = :typeId,
+				TYPE_NAME = :typeName,
+				VOLUME = :volume,
+				WEIGHT = :weight
+			WHERE 
+				TYPE_ID = :typeId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+
+	public int deleteEntity(String typeId)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		#sql [myCtx] {
+			DELETE
+			FROM
+			:{Com_("D_T2_BOX_TYPE")}
+			WHERE
+				TYPE_ID = :typeId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	/**
+	 * 启停用箱子类型
+	 */
+	public int enableType(String typeId, Integer enabled)
+			throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		#sql [myCtx] {
+			UPDATE
+			:{Com_("D_T2_BOX_TYPE")}
+			SET
+			   	ENABLED = :enabled
+			WHERE 
+				TYPE_ID = :typeId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+
+	public int count(java.util.Date startDate, java.util.Date endDate, String branchId, String queryType)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		int total = 0;
+		#sql [myCtx] {
+			SELECT
+			    count(*) into :total
+			FROM
+			:{Com_("D_T2_BOX_TYPE")} h
+		};
+		closeDefaultContext(myCtx);
+		return total;
+	}
+	
+	public List<BoxType> query(Integer enabled) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		String query = " 1=1 ";
+		if (enabled != null) {
+			query = " ENABLED = 1";
+		}
+		
+		BoxTypeIter boxTypeIter = null;
+		#sql [myCtx] boxTypeIter = {
+			SELECT
+			    *
+			FROM
+			:{Com_("D_T2_BOX_TYPE")} h
+			WHERE
+				:{query :: 1=1}
+			ORDER BY
+				TYPE_ID
+		};
+		List<BoxType> boxTypeLst = processIter(boxTypeIter);
+		boxTypeIter.close();
+		closeDefaultContext(myCtx);
+		return boxTypeLst;
+	}
+	
+	public BoxType queryById(String typeId) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		BoxTypeIter boxTypeIter = null;
+		#sql [myCtx] boxTypeIter = {
+			SELECT
+			    *
+			FROM
+			:{Com_("D_T2_BOX_TYPE")} h
+			WHERE
+				h.TYPE_ID = :typeId
+		};
+		List<BoxType> boxTypeLst = processIter(boxTypeIter);
+		boxTypeIter.close();
+		closeDefaultContext(myCtx);
+		if (boxTypeLst !=null && !boxTypeLst.isEmpty()) {
+			return boxTypeLst.get(0);
+		}
+		return null;
+	}
+	
+	private List<BoxType> processIter(BoxTypeIter boxTypeIter) 
+			throws SQLException {
+		List<BoxType> boxTypeLst = new ArrayList<BoxType>();
+		while(boxTypeIter.next()) {
+			BoxType boxType = new BoxType();
+			boxType.setTypeId(boxTypeIter.type_id());
+			boxType.setTypeName(boxTypeIter.type_name());
+			boxType.setVolume(boxTypeIter.volume());
+			boxType.setWeight(boxTypeIter.weight());
+			boxType.setEnabled(boxTypeIter.enabled());
+			boxTypeLst.add(boxType);
+		}
+		return boxTypeLst;
+	}
+}

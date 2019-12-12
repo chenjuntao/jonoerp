@@ -1,0 +1,283 @@
+ 
+package logic.businessquery;
+
+import sqlj.runtime.*;
+import sqlj.runtime.ref.*;
+import java.sql.*;
+import oracle.sql.*;
+import oracle.sqlj.runtime.*;
+import oracle.jdbc.driver.*;
+import java.util.*;
+import java.text.SimpleDateFormat;
+import java.text.ParseException;
+import logic.pool.ConnectionPool;
+import logic.*;
+import com.tanry.framework.acl.*;
+
+import pojo.businessquery.FreeBill;
+
+public class FreeBillBean extends ConnectionPool
+{
+	private String strDateFormat = "yyyy-MM-dd"; //设置日期格式
+
+	#sql public static iterator HeadIterator(
+			String businessDate,
+			Double payAmt,
+			Double foodAmt,
+			String billC, 
+			String table,
+			String period,
+			String shift, 
+			String shopC,
+			String shopN);
+	
+	#sql public static iterator DetailIterator(
+			String id,
+			String rownumber,
+			String businessDate,
+			String billC,
+			String table,
+			String period, 
+			String shift, 
+			String shopC, 
+			String shopN,
+			String foodN,
+			Double price,
+			Double qty,
+			Double amt, 
+			String unit,
+			String smallC,
+			String smallN);
+	
+
+	public FreeBillBean(){
+	}
+	
+	public int getHeadCount(String startDate,String endDate,String shopC,String period,String shift)
+			throws NoPrivilegeException,SQLException,NoConnection	{
+		int counts = 0;
+		DefaultContext myCtx = getDefaultContext();
+		
+		if (myCtx != null)
+		{
+			#sql [myCtx] {
+			SELECT
+					count(*) into :counts
+				    FROM
+				    :{Com_("D_T_FOOD_BILL")} b
+				    LEFT JOIN
+				    :{Com_("d_t_bill_pay")} p
+				    ON
+				        b.CBILL_C = p.CBILL_C
+				    WHERE
+				    	b.CBRANCH_C like :shopC
+				    and b.CPERIOD_N like :period
+				    and b.CSHIFT_N like :shift
+					AND p.cPay_C = '05'
+					AND TO_CHAR(b.DBUSINESS,'yyyy-mm-dd')>=:startDate
+					AND TO_CHAR(b.DBUSINESS,'yyyy-mm-dd')<=:endDate
+			};
+		}
+		else
+		{
+			throw new NoConnection();
+		}
+		closeDefaultContext(myCtx);
+		return counts;
+	}
+	
+
+	public List<FreeBill> getHead(String startDate,String endDate,String shopC,String period,
+			String shift,int startRow,int endRow)
+			throws NoPrivilegeException,SQLException,NoConnection	{
+		
+		List<FreeBill> result = new ArrayList<FreeBill>();
+		DefaultContext myCtx = getDefaultContext();
+		
+		HeadIterator headIterator = null;
+		if (myCtx != null)
+		{
+			#sql [myCtx] headIterator = {
+			SELECT
+				    *
+				    FROM
+				        (
+				            SELECT
+				                t.*,
+				                ROWNUM rowNumber
+				            FROM
+				                (
+				                    SELECT
+				                        TO_CHAR(b.DBUSINESS,'yyyy-mm-dd') businessDate,
+				                        p.nPayAmt                         payAmt,
+				                        b.cSettleMan                      payMan,
+				                        b.nFoodAmt                        foodAmt,
+				                        p.cBill_C                         billC,
+				                        b.cTable_N                        table,
+				                        b.cPeriod_N                       period,
+				                        b.cShift_N                        shift,
+				                        b.cBranch_C                       shopC,
+				                        b.cBranch_N                       shopN
+				                    FROM
+				                    :{Com_("D_T_FOOD_BILL")} b
+				                    LEFT JOIN
+				                    :{Com_("d_t_bill_pay")} p
+				                    ON
+				                        b.CBILL_C = p.CBILL_C
+				                    WHERE
+				                        b.CBRANCH_C LIKE :shopC
+				                    AND b.CPERIOD_N LIKE :period
+				                    AND b.CSHIFT_N LIKE :shift
+				                    AND p.cPay_C = '05'
+				                    AND TO_CHAR(b.DBUSINESS,'yyyy-mm-dd')>=:startDate
+				                    AND TO_CHAR(b.DBUSINESS,'yyyy-mm-dd')<=:endDate
+				                    ORDER BY
+				                        TO_CHAR(b.DBUSINESS,'yyyy-mm-dd'),
+				                        b.CBILL_C
+			                         )t
+				            WHERE
+				                ROWNUM <= :endRow)
+				    WHERE
+				    rowNumber >= :startRow
+		    };
+			
+			while(headIterator.next()) {
+				FreeBill freeBillBean = new FreeBill();
+				freeBillBean.shift = headIterator.shift();
+				freeBillBean.period = headIterator.period();
+//				freeBillBean.businessDate = headIterator.businessDate();
+//				freeBillBean.payAmt = headIterator.payAmt();
+//				freeBillBean.foodAmt = headIterator.foodAmt();
+//				freeBillBean.payMan = headIterator.payMan();
+//				freeBillBean.billC = headIterator.billC();
+//				freeBillBean.table = headIterator.table();
+//				freeBillBean.shopC = headIterator.shopC();
+//				freeBillBean.shopN = headIterator.shopN();
+				result.add(freeBillBean);
+			}
+			headIterator.close();
+		}
+		else
+		{
+			throw new NoConnection();
+		}
+		closeDefaultContext(myCtx);
+		return result;
+	}
+	
+	public List<Map> getDetail(String queryText,int startRow,int endRow)
+					throws NoPrivilegeException,SQLException,NoConnection	{
+		List<Map> headerLst = new ArrayList<Map>();
+		DefaultContext myCtx = getDefaultContext();
+		
+		DetailIterator detailIterator = null;
+		if (myCtx != null){
+			#sql [myCtx] detailIterator = {
+				SELECT
+				    *
+				    FROM
+				        (
+				            SELECT
+					            t.*,
+					            ROWNUM                                   rowIndex,
+					            DECODE(billC,NULL,'合计', TO_CHAR(ROWNUM)) rownumber,
+					            ROWNUM                                   id
+				            FROM
+				                (
+				                    SELECT
+				                        b.cBill_C                         billC,
+				                        TO_CHAR(b.DBUSINESS,'yyyy-mm-dd') businessDate,
+				                        b.cTable_N                        table,
+				                        b.cPeriod_N                       period,
+				                        b.cShift_N                        shift,
+				                        b.cBranch_C                       shopC,
+				                        b.cBranch_N                       shopN,
+				                        bs.cFood_C                        foodC,
+				                        bs.cFood_N                        foodN,
+				                        bs.nPrc                           price,
+				                        SUM(bs.nQty)                      qty,
+				                        SUM(bs.nAmt)                      amt,
+				                        bs.sUnit                          unit,
+				                        bs.cLitCls_C                      smallC,
+				                        bs.cLitCls_N                      smallN
+				                    FROM
+				                        :{Com_("D_T_FOOD_BILL")} b
+				                    INNER JOIN
+				                        :{Com_("d_t_food_Bills")} bs
+				                    ON
+				                        b.cBill_C = bs.cBill_C  :{queryText}
+			                        INNER JOIN
+				                        :{Com_("d_t_bill_pay")} p
+				                    ON
+				                        b.CBILL_C = p.CBILL_C  AND p.CPAY_N = '免单' 
+	                        		  GROUP BY
+		                                  GROUPING SETS( ( b.cBill_C , TO_CHAR(b.DBUSINESS,'yyyy-mm-dd'),bs.cFood_C,
+		                                  bs.cFood_N, b.cTable_N, b.cPeriod_N, b.cShift_N, b.cBranch_C,
+		                                  b.cBranch_N, bs.nPrc, bs.nQty, bs.nAmt, bs.sUnit,
+		                                  bs.cLitCls_C, bs.cLitCls_N ),NULL)
+				                    ORDER BY
+				                        TO_CHAR(b.DBUSINESS,'yyyy-mm-dd'),
+				                        b.CBILL_C )t
+				            WHERE
+				                ROWNUM <= :endRow)
+				    WHERE
+				    	rowIndex >= :startRow};
+			
+			while(detailIterator.next()) {
+				Map header = new HashMap();
+				
+				header.put("id", detailIterator.id());
+				header.put("rownumber", detailIterator.rownumber());
+				header.put("shift", detailIterator.shift());
+//				header.put("period", detailIterator.period());
+//				header.put("businessDate", detailIterator.businessDate());
+//				header.put("billC", detailIterator.billC());
+//				header.put("table", detailIterator.table());
+//				header.put("shopC", detailIterator.shopC());
+//				header.put("shopN", detailIterator.shopN());
+//				header.put("foodN", detailIterator.foodN());
+//				header.put("price", detailIterator.price());
+//				header.put("qty", detailIterator.qty());
+//				header.put("amt", detailIterator.amt());
+//				header.put("unit", detailIterator.unit());
+//				header.put("smallC", detailIterator.smallC());
+//				header.put("smallN", detailIterator.smallN());
+				
+				headerLst.add(header);
+			}
+			detailIterator.close();
+		}else{
+			throw new NoConnection();
+		}
+		
+		closeDefaultContext(myCtx);
+		return headerLst;
+	}
+	
+	public int getDetailCount(String queryText) throws NoPrivilegeException,SQLException,NoConnection{
+		DefaultContext myCtx = getDefaultContext();
+		
+		int counts = 0;
+		if (myCtx != null){
+			#sql [myCtx]  {
+	            SELECT
+	            	COUNT(*) into :counts
+	            FROM
+	            	:{Com_("D_T_FOOD_BILL")} b
+	            INNER JOIN
+	            	:{Com_("d_t_food_Bills")} bs
+	            ON
+	                b.cBill_C = bs.cBill_C :{queryText}
+            	INNER JOIN
+	            	:{Com_("d_t_bill_pay")} p
+	            ON
+	                b.CBILL_C = p.CBILL_C  AND p.CPAY_N = '免单' 
+			};
+		}else{
+			throw new NoConnection();
+		}
+		
+		closeDefaultContext(myCtx);
+		return counts;
+	}
+}

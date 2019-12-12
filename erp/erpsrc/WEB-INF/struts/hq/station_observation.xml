@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE struts PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN"
+    "http://struts.apache.org/dtds/struts-2.0.dtd">
+
+<struts>
+	<package name="hq_station_observation" namespace="/hq/station_observation" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.hq.so.StationObservationAction">
+			<result name="success">/jsp/hq/stationobservation/main.jsp</result>
+		</action>
+		
+		<action name="edit" method="edit" class="com.tanry.business.module.hq.so.StationObservationAction">
+			<result name="success">/jsp/hq/stationobservation/edit.jsp</result>
+		</action>
+		
+		<action name="doSave" method="doSave" class="com.tanry.business.module.hq.so.StationObservationAction">
+			<result type="json" />
+		</action>
+		
+		<action name="queryCostInfo" method="queryCostInfo" class="com.tanry.business.module.hq.so.StationObservationAction">
+			<result type="json" />
+		</action>
+		
+<!-- 	岗位观察表模板 -->
+		<action name="doStartTemplate" method="doStartTemplate" class="com.tanry.business.module.hq.so.StationObservationAction">
+			<result name="success">/jsp/hq/stationobservation/template.jsp</result>
+		</action>
+		
+		<action name="doSaveTemplate" method="doSaveTemplate" class="com.tanry.business.module.hq.so.StationObservationAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doLoadTemplate" method="doLoadTemplate" class="com.tanry.business.module.hq.so.StationObservationAction">
+			<result type="json" />
+		</action>
+		
+		<!-- 	岗位观察表编辑 -->
+		<action name="doLoadData" method="doLoadData" class="com.tanry.business.module.hq.so.StationObservationAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doSaveData" method="doSaveData" class="com.tanry.business.module.hq.so.StationObservationAction">
+			<result type="json" />
+		</action>
+		
+<!-- 		岗位观察表查看 -->
+	    <action name="scan" method="scan" class="com.tanry.business.module.hq.so.StationObservationAction">
+			<result name="success">/jsp/hq/stationobservation/scan.jsp</result>
+		</action>
+		
+		<action name="doExport" method="doExport" class="com.tanry.business.module.hq.so.StationObservationAction">
+			<result name="success">/jsp/hq/stationobservation/export.jsp</result>
+		</action>
+		
+<!-- 		上传操作信息 -->
+	    <action name="uploadView"  method="uploadView" class="com.tanry.business.module.hq.so.StationObservationAction">
+			<result name="success">/jsp/hq/stationobservation/upload.jsp</result>
+		</action>
+		
+<!-- 	    管理操作信息 -->
+	    <action name="uploadEditView"  method="uploadEditView" class="com.tanry.business.module.hq.so.StationObservationAction">
+			<result name="success">/jsp/hq/stationobservation/uploadEdit.jsp</result>
+		</action>
+		
+	    <action name="doUpload" method="doUpload" class="com.tanry.business.module.hq.so.StationObservationAction">
+			<result type="json" />
+		</action>
+		
+	    <action name="doUploadEdit" method="doUploadEdit" class="com.tanry.business.module.hq.so.StationObservationAction">
+			<result type="json" />
+		</action>
+		
+	    <action name="doUploadDelete" method="doUploadDelete" class="com.tanry.business.module.hq.so.StationObservationAction">
+			<result type="json" />
+		</action>
+		
+	    <action name="getData" method="getData" class="com.tanry.business.module.hq.so.StationObservationAction">
+			<result type="json" />
+		</action>
+		
+	    <action name="loadImage" method="loadImage" class="com.tanry.business.module.hq.so.StationObservationAction">
+			<result type="json" />
+		</action>
+	</package>
+</struts>
+

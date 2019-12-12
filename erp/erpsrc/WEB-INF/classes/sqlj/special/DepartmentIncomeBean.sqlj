@@ -1,0 +1,394 @@
+package logic.special;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import sqlj.runtime.ref.DefaultContext;
+import com.tanry.business.form.FormConstant;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.TextUtil;
+import com.tanry.framework.util.constant.BillStatus;
+import com.tanry.framework.acl.NoPrivilegeException;
+import com.tanry.framework.util.TextUtil;
+
+public class DepartmentIncomeBean extends ConnectionPool {
+	public static Logger log = Logger.getLogger(DepartmentIncomeBean.class);
+	
+	#sql private iterator HeaderIter(
+			String dbusiness,
+			String weekinfo,
+			String dayinfo,
+			Double id_1011,
+			Double id_1011_per,
+			Double chinese,
+			Double chinese_per,
+			Double id_1017,
+			Double id_1017_per,
+			Double id_1013,
+			Double id_1013_per,
+			Double id_1014,
+			Double id_1014_per,
+			Double id_2024,
+			Double id_2024_per,
+			Double id_2029,
+			Double id_2029_per,
+			Double drink,
+			Double drink_per,
+			Double west,
+			Double west_per,
+			Double other,
+			Double other_per
+		);
+	
+	
+	#sql private iterator TotalIter(
+			Integer totals
+		);
+	
+	public Integer count(String queryStr)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		TotalIter totalIter = null;
+		Integer total = null;
+		
+		#sql [myCtx] totalIter =  {
+			WITH
+			    a AS
+			    (
+			        SELECT DISTINCT
+			            b.DBUSINESS,
+			            TO_CHAR(b.DBUSINESS , 'iw') weekinfo
+			        FROM
+			            :{Com_("D_T_FOOD_BILL")} b
+			        WHERE
+			            :{queryStr :: 1=1}
+			    )
+			    ,
+			    b AS
+			    (
+			        SELECT
+			            DBUSINESS,
+			            weekinfo
+			        FROM
+			            a
+			        GROUP BY
+			            GROUPING sets((DBUSINESS,weekinfo),weekinfo,NULL)
+			    )
+			SELECT
+			    COUNT(*) totals
+			FROM
+			    b};
+    
+		if(totalIter.next()) {
+			total = totalIter.totals();
+		}
+		
+		total = total == null ? 0:total;
+	    closeDefaultContext(myCtx);
+		return total;
+	}
+	
+	public List<Map> query(String queryStr,int startRow,int endRow)  
+			throws NoPrivilegeException,SQLException,NoConnection {
+		
+		DefaultContext myCtx = getDefaultContext();
+		HeaderIter headerIter = null;
+		#sql [myCtx] headerIter = {
+			WITH
+			    a AS
+			    (
+			        SELECT
+			            b.DBUSINESS,
+			            bs.clitcls_c,
+			            SUM(
+			                CASE
+			                    WHEN bs.CLITCLS_C = '3036'
+			                    THEN -bs.NAMT
+			                    ELSE 0
+			                END ) amt1,
+			            SUM(
+			                CASE
+			                    WHEN bs.ERETSENDFLAG = '赠送'
+			                    THEN bs.NAMT
+			                    ELSE 0
+			                END ) amt2,
+			            SUM(
+			                CASE
+			                    WHEN bs.CLITCLS_C = '1011'
+			                    THEN bs.NAMT
+			                    ELSE 0
+			                END ) id_1011,
+			            SUM(
+			                CASE
+			                    WHEN bs.CLITCLS_C IN ('1015',
+			                                          '1016',
+			                                          '1012',
+			                                          '2023')
+			                    THEN bs.NAMT
+			                    ELSE 0
+			                END ) chinese,
+			            SUM(
+			                CASE
+			                    WHEN bs.CLITCLS_C ='1017'
+			                    THEN bs.NAMT
+			                    ELSE 0
+			                END ) id_1017,
+			            SUM(
+			                CASE
+			                    WHEN bs.CLITCLS_C ='1013'
+			                    THEN bs.NAMT
+			                    ELSE 0
+			                END ) id_1013,
+			            SUM(
+			                CASE
+			                    WHEN bs.CLITCLS_C ='1014'
+			                    THEN bs.NAMT
+			                    ELSE 0
+			                END ) id_1014,
+			            SUM(
+			                CASE
+			                    WHEN bs.CLITCLS_C ='2024'
+			                    THEN bs.NAMT
+			                    ELSE 0
+			                END ) id_2024,
+			            SUM(
+			                CASE
+			                    WHEN bs.CLITCLS_C ='2029'
+			                    THEN bs.NAMT
+			                    ELSE 0
+			                END ) id_2029,
+			            SUM(
+			                CASE
+			                    WHEN bs.CLITCLS_C IN ('2026',
+			                                          '2027',
+			                                          '2028' )
+			                    THEN bs.NAMT
+			                    ELSE 0
+			                END ) drink,
+			            SUM(
+			                CASE
+			                    WHEN bs.CLITCLS_C IN ('2022',
+			                                          '2025',
+			                                          '2030',
+			                                          '1018',
+			                                          '2021')
+			                    THEN bs.NAMT
+			                    ELSE 0
+			                END ) west,
+			            SUM(
+			                CASE
+			                    WHEN bs.CLITCLS_C IN ('3032',
+			                                          '3033')
+			                    THEN bs.NAMT
+			                    ELSE 0
+			                END ) other
+			        FROM
+			            :{Com_("D_T_FOOD_BILL")} b
+			        INNER JOIN
+			            :{Com_("D_T_FOOD_BILLS")} bs
+			        ON
+			            b.CBILL_C = bs.CBILL_C
+			        WHERE
+			            :{queryStr :: 1=1}
+			        GROUP BY
+			            b.DBUSINESS,
+			            bs.clitcls_c
+			    )
+			    ,
+			    b AS
+			    (
+			        SELECT
+			            DBUSINESS,
+			            SUM(AMT1)    AMT1,
+			            SUM(AMT2)    AMT2,
+			            SUM(ID_1011) ID_1011,
+			            SUM(CHINESE) CHINESE,
+			            SUM(ID_1017) ID_1017,
+			            SUM(ID_1013) ID_1013,
+			            SUM(ID_1014) ID_1014,
+			            SUM(ID_2024) ID_2024,
+			            SUM(ID_2029) ID_2029,
+			            SUM(DRINK)   DRINK,
+			            SUM(WEST)    WEST,
+			            SUM(OTHER)   OTHER
+			        FROM
+			            a
+			        GROUP BY
+			            DBUSINESS
+			    )
+			    ,
+			    c AS
+			    (
+			        SELECT
+			            b.DBUSINESS,
+			            SUM(p.NPAYAMT) NPAYAMT
+			        FROM
+			            :{Com_("D_T_BILL_PAY")} p
+			        INNER JOIN
+			            :{Com_("D_T_FOOD_BILL")} b
+			        ON
+			            p.CBILL_C = b.CBILL_C
+			        WHERE
+			            :{queryStr :: 1=1}
+			        AND p.CPAY_C IN('01',
+			                        '02',
+			                        '03',
+			                        '07',
+			                        '15',
+			                        '16',
+			                        '23',
+			                        '18',
+			                        '04',
+			                        '05',
+			                        '08',
+			                        '09')
+			        GROUP BY
+			            b.DBUSINESS
+			    )
+			    ,
+			    d AS
+			    (
+			        SELECT
+			            TO_CHAR(b.DBUSINESS , 'iw') weekinfo,
+			            TO_CHAR(b.DBUSINESS,'day')  dayinfo,
+			            b.*,
+			            c.NPAYAMT,
+			            amt1+amt2+c.NPAYAMT sumAmt
+			        FROM
+			            b
+			        LEFT JOIN
+			            c
+			        ON
+			            b.DBUSINESS = c.DBUSINESS
+			    )
+			    ,
+			    e AS
+			    (
+			        SELECT
+			            DECODE(DBUSINESS,NULL,DECODE(WEEKINFO,NULL,'合计',DECODE(DAYINFO,NULL,'周汇总',TO_CHAR
+			            (DBUSINESS, 'YYYY-MM-DD'))),TO_CHAR(DBUSINESS, 'YYYY-MM-DD') ) DBUSINESS,
+			            DAYINFO,
+			            WEEKINFO,
+			            SUM( ID_1011) ID_1011 ,
+			            SUM( CHINESE) CHINESE,
+			            SUM(ID_1017)  ID_1017 ,
+			            SUM(ID_1013)  ID_1013 ,
+			            SUM(ID_1014)  ID_1014 ,
+			            SUM(ID_2024)  ID_2024,
+			            SUM( ID_2029) ID_2029 ,
+			            SUM(DRINK)    DRINK ,
+			            SUM(WEST)     WEST ,
+			            SUM(OTHER)    OTHER ,
+			            SUM(sumAmt)   sumAmt
+			        FROM
+			            d
+			        GROUP BY
+			            GROUPING SETS ((DBUSINESS, DAYINFO,WEEKINFO,ID_1011, CHINESE, ID_1017, ID_1013, ID_1014
+			            , ID_2024, ID_2029, DRINK, WEST, OTHER , sumAmt),WEEKINFO,NULL)
+			    )
+			SELECT
+			    *
+			FROM
+			    (
+			        SELECT
+			            t.*,
+			            ROWNUM rowNumber
+			        FROM
+			            (
+			                SELECT
+			                    DBUSINESS,
+			                    DAYINFO,
+			                    WEEKINFO,
+			                    ID_1011 ,
+			                    ROUND(ID_1011/sumAmt,4)ID_1011_per,
+			                    
+			                    CHINESE,
+			                    ROUND(CHINESE/sumAmt,4)CHINESE_per,
+			                    
+			                    ID_1017 ,
+			                    ROUND(ID_1017/sumAmt,4)ID_1017_per,
+			                    
+			                    ID_1013 ,
+			                    ROUND(ID_1013/sumAmt,4)ID_1013_per,
+			                    
+			                    ID_1014 ,
+			                    ROUND(ID_1014/sumAmt,4) ID_1014_per,
+			                    
+			                    ID_2024,
+			                    ROUND(ID_2024/sumAmt,4)ID_2024_per,
+			                    
+			                    ID_2029 ,
+			                    ROUND(ID_2029/sumAmt,4)ID_2029_per,
+			                    
+			                    DRINK ,
+			                    ROUND(DRINK/sumAmt,4)DRINK_per,
+			                    
+			                    WEST ,
+			                    ROUND(WEST/sumAmt,4)WEST_per,
+			                    
+			                    OTHER ,
+			                    ROUND(OTHER/sumAmt,4)OTHER_per,
+			                    sumAmt
+			                FROM
+			                    e) t
+			        WHERE
+			            ROWNUM < :endRow)
+			WHERE
+			    rowNumber >= :startRow};
+		List<Map> headerLst = processIter(headerIter);
+		headerIter.close();
+		closeDefaultContext(myCtx);
+		return headerLst;
+	}
+	
+	public List<Map> queryInfo(String queryStr)  
+			throws NoPrivilegeException,SQLException,NoConnection {
+		List<Map> branchLst = new ArrayList<Map>();
+		return branchLst;
+	}
+	
+	private List<Map> processIter(HeaderIter headerIter) 
+			throws SQLException {
+		List<Map> headerLst = new ArrayList<Map>();
+		
+		while(headerIter.next()) {
+			Map header = new HashMap();
+			header.put("dbusiness", headerIter.dbusiness());
+			header.put("weekinfo", headerIter.weekinfo());
+			header.put("dayinfo", headerIter.dayinfo());
+			header.put("id_1011", headerIter.id_1011());
+			header.put("id_1011_per", headerIter.id_1011_per());
+			header.put("chinese", headerIter.chinese());
+			header.put("chinese_per", headerIter.chinese_per());
+			header.put("id_1017", headerIter.id_1017());
+			header.put("id_1017_per", headerIter.id_1017_per());
+			header.put("id_1013", headerIter.id_1013());
+			header.put("id_1013_per", headerIter.id_1013_per());
+			header.put("id_1014", headerIter.id_1014());
+			header.put("id_1014_per", headerIter.id_1014_per());
+			header.put("id_2024", headerIter.id_2024());
+			header.put("id_2024_per", headerIter.id_2024_per());
+			header.put("id_2029", headerIter.id_2029());
+			header.put("id_2029_per", headerIter.id_2029_per());
+			header.put("drink", headerIter.drink());
+			header.put("drink_per", headerIter.drink_per());
+			header.put("west", headerIter.west());
+			header.put("west_per", headerIter.west_per());
+			header.put("other", headerIter.other());
+			header.put("other_per", headerIter.other_per());
+			
+			headerLst.add(header);
+		}
+		return headerLst;
+	}
+}

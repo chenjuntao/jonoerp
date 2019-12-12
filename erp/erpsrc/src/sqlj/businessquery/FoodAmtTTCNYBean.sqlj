@@ -1,0 +1,114 @@
+/**根据查营业信息询万元出品量
+ *read food amount per ten throusand CNY by business info
+ *by cjt
+ *first created on 2014.7.21
+ *last edited on 2014.7.21
+ */
+
+package logic.businessquery;
+
+import sqlj.runtime.*;
+import sqlj.runtime.ref.*;
+import java.sql.*;
+import java.math.BigDecimal;
+import oracle.sql.*;
+import oracle.sqlj.runtime.*;
+import oracle.jdbc.driver.*;
+import java.util.*;
+import java.text.SimpleDateFormat;
+import java.text.ParseException;
+import logic.pool.ConnectionPool;
+import logic.*;
+import com.tanry.framework.acl.*;
+import pojo.businessquery.FoodAmtTTCNY;
+
+public class FoodAmtTTCNYBean extends ConnectionPool
+{
+	private String strDateFormat = "yyyy-MM-dd";//设置日期格式
+
+	#sql public static iterator FoodIterator(
+			String cFood_C, 
+			String cFood_N,
+			String sUnit,
+			int nQty, 
+			float amtTTCNY); 
+
+	public FoodAmtTTCNYBean() {
+	}
+
+	/**
+	 * 每万元出品数量计算公式：SUM(c.nAmt) / SUM(c.nQty) = 10000 / 每万元出品数量
+	 */
+	public List<FoodAmtTTCNY> listFoodAmtTTCNY(String shopC, String startTime, String endTime, String categoryId)
+		throws NoPrivilegeException,SQLException,NoConnection
+	{
+		List<FoodAmtTTCNY> foods = new ArrayList<FoodAmtTTCNY>();
+		DefaultContext myCtx = getDefaultContext();
+		FoodIterator foodIterator = null;
+		if (myCtx != null)
+		{
+			//查询该时间段内某餐厅总营业额
+			BigDecimal amt = BigDecimal.ZERO;
+			Object amtObj = null;
+			String shopCStr = shopC + "%";
+			#sql [myCtx] {
+				SELECT sum(npayamt) INTO :amtObj
+				FROM :{Com_("d_t_food_bill")}
+				WHERE cbranch_c like :shopCStr
+  				AND dbusiness >= to_date(:startTime, :strDateFormat)
+  				AND dbusiness <= to_date(:endTime, :strDateFormat)
+			};
+			if (amtObj != null) {
+				amt = (BigDecimal)amtObj;
+			}
+			amt = amt.setScale(2, BigDecimal.ROUND_HALF_UP);
+			
+			//查询某类别下所有的出品数量
+			#sql [myCtx] foodIterator = {
+					SELECT
+					    c.cFood_C ,
+					    c.cFood_N,
+					    c.sUnit,
+					    ROUND(SUM(c.nQty),2) nQty,
+					    CASE
+					        WHEN (:amt = 0)
+					        THEN 0
+					        ELSE ROUND(SUM(c.nQty) * 10000/ :amt,2)
+					    END amtTTCNY
+					FROM
+						:{Com_("d_t_food_bills")} c
+					LEFT JOIN
+						:{Com_("d_t_food_bill")} a
+					ON
+					    a.cBill_C = c.cBill_C
+					WHERE
+					    c.cLitCls_C =:categoryId
+					AND a.cbranch_c like :shopCStr
+					AND a.DBUSINESS >= to_date(:startTime, 'yyyy-mm-dd')
+					AND a.DBUSINESS <= to_date(:endTime, 'yyyy-mm-dd')
+					GROUP BY
+					    c.cFood_C,
+					    c.cFood_N,
+					    c.sUnit
+					ORDER BY
+					    1};
+			while(foodIterator.next())
+			{
+				FoodAmtTTCNY foodAmtTTCNY = new FoodAmtTTCNY();
+				foodAmtTTCNY.foodId = foodIterator.cFood_C();
+				foodAmtTTCNY.foodName = foodIterator.cFood_N();
+				foodAmtTTCNY.foodUnit = foodIterator.sUnit();
+				foodAmtTTCNY.foodNum = foodIterator.nQty();
+				foodAmtTTCNY.amtTTCNY = foodIterator.amtTTCNY();
+				foods.add(foodAmtTTCNY);
+			}
+			foodIterator.close();
+		}
+		else
+        {
+            throw new NoConnection();
+        }
+		closeDefaultContext(myCtx);
+		return foods;
+	}
+}

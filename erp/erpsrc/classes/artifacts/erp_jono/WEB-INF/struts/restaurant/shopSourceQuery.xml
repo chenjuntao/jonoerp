@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE struts PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN"
+    "http://struts.apache.org/dtds/struts-2.0.dtd">
+
+<struts>
+	<package name="restaurant_shopSourceQuery" namespace="/restaurant/shopSourceQuery"	extends="trust-default">
+		<action name="mainView" class="action.restaurant.ShopSourceAction">
+			<result name="success">/jsp/restaurant/shopsource/main.jsp</result>
+		</action>
+
+		<action name="loadTree" method="loadTree" class="action.restaurant.ShopSourceAction">
+			<result type="json" />
+		</action>
+
+		<action name="listItemMeta" method="listItemMeta" class="action.restaurant.ShopSourceAction">
+			<result type="json" />
+		</action>
+
+		<action name="listMaterial" method="listMaterial" class="action.restaurant.ShopSourceAction">
+			<result type="json" />
+		</action>
+
+		<action name="listItemByIds" method="listItemByIds" class="action.restaurant.ShopSourceAction">
+			<result type="json" />
+		</action>
+
+		<action name="listItemMetaQuickly" method="listItemMetaQuickly" class="action.restaurant.ShopSourceAction">
+			<result type="json" />
+		</action>
+		
+		<action name="updateShelf" method="updateShelf" class="action.restaurant.ShopSourceAction">
+			<result type="json" />
+		</action>
+	</package>
+
+	<package name="restaurant_selmaterial" namespace="/restaurant/selmaterial"	extends="trust-default">
+		<action name="mainView" class="com.tanry.business.store.SelMaterialAction">
+			<result name="success">/jsp/restaurant/common/selmaterial/main.jsp</result>
+		</action>
+		
+		<action name="loadTree" method="queryTree" class="com.tanry.business.store.SelMaterialAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="restaurant_selmaterialRadio" namespace="/restaurant/selmaterialRadio" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.store.SelMaterialAction">
+			<result name="success">/jsp/restaurant/common/selmaterialRadio/main.jsp</result>
+		</action>
+	</package>
+</struts>
+

@@ -1,0 +1,89 @@
+<%@ page contentType="text/html;charset=UTF-8" language="java"%>
+<%@ taglib prefix="s" uri="/struts-tags"%>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+	<title>Logistics Center estimate</title>
+	<%@ include file="/jsp/common/jsp/path.jsp"%>
+	
+	<script type="text/javascript" src='<%=dojoBase %>/dojo/dojo.js' data-dojo-config="async:1"></script>
+	<script type="text/javascript" src="<%=dojoBase %>/My97DatePicker/WdatePicker.js"></script>
+	<script type="text/javascript" src="<%=appRoot %>/jsp/common/js/dgrid-util.js?Version=<%=currenttime %>"></script>
+	<script type="text/javascript" src="<%=appRoot %>/jsp/common/js/common.js?Version=<%=currenttime %>"></script>
+	<script type="text/javascript" src="<%=appRoot %>/jsp/lc/request/summary/estimate.js?Version=<%=currenttime %>"></script>
+	
+    <style type="text/css">
+      @import "<%=dojoBase %>/dojo/resources/dojo.css";
+      @import "<%=dojoBase %>/dgrid/css/dgrid.css";
+      @import "<%=dojoBase %>/dgrid/css/skins/claro.css";
+      @import "<%=dojoBase %>/dijit/themes/claro/claro.css";
+    </style>
+    
+	<link rel="stylesheet" href="<%=appRoot %>/jsp/lc/request/summary/estimate.css">
+	<link rel="stylesheet" href="<%=appRoot %>/jsp/common/css/common.css"/>
+	
+	<script type="text/javascript">
+		var ids = '${ids }';
+	</script>
+</head>
+
+<body class="claro" style="overflow-y: auto;overflow-x: hidden;">
+	<form id="billForm" method="post" >
+		<table class="hovertable" width="100%" border="1">
+			<tr>
+				<td colspan="4">
+					<div style="padding-left: 8px; font-weight: 900; font-size: 15px; color: red;">
+						<b>物流中心预估处理（只对统配物资有效，直配和越库在下一步统一处理）</b>
+					</div>
+				</td>
+			</tr>
+			
+			<tr>
+				<td class="label_right" style="width: 90px;">营业日期：</td>
+				<td class="text_left" style="width: 240px;">
+					<span id="formTimeText">${businessDate }</span>
+					<input type="hidden" name="businessDate" value='${businessDate }' />
+				</td>
+				
+				<td class="label_right" style="width: 90px;">参考日期区间1：</td>
+				<td class="text_left">
+					<input type="text" class="Wdate" style="width: 100px;" id="refDateStart1" value="${refDateStart1}" />
+					<span style="padding: 0px 5px;">至</span>		 
+					<input type="text" class="Wdate" style="width: 100px;" id="refDateEnd1" value="${refDateEnd1}" />
+				</td>
+			</tr>
+			
+			<tr>
+				<td class="label_right">参考日期区间2：</td>
+				<td class="text_left">
+					<input type="text" class="Wdate" style="width: 100px;" id="refDateStart2" value="${refDateStart2}" />
+					<span style="padding: 0px 5px;">至</span>		 
+					<input type="text" class="Wdate" style="width: 100px;" id="refDateEnd2" value="${refDateEnd2}" />
+				</td>
+				
+				<td class="label_right">参考日期区间3：</td>
+				<td class="text_left">
+					<input type="text" class="Wdate" style="width: 100px;" id="refDateStart3" value="${refDateStart3}" />
+					<span style="padding: 0px 5px;">至</span>		 
+					<input type="text" class="Wdate" style="width: 100px;" id="refDateEnd3" value="${refDateEnd3}" />
+				</td>
+			</tr>
+			
+			<tr>
+				<td class="text_left" colspan="4">
+					<input type="button" onclick="calcSuggest();" value="计算建议值" style="margin-left: 58px;">
+				    <input type="button" id="btn_submit" value="生成采购单" style="margin-left: 8px;" />
+				</td>
+			</tr>
+		</table>
+		
+		<p class="area_blank">&nbsp;</p>
+		
+		<div id="dataGrid" class="estimateGrid"></div>
+		
+	  	<input type="hidden" id="ids" name="ids" value='${ids }' />
+	  	<input type="hidden" id="jsonData" name="jsonData" value='${jsonData }' />
+	</form>
+</body>
+
+</html>

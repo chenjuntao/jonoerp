@@ -1,0 +1,166 @@
+/**查询各个台位的付款方式列表
+ *read shop pay type list
+ *by cjt
+ *first created on 2014.7.7
+ *last edited 2014.7.7
+ */
+
+package logic.businessquery;
+
+import sqlj.runtime.*;
+import sqlj.runtime.ref.*;
+import java.sql.*;
+import oracle.sql.*;
+import oracle.sqlj.runtime.*;
+import oracle.jdbc.driver.*;
+import java.util.*;
+import java.text.SimpleDateFormat;
+import java.text.ParseException;
+import logic.pool.ConnectionPool;
+import logic.*;
+import com.tanry.framework.acl.*;
+import pojo.businessquery.TablePay;
+
+public class TablePayBean extends ConnectionPool
+{	
+	private String strDateFormat = "yyyy-MM-dd";//设置日期格式
+	
+	#sql  public static iterator TableIterator(String cTable_N);
+	#sql  public static iterator BillIterator(String cBill_C, float nPayAmt);
+	#sql public static iterator PayIterator(String cPay_N, float nPayAmt);
+
+	public TablePayBean()
+	{
+	}
+	
+	public List<TablePay> listTablePay(String startTime, String endTime, String shopC)
+		throws NoPrivilegeException,SQLException,NoConnection
+	{
+		List<TablePay> tables = new ArrayList<TablePay>();
+		DefaultContext myCtx = getDefaultContext();
+		TableIterator tableIterator = null;
+		if (myCtx != null)
+		{
+			String strDateFormat = "yyyy-MM-dd";//设置日期格式
+			//遍历查找指定门店的台位列表
+			#sql [myCtx] tableIterator = { select distinct cTable_N
+											from :{Com_("d_t_food_bill")}
+											where DBUSINESS >= to_date(:startTime, :strDateFormat)
+											and DBUSINESS <= to_date(:endTime, :strDateFormat)
+											and cBranch_C = :shopC order by cTable_N};
+			while(tableIterator.next())
+			{
+				TablePay table = new TablePay();
+				table.table = tableIterator.cTable_N();
+				tables.add(table);
+			}
+			tableIterator.close();
+
+			for (int i=0; i<tables.size(); i++) 
+			{
+				TablePay table = tables.get(i);
+				String table_N = table.getTable();
+
+				//遍历查找属于指定台位的所有单据
+				BillIterator billIterator = null;
+				#sql [myCtx] billIterator = {select cBill_C, nPayAmt 
+											from :{Com_("d_t_food_bill")}
+											where DBUSINESS >= to_date(:startTime, :strDateFormat)
+											and DBUSINESS <= to_date(:endTime, :strDateFormat)
+											and cBranch_C = :shopC and cTable_N = :table_N};
+				List billCList = new ArrayList();//存储每个单据的编号
+	 			while(billIterator.next())
+				{
+					billCList.add(billIterator.cBill_C());
+					table.payAmt += billIterator.nPayAmt();
+				}
+				billIterator.close();
+
+				//遍历查找每个台位的单据付款类型
+				PayIterator payIterator = null;
+				table.pay = new HashMap<String, Float>();
+				for (int j=0; j<billCList.size(); j++)
+				{
+					String billC = (String)billCList.get(j);
+					#sql [myCtx] payIterator = 	{select cPay_N, nPayAmt 
+												from :{Com_("d_t_bill_pay")} 
+												where cBill_C = :billC};
+					while (payIterator.next()) 
+					{
+						String payN = payIterator.cPay_N();
+						if (table.pay.containsKey(payN))
+						{
+							float payAmt = table.pay.get(payN);
+							payAmt += payIterator.nPayAmt();
+							table.pay.put(payN, payAmt);
+						}
+						else
+						{
+							table.pay.put(payN, payIterator.nPayAmt());
+						}
+					}
+					payIterator.close();
+				}
+			}
+		}
+		else
+        {
+            throw new NoConnection();
+        }
+		closeDefaultContext(myCtx);
+		return tables;
+	}
+
+	public Map<String, List> listTablePayByDay(String startTime, String endTime, String shopC)
+		throws NoPrivilegeException,SQLException,NoConnection
+	{
+		Map<String, List> result = new TreeMap<String, List>();
+		List<String> dateList = getDates(startTime, endTime);
+		for (int i=0; i<dateList.size()-1; i++) 
+		{
+			String date = dateList.get(i);
+			String nextDate = dateList.get(i+1);
+			List<TablePay> shopList = listTablePay(date, nextDate, shopC); 
+			if(shopList.size()>0)
+			{
+				result.put(date, shopList);
+			}
+		}
+		return result;
+	}
+
+	/**
+	 * Get the Dates between Start Date and End Date.
+	 * @param start_date	Start Date
+	 * @param end_date		End Date
+	 * @return Dates List
+	 */
+	public List<String> getDates(String start_date, String end_date) 
+	{	
+		SimpleDateFormat sdf = new SimpleDateFormat(strDateFormat);
+		Calendar p_start = new GregorianCalendar();
+		Calendar p_end = new GregorianCalendar();
+
+		try 
+		{
+			p_start.setTime(sdf.parse(start_date));
+			p_end.setTime(sdf.parse(end_date));
+		} 
+		catch (ParseException e) 
+		{
+			e.printStackTrace();
+		}
+
+		List<String> result = new ArrayList<String>();
+		if(p_start.before(p_end))
+		{
+			while (p_start.before(p_end)) 
+			{
+				result.add(sdf.format(p_start.getTime()));
+				p_start.add(Calendar.DAY_OF_YEAR, 1);
+			}
+			result.add(sdf.format(p_start.getTime()));
+		}
+		return result;
+	}
+}

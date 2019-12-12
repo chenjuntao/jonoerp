@@ -1,0 +1,25 @@
+.dgrid-cell {
+	width: 80px;
+}
+
+.dgrid-column-set-0{
+	width: 300px;
+}
+
+.field-itemDimension,.field-therapyDimension,.field-blank  {
+	width: 60px;
+}
+
+.field-therapyNum,.field-lossNum{
+	width: 100px;
+}
+
+.field-itemSpecification{
+	width: 120px;
+}
+
+.field-itemName ,.field-therapyName,.field-item_name,.field-reason{
+	width: 140px;
+}
+
+

@@ -1,0 +1,13 @@
+.dataGrid {
+	width: 100%;
+	height: 120px; /* override default height: 30em; in dgrid.css */
+}
+
+.input-provider {
+	width: 160px !important;
+}
+
+/* for observable warn,sort consideration */
+.field-rownumber {
+	width: 60px !important;
+}

@@ -1,0 +1,49 @@
+
+#dataGrid {
+	position: absolute;
+	right: 0;
+	top: 32px;
+	bottom: 0;
+	width: 100%;
+	height: auto; /* override default height: 30em; in dgrid.css */
+}
+
+.dgrid-cell {
+	/* 	width: 80px; make all the columns 80px wide */
+	vertical-align: middle;
+	text-align: center !important;
+	width: 100px;
+}
+
+.renderedHeaderCell {
+	text-align: center;
+}
+
+.dateCell {
+	text-align: center;
+}
+
+.numberCell {
+	text-align: right;
+}
+
+.dgrid-column-set-0 {
+	width: 360px;
+}
+
+th[role="columnheader"] {
+	text-align: center;
+}
+
+
+.field-branchName {
+	width: 120px;
+}
+
+.field-giftAmt {
+	width: 220px;
+}
+
+.field-totalPer {
+	width: 150px;
+}

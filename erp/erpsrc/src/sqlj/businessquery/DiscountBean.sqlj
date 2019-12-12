@@ -1,0 +1,206 @@
+ 
+package logic.store;
+
+import sqlj.runtime.*;
+import sqlj.runtime.ref.*;
+import java.sql.*;
+import oracle.sql.*;
+import oracle.sqlj.runtime.*;
+import oracle.jdbc.driver.*;
+import java.util.*;
+import java.text.SimpleDateFormat;
+import java.text.ParseException;
+import logic.pool.ConnectionPool;
+import logic.*;
+import com.tanry.framework.acl.*;
+import pojo.businessquery.DiscountBill;
+
+import pojo.businessquery.FreeBill;
+
+public class DiscountBean extends ConnectionPool{
+	private String strDateFormat = "yyyy-MM-dd"; //设置日期格式
+
+	#sql public static iterator DiscountIterator(
+			String billC, 			//出品单号
+			String businessDate, 	//日期
+			String table, 			//台位
+			String shift,			//班次
+			String period, 			//市别
+			String shopC,			//门店编号
+			String shopN,			//门店名称
+			String foodC,			//出品编码
+			String foodN,			//出品名称
+			Double price,			//单价
+			Double qty,				//数量
+			Double amt,				//金额
+			String unit,			//单位
+			
+			Double foodAmt,			//消费金额
+			Double disAmt,			//折扣金额 
+			Double payAmt,			//付款金额 
+			String disMan,			//折扣人 
+			String disWhy			//折扣原因
+		);
+	
+	public DiscountBean(){
+	}
+	
+	public int getCount(String startDate,String endDate,String shopC,String period,String shift)
+			throws NoPrivilegeException,SQLException,NoConnection	{
+		int counts = 0;
+		
+		DefaultContext myCtx = getDefaultContext();
+		
+		if (myCtx != null)
+		{
+			#sql [myCtx]  {
+			SELECT
+				    COUNT(*) into :counts
+				    FROM
+				        (
+				            SELECT
+				                TO_CHAR(DBUSINESS, 'yyyy-MM-dd') businessDate,
+				                cBranch_C                        shopC,
+				                SUM(nFoodAmt)                    foodAmt,
+				                cTable_N                         table,
+				                cBill_C                          billC,
+				                b.cPeriod_N                      period,
+				                b.cShift_N                       shift,
+				                b.CDISMANCUR_N                   disMan,
+				                b.CDISCURWHY                     disWhy,
+				                SUM(nDisAmt)                     disAmt,
+				                SUM(nPayAmt)                     payAmt
+				            FROM
+				            :{Com_("d_t_food_bill")} b
+				            WHERE
+				            	b.cBranch_C LIKE :shopC
+							AND b.CPERIOD_N LIKE :period
+							AND b.CSHIFT_N LIKE  :shift
+				            AND nDisAmt > 0
+				            AND TO_CHAR(DBUSINESS, 'yyyy-MM-dd') IN
+				                (
+				                    SELECT
+				                        TO_CHAR(DBUSINESS, 'yyyy-MM-dd')
+				                    FROM
+				                    :{Com_("d_t_food_bill")} d
+				                    WHERE
+				                    	DBUSINESS >= to_date(:startDate, 'yyyy-MM-dd')
+							        AND DBUSINESS <= to_date(:endDate,'yyyy-MM-dd')
+				                    GROUP BY
+				                        TO_CHAR(DBUSINESS, 'yyyy-MM-dd'))
+				            GROUP BY
+				                TO_CHAR(DBUSINESS, 'yyyy-MM-dd'),
+				                cBranch_C,
+				                cTable_N ,
+				                cBill_C,
+				                b.cPeriod_N ,
+				                b.cShift_N,
+				                b.CDISMANCUR_N,
+				                b.CDISCURWHY ) t};
+		}
+		else
+		{
+			throw new NoConnection();
+		}
+		closeDefaultContext(myCtx);
+		return counts;
+	}
+	
+	public List<DiscountBill> getDiscount(String startDate,String endDate,String shopC,String period,String shift,int startRow,int endRow)
+			throws NoPrivilegeException,SQLException,NoConnection	{
+		
+		List<DiscountBill> result = new ArrayList<DiscountBill>();
+		DefaultContext myCtx = getDefaultContext();
+		DiscountIterator discountIterator = null;
+		if (myCtx != null)
+		{
+			#sql [myCtx] discountIterator = {
+			SELECT
+				    *
+				    FROM
+				        (
+				            SELECT
+				                t.*,
+				                ROWNUM rowNumber
+				            FROM
+				                (
+				                    SELECT
+				                        TO_CHAR(DBUSINESS, 'yyyy-MM-dd') businessDate,
+				                        cBranch_C                        shopC,
+				                        cBranch_N                        shopN,
+				                        SUM(nFoodAmt)                    foodAmt,
+				                        cTable_N                         table,
+				                        cBill_C                          billC,
+				                        b.cPeriod_N                      period,
+				                        b.cShift_N                       shift ,
+				                        b.CDISMANCUR_N                   disMan,
+				                        b.CDISCURWHY                     disWhy,
+				                        SUM(nDisAmt)                     disAmt,
+				                        SUM(nPayAmt)                     payAmt
+				                    FROM
+				                    :{Com_("d_t_food_bill")} b
+				                    WHERE
+				                        b.cBranch_C LIKE :shopC
+				                    AND b.CPERIOD_N LIKE :period
+				                    AND b.CSHIFT_N LIKE :shift
+				                    AND nDisAmt > 0
+				                    AND TO_CHAR(DBUSINESS, 'yyyy-MM-dd') IN
+				                        (
+				                            SELECT
+				                                TO_CHAR(DBUSINESS, 'yyyy-MM-dd')
+				                            FROM
+				                            :{Com_("d_t_food_bill")} d
+				                            WHERE
+				                                DBUSINESS >= to_date(:startDate, 'yyyy-MM-dd')
+				                            AND DBUSINESS <= to_date(:endDate,'yyyy-MM-dd')
+				                            GROUP BY
+				                                TO_CHAR(DBUSINESS, 'yyyy-MM-dd'))
+				                    GROUP BY
+				                        TO_CHAR(DBUSINESS, 'yyyy-MM-dd'),
+				                        cBranch_C,
+				                        cBranch_N,
+				                        cTable_N,
+				                        cBill_C,
+				                        b.cPeriod_N ,
+				                        b.cShift_N,
+				                        b.CDISMANCUR_N,
+				                        b.CDISCURWHY
+				                    ORDER BY
+				                        TO_CHAR(DBUSINESS, 'yyyy-MM-dd'),
+				                        cBill_C,
+				                        cBranch_C,
+				                        cTable_N
+				                        ) t
+				            WHERE
+				                ROWNUM <= :endRow)
+				    WHERE
+				        rowNumber >= :startRow};
+			
+			while(discountIterator.next()) {
+				DiscountBill discountBill = new DiscountBill();
+				discountBill.businessDate = discountIterator.businessDate();
+//				discountBill.shopC = discountIterator.shopC();
+//				discountBill.shopN = discountIterator.shopN();
+//				discountBill.foodAmt = discountIterator.foodAmt();
+//				discountBill.table = discountIterator.table();
+//				discountBill.billC = discountIterator.billC();
+//				discountBill.period = discountIterator.period();
+//				discountBill.shift = discountIterator.shift();
+//				discountBill.disAmt = discountIterator.disAmt();
+//				discountBill.payAmt = discountIterator.payAmt();
+//				discountBill.disMan = discountIterator.disMan();
+				discountBill.disWhy = discountIterator.disWhy();
+				
+				result.add(discountBill);
+			}
+			discountIterator.close();
+		}
+		else
+		{
+			throw new NoConnection();
+		}
+		closeDefaultContext(myCtx);
+		return result;
+	}
+	
+}

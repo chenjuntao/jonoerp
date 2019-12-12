@@ -1,0 +1,33 @@
+#dataGrid {
+	position: absolute;
+	right: 0;
+	top: 0px;
+	bottom: 0px;
+	width: 100%;
+	height: auto; 
+}
+
+.dgrid-cell {
+    width: 90px;
+}
+
+.dgrid-column-set-0{
+	width: 200px;
+}
+
+.field-branchAddress {
+	width: 260px;
+}
+
+.field-branchId ,.field-enabled{
+	width: 60px;
+}
+
+.field-branchName{
+	width: 120px;
+}
+
+.field-email,.field-remark,.field-telephone{
+	width: 120px;
+}
+

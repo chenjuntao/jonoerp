@@ -1,0 +1,79 @@
+#myTree {
+	position: absolute;
+	left: 0;
+	right: 0;
+	top: 120px;
+	bottom: 0;
+	width: 20%;
+	height: auto; /* override default height: 30em; in dgrid.css */
+}
+
+#dataGrid {
+	position: absolute;
+	right: 0;
+	top: 120px;
+	bottom: 0;
+	width: 80%;
+	height: auto; /* override default height: 30em; in dgrid.css */
+}
+
+th[role="columnheader"] {
+	text-align: center;
+}
+
+.dgrid-cell {
+	/* 	width: 80px; make all the columns 80px wide */
+	vertical-align: middle;
+}
+
+.field-rownumber, .field-itemId, .field-stockDimension,
+	.field-itemDimension, .field-therapy, .field-itemType {
+	text-align: center;
+}
+
+.dgrid-column-set-0 {
+	width: 300px;
+}
+
+.field-rownumber {
+	width: 40px;
+}
+
+.field-existFlag {
+	width: 60px;
+	color: red;
+}
+
+
+.field-itemId, .field-itemType {
+	width: 60px;
+}
+
+.field-itemName {
+	width: 150px;
+}
+
+.field-itemCount,.field-itemGrossCount {
+	width: 120px;
+	text-align: right;
+}
+
+.field-itemDimension, .field-stockDimension {
+	width: 60px;
+}
+
+.field-unitConvertFactor, .field-itemUsageRate, .field-recipeFactor {
+	width: 80px;
+	text-align: right;
+}
+
+.field-purchasePrice,.field-purchaseAmt,.field-benchmarkPrice,.field-benchmarkAmt{
+	width: 120px;
+	text-align: right;
+}
+
+
+
+.field-none {
+	width: 80px;
+}

@@ -1,0 +1,48 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on Tue Nov 04 17:07:12 CST 2014 by pw
+ * Last edited on Tue Nov 04 17:07:12 CST 2014 by pw
+ * 
+ * comment: 中央工厂生产计划/排程单明细
+ */
+package logic.form;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import pojo.form.ArrangmentDetail;
+import sqlj.runtime.ref.DefaultContext;
+import com.tanry.business.form.FormConstant;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.TextUtil;
+import com.tanry.framework.acl.NoPrivilegeException;
+
+public class DeleteTestBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(DeleteTestBean.class);
+	
+	public void deleteTestData(String tbName)
+			throws NoPrivilegeException, SQLException, NoConnection{
+		DefaultContext myCtx = getDefaultContext();
+		String name = ":{COM_(\""+tbName+"\")}";
+		#sql [myCtx]{
+			DELETE FROM
+			:name D
+			WHERE
+				LENGTH(D.FORM_ID) = 32
+		};
+		closeDefaultContext(myCtx);
+	}
+}

@@ -1,0 +1,204 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on Fri Jul 08 12:10:12 CST 2016 by pw
+ * Last edited on Fri Jul 08 12:10:12 CST 2016 by pw
+ * 
+ * comment: 半成品加工单明细
+ */
+package logic.form;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+import java.util.HashMap;
+import java.util.Map;
+
+import pojo.form.SelfSemisDetail;
+import sqlj.runtime.ref.DefaultContext;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.TextUtil;
+import com.tanry.framework.acl.NoPrivilegeException;
+
+public class SelfSemisDetailBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(SelfSemisDetailBean.class);
+	
+	#sql private iterator HeaderIter(String form_id, String item_id, String item_name, String item_dimension, String item_specification, String item_category, Double item_count_plan, Double item_count_actual);
+	
+	public int saveEntity(SelfSemisDetail header)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		String formId = header.getFormId();
+		String itemId = header.getItemId();
+		String itemName = header.getItemName();
+		String itemDimension = header.getItemDimension();
+		String itemSpecification = header.getItemSpecification();
+		String itemCategory = header.getItemCategory();
+		Double itemCountPlan = header.getItemCountPlan();
+		Double itemCountActual = header.getItemCountActual();
+
+		#sql [myCtx] {
+			INSERT INTO :{Com_("D_T1_SELF_SEMIS_DETAIL")}
+				(FORM_ID, ITEM_ID, ITEM_NAME, ITEM_DIMENSION, ITEM_SPECIFICATION, ITEM_CATEGORY, ITEM_COUNT_PLAN, ITEM_COUNT_ACTUAL) 
+			VALUES (:formId, :itemId, :itemName, :itemDimension, :itemSpecification, :itemCategory, :itemCountPlan, :itemCountActual)
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public int updateEntity(SelfSemisDetail header)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		String formId = header.getFormId();
+		String itemId = header.getItemId();
+		String itemName = header.getItemName();
+		String itemDimension = header.getItemDimension();
+		String itemSpecification = header.getItemSpecification();
+		String itemCategory = header.getItemCategory();
+		Double itemCountPlan = header.getItemCountPlan();
+		Double itemCountActual = header.getItemCountActual();
+
+		#sql [myCtx] {
+			UPDATE
+			:{Com_("D_T1_SELF_SEMIS_DETAIL")}
+			SET
+				ITEM_COUNT_PLAN = :itemCountPlan,
+				ITEM_COUNT_ACTUAL = :itemCountActual
+			WHERE 
+				FORM_ID = :formId
+				AND ITEM_ID = :itemId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+
+	public int deleteEntity(String formId)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		#sql [myCtx] {
+			DELETE
+			FROM
+			:{Com_("D_T1_SELF_SEMIS_DETAIL")}
+			WHERE
+				FORM_ID = :formId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+
+	private String formQuery(String itemType) {
+		String query = " 1=1";
+		
+		if ("SEMIS".equals(itemType)) { // 获取半成品记录
+			query = query + " AND d.ITEM_SPECIFICATION='FOOD'"; 
+		}else if("RAW".equals(itemType)){
+			query = query + " AND d.ITEM_SPECIFICATION!='FOOD'"; 
+		}
+		return query;
+	}
+	
+	public List<SelfSemisDetail> queryDetail(String formId,String itemType) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		String query = formQuery(itemType);
+		DefaultContext myCtx = getDefaultContext();
+		HeaderIter headerIter = null;
+		#sql [myCtx] headerIter = {
+			SELECT
+			    *
+			FROM
+			:{Com_("D_T1_SELF_SEMIS_DETAIL")} d
+			WHERE
+				:{query ::}
+			AND 
+				d.FORM_ID =:formId
+		};
+		List<SelfSemisDetail> headerLst = processIter(headerIter);
+		headerIter.close();
+		closeDefaultContext(myCtx);
+		return headerLst;
+	}
+	
+	#sql private iterator StorageIter(
+		 	String item_id,
+	 	 	Double item_count
+		);
+	
+	/**
+	 * query items storage
+	 */
+	public Map<String,Double> queryStorage(String formId,String storageId)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		StorageIter storageIter = null;
+		#sql [myCtx] storageIter = {
+			WITH
+			    items AS
+			    (
+			        SELECT DISTINCT
+			            ITEM_ID
+			        FROM
+			        	:{Com_("D_T1_SELF_SEMIS_HEADER")} h
+			        INNER JOIN
+			            :{Com_("D_T1_SELF_SEMIS_DETAIL")} d
+			        ON
+			            h.FORM_ID = d.FORM_ID
+			        WHERE
+			            d.FORM_ID = :formId
+			    )
+			SELECT
+			    i.ITEM_ID,
+			    NVL(s.ITEM_COUNT,0)ITEM_COUNT
+			FROM
+			    items i
+			LEFT JOIN
+			 :{Com_("D_T2_STORAGE")} s
+			ON
+			    i.ITEM_ID = s.ITEM_ID
+			AND s.STORAGE_ID = :storageId};
+		
+		Map<String,Double> resultMap = new HashMap<String,Double>();
+		while(storageIter.next()) {
+			resultMap.put(storageIter.item_id(),storageIter.item_count());
+		}
+		
+		storageIter.close();
+		closeDefaultContext(myCtx);
+		return resultMap;
+	}
+
+	private List<SelfSemisDetail> processIter(HeaderIter headerIter) 
+			throws SQLException {
+		List<SelfSemisDetail> headerLst = new ArrayList<SelfSemisDetail>();
+		while(headerIter.next()) {
+			SelfSemisDetail header = new SelfSemisDetail();
+			header.setFormId(headerIter.form_id());
+			header.setItemId(headerIter.item_id());
+			header.setItemName(headerIter.item_name());
+			header.setItemDimension(headerIter.item_dimension());
+			header.setItemSpecification(headerIter.item_specification());
+			header.setItemCategory(headerIter.item_category());
+			header.setItemCountPlan(headerIter.item_count_plan());
+			header.setItemCountActual(headerIter.item_count_actual());
+			headerLst.add(header);
+		}
+		return headerLst;
+	}
+}

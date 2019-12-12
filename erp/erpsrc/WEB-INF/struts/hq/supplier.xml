@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE struts PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN"
+    "http://struts.apache.org/dtds/struts-2.0.dtd">
+
+<struts>
+	<package name="hq_supplier_item" namespace="/hq/supplier/item" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.hq.config.supplier.SupplierManageAction">
+			<result name="success">/jsp/hq/config/supplier/item/main.jsp</result>
+		</action>
+		
+		<action name="deleteView" method="deleteView" class="com.tanry.business.module.hq.config.item.MetaManageAction">
+			<result name="success">/jsp/hq/config/item/supplier/main.jsp</result>
+		</action>
+		
+		<action name="queryItem" method="queryItem" class="com.tanry.business.module.hq.config.supplier.SupplierManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="queryBranch" method="queryBranch" class="com.tanry.business.module.hq.config.supplier.SupplierManageAction">
+			<result type="json" />
+		</action>
+	</package>
+</struts>
+

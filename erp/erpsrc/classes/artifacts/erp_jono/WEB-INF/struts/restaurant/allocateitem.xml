@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE struts PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN"
+    "http://struts.apache.org/dtds/struts-2.0.dtd">
+
+<struts>
+	<package name="restaurant_allocateitem_selmaterial" namespace="/restaurant/allocateitem/selmaterial" extends="trust-default">
+		<action name="mainView" class="action.restaurant.goodsbill.SelMaterialAction">
+			<result name="success">/jsp/restaurant/allocateitem/selmaterial/main.jsp</result>
+		</action>
+	</package>
+	
+	<package name="restaurant_allocateitem_create" namespace="/restaurant/allocateitem/create" extends="trust-default">
+		<action name="mainView" class="action.restaurant.allocateitem.CreateBillAction">
+			<result name="success">/jsp/restaurant/allocateitem/create/main.jsp</result>
+		</action>
+		
+		<action name="commitView" method="commitView" class="action.restaurant.allocateitem.CreateBillAction">
+			<result name="success">/jsp/restaurant/allocateitem/create/commit.jsp</result>
+			<result name="input" type="json" />
+		</action>
+		
+		<action name="doCommit" method="doCommit" class="action.restaurant.allocateitem.CreateBillAction">
+			<interceptor-ref name="defaultStack" />
+			<interceptor-ref name="token" />
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="restaurant_allocateitem_confirm" namespace="/restaurant/allocateitem/confirm" extends="trust-default">
+		<action name="mainView" class="action.restaurant.allocateitem.ConfirmBillAction">  
+			<result name="success">/jsp/restaurant/allocateitem/confirm/main.jsp</result>
+		</action>
+		
+		<action name="doQuery" method="doQuery" class="action.restaurant.allocateitem.ConfirmBillAction">
+			<result type="json" />
+		</action>
+		
+		<action name="confirmView" method="confirmView" class="action.restaurant.allocateitem.ConfirmBillAction">
+			<result name="success">/jsp/restaurant/allocateitem/confirm/confirm.jsp</result>
+		</action>
+		
+		<action name="doConfirm" method="doConfirm" class="action.restaurant.allocateitem.ConfirmBillAction">
+			<interceptor-ref name="defaultStack" />
+			<interceptor-ref name="token" />
+			<result type="json" />
+		</action>
+		
+		<action name="auditById" method="auditById" class="action.restaurant.allocateitem.ConfirmBillAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="restaurant_allocateitem_query" namespace="/restaurant/allocateitem/query" extends="trust-default">
+		<action name="mainView" class="action.restaurant.allocateitem.QueryBillAction">
+			<result name="success">/jsp/restaurant/allocateitem/query/main.jsp</result>
+		</action>
+		
+		<action name="editView" method="editView" class="action.restaurant.allocateitem.QueryBillAction">
+			<result name="success">/jsp/restaurant/allocateitem/query/edit.jsp</result>
+		</action>
+
+		<action name="scanView" method="scanView" class="action.restaurant.allocateitem.QueryBillAction">
+			<result name="success">/jsp/restaurant/allocateitem/query/scan.jsp</result>
+		</action>
+		
+		<action name="doQuery" method="doQuery" class="action.restaurant.allocateitem.QueryBillAction">
+			<result type="json" />
+		</action>
+
+		<action name="queryDetail" method="queryDetail" class="action.restaurant.allocateitem.BillManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doSave" method="doSave" class="action.restaurant.allocateitem.BillManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doDelete" method="doDelete" class="action.restaurant.allocateitem.BillManageAction">
+			<result type="json" />
+		</action>
+	</package>
+</struts>
+

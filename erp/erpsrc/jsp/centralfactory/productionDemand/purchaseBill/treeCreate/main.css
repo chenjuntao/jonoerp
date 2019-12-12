@@ -1,0 +1,46 @@
+.dataGrid {
+	width: 100%;
+	height: 400px; /* override default height: 30em; in dgrid.css */
+}
+
+
+th[role="columnheader"] {
+	text-align: center;
+}
+
+#arrangeGrid {
+    position: absolute;
+    top: 65px;
+    bottom: 0px;
+    width: 100%;
+    height: auto;
+}
+
+.field-rownumber, .field-formId, .field-itemId, .field-formTime,.field-itemCount,
+	.field-formMaker, .field-payAmt, .field-auditor, .field-auditTime,.field-scan
+	,.field-formRefId
+	{
+	text-align: center !important;
+}
+
+/* for observable warn,sort consideration */
+.field-rownumber {
+	width: 40px !important;
+}
+
+.field-scan,.field-none {
+	width: 50px ;
+}
+
+.field-auditor,.field-auditTime,.field-formTime,.field-shelfName,.field-formMaker{
+	width: 100px;
+}
+
+.field-formId {
+	width: 130px ;
+}
+
+.field-formRefId {
+	width: 130px ;
+}
+

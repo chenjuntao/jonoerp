@@ -1,0 +1,220 @@
+package logic.businessquery;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import sqlj.runtime.ref.DefaultContext;
+
+import com.tanry.framework.acl.NoPrivilegeException;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.TextUtil;
+
+public class PeoplePayBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(PeoplePayBean.class);
+	
+	#sql private iterator DataIter(
+			String cBranch_C,
+			String cBranch_N,
+			String cSettleMan,
+			String cPay_C,
+			String cPay_N,
+			String readPayCode,
+			Double nPayAmt
+		);
+	
+	#sql private iterator ColumnIter(
+			String cPay_C,
+			String cPay_N
+		);
+	
+	/**
+	 * startDate 	营业开始日期
+	 * endDate	  	营业结束日期
+	 * branchId 	门店Id
+	 * peopleId     结帐人员Id
+	 */
+	public List<Map> query(java.util.Date startDate, java.util.Date endDate, String branchId, String peopleId)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		String query = " 1=1";
+		
+		if (!TextUtil.isEmpty(branchId)) { 
+			query = query + " AND b.cBranch_C = '" + branchId + "'";
+		}
+		
+		if (!TextUtil.isEmpty(peopleId)) { 
+			query = query + " AND b.cSettleMan = '" + peopleId + "'";
+		}
+		
+		Date sDate = SqlDateUtil.getSqlDate(startDate);
+		Date eDate = SqlDateUtil.getSqlDate(endDate);
+		
+		DefaultContext myCtx = getDefaultContext();
+		DataIter dataIter = null;
+		#sql [myCtx] dataIter = {
+			SELECT
+			    *
+			    FROM
+			        (
+			            SELECT
+			                b.cBranch_C ,
+			                '['|| cBranch_C || ']'|| b.cBranch_N cBranch_N,
+			                b.cSettleMan cSettleMan,
+			                'pay_' || p.cPay_C cPay_C,
+			                p.cPay_C readPayCode,
+			                p.cPay_N,
+			                SUM(p.nPayAmt) nPayAmt
+			            FROM
+			                :{Com_("d_t_food_bill")} b
+			            LEFT JOIN
+			                :{Com_("d_t_bill_pay")} p
+			            ON
+			                b.cBill_C = p.cBill_C
+			            WHERE
+			                :{query ::}
+			            AND (
+			                    DBUSINESS >= :sDate
+			                OR  :sDate IS NULL)
+			            AND (
+			                    DBUSINESS <= :eDate
+			                OR  :eDate IS NULL)
+			            AND p.CPAY_C IS NOT NULL
+			            GROUP BY
+			                b.cBranch_C ,
+			                b.cBranch_N ,
+			                b.cSettleMan,
+			                p.cPay_C,
+			                p.cPay_N
+			            UNION ALL
+			            SELECT
+			                b.cBranch_C ,
+			                '['|| cBranch_C || ']'|| b.cBranch_N cBranch_N,
+			                b.cSettleMan cSettleMan,
+			                'pay_sum'      cPay_C,
+			                 '' readPayCode,
+			                '合计'           cPay_N ,
+			                SUM(p.nPayAmt) nPayAmt
+			            FROM
+			                :{Com_("d_t_food_bill")} b
+			            LEFT JOIN
+			                :{Com_("d_t_bill_pay")} p
+			            ON
+			                b.cBill_C = p.cBill_C
+			            WHERE
+			                :{query ::}
+			            AND (
+			                    DBUSINESS >= :sDate
+			                OR  :sDate IS NULL)
+			            AND (
+			                    DBUSINESS <= :eDate
+			                OR  :eDate IS NULL)
+			            AND p.CPAY_C IS NOT NULL
+			            GROUP BY
+			                b.cBranch_C ,
+			                b.cBranch_N ,
+			                b.CSETTLEMAN) a
+			    ORDER BY
+			        cBranch_C,
+			        CSETTLEMAN,
+			        CPAY_C};
+		List<Map> returnLst = returnProcessIter(dataIter);
+		dataIter.close();
+		closeDefaultContext(myCtx);
+		return returnLst;
+	}
+	
+	/**
+	 * startDate 	营业开始日期
+	 * endDate	  	营业结束日期
+	 * branchId 	门店Id
+	 * peopleId     结帐人员Id
+	 */
+	public List<Map> queryColumns(java.util.Date startDate, java.util.Date endDate, String branchId, String peopleId)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		String query = " 1=1";
+		
+		if (!TextUtil.isEmpty(branchId)) { 
+			query = query + " AND b.cBranch_C = '" + branchId + "'";
+		}
+		
+		if (!TextUtil.isEmpty(peopleId)) { 
+			query = query + " AND b.cSettleMan = '" + peopleId + "'";
+		}
+		
+		Date sDate = SqlDateUtil.getSqlDate(startDate);
+		Date eDate = SqlDateUtil.getSqlDate(endDate);
+		
+		DefaultContext myCtx = getDefaultContext();
+		ColumnIter columnIter = null;
+		#sql [myCtx] columnIter = {
+			SELECT
+				'pay_' || p.cPay_C cPay_C,
+			    p.cPay_N
+			FROM
+			    :{Com_("d_t_food_bill")} b
+			LEFT JOIN
+			    :{Com_("d_t_bill_pay")} p
+			ON
+			    b.cBill_C = p.cBill_C
+			WHERE
+			    :{query ::}
+			AND (
+			        DBUSINESS >= :sDate
+			    OR  :sDate IS NULL)
+			AND (
+			        DBUSINESS <= :eDate
+			    OR  :eDate IS NULL)
+			AND p.CPAY_C IS NOT NULL
+			GROUP BY
+			    p.cPay_C,
+			    p.cPay_N
+			ORDER BY
+			    p.CPAY_C};
+		List<Map> returnLst = returnColumnIter(columnIter);
+		columnIter.close();
+		closeDefaultContext(myCtx);
+		return returnLst;
+	}
+	
+	
+	private List<Map> returnColumnIter(ColumnIter columnIter) 
+			throws SQLException {
+		List<Map> headLst = new ArrayList<Map>();
+		while(columnIter.next()) {
+			Map<String, Object> head = new HashMap<String, Object>();
+			head.put("cPay_C", columnIter.cPay_C());
+			head.put("cPay_N", columnIter.cPay_N());
+			
+			headLst.add(head);
+		}
+		return headLst;
+	}
+	
+	private List<Map> returnProcessIter(DataIter dataIter) 
+			throws SQLException {
+		List<Map> headLst = new ArrayList<Map>();
+		while(dataIter.next()) {
+			Map<String, Object> head = new HashMap<String, Object>();
+			head.put("cBranch_C", dataIter.cBranch_C());
+			head.put("cBranch_N", dataIter.cBranch_N());
+			head.put("cSettleMan", dataIter.cSettleMan());
+			head.put("cPay_C", dataIter.cPay_C());
+			head.put("cPay_N", dataIter.cPay_N());
+			head.put("readPayCode", dataIter.readPayCode());
+			head.put("nPayAmt", dataIter.nPayAmt());
+			
+			headLst.add(head);
+		}
+		return headLst;
+	}
+	
+}

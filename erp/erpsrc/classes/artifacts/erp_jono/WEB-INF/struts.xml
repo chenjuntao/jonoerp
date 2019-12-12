@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE struts PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN"
+    "http://struts.apache.org/dtds/struts-2.0.dtd">
+
+<struts>
+	<constant name="struts.custom.i18n.resources" value="messageResource"/>
+	<constant name="struts.enable.DynamicMethodInvocation" value="true"/>
+	<constant name="struts.objectFactory" value="spring" />
+	<constant name="struts.objectFactory.spring.autowire" value="name"/>
+	 <constant name="struts.i18n.encoding" value="UTF-8" /><!-- 全局默认编码为UTF-8 -->
+	 <constant name="struts.devMode" value="ture" /><!-- 开发模试 -->
+    <constant name="struts.configuration.xml.reload" value="true" /><!-- 当配置文件改变时,自动读取配置文件 -->
+     <constant name="struts.objectFactory.spring.useClassCache" value="true" /><!-- 类缓存默认关闭,开发期间这样处理 -->
+	<package name="trust-default" extends="json-default">
+        <!-- 拦截器 -->
+        <interceptors>
+            <!-- 登录验证 -->
+            <interceptor name="loginVerify" class="com.tanry.framework.ic.LoginInterceptor">
+            	<param name="excludeMethods">
+	            	testConnect,
+	            	postBill, 
+	            	postBills,
+	            	postPay,
+	            	postFood,
+	            	postFoodPrice,
+	            	postFoodCategory,
+	            	postRestaurant,
+					uploadWeight
+            	</param> <!--不拦截Action中的method1-->  
+			<!--<param name="includeMethods">method1,method2</param> 拦截Action中的method2-->
+            </interceptor>
+            <interceptor-stack name="verify">
+                <interceptor-ref name="defaultStack"></interceptor-ref>
+                <interceptor-ref name="loginVerify"></interceptor-ref>
+            </interceptor-stack>
+            
+            
+        </interceptors>        
+        <default-interceptor-ref name="verify"></default-interceptor-ref>
+               
+        <!-- 错误处理Action -->
+        <global-results>
+            <result name="error">Error.jsp</result>
+            <result name="login">/jsp/login/main.jsp</result>
+            <result name="tanry-login">/jsp/login/product.jsp</result>
+<!--             <result name="invalid.token">/jsp/login/err.jsp</result> -->
+            <result name="ajaxerror" type="json">
+			  	<param name="statusCode">403</param>
+			  	<!-- 防止未登录时后台报错（json无限循环） -->
+			  	<param name="root">count</param>
+			</result>
+        </global-results>
+	</package>
+	
+	<package name="jsp2" namespace="/jsp2" extends="struts-default">
+		<!--
+		<interceptors>  
+			<interceptor name="i18nInterceptor" class="com.opensymphony.xwork2.interceptor.I18nInterceptor"/>  
+			<interceptor name="localeInterceptor" class="ic.LocaleInterceptor"/>  
+			<interceptor-stack name="localeDefaultStack">  
+				<interceptor-ref name="i18nInterceptor"/>  
+				<interceptor-ref name="defaultStack"/>  
+			</interceptor-stack>  
+		</interceptors>  
+
+        <default-interceptor-ref name="localeDefaultStack"></default-interceptor-ref>  
+		-->
+
+		<!--
+		<default-action-ref name="nopage"/>
+
+		<global-results>
+			<result name="securityerror">/securityerror.jsp</result>
+			<result name="error">/error.jsp</result>
+		</global-results>
+
+		<global-exception-mappings> 
+			<exception-mapping result="error" exception="java.lang.Exception"/>
+		</global-exception-mappings>
+
+		<action name="nopage">
+			<result>/WEB-INF/jsp/nopage.jsp</result>
+		</action>
+		-->
+	</package>
+	
+	
+	<include file="../struts/urlredirect.xml"/>
+	<include file="../struts/quartz.xml"/>
+	<include file="../struts/common.xml"/>
+	<include file="../struts/businessquery/main.xml"/>
+	<include file="../struts/restaurant/main.xml"/>
+	<include file="../struts/lc/main.xml"/>
+	<include file="../struts/outerorder.xml"/>
+	<include file="../struts/centralfactory/main.xml"/>
+	<include file="../struts/hq/main.xml"/>
+	<include file="../struts/supplier/main.xml"/>
+	<include file="../struts/outerorder/main.xml"/>
+	<include file="../struts/setting/main.xml"/>
+	<include file="../struts/reportmanage/main.xml"/>
+	<include file="../struts/special/main.xml"/>
+	<include file="../struts/restapi.xml"/>
+</struts>
+

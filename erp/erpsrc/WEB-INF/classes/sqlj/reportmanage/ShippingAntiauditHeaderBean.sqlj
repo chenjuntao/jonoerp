@@ -1,0 +1,271 @@
+package logic.reportmanage;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import sqlj.runtime.ref.DefaultContext;
+import com.tanry.business.form.FormConstant;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.TextUtil;
+import com.tanry.framework.util.constant.BillStatus;
+import com.tanry.framework.acl.NoPrivilegeException;
+
+public class ShippingAntiauditHeaderBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(ShippingAntiauditHeaderBean.class);
+	
+	#sql private iterator HeaderIter(
+			String antiaudit_branch_id,
+			String antiaudit_branch,
+			String provider, 
+			String out_storage, 
+			String requester, 
+			String in_storage, 
+			String item_id,
+			String item_name,
+			Double antiaudit_receive_count,
+			Double antiaudit_pay_amt
+		);
+	
+	#sql private iterator SumIter(
+			Double antiaudit_receive_count,
+			Double antiaudit_pay_amt);
+	
+	public Map getColmunType(){
+		Map map  = new HashMap();
+		map.put("antiaudit_branch_id", "String");
+		map.put("antiaudit_branch", "String");
+		map.put("provider", "String");
+		map.put("out_storage", "String");
+		map.put("requester", "String");
+		map.put("in_storage", "String");
+		map.put("item_id", "String");
+		map.put("item_name", "String");
+		map.put("antiaudit_receive_count", "Number");
+		map.put("antiaudit_pay_amt", "Number");
+		
+		return map;
+	}
+	
+	public Map getColmunPrefix(){
+		Map map  = new HashMap();
+		map.put("antiaudit_branch_id", "h");
+		map.put("antiaudit_branch", "h");
+		map.put("provider", "ph");
+		map.put("out_storage", "ph");
+		map.put("requester", "ph");
+		map.put("in_storage", "ph");
+		map.put("item_id", "d");
+		map.put("item_name", "im");
+		map.put("antiaudit_receive_count", "d");
+		map.put("antiaudit_receive_count", "d");
+		return map;
+	}
+	
+	public int count(String queryStr, String sortStr)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		
+		DefaultContext myCtx = getDefaultContext();
+		int total = 0;
+		#sql [myCtx] {
+			select count(*) into :total
+			from (SELECT
+            	   count(*)
+            	FROM
+            	:{Com_("D_T1_SHIPPING_ANTIAUDIT_HEADER")} h
+            	LEFT JOIN
+            	:{Com_("D_T1_SHIPPING_ANTIAUDIT_DETAIL")} d
+            	ON
+            	    h.FORM_REF_ID = d.FORM_REF_ID
+            	LEFT JOIN
+            	:{Com_("D_T2_ITEM_META")} im
+            	ON
+            	    d.ITEM_ID = im.ITEM_ID
+            	JOIN
+            	:{Com_("D_T1_SHIPPING_HEADER")} ph
+            	ON
+            	    h.FORM_REF_ID = ph.FORM_ID
+            	JOIN
+            	:{Com_("D_T0_FORM_STATUS")} s
+            	ON
+            	    h.FORM_REF_ID = s.FORM_ID
+            	AND s.IS_CURRENT = 1
+            	WHERE
+            	    1 = 1  :{queryStr :: ''}
+            	GROUP BY
+            	    h.ANTIAUDIT_BRANCH_ID,
+            	    h.ANTIAUDIT_BRANCH,
+            	    ph.PROVIDER,
+            	    ph.OUT_STORAGE,
+            	    ph.REQUESTER,
+            	    ph.IN_STORAGE,
+            	    d.ITEM_ID,
+            	    im.ITEM_NAME :{sortStr :: ''})a
+		};
+		closeDefaultContext(myCtx);
+		return total;
+	}
+	
+	
+	public List<Map> query(int startRow, int endRow,String queryStr,  String sortStr)  
+			throws NoPrivilegeException,SQLException,NoConnection {
+		
+		DefaultContext myCtx = getDefaultContext();
+		HeaderIter headerIter = null;
+		#sql [myCtx] headerIter = {
+		SELECT
+			    *
+			    FROM
+			        (
+			            SELECT
+			                t.*,
+			                ROWNUM rowNumber
+			            FROM
+			                (SELECT
+			                		h.ANTIAUDIT_BRANCH_ID,
+			                	    h.ANTIAUDIT_BRANCH,
+			                	    ph.PROVIDER,
+			                	    ph.OUT_STORAGE,
+			                	    ph.REQUESTER,
+			                	    ph.IN_STORAGE,
+			                	    d.ITEM_ID,
+			                	    im.ITEM_NAME,
+			                	    SUM(NVL(d.ANTIAUDIT_RECEIVE_COUNT,0)) ANTIAUDIT_RECEIVE_COUNT,
+			                	    SUM(NVL(d.ANTIAUDIT_PAY_AMT,0))       ANTIAUDIT_PAY_AMT
+			                	FROM
+			                	:{Com_("D_T1_SHIPPING_ANTIAUDIT_HEADER")} h
+			                	LEFT JOIN
+			                	:{Com_("D_T1_SHIPPING_ANTIAUDIT_DETAIL")} d
+			                	ON
+			                	    h.FORM_REF_ID = d.FORM_REF_ID
+			                	LEFT JOIN
+			                	:{Com_("D_T2_ITEM_META")} im
+			                	ON
+			                	    d.ITEM_ID = im.ITEM_ID
+			                	JOIN
+			                	:{Com_("D_T1_SHIPPING_HEADER")} ph
+			                	ON
+			                	    h.FORM_REF_ID = ph.FORM_ID
+			                	JOIN
+			                	:{Com_("D_T0_FORM_STATUS")} s
+			                	ON
+			                	    h.FORM_REF_ID = s.FORM_ID
+			                	AND s.IS_CURRENT = 1
+			                	WHERE
+			                	    1 = 1  :{queryStr :: ''}
+			                	GROUP BY
+			                	    h.ANTIAUDIT_BRANCH_ID,
+			                	    h.ANTIAUDIT_BRANCH,
+			                	    ph.PROVIDER,
+			                	    ph.OUT_STORAGE,
+			                	    ph.REQUESTER,
+			                	    ph.IN_STORAGE,
+			                	    d.ITEM_ID,
+			                	    im.ITEM_NAME :{sortStr :: ''}) t
+			            WHERE
+			                ROWNUM < :endRow)
+			    WHERE
+			        rowNumber >= :startRow};
+		List<Map> headerLst = processIter(headerIter);
+		headerIter.close();
+		closeDefaultContext(myCtx);
+		return headerLst;
+	}
+	
+	public Map sum( String queryStr, String sortStr) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		
+		DefaultContext myCtx = getDefaultContext();
+		
+		SumIter sumIter = null;
+		
+		#sql [myCtx] sumIter = {
+				SELECT
+			    round(SUM (ANTIAUDIT_RECEIVE_COUNT),2) ANTIAUDIT_RECEIVE_COUNT,
+			    round(SUM(ANTIAUDIT_PAY_AMT),2)     ANTIAUDIT_PAY_AMT
+		FROM
+		    (SELECT
+            	    SUM(NVL(d.ANTIAUDIT_RECEIVE_COUNT,0)) ANTIAUDIT_RECEIVE_COUNT,
+            	    SUM(NVL(d.ANTIAUDIT_PAY_AMT,0))       ANTIAUDIT_PAY_AMT
+            	FROM
+            	:{Com_("D_T1_SHIPPING_ANTIAUDIT_HEADER")} h
+            	LEFT JOIN
+            	:{Com_("D_T1_SHIPPING_ANTIAUDIT_DETAIL")} d
+            	ON
+            	    h.FORM_REF_ID = d.FORM_REF_ID
+            	LEFT JOIN
+            	:{Com_("D_T2_ITEM_META")} im
+            	ON
+            	    d.ITEM_ID = im.ITEM_ID
+            	JOIN
+            	:{Com_("D_T1_SHIPPING_HEADER")} ph
+            	ON
+            	    h.FORM_REF_ID = ph.FORM_ID
+            	JOIN
+            	:{Com_("D_T0_FORM_STATUS")} s
+            	ON
+            	    h.FORM_REF_ID = s.FORM_ID
+            	AND s.IS_CURRENT = 1
+            	WHERE
+            	    1 = 1  :{queryStr :: ''}
+            	GROUP BY
+            	    h.ANTIAUDIT_BRANCH_ID,
+            	    h.ANTIAUDIT_BRANCH,
+            	    ph.PROVIDER,
+            	    ph.OUT_STORAGE,
+            	    ph.REQUESTER,
+            	    ph.IN_STORAGE,
+            	    d.ITEM_ID,
+            	    im.ITEM_NAME ) a};
+		
+		closeDefaultContext(myCtx);
+		
+		Map sumMap = processSumIter(sumIter);
+		sumIter.close();
+		
+		return sumMap;
+	}
+	
+	private Map processSumIter(SumIter sumIter) 
+			throws SQLException {
+		Map sumMap = new HashMap();
+		
+		while(sumIter.next()) {
+			sumMap.put("antiaudit_receive_count", sumIter.antiaudit_receive_count());
+			sumMap.put("antiaudit_pay_amt", sumIter.antiaudit_pay_amt());
+		}
+			
+		return sumMap;
+	}
+	
+	private List<Map> processIter(HeaderIter headerIter) 
+			throws SQLException {
+		List<Map> headerLst = new ArrayList<Map>();
+		
+		while(headerIter.next()) {
+			Map header = new HashMap();
+			header.put("antiaudit_branch_id", headerIter.antiaudit_branch_id());
+			header.put("antiaudit_branch", headerIter.antiaudit_branch());
+			header.put("provider", headerIter.provider());
+			header.put("out_storage", headerIter.out_storage());
+			header.put("requester", headerIter.requester());
+			header.put("in_storage", headerIter.in_storage());
+			header.put("item_id", headerIter.item_id());
+			header.put("item_name", headerIter.item_name());
+			header.put("antiaudit_receive_count", headerIter.antiaudit_receive_count());
+			header.put("antiaudit_pay_amt", headerIter.antiaudit_pay_amt());
+			
+			headerLst.add(header);
+		}
+		return headerLst;
+	}
+}

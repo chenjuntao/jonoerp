@@ -1,0 +1,11 @@
+1. 菜单编码：setting05
+   菜单名称：权限查询 
+   排序：1
+2. 菜单编码：setting0501 
+   菜单名称：用户-角色查询 
+   菜单地址：/setting/rolesearch/mainView.action
+   排序：1
+3. 菜单编码：setting0502 
+   菜单名称：角色权限查询 
+   菜单地址：/setting/power/mainView.action
+   排序：1

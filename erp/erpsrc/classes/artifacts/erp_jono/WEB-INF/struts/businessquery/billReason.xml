@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE struts PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN"
+    "http://struts.apache.org/dtds/struts-2.0.dtd">
+
+<struts>
+	<package name="businessquery_billreason" namespace="/businessquery/billreason" extends="trust-default">
+		<action name="returnReason" method="returnReason" class="action.businessquery.BillReasonAction">
+			<result type="json" />
+		</action>
+		
+		<action name="discountReason" method="discountReason" class="action.businessquery.BillReasonAction">
+			<result type="json" />
+		</action>
+		
+		<action name="presentReason" method="presentReason" class="action.businessquery.BillReasonAction">
+			<result type="json" />
+		</action>
+		
+		<action name="mainView" class="action.businessquery.BillReasonAction">
+			<result name="success">/jsp/businessquery/billreason/main.jsp</result>
+		</action>
+	</package>
+	
+	<package name="bq_freebill_export" namespace="/bq/freebill/export" extends="trust-default">
+		<action name="export" method="export" class="action.businessquery.export.FreeBillExportAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="bq_presentreason_export" namespace="/bq/presentreason/export" extends="trust-default">
+		<action name="export" method="export" class="action.businessquery.export.PresentReasonExportAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="bq_returnreason_export" namespace="/bq/returnreason/export" extends="trust-default">
+		<action name="export" method="export" class="action.businessquery.export.ReturnReasonExportAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+		<package name="bq_discountreason_export" namespace="/bq/discountreason/export" extends="trust-default">
+		<action name="export" method="export" class="action.businessquery.export.DiscountReasonExportAction">
+			<result type="json" />
+		</action>
+	</package>
+</struts>
+

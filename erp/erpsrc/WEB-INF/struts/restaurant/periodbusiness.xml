@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE struts PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN"
+    "http://struts.apache.org/dtds/struts-2.0.dtd">
+
+<struts>
+	<package name="restaurant_periodbusiness" namespace="/restaurant/periodbusiness" extends="trust-default">
+		<action name="mainView" class="action.restaurant.PeriodBusinessAction">
+			<result name="success">/jsp/restaurant/periodbusiness/main.jsp</result>
+		</action>
+		
+		<action name="listPeriodBussiness" method="listPeriodBussiness" class="action.restaurant.PeriodBusinessAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="bq_periodbusiness_export" namespace="/bq/periodbusiness/export" extends="trust-default">
+		<action name="export" method="export" class="action.businessquery.export.PeriodBusinessExportAction">
+			<result type="json" />
+		</action>
+	</package>
+</struts>
+

@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"   
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">  
+
+<mapper namespace="mapper.businessquery.ShopMapper">  
+
+<resultMap id="ShopResultMap" type="pojo.businessquery.ShopBill">
+		<id property="shopC" column="shopC" />
+		<result property="businessDate" column="businessDate" />
+		<result property="shopName" column="shopName" />
+		<result property="foodAmt" column="foodAmt" />
+		<result property="billNum" column="billNum" />
+		<result property="amtPerBill" column="amtPerBill" />
+		<result property="guestNum" column="guestNum" />
+		<result property="amtPerGuest" column="amtPerGuest" />
+		<result property="tableNum" column="tableNum" />
+		<result property="amtPerTable" column="amtPerTable" />
+		<result property="guestPerTable" column="guestPerTable" />
+		<result property="disAmt" column="disAmt" />
+		<result property="roundAmt" column="roundAmt" />
+		<result property="presentAmt" column="presentAmt" />
+		<result property="oughtAmt" column="oughtAmt" />
+		<result property="payAmt" column="payAmt" />
+</resultMap>
+
+<select id="countByDay" resultType="int">
+	SELECT 
+		count(DISTINCT date_format(DBUSINESS, '%Y-%m-%d') ) 
+	FROM
+		${com}.d_t_food_bill b
+	WHERE
+		date_format(DBUSINESS, '%Y-%m-%d') &gt;= #{startTime}
+	AND date_format(DBUSINESS, '%Y-%m-%d') &lt;= #{endTime}
+	ORDER BY
+		date_format(DBUSINESS, '%Y-%m-%d')
+</select>
+
+<select id="byDay" resultMap="ShopResultMap">
+	SELECT
+		date_format(DBUSINESS, '%Y-%m-%d') businessDate,
+		cBranch_C        shopC,
+		cBranch_N        shopName,
+		SUM(nFoodAmt)    foodAmt,
+		COUNT(cBranch_C) billNum,
+		CASE WHEN (COUNT(cBranch_C) = 0)
+			THEN 0
+			ELSE ROUND(SUM(nFoodAmt) / COUNT(cBranch_C),2)
+		END            amtPerBill,
+		SUM(iGuestNum) guestNum,
+		CASE WHEN (SUM(iGuestNum) = 0)
+			THEN 0
+			ELSE ROUND(SUM(nFoodAmt) / SUM(iGuestNum) ,2)
+		END                      amtPerGuest,
+		COUNT(DISTINCT cTable_N) tableNum,
+		CASE WHEN (SUM(nFoodAmt) = 0)
+			THEN 0
+			ELSE ROUND(SUM(nFoodAmt) / COUNT(DISTINCT cTable_N) ,2)
+		END amtPerTable,
+		CASE WHEN (SUM(iGuestNum)=0)
+			THEN 0
+			ELSE ROUND(SUM(iGuestNum) / COUNT(DISTINCT cTable_N) ,2)
+		END              guestPerTable,
+		SUM(nDisAmt)     disAmt,
+		SUM(nRoundAmt)   roundAmt,
+		SUM(nPresentAmt) presentAmt,
+		SUM(nOughtAmt)   oughtAmt,
+		SUM(nPayAmt)     payAmt
+	FROM
+		${com}.d_t_food_bill
+	WHERE
+		date_format(DBUSINESS, '%Y-%m-%d') IN
+		(
+			SELECT
+				date_format(DBUSINESS, '%Y-%m-%d')
+			FROM
+				${com}.d_t_food_bill d
+			WHERE
+				DBUSINESS &gt;= #{startTime}
+			AND DBUSINESS &lt;= #{endTime}
+			GROUP BY
+				date_format(DBUSINESS, '%Y-%m-%d')
+		)
+	GROUP BY
+		date_format(DBUSINESS, '%Y-%m-%d'),
+		cBranch_C,
+		cBranch_N
+	ORDER BY
+		date_format(DBUSINESS, '%Y-%m-%d'),
+		cBranch_C
+</select>
+
+<select id="listShop" resultMap="ShopResultMap">
+	SELECT
+		'all' businessDate,
+		cBranch_C shopC,
+		cBranch_N shopName,
+		SUM(nFoodAmt) foodAmt,
+		COUNT(cBranch_C) billNum,
+		CASE WHEN (COUNT(cBranch_C) = 0)
+			THEN 0
+			ELSE ROUND(SUM(nFoodAmt) / COUNT(cBranch_C),2)
+		END amtPerBill,
+		SUM(iGuestNum) guestNum,
+		CASE WHEN (SUM(iGuestNum) = 0)
+			THEN 0
+			ELSE ROUND(SUM(nFoodAmt) / SUM(iGuestNum) ,2)
+		END amtPerGuest,
+		COUNT(DISTINCT  cTable_N) tableNum,
+		CASE WHEN ((SUM(nFoodAmt) = 0) OR (COUNT(DISTINCT cTable_N)=0)) 
+			THEN 0
+			ELSE ROUND(SUM(nFoodAmt) / COUNT(DISTINCT cTable_N) ,2)
+		END amtPerTable,
+		CASE WHEN ((SUM(nFoodAmt) = 0) OR (COUNT(DISTINCT cTable_N)=0)) 
+			THEN 0
+			ELSE ROUND(SUM(iGuestNum) / COUNT(DISTINCT cTable_N) ,2)
+		END guestPerTable,
+		SUM(nDisAmt)disAmt,
+		SUM(nRoundAmt) roundAmt,
+		SUM(nPresentAmt) presentAmt,
+		SUM(nOughtAmt) oughtAmt,
+		SUM(nPayAmt) payAmt
+	FROM
+		${com}.d_t_food_bill
+	WHERE
+		DBUSINESS &gt;= #{startTime}
+	AND DBUSINESS &lt;= #{endTime}
+	GROUP BY
+		cBranch_C,
+		cBranch_N
+		ORDER BY
+		cBranch_C
+</select>
+
+<select id="listShopByDay" resultType="String">
+		SELECT 
+			DISTINCT date_format(DBUSINESS, '%Y-%m-%d') settletime
+		FROM
+			${com}.d_t_food_bill b
+		WHERE
+			DBUSINESS &gt;= #{startTime}
+		AND DBUSINESS &lt;= #{endTime}
+		ORDER BY
+			date_format(DBUSINESS, '%Y-%m-%d') 
+		limit #{startRow},#{endRow}
+</select>
+</mapper>

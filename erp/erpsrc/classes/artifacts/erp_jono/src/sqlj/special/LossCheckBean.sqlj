@@ -1,0 +1,249 @@
+package logic.special;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import sqlj.runtime.ref.DefaultContext;
+import com.tanry.business.form.FormConstant;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.TextUtil;
+import com.tanry.framework.util.constant.BillStatus;
+import com.tanry.framework.acl.NoPrivilegeException;
+import com.tanry.framework.util.TextUtil;
+
+public class LossCheckBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(LossCheckBean.class);
+	
+	#sql private iterator HeaderIter(
+			String rownumber,
+			String item_name,
+			String item_dimension,
+			String item_specification,
+			String branch_name,
+			String branch_id,
+			String item_id,
+			Double item_price,
+			Double ylbs,
+			Double cpbs,
+			Double pdi,
+			Double pdo,
+			Double sshl,
+			Double llku,
+			Double actual,
+			Double theory,
+			Double sshl2,
+			Double theory_amt,
+			Double actual_amt
+		);
+	
+	#sql private iterator TotalIter(
+			Integer totals
+		);
+	
+	
+	public Integer count(String queryStr)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		String[] strs = queryStr.split("\\|_\\|"); 
+		TotalIter totalIter = null;
+		Integer total = null;
+		
+		#sql [myCtx] totalIter =  {
+			WITH
+			    a AS
+			    (
+			        SELECT
+			            io.ITEM_ID
+			        FROM
+			            :{Com_("D_T0_STORAGE_IN_OUT")} io
+			        INNER JOIN
+			            :{Com_("D_T2_ITEM_META")} m
+			        ON
+			            io.ITEM_ID = m.ITEM_ID
+			        WHERE
+			            :{strs[1] :: 1=1}
+			        GROUP BY
+			            io.ITEM_ID
+			    )
+			SELECT
+			    COUNT(*) totals
+			FROM
+			    a};
+    
+		if(totalIter.next()) {
+			total = totalIter.totals();
+		}
+		
+		total = total == null ? 0:total;
+	    closeDefaultContext(myCtx);
+		return total;
+	}
+	
+	public List<Map> query(String queryStr,int startRow,int endRow)  
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		HeaderIter headerIter = null;
+		
+		String[] strs = queryStr.split("\\|_\\|");
+		
+		#sql [myCtx] headerIter = {
+			WITH
+			    a AS
+			    (
+			        SELECT
+			            h.BRANCH_ID,
+			            d.ITEM_ID,
+			            SUM(NVL(d.ITEM_COUNT_PLAN,0)) ITEM_COUNT_PLAN
+			        FROM
+			        	:{Com_("D_T1_SELF_SEMIS_HEADER")} h 
+			        INNER JOIN
+			        	:{Com_("D_T1_SELF_SEMIS_DETAIL")} d 
+			        ON
+			            h.FORM_ID = d.FORM_ID
+			        INNER JOIN
+			        	:{Com_("D_T2_ITEM_META")} m 
+			        ON
+			            d.ITEM_ID = m.ITEM_ID
+			        WHERE
+			        	:{strs[0] :: 1=1}
+			        GROUP BY
+			            h.BRANCH_ID,
+			            d.ITEM_ID
+			    )
+			    ,
+			    b AS
+			    (
+			        SELECT
+			            io.BRANCH_ID,
+			            io.ITEM_ID,
+			            SUM(DECODE(io.REASON,'YLBS',io.ITEM_COUNT_OUT,0)) ylbs,
+			            SUM(DECODE(io.REASON,'CPBS',io.ITEM_COUNT_OUT,0)) cpbs,
+			            SUM(DECODE(io.REASON,'PD',io.ITEM_COUNT_IN,0))    pdi,
+			            SUM(DECODE(io.REASON,'PD',io.ITEM_COUNT_OUT,0))   pdo,
+			            SUM(DECODE(io.REASON,'SSHL',io.ITEM_COUNT_OUT,0)) sshl,
+			            SUM(DECODE(io.REASON,'LLKU',io.ITEM_COUNT_OUT,0)) llku,
+			            SUM(
+			                CASE
+			                    WHEN io.REASON IN ('YLBS',
+			                                       'CPBS',
+			                                       'PD',
+			                                       'SSHL',
+			                                       'LLKU')
+			                    THEN NVL(ITEM_COUNT_IN,0)+NVL(ITEM_COUNT_OUT,0)
+			                    ELSE 0
+			                END ) actual ,
+			            SUM(
+			                CASE
+			                    WHEN io.REASON IN ('SSHL',
+			                                       'LLKU')
+			                    THEN NVL(ITEM_COUNT_OUT,0)
+			                    ELSE 0
+			                END ) theory
+			        FROM
+			        	:{Com_("D_T0_STORAGE_IN_OUT")} io 
+			        INNER JOIN
+			        	:{Com_("D_T2_ITEM_META")} m 
+			        ON
+			            io.ITEM_ID = m.ITEM_ID
+			        WHERE
+			        	:{strs[1] :: 1=1}
+			        GROUP BY
+			            io.BRANCH_ID,
+			            io.ITEM_ID
+			    )
+			SELECT
+			    *
+			FROM
+			    (
+			        SELECT
+			            t.*,
+			            ROWNUM rowNumber
+			        FROM
+			            (
+			                SELECT
+			                    NVL(p.ITEM_PRICE,0) ITEM_PRICE,
+			                    m.ITEM_NAME,
+			                    m.ITEM_DIMENSION,
+			                    m.ITEM_SPECIFICATION,
+			                    m.CATEGORY_ID,
+			                    b2.BRANCH_NAME,
+			                    b.*,
+			                    NVL(b.sshl,0) - NVL(ITEM_COUNT_PLAN ,0) sshl2,
+			                    THEORY * NVL(p.ITEM_PRICE,0)            THEORY_amt,
+			                    ACTUAL * NVL(p.ITEM_PRICE,0)            ACTUAL_amt
+			                FROM
+			                    b
+			                INNER JOIN
+			                	:{Com_("D_T2_BRANCH")} b2 
+			                ON
+			                    b.BRANCH_ID = b2.BRANCH_ID
+			                INNER JOIN
+			                	:{Com_("D_T2_ITEM_META")} m 
+			                ON
+			                    b.item_id = m.ITEM_ID
+			                LEFT JOIN
+			                    a
+			                ON
+			                    b.BRANCH_ID = a.BRANCH_ID
+			                AND b.ITEM_ID = a.ITEM_ID
+			                LEFT JOIN
+			                :{Com_("D_T2_ITEM_PRICE")} p
+			                ON
+			                    b.item_id = p.ITEM_ID
+			                AND p.IS_CURRENT = 1
+			                AND p.PRICE_TYPE = 'BENCHMARK'
+			                ORDER BY
+			                    1,2 ) t
+			        WHERE
+			            ROWNUM < :endRow)
+			WHERE
+			    rowNumber >= :startRow};
+		List<Map> headerLst = processIter(headerIter);
+		headerIter.close();
+		closeDefaultContext(myCtx);
+		return headerLst;
+	}
+	
+	
+	private List<Map> processIter(HeaderIter headerIter) 
+			throws SQLException {
+		List<Map> headerLst = new ArrayList<Map>();
+		
+		while(headerIter.next()) {
+			Map header = new HashMap();
+			header.put("rownumber", headerIter.rownumber());
+			header.put("item_name", headerIter.item_name());
+			header.put("item_dimension", headerIter.item_dimension());
+			header.put("item_specification", headerIter.item_specification());
+			header.put("branch_name", headerIter.branch_name());
+			header.put("branch_id", headerIter.branch_id());
+			header.put("item_id", headerIter.item_id());
+			header.put("item_price", headerIter.item_price());
+			header.put("ylbs", headerIter.ylbs());
+			header.put("cpbs", headerIter.cpbs());
+			header.put("pdi", headerIter.pdi());
+			header.put("pdo", headerIter.pdo());
+			header.put("sshl", headerIter.sshl());
+			header.put("llku", headerIter.llku());
+			header.put("actual", headerIter.actual());
+			header.put("theory", headerIter.theory());
+			header.put("sshl2", headerIter.sshl2());
+			header.put("theory_amt", headerIter.theory_amt());
+			header.put("actual_amt", headerIter.actual_amt());
+			
+			headerLst.add(header);
+		}
+		return headerLst;
+	}
+}

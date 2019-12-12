@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE struts PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN"
+    "http://struts.apache.org/dtds/struts-2.0.dtd">
+
+<struts>
+	<package name="hq_tag" namespace="/hq/config/tag" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.hq.config.tag.TagManageAction">
+			<result name="success">/jsp/hq/config/tag/main.jsp</result>
+		</action>
+		
+		<action name="editView" method="editView" class="com.tanry.business.module.hq.config.tag.TagManageAction">
+			<result name="success">/jsp/hq/config/tag/edit.jsp</result>
+		</action>
+		
+		<action name="doQuery" method="doQuery" class="com.tanry.business.module.hq.config.tag.TagManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="queryTagTree" method="queryTagTree" class="com.tanry.business.module.hq.config.tag.TagManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="checkTagId" method="checkTagId" class="com.tanry.business.module.hq.config.tag.TagManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doSave" method="doSave" class="com.tanry.business.module.hq.config.tag.TagManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doDelete" method="doDelete" class="com.tanry.business.module.hq.config.tag.TagManageAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="hq_tag_item" namespace="/hq/config/tag/item" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.hq.config.tag.TagManageAction">
+			<result name="success">/jsp/hq/config/tag/item/main.jsp</result>
+		</action>
+		
+		<action name="queryItems" method="queryItems" class="com.tanry.business.module.hq.config.tag.TagManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="export" method="export" class="com.tanry.business.module.hq.config.tag.TagManageAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="hq_tag_settag" namespace="/hq/config/tag/settag" extends="trust-default">
+		<action name="setTagView" class="com.tanry.business.module.hq.config.tag.TagManageAction">
+			<result name="success">/jsp/hq/config/tag/settag/main.jsp</result>
+		</action>
+		
+		<action name="doBatchTagSet" method="doBatchTagSet" class="com.tanry.business.module.hq.config.tag.TagManageAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	
+	<package name="hq_tag_settag_isingle" namespace="/hq/config/tag/settag/isingle" extends="trust-default">
+		<action name="setTagView" class="com.tanry.business.module.hq.config.tag.TagManageAction">
+			<result name="success">/jsp/hq/config/tag/settag/isingle/main.jsp</result>
+		</action>
+		
+		<action name="queryISingleTagTree" method="queryISingleTagTree" class="com.tanry.business.module.hq.config.tag.TagManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doISingleTagSet" method="doISingleTagSet" class="com.tanry.business.module.hq.config.tag.TagManageAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+</struts>
+

@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE struts PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN"
+    "http://struts.apache.org/dtds/struts-2.0.dtd">
+
+<struts>
+<!-- 餐厅 -->
+	<package name="reportmanage_transfer_restaurant_form" namespace="/reportmanage/transfer/restaurant/form" extends="trust-default">
+		<action name="mainView" class="action.reportmanage.ReportManageAction">
+			<result name="success">/jsp/restaurant/reportmanage/transfer/form/main.jsp</result>
+			<result name="mobile">/mobile/module/transfer/main.jsp</result>
+		</action>
+	</package>
+	
+	<package name="reportmanage_transfer_restaurant_collect" namespace="/reportmanage/transfer/restaurant/collect" extends="trust-default">
+		<action name="mainView" class="action.reportmanage.ReportManageAction">
+			<result name="success">/jsp/restaurant/reportmanage/transfer/collect/main.jsp</result>
+			<result name="mobile">/mobile/module/transfer/collect/main.jsp</result>
+		</action>
+	</package>
+	
+	<package name="reportmanage_transfer_restaurant_detail" namespace="/reportmanage/transfer/restaurant/detail" extends="trust-default">
+		<action name="mainView" class="action.reportmanage.ReportManageAction">
+			<result name="success">/jsp/restaurant/reportmanage/transfer/detail/main.jsp</result>
+			<result name="mobile">/mobile/module/transfer/detail/main.jsp</result>
+		</action>
+	</package>
+	
+<!-- 	物流中心 -->
+	<package name="reportmanage_transfer_lc_form" namespace="/reportmanage/transfer/lc/form" extends="trust-default">
+		<action name="mainView" class="action.reportmanage.ReportManageAction">
+			<result name="success">/jsp/lc/reportmanage/transfer/form/main.jsp</result>
+			<result name="mobile">/mobile/module/lc/transfer/main.jsp</result>
+		</action>
+	</package>
+	
+	<package name="reportmanage_transfer_lc_collect" namespace="/reportmanage/transfer/lc/collect" extends="trust-default">
+		<action name="mainView" class="action.reportmanage.ReportManageAction">
+			<result name="success">/jsp/lc/reportmanage/transfer/collect/main.jsp</result>
+			<result name="mobile">/mobile/module/lc/transfer/collect/main.jsp</result>
+		</action>
+	</package>
+	
+	<package name="reportmanage_transfer_lc_detail" namespace="/reportmanage/transfer/lc/detail" extends="trust-default">
+		<action name="mainView" class="action.reportmanage.ReportManageAction">
+			<result name="success">/jsp/lc/reportmanage/transfer/detail/main.jsp</result>
+			<result name="mobile">/mobile/module/lc/transfer/detail/main.jsp</result>
+		</action>
+	</package>
+	
+	<package name="reportmanage_transfer_cf_form" namespace="/reportmanage/transfer/cf/form" extends="trust-default">
+		<action name="mainView" class="action.reportmanage.ReportManageAction">
+			<result name="success">/jsp/centralfactory/reportmanage/transfer/form/main.jsp</result>
+			<result name="mobile">/mobile/module/cf/transfer/main.jsp</result>
+		</action>
+	</package>
+	
+	<package name="reportmanage_transfer_cf_collect" namespace="/reportmanage/transfer/cf/collect" extends="trust-default">
+		<action name="mainView" class="action.reportmanage.ReportManageAction">
+			<result name="success">/jsp/centralfactory/reportmanage/transfer/collect/main.jsp</result>
+			<result name="mobile">/mobile/module/cf/transfer/collect/main.jsp</result>
+		</action>
+	</package>
+	
+	<package name="reportmanage_transfer_cf_detail" namespace="/reportmanage/transfer/cf/detail" extends="trust-default">
+		<action name="mainView" class="action.reportmanage.ReportManageAction">
+			<result name="success">/jsp/centralfactory/reportmanage/transfer/detail/main.jsp</result>
+			<result name="mobile">/mobile/module/cf/transfer/detail/main.jsp</result>
+		</action>
+	</package>
+</struts>
+

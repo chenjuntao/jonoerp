@@ -1,0 +1,17 @@
+.dgrid-cell {
+	width: 80px;
+}
+
+.field-itemName {
+	width: 180px;
+}
+
+
+.field-itemDimension,.field-itemPrice{
+	width: 60px;
+}
+
+.field-none{
+	width: 300px;
+}
+

@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"   
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">  
+
+<mapper namespace="mapper.businessquery.FoodSellCountMapper">  
+
+<resultMap id="foodSellCountResultMap" type="pojo.businessquery.FoodSellCount">
+	<id property="categoryId" column="categoryId"/>
+	<result property="categoryN" column="categoryN"/> 
+	<result property="qty" column="qty"/> 
+	<result property="amt" column="amt"/> 
+	<result property="afterAmt" column="afterAmt"/> 
+	<result property="shopC" column="shopC"/> 
+	<result property="shopN" column="shopN"/> 
+</resultMap>
+
+<select id="bigCategorySum" resultMap="foodSellCountResultMap">
+	SELECT
+		SUM(qty)      qty,
+		SUM(amt)      amt,
+		SUM(afterAmt) afterAmt
+	FROM
+	(
+		SELECT
+			bs.cLitCls_c                categoryId,
+			bs.cLitCls_N                categoryN,
+			SUM(nQty)                   qty,
+			SUM(nAmt)                   amt,
+			SUM(nAmt) - SUM(bs.nDisAmt) afterAmt,
+			cBranch_C                   shopC,
+			cBranch_N                   shopN
+		FROM
+			${com}.d_t_food_bills bs
+		LEFT JOIN
+			${com}.d_t_food_bill b
+		ON
+			b.CBILL_C = bs.CBILL_C
+		WHERE
+			DBUSINESS &gt;= #{startDate}
+		AND DBUSINESS &lt;= #{endDate}
+		AND b.CBRANCH_C LIKE #{shopC}
+		AND bs.cLitCls_c IS NOT NULL
+		AND bs.cLitCls_N &lt;&gt; '套餐'
+		GROUP BY
+			bs.cLitCls_c ,
+			bs.cLitCls_N ,
+			b.cBranch_C,
+			b.cBranch_N ) t
+</select>
+
+<select id="littleCategorySum" resultMap="foodSellCountResultMap">
+	SELECT
+		SUM(qty)      qty,
+		SUM(amt)      amt,
+		SUM(afterAmt) afterAmt
+	FROM
+	(
+		SELECT
+			bs.cLitCls_C                categoryId,
+			bs.cLitCls_N                categoryN,
+			SUM(nQty)                   qty,
+			SUM(nAmt)                   amt,
+			SUM(nAmt) - SUM(bs.nDisAmt) afterAmt,
+			cBranch_C                   shopC,
+			cBranch_N                   shopN
+		FROM
+			${com}.d_t_food_bills bs
+		LEFT JOIN
+			${com}.d_t_food_bill b
+		ON
+			b.CBILL_C = bs.CBILL_C
+		WHERE
+			DBUSINESS &gt;= #{startDate}
+		AND DBUSINESS &lt;= #{endDate}
+			AND b.CBRANCH_C LIKE #{shopC}
+			AND bs.cLitCls_C IS NOT NULL
+			AND bs.cLitCls_N &lt;&gt; '套餐'
+		GROUP BY
+			bs.cLitCls_C,
+			bs.cLitCls_N ,
+			b.cBranch_C,
+			b.cBranch_N) t
+</select>
+
+<select id="bigCategory" resultMap="foodSellCountResultMap">
+	SELECT
+		bs.cLitCls_c                categoryId,
+		bs.cLitCls_N                categoryN,
+		SUM(nQty)                   qty,
+		SUM(nAmt)                   amt,
+		SUM(nAmt) - SUM(bs.nDisAmt) afterAmt,
+		cBranch_C                   shopC,
+		cBranch_N                   shopN
+	FROM
+		${com}.d_t_food_bills bs
+	LEFT JOIN
+		${com}.d_t_food_bill b
+	ON
+		b.CBILL_C = bs.CBILL_C
+	WHERE
+		DBUSINESS &gt;= #{startDate}
+		AND DBUSINESS &lt;= #{endDate}
+		AND b.CBRANCH_C LIKE #{shopC}
+		AND bs.cLitCls_C IS NOT NULL
+		AND bs.cLitCls_N &lt;&gt; '套餐'
+	GROUP BY
+		bs.cLitCls_c ,
+		bs.cLitCls_N ,
+		b.cBranch_C,
+		b.cBranch_N
+	ORDER BY
+	bs.cLitCls_C ,
+	b.CBRANCH_C
+
+</select>
+
+<select id="littleCategory" resultMap="foodSellCountResultMap">
+	SELECT
+		bs.cLitCls_C                categoryId,
+		bs.cLitCls_N                categoryN,
+		SUM(nQty)                   qty,
+		SUM(nAmt)                   amt,
+		SUM(nAmt) - SUM(bs.nDisAmt) afterAmt,
+		cBranch_C                   shopC,
+		cBranch_N                   shopN
+	FROM
+		${com}.d_t_food_bills bs
+	LEFT JOIN
+		${com}.d_t_food_bill b
+	ON
+		b.CBILL_C = bs.CBILL_C
+	WHERE
+		DBUSINESS &gt;= #{startDate}
+		AND DBUSINESS &lt;= #{endDate}
+		AND b.CBRANCH_C LIKE #{shopC}
+		AND bs.cLitCls_C IS NOT NULL
+		AND bs.cLitCls_N &lt;&gt; '套餐'
+	GROUP BY
+		bs.cLitCls_C,
+		bs.cLitCls_N ,
+		b.cBranch_C,
+		b.cBranch_N
+	ORDER BY
+		bs.cLitCls_C,
+		b.CBRANCH_C
+</select>
+</mapper>

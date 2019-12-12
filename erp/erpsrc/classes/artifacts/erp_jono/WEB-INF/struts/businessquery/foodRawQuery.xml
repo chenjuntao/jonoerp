@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE struts PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN"
+    "http://struts.apache.org/dtds/struts-2.0.dtd">
+
+<struts>
+	<package name="businessquery_foodRawQuery" namespace="/businessquery/foodRawQuery" extends="trust-default">
+		<action name="mainView" class="action.businessquery.FoodRawQueryAction">
+			<result name="success">/jsp/businessquery/foodRawQuery/main.jsp</result>
+		</action>
+		
+		<action name="queryAmount" method="queryAmount" class="action.businessquery.FoodRawQueryAction">
+			<result type="json" />
+		</action>
+		
+		<action name="queryDetail" method="queryDetail" class="action.businessquery.FoodRawQueryAction">
+			<result name="success">/jsp/businessquery/foodRawQuery/detail.jsp</result>
+		</action>
+	</package>
+</struts>
+

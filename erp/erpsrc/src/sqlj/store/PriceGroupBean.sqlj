@@ -1,0 +1,553 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on Tue Mar 03 17:07:55 CST 2015 by lyz
+ * Last edited on Tue Mar 03 17:07:55 CST 2015 by lyz
+ * 
+ * comment: 价格组
+ */
+package logic.store;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import pojo.store.PriceGroup;
+import sqlj.runtime.ref.DefaultContext;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.TextUtil;
+import com.tanry.framework.acl.NoPrivilegeException;
+
+public class PriceGroupBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(PriceGroupBean.class);
+	
+	public int saveEntity(PriceGroup group)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		String priceGroupId = group.getPriceGroupId();
+		String priceGroupName = group.getPriceGroupName();
+		String priceGroupType = group.getPriceGroupType();
+		String priceGroupNote = group.getPriceGroupNote();
+		String owner = group.getOwner();
+
+		#sql [myCtx] {
+			INSERT INTO :{Com_("D_T2_PRICE_GROUP")} 
+				(PRICE_GROUP_ID, PRICE_GROUP_NAME, PRICE_GROUP_TYPE, PRICE_GROUP_NOTE, OWNER) 
+			VALUES (:priceGroupId, :priceGroupName, :priceGroupType, :priceGroupNote, :owner)
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public int updateEntity(String oldGroupId, PriceGroup group)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		String priceGroupName = group.getPriceGroupName();
+		String priceGroupType = group.getPriceGroupType();
+		String priceGroupNote = group.getPriceGroupNote();
+		String owner = group.getOwner();
+
+		#sql [myCtx] {
+			UPDATE
+			:{Com_("D_T2_PRICE_GROUP")}
+			SET
+				PRICE_GROUP_NAME = :priceGroupName,
+				PRICE_GROUP_TYPE = :priceGroupType,
+				PRICE_GROUP_NOTE = :priceGroupNote,
+				OWNER = :owner
+			WHERE 
+				PRICE_GROUP_ID = :oldGroupId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public int updateName(String pgroupId, String pgroupName)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		#sql [myCtx] {
+			UPDATE
+			:{Com_("D_T2_PRICE_GROUP")}
+			SET
+				PRICE_GROUP_NAME = :pgroupName
+			WHERE 
+				PRICE_GROUP_ID = :pgroupId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+
+	public int deleteEntity(String priceGroupId)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		#sql [myCtx] {
+			DELETE
+			FROM
+			:{Com_("D_T2_PRICE_GROUP")}
+			WHERE
+				PRICE_GROUP_ID = :priceGroupId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+
+	#sql private iterator GroupIter(String price_group_id, String price_group_name, 
+			String price_group_type, String price_group_note, String owner, String owner_name);
+	
+	public List<PriceGroup> query(String priceGroupType) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		GroupIter groupIter = null;
+		
+		if ("BRAND".equals(priceGroupType)) {// 品牌下分价格组
+			#sql [myCtx] groupIter = {
+				SELECT
+				    g.*,
+				    b.BRAND_NAME as owner_name
+				FROM
+				:{Com_("D_T2_PRICE_GROUP")} g
+				INNER JOIN
+				:{Com_("D_T2_BRAND_GROUP")} b
+				ON
+				    b.BRAND_ID = g.OWNER
+				WHERE
+					g.PRICE_GROUP_TYPE = :priceGroupType
+			};
+		} else {
+			#sql [myCtx] groupIter = {
+				SELECT
+				    g.*,
+				    '' owner_name
+				FROM
+				:{Com_("D_T2_PRICE_GROUP")} g
+				WHERE
+					g.PRICE_GROUP_TYPE = :priceGroupType
+			};
+		}
+		List<PriceGroup> groupLst = processIter(groupIter);
+		groupIter.close();
+		closeDefaultContext(myCtx);
+		return groupLst;
+	}
+	
+	#sql private iterator FGroupIter(String price_group_id, String price_group_name, 
+			String price_group_type, String price_group_note, String owner, String owner_name);
+	
+	public List<PriceGroup> Fquery() 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		FGroupIter groupIter = null;
+			#sql [myCtx] groupIter = {
+				SELECT
+				    g.*,
+				    '' owner_name
+				FROM
+					:{Com_("D_T2_PRICE_GROUP")} g
+				WHERE
+					g.PRICE_GROUP_TYPE = 'LC'
+					and (g.PRICE_GROUP_ID LIKE 'BENCHMARK%' or g.PRICE_GROUP_ID LIKE 'JOIN%' or g.PRICE_GROUP_ID LIKE 'RETAIL%' or g.PRICE_GROUP_ID LIKE 'SALE%')
+					order by g.PRICE_GROUP_ID
+			};
+		List<PriceGroup> groupLst = fprocessIter(groupIter);
+		groupIter.close();
+		closeDefaultContext(myCtx);
+		return groupLst;
+	}
+	
+	
+	#sql private iterator PriceIter(
+				String item_id,
+				String item_name,
+				String business_id,
+				String business_name,
+				String item_price
+			);
+	public List<Map> queryPrice(String itemId,String supplierId,String priceType,int startRow,int endRow)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		PriceIter iter = null;
+		String str = "and 1=1";
+		if (!TextUtil.isEmpty(itemId)){
+			str += "and p.item_id like '%" + itemId + "%'";
+		}
+		
+		if (!TextUtil.isEmpty(supplierId)){
+			str += "and p.supplier_id like '%" + supplierId + "%'";
+		}
+		#sql [myCtx] iter = {
+			select * from(
+					select t.*,
+	                ROWNUM rowNumber from
+				(select 
+					p.ITEM_ID item_id,
+					m.ITEM_NAME item_name,
+					p.SUPPLIER_ID business_id,
+					b.BRANCH_NAME business_name,
+					p.ITEM_PRICE item_price
+				from 
+					:{Com_("D_T2_ITEM_PRICE")}  p 
+				inner join 
+					:{Com_("D_T2_BRANCH")}  b 
+				on 
+					p.SUPPLIER_ID = b.BRANCH_ID 
+				inner join 
+					:{Com_("D_T2_ITEM_META")} m  
+				on 
+					p.ITEM_ID = m.ITEM_ID 
+				where 
+					p.PRICE_TYPE = 'SUPPLIER' :{str}
+				order by 
+					p.ITEM_ID) t
+					WHERE
+	                ROWNUM < :endRow
+					)
+					 WHERE
+				        rowNumber >= :startRow};
+		List<Map> nodeLst = new ArrayList<Map>();
+		while(iter.next()) {
+			Map<String, String> node = new HashMap<String, String>();
+			node.put("item_id", iter.item_id());
+			node.put("item_name", iter.item_name());
+			node.put("business_id", iter.business_id());
+			node.put("business_name", iter.business_name());
+			node.put("item_price", iter.item_price());
+			nodeLst.add(node);
+		}
+		iter.close();
+		closeDefaultContext(myCtx);
+		return nodeLst;
+	}
+	
+	#sql private iterator sumIter(
+			int sum
+			);
+	public int queryPriceCount(String itemId,String supplierId,String priceType)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		sumIter iter = null;
+		String str = "and 1=1";
+		if (!TextUtil.isEmpty(itemId)){
+			str += "and p.item_id like '%" + itemId + "%'";
+		}
+		
+		if (!TextUtil.isEmpty(supplierId)){
+			str += "and p.supplier_id like '%" + supplierId + "%'";
+		}
+		#sql [myCtx] iter = {
+				select 
+					count(*) sum
+				from 
+					:{Com_("D_T2_ITEM_PRICE")} p  
+				inner join 
+					:{Com_("D_T2_BRANCH")} b  
+				on 
+					p.SUPPLIER_ID = b.BRANCH_ID 
+				inner join 
+					:{Com_("D_T2_ITEM_META")} m  
+				on 
+					p.ITEM_ID = m.ITEM_ID 
+				where 
+					p.PRICE_TYPE = 'SUPPLIER' :{str}
+				order by 
+					p.ITEM_ID
+		};
+		int result = 0;
+		while(iter.next()) {
+			result = iter.sum();
+			break;
+		}
+		iter.close();
+		closeDefaultContext(myCtx);
+		return result;
+	}
+	
+	public PriceGroup queryById(String priceGroupId) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		GroupIter groupIter = null;
+		#sql [myCtx] groupIter = {
+			SELECT
+		    	g.*,
+			    '' owner_name
+			FROM
+			:{Com_("D_T2_PRICE_GROUP")} g
+			WHERE
+				g.PRICE_GROUP_ID = :priceGroupId
+		};
+		List<PriceGroup> groupLst = processIter(groupIter);
+		groupIter.close();
+		closeDefaultContext(myCtx);
+		if (groupLst !=null && !groupLst.isEmpty()) {
+			return groupLst.get(0);
+		}
+		return null;
+	}
+
+	//查询所有价格组
+	public List<PriceGroup> queryAll() 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		GroupIter groupIter = null;
+		#sql [myCtx] groupIter = {
+			SELECT
+		    	g.*,
+			    '' owner_name
+			FROM
+			:{Com_("D_T2_PRICE_GROUP")} g
+		};
+		List<PriceGroup> groupLst = processIter(groupIter);
+		groupIter.close();
+		closeDefaultContext(myCtx);
+		return groupLst;
+	}
+	
+		
+	public List<PriceGroup> queryByType(String priceType) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		if(TextUtil.isEmpty(priceType)){
+			priceType="( g.PRICE_GROUP_ID LIKE 'BENCHMARK%' or g.PRICE_GROUP_ID LIKE 'JOIN%' or g.PRICE_GROUP_ID LIKE 'RETAIL%' or g.PRICE_GROUP_ID LIKE 'PURCHASE%' or g.PRICE_GROUP_ID LIKE 'WHOLESALE%' )";
+		}
+		GroupIter groupIter = null;
+		#sql [myCtx] groupIter = {
+			SELECT
+				DISTINCT
+		    	g.*,
+			    '' owner_name
+			FROM
+			:{Com_("D_T2_PRICE_GROUP")} g
+			WHERE 
+			:{priceType :: 1=1}
+		};
+		List<PriceGroup> groupLst = processIter(groupIter);
+		groupIter.close();
+		closeDefaultContext(myCtx);
+		return groupLst;
+	}
+
+	#sql private iterator ItemIter(String ItemId, String ItemName, String ItemPrice);
+	
+	public int count(String priceGroupId)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		
+		DefaultContext myCtx = getDefaultContext();
+		int total = 0;
+		#sql [myCtx] {
+		select 
+			count(*) into :total
+		from 
+				
+			:{Com_("D_T2_ITEM_PRICE")} A
+		left join 
+			:{Com_("D_T2_ITEM_META")} B
+		on
+			A.ITEM_ID = B.ITEM_ID
+		where 
+			A.PRICE_TYPE = :priceGroupId
+		};
+		closeDefaultContext(myCtx);
+		return total;
+	}
+	
+	//根据门店id和价格组类型找到对应价格组
+		public List<PriceGroup> queryByType(String priceType,String branchId) 
+				throws NoPrivilegeException,SQLException,NoConnection {
+			DefaultContext myCtx = getDefaultContext();
+			if(TextUtil.isEmpty(priceType)){
+				priceType="( g.PRICE_GROUP_ID LIKE 'BENCHMARK%' or g.PRICE_GROUP_ID LIKE 'JOIN%' or g.PRICE_GROUP_ID LIKE 'RETAIL%' or g.PRICE_GROUP_ID LIKE 'PURCHASE%' or g.PRICE_GROUP_ID LIKE 'WHOLESALE%' )";
+			}
+			GroupIter groupIter = null;
+			#sql [myCtx] groupIter = {
+				SELECT
+					DISTINCT
+			    	g.*,
+				    '' owner_name
+				FROM
+				:{Com_("D_T2_PRICE_GROUP_BRANCH")} pg
+				INNER JOIN
+				:{Com_("D_T2_PRICE_GROUP")} g
+				ON
+				pg.PRICE_GROUP_ID=g.PRICE_GROUP_ID
+				WHERE 
+				pg.BRANCH_ID =:branchId 
+				AND :{priceType :: 1=1}
+			};
+			List<PriceGroup> groupLst = processIter(groupIter);
+			groupIter.close();
+			closeDefaultContext(myCtx);
+			return groupLst;
+		}
+	public List<Map> queryItem(String priceGroupId,String itemIdorName,int startRow,int endRow) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		String tmp = "%"+itemIdorName+"%";
+		DefaultContext myCtx = getDefaultContext();
+		ItemIter iIter = null;
+		#sql [myCtx] iIter = {
+			SELECT
+			    *
+			    FROM
+			        (
+			            SELECT
+			                t.*,
+			                ROWNUM rowNumber
+			            FROM 
+			                (
+		select 
+			a.ITEM_ID AS ItemId,
+			a.ITEM_PRICE AS ItemPrice,
+			b.ITEM_NAME AS ItemName
+		from 
+				
+			:{Com_("D_T2_ITEM_PRICE")} A
+		left join 
+			 :{Com_("D_T2_ITEM_META")} B
+		on
+			A.ITEM_ID = B.ITEM_ID
+		where 
+			A.PRICE_TYPE = :priceGroupId AND (A.ITEM_ID LIKE :tmp or B.ITEM_NAME LIKE :tmp)
+		) t
+			            WHERE
+			                ROWNUM < :endRow)
+			    WHERE
+			        rowNumber >= :startRow};
+		List<Map> nodeLst = new ArrayList<Map>();
+		while(iIter.next()) {
+			Map<String, String> node = new HashMap<String, String>();
+			node.put("id", iIter.ItemId());
+			node.put("name", iIter.ItemName());
+			node.put("price", iIter.ItemPrice());
+			nodeLst.add(node);
+		}
+		iIter.close();
+		closeDefaultContext(myCtx);
+		return nodeLst;
+	}
+	
+	public PriceGroup fqueryById(String priceGroupId) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		FGroupIter groupIter = null;
+		#sql [myCtx] groupIter = {
+			SELECT
+		    	g.*,
+			    '' owner_name
+			FROM
+			:{Com_("D_T2_PRICE_GROUP")} g
+			WHERE
+				g.PRICE_GROUP_ID = :priceGroupId
+		};
+		List<PriceGroup> groupLst = fprocessIter(groupIter);
+		groupIter.close();
+		closeDefaultContext(myCtx);
+		if (groupLst !=null && !groupLst.isEmpty()) {
+			return groupLst.get(0);
+		}
+		return null;
+	}
+	
+	private List<PriceGroup> processIter(GroupIter groupIter) 
+			throws SQLException {
+		List<PriceGroup> groupLst = new ArrayList<PriceGroup>();
+		while(groupIter.next()) {
+			PriceGroup group = new PriceGroup();
+			group.setPriceGroupId(groupIter.price_group_id());
+			group.setPriceGroupName(groupIter.price_group_name());
+			group.setPriceGroupType(groupIter.price_group_type());
+			group.setPriceGroupNote(groupIter.price_group_note());
+			group.setOwner(groupIter.owner());
+			group.setOwnerName(groupIter.owner_name());
+			groupLst.add(group);
+		}
+		return groupLst;
+	}
+	
+	private List<PriceGroup> fprocessIter(FGroupIter groupIter) 
+			throws SQLException {
+		List<PriceGroup> groupLst = new ArrayList<PriceGroup>();
+		while(groupIter.next()) {
+			PriceGroup group = new PriceGroup();
+			group.setPriceGroupId(groupIter.price_group_id());
+			group.setPriceGroupName(groupIter.price_group_name());
+			group.setPriceGroupType(groupIter.price_group_type());
+			group.setPriceGroupNote(groupIter.price_group_note());
+			group.setOwner(groupIter.owner());
+			group.setOwnerName(groupIter.owner_name());
+			groupLst.add(group);
+		}
+		return groupLst;
+	}
+	
+	public int deleteAll(String priceGroup,String defaultId)
+			throws NoPrivilegeException, SQLException, NoConnection {
+			DefaultContext myCtx = getDefaultContext();
+
+			#sql [myCtx] {
+				UPDATE
+				:{Com_("D_T2_PRICE_GROUP_BRANCH")} A
+				SET 
+					A.PRICE_GROUP_ID = :defaultId
+				WHERE 
+					A.PRICE_GROUP_ID = :priceGroup
+			};
+			closeDefaultContext(myCtx);
+			
+			return 1;
+		}
+	
+	public int deletePriceGroupSoOn(String pType)
+	throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		#sql [myCtx] {
+			DELETE
+			FROM
+			:{Com_("D_T2_ITEM_PRICE")}
+			WHERE
+				PRICE_TYPE = :pType
+		};
+//		#sql [myCtx] {
+//			DELETE
+//			FROM
+//			:{Com_("D_T2_PRICE_GROUP_BRANCH")}
+//			WHERE
+//				PRICE_GROUP_ID = :pType
+//		};
+//		#sql [myCtx] {
+//			UPDATE
+//			:{Com_("D_T2_PRICE_GROUP_BRANCH")} A
+//			SET 
+//				A.PRICE_GROUP_ID = :defaultId
+//			WHERE 
+//				A.PRICE_GROUP_ID = :pType
+//		};
+		#sql [myCtx] {
+			DELETE
+			FROM
+			:{Com_("D_T2_PRICE_GROUP")}
+			WHERE
+				PRICE_GROUP_ID = :pType
+		};
+		closeDefaultContext(myCtx);
+		return 1;
+	}
+}

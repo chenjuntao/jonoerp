@@ -1,0 +1,61 @@
+.dataGrid {
+	position: absolute;
+	right: 0;
+	top: 32px;
+	bottom: 0;
+	width: 100%;
+	height: auto;
+}
+
+.input-provider {
+	width: 160px !important;
+}
+
+.field-formId, .field-itemName, .field-itemCategory {
+	width: 150px;
+}
+
+th[role="columnheader"] {
+	text-align: center;
+}
+
+.dgrid-cell {
+	/* 	width: 80px; make all the columns 80px wide */
+	vertical-align: middle;
+	width: 90px;
+}
+
+.field-rownumber,.field-count, .field-formId, .field-itemId, .field-formTime,.field-itemCount,.field-requestCount,
+	.field-receiveTime, .field-formStatus, .field-operate,.field-itemDimension ,.field-return,.field-none
+	{
+	text-align: center !important;
+}
+
+.field-rownumber,.field-itemDimension,.field-none, .field-return{
+	width: 60px;
+}
+
+.field-formId, .field-formNote {
+	width: 150px;
+}
+
+.dgrid-column-set-0 {
+	width: 350px;
+}
+
+.field-workOrderId {
+	width: 180px;
+}
+
+.field-operate{
+	width: 80px;
+}
+
+.field-formMaker,.file-itemName{
+	width: 120px;
+}
+
+.field-requestCount,.field-itemCount {
+	width: 90px;
+	text-align: right;
+}

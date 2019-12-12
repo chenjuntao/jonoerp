@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"   
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">  
+
+<mapper namespace="mapper.businessquery.DiscountReasonMapper">  
+
+<resultMap id="discountReasonResultMap" type="pojo.businessquery.DiscountReason">
+		<id property="shopC" column="cBranch_C" />
+		<result property="shopN" column="cBranch_N" />
+		<result property="foodAmt" column="guestNum" />
+		<result property="disAmt" column="foodAmt" />
+		<result property="payAmt" column="disAmt" />
+		<result property="disWhy" column="CDISCURWHY" />
+</resultMap>
+
+<select id="discountReasonSum" resultMap="discountReasonResultMap">
+	SELECT
+		SUM(foodAmt)    foodAmt,
+		SUM(disAmt)     disAmt,
+		SUM(payAmt)     payAmt
+	FROM
+	(
+		SELECT
+			cBranch_C        shopC,
+			cBranch_N        shopN,
+			SUM(nFoodAmt)    foodAmt,
+			b.CDISCURWHY     disWhy,
+			SUM(nDisAmt)     disAmt,
+			SUM(nPayAmt)     payAmt
+		FROM
+			${com}.d_t_food_bill b
+		WHERE
+			nDisAmt > 0
+		<if test="shopC != null">
+			AND b.cBranch_C LIKE #{shopC}
+		</if>
+		AND DBUSINESS &gt;=#{startDate}
+		AND DBUSINESS &lt;=#{endDate}
+		GROUP BY
+			cBranch_C,
+			cBranch_N,
+			b.CDISCURWHY
+	) t
+</select>
+
+<select id="discountReason" resultMap="discountReasonResultMap">
+	SELECT
+		cBranch_C        ,
+		cBranch_N        ,
+		SUM(nFoodAmt)    foodAmt,
+		b.CDISCURWHY     ,
+		SUM(nDisAmt)     disAmt,
+		SUM(nPayAmt)     payAmt
+	FROM
+		${com}.d_t_food_bill b
+	WHERE
+		nDisAmt > 0
+	<if test="shopC != null">
+		AND b.cBranch_C LIKE #{shopC}
+	</if>
+	AND DBUSINESS &gt;=#{startDate}
+	AND DBUSINESS &lt;=#{endDate}
+	GROUP BY
+		cBranch_C,
+		cBranch_N,
+		b.CDISCURWHY
+
+</select>
+</mapper>

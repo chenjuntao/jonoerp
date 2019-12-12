@@ -1,0 +1,54 @@
+#dataGrid {
+	position: absolute;
+	right: 0;
+	top: 32px;
+	bottom: 0;
+	width: 100%;
+	height: auto; /* override default height: 30em; in dgrid.css */
+}
+
+#commandTable {
+	position: absolute;
+	bottom: 0;
+	width: 100%;
+}
+
+.dgrid-cell {
+	/* 	width: 80px; make all the columns 80px wide */
+	
+}
+
+th[role="columnheader"] {
+	text-align: center;
+}
+
+.field-rownumber, .field-itemId, .field-itemDimension, .field-categoryId
+	{
+	text-align: center;
+	vertical-align: middle;
+}
+
+.field-rownumber {
+	width: 40px;
+}
+
+.field-itemId, .field-categoryId {
+	width: 80px;
+}
+
+.field-itemName {
+	width: 160px;
+}
+
+.field-queryCode {
+	width: 90px;
+}
+
+.field-itemDimension {
+	width: 60px;
+}
+
+.field-itemUnitPrice, .field-inventory {
+	width: 60px;
+	text-align: right;
+}

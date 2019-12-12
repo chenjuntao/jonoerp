@@ -1,0 +1,55 @@
+<project name="erp" default="copy-new" basedir="..">
+
+	<!-- ==================== File and Directory Names ======================== -->
+
+	<property name="app.name" value="jono" />
+	<property name="build.home" value="${basedir}" />
+	<property name="war.dir" value="${basedir}/../war" />
+	<property name="fixed.dir" value="${basedir}/../fixed" />
+	<property name="src.home" value="${basedir}/src" />
+	<property name="generated.home" value="generated" />
+
+	<!-- ==================== Compilation Classpath =========================== -->
+	<target name="copy-new" description="copy dynamic file to new dir">
+		<echo>copying...</echo>
+		<delete includeemptydirs="true" verbose="false" failonerror="false">  
+		   	<dirset dir="${war.dir}" includes="**" />
+		   	<fileset dir="${war.dir}" includes="**" />
+		</delete> 
+		<copy todir="${war.dir}">
+           	<fileset dir="${basedir}">
+              	<include name="jsp/**/*.*" />
+              	<exclude name="jsp/common/lib/**/*.*" />
+              	<exclude name="jsp/common/plugins/**/*.*" />
+           	 	<exclude name="jsp/test/**/*.*" />
+           		
+              	<include name="WEB-INF/**/*.*" />
+              	<exclude name="WEB-INF/lib/**/*.*" />
+           		
+              	<include name="mobile/**/*.*" />
+              	<exclude name="mobile/framework/**/*.*" />
+           	</fileset>
+        </copy>
+		<tar destfile="${war.dir}/../war.tar" basedir="${war.dir}"/>
+		<gzip destfile="${war.dir}/../war.tar.gz" src="${war.dir}/../war.tar"/>
+	</target>
+	
+	<target name="copy-fixed" description="copy fixed file to new dir">
+		<echo>copying...</echo>
+		<delete includeemptydirs="true" verbose="false" failonerror="false">  
+		   	<dirset dir="${fixed.dir}" includes="**" />
+		   	<fileset dir="${fixed.dir}" includes="**" />
+		</delete> 
+		<copy todir="${fixed.dir}">
+           	<fileset dir="${basedir}">
+              	<include name="jsp/common/lib/**/*.*" />
+              	<include name="jsp/common/plugins/**/*.*" />
+           		
+              	<include name="WEB-INF/lib/**/*.*" />
+           		
+              	<include name="mobile/framework/**/*.*" />
+           	</fileset>
+        </copy> 
+	</target>
+
+</project>

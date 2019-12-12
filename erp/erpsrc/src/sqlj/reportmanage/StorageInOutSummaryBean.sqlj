@@ -1,0 +1,667 @@
+package logic.reportmanage;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import java.util.Map;
+import java.util.HashMap;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import sqlj.runtime.ref.DefaultContext;
+
+import com.tanry.business.form.FormConstant;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.TextUtil;
+import com.tanry.framework.acl.NoPrivilegeException;
+
+public class StorageInOutSummaryBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(StorageInOutSummaryBean.class);
+	
+	#sql private iterator HeaderIter(
+			String item_id,		//商品编码
+			String item_name,	//商品名称
+			String item_dimension,	//商品名称
+			String branch_name,	//门店名称
+			String storage_name,//仓库名称
+			Double itemcountin, //入库合计数
+			Double itemcountinmoney,//入库合计金额
+			Double itemcountout, //出库合计数
+			Double itemcountoutmoney, //出库合计金额
+			Double distributionOut, //物流中心配送出库
+			
+			Double outerOut, //物流中心外部出库
+			
+			Double rejectinstorage, //拒收入库
+			Double putinstorage, //采购入库
+			Double distribution, //配送入库
+			Double antiauditin, //配送反审核入库数量
+			Double antiauditout,//配送反审核出库数量
+			Double dreject, //配送退货出
+			Double dreject2, //配送退货入
+			
+			Double preject, //采购退货(出)
+			Double preject2, //采购退货(入)
+			
+			Double rawloss, //原料报损
+			Double dishloss, //出品报损
+			Double allocateitemin, //调拨入库数
+			Double allocateitemout, //调拨出库数
+			Double checkstoragein, //盘点入库数量
+			Double checkstorageout, //盘点出库数量
+			Double theoryDeduct,//理论扣库
+			Double publicstoragein, //产品入库数量
+			Double publicstorageout, //产品出库数量
+			Double crossstorageout, //越库出库
+			Double semiesin, //自产入库
+			Double rawout, //自产耗料
+			
+			Double scll, //生产领料
+			Double sccl, //生产超领
+			Double sctl, //生产退料
+			Double fgll, //非工单领料
+			
+			Double orgiCount, //期初数量
+			Double orgicountmoney,//期初金额
+			Double resultcount, //结存数量
+			Double resultcountmoney //结存金额
+			);
+	
+	#sql private iterator CountIter(
+			Integer counts
+		);
+	
+	public Map getColmunType(){
+		Map map  = new HashMap();
+		map.put("item_id", "String");
+		map.put("item_name", "String");
+		return map;
+	}
+	
+	public Map getColmunPrefix(){
+		Map map  = new HashMap();
+		map.put("item_id", "io");
+		map.put("item_name", "m");
+		return map;
+	}
+	
+	/**
+	 * 计算count时，尽量优化sql
+	 */
+	public Integer count(String queryStr)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		CountIter countIter = null;
+		
+		String[] strs = queryStr.split("\\|_\\|");
+		
+		#sql [myCtx] countIter = {
+			WITH
+			    items AS
+			    (
+			        SELECT
+			            io.*,
+			            m.item_name,
+			            item_dimension
+			        FROM
+			            :{Com_("D_T0_STORAGE_IN_OUT")} io
+		            LEFT JOIN
+                    	:{Com_("D_T2_BRANCH")} b 
+                    ON
+                        io.BRANCH_ID = b.BRANCH_ID
+			        INNER JOIN
+			            :{Com_("D_T2_ITEM_META")} m
+			        ON
+			            io.item_id = m.item_id
+			        WHERE
+			            1 = 1 :{strs[1]+strs[3] :: ''}
+			    )
+			    ,
+			    begins AS
+			    (
+			        SELECT
+			            *
+			        FROM
+			            (
+			                SELECT
+			                    t.branch_id,
+			                    t.STORAGE_ID,
+			                    t.ITEM_ID,
+			                    t.item_name,
+			                    t.item_dimension,
+			                    t.RESULT_COUNT orgiCount,
+			                    row_number() over(partition BY branch_id,STORAGE_ID,ITEM_ID, item_name ,
+			                    item_dimension ORDER BY OPERATION_TIME DESC ) rn
+			                FROM
+			                    items t )
+			        WHERE
+			            rn=1
+			    )
+			    ,
+			    items2 AS
+			    (
+			        SELECT
+			            io.*,
+			            m.item_name,
+			            item_dimension
+			        FROM
+			            :{Com_("D_T0_STORAGE_IN_OUT")} io
+		            LEFT JOIN
+                    	:{Com_("D_T2_BRANCH")} b 
+                    ON
+                        io.BRANCH_ID = b.BRANCH_ID
+			        INNER JOIN
+			            :{Com_("D_T2_ITEM_META")} m
+			        ON
+			            io.item_id = m.item_id
+			        WHERE
+			            1 = 1 :{strs[2]+strs[3] :: ''}
+			    )
+			    ,
+			    ends AS
+			    (
+			        SELECT
+			            *
+			        FROM
+			            (
+			                SELECT
+			                    t.branch_id,
+			                    t.STORAGE_ID,
+			                    t.ITEM_ID,
+			                    t.item_name,
+			                    t.item_dimension,
+			                    t.RESULT_COUNT resultcount,
+			                    row_number() over(partition BY branch_id,STORAGE_ID,ITEM_ID, item_name ,
+			                    item_dimension ORDER BY OPERATION_TIME DESC ) rn
+			                FROM
+			                    items2 t )
+			        WHERE
+			            rn=1
+			    )
+			    ,
+			    c AS
+			    (
+			        SELECT
+			            io.BRANCH_ID ,
+			            io.STORAGE_ID,
+			            io.ITEM_ID ,
+			            m.item_name,
+			            m.item_dimension
+			        FROM
+			            :{Com_("D_T0_STORAGE_IN_OUT")} io
+		            LEFT JOIN
+                    	:{Com_("D_T2_BRANCH")} b 
+                    ON
+                        io.BRANCH_ID = b.BRANCH_ID
+			        INNER JOIN
+			            :{Com_("D_T2_ITEM_META")} m
+			        ON
+			            io.item_id = m.item_id
+			        WHERE
+			            1 = 1 :{strs[0]+strs[3] :: ''}
+			        GROUP BY
+			            io.BRANCH_ID ,
+			            io.STORAGE_ID,
+			            io.ITEM_ID,
+			            m.item_name,
+			            m.item_dimension
+			    )
+			SELECT
+			    COUNT(*) counts
+			FROM
+			    c
+			FULL JOIN
+			    begins s
+			ON
+			    c.item_id = s.item_id AND c.STORAGE_ID = s.STORAGE_ID};
+		
+		Integer counts = 0;
+		while(countIter.next()) {
+			counts = countIter.counts();
+		}
+		
+		closeDefaultContext(myCtx);
+		countIter.close();
+		
+		return counts;
+	}
+	
+	
+	public List<Map> query(int startRow, int endRow,String queryStr,String sortStr)  
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		String[] strs = queryStr.split("\\|_\\|");
+		
+		HeaderIter headerIter = null;
+		#sql [myCtx] headerIter = {
+			SELECT
+			    *
+			    FROM
+			        (
+			            SELECT
+			                t.*,
+			                ROUND((orgiCount* t.ITEM_PRICE),4 )   orgicountmoney,
+			                ROUND((resultcount* t.ITEM_PRICE),4 ) resultcountmoney,
+			                ROWNUM                                rowNumber
+			            FROM
+			                (
+			                    WITH
+			                        items AS
+			                        (
+			                            SELECT
+			                                io.*,
+			                                m.item_name,
+			                                item_dimension
+			                            FROM
+			                                :{Com_("D_T0_STORAGE_IN_OUT")} io
+			                            LEFT JOIN
+			                                :{Com_("D_T2_BRANCH")} b
+			                            ON
+			                                io.BRANCH_ID = b.BRANCH_ID
+			                            INNER JOIN
+			                                :{Com_("D_T2_ITEM_META")} m
+			                            ON
+			                                io.item_id = m.item_id
+			                            WHERE
+			                                1 = 1 :{strs[1]+strs[3] :: ''}
+			                        )
+			                        ,
+			                        begins AS
+			                        (
+			                            SELECT
+			                                *
+			                            FROM
+			                                (
+			                                    SELECT
+			                                        t.branch_id,
+			                                        t.STORAGE_ID,
+			                                        t.ITEM_ID,
+			                                        t.item_name,
+			                                        t.item_dimension,
+			                                        t.RESULT_COUNT orgiCount,
+			                                        row_number() over(partition BY branch_id,STORAGE_ID,ITEM_ID,
+			                                        item_name ,item_dimension ORDER BY OPERATION_TIME DESC ) rn
+			                                    FROM
+			                                        items t )
+			                            WHERE
+			                                rn=1
+			                        )
+			                        ,
+			                        items2 AS
+			                        (
+			                            SELECT
+			                                io.*,
+			                                m.item_name,
+			                                item_dimension
+			                            FROM
+			                                :{Com_("D_T0_STORAGE_IN_OUT")} io
+			                            LEFT JOIN
+			                                :{Com_("D_T2_BRANCH")} b
+			                            ON
+			                                io.BRANCH_ID = b.BRANCH_ID
+			                            INNER JOIN
+			                                :{Com_("D_T2_ITEM_META")} m
+			                            ON
+			                                io.item_id = m.item_id
+			                            WHERE
+			                                1 = 1 :{strs[2]+strs[3] :: ''}
+			                        )
+			                        ,
+			                        ends AS
+			                        (
+			                            SELECT
+			                                *
+			                            FROM
+			                                (
+			                                    SELECT
+			                                        t.branch_id,
+			                                        t.STORAGE_ID,
+			                                        t.ITEM_ID,
+			                                        t.item_name,
+			                                        t.item_dimension,
+			                                        t.RESULT_COUNT resultcount,
+			                                        row_number() over(partition BY branch_id,STORAGE_ID,ITEM_ID,
+			                                        item_name ,item_dimension ORDER BY OPERATION_TIME DESC ) rn
+			                                    FROM
+			                                        items2 t )
+			                            WHERE
+			                                rn=1
+			                        )
+			                        ,
+			                        c AS
+			                        (
+			                            SELECT
+			                                io.BRANCH_ID ,
+			                                io.STORAGE_ID,
+			                                io.ITEM_ID ,
+			                                m.item_name,
+			                                m.item_dimension,
+			                                ROUND(SUM(NVL(ITEM_COUNT_IN,0)),4) itemCountIn,
+			                                ROUND(SUM(NVL(ITEM_COUNT_IN,0)* NVL(io.ITEM_UNIT_PRICE,0)),4)
+			                                                                    itemCountInMoney,
+			                                ROUND(SUM(NVL(ITEM_COUNT_OUT,0)),4) itemCountOut,
+			                                ROUND(SUM(NVL(ITEM_COUNT_OUT,0)* NVL(io.ITEM_UNIT_PRICE,0)),4)
+			                                itemCountOutMoney,
+			                                SUM(
+			                                    CASE
+			                                        WHEN io.REASON = 'CGRK'
+			                                        THEN NVL(ITEM_COUNT_IN,0)
+			                                        ELSE 0
+			                                    END) putinstorage,
+			                                SUM(
+			                                    CASE
+			                                        WHEN io.REASON = 'JSRK'
+			                                        THEN NVL(ITEM_COUNT_IN,0)
+			                                        ELSE 0
+			                                    END) rejectinstorage,
+			                                SUM(
+			                                    CASE
+			                                        WHEN io.REASON = 'PSRK'
+			                                        THEN NVL(ITEM_COUNT_IN,0)
+			                                        ELSE 0
+			                                    END) distribution,
+			                                SUM(
+			                                    CASE
+			                                        WHEN io.REASON = 'PSCK'
+			                                        THEN NVL(ITEM_COUNT_OUT,0)
+			                                        ELSE 0
+			                                    END) distributionOut,
+			                                SUM(
+			                                    CASE
+			                                        WHEN io.REASON = 'PSFSH'
+			                                        THEN NVL(ITEM_COUNT_IN,0)
+			                                        ELSE 0
+			                                    END) antiauditIn,
+			                                SUM(
+			                                    CASE
+			                                        WHEN io.REASON = 'PSFSH'
+			                                        THEN NVL(ITEM_COUNT_OUT,0)
+			                                        ELSE 0
+			                                    END) antiauditOut,
+			                                SUM(
+			                                    CASE
+			                                        WHEN io.REASON = 'PSTH'
+			                                        THEN NVL(ITEM_COUNT_OUT,0)
+			                                        ELSE 0
+			                                    END) dreject,
+			                                SUM(
+			                                    CASE
+			                                        WHEN io.REASON = 'PSTH'
+			                                        THEN NVL(ITEM_COUNT_IN,0)
+			                                        ELSE 0
+			                                    END) dreject2,
+			                                SUM(
+			                                    CASE
+			                                        WHEN io.REASON = 'CGTH'
+			                                        THEN NVL(ITEM_COUNT_OUT,0)
+			                                        ELSE 0
+			                                    END) preject,
+			                                    
+		                                    SUM(
+			                                    CASE
+			                                        WHEN io.REASON = 'CGTH'
+			                                        THEN NVL(ITEM_COUNT_IN,0)
+			                                        ELSE 0
+			                                    END) preject2,
+			                                SUM(
+			                                    CASE
+			                                        WHEN io.REASON = 'YLBS'
+			                                        THEN NVL(ITEM_COUNT_OUT,0)
+			                                        ELSE 0
+			                                    END) rawLoss,
+			                                SUM(
+			                                    CASE
+			                                        WHEN io.REASON = 'CPBS'
+			                                        THEN NVL(ITEM_COUNT_OUT,0)
+			                                        ELSE 0
+			                                    END) dishLoss,
+			                                SUM(
+			                                    CASE
+			                                        WHEN io.REASON = 'DB'
+			                                        THEN NVL(ITEM_COUNT_IN,0)
+			                                        ELSE 0
+			                                    END) allocateitemIn,
+			                                SUM(
+			                                    CASE
+			                                        WHEN io.REASON = 'DB'
+			                                        THEN NVL(ITEM_COUNT_OUT,0)
+			                                        ELSE 0
+			                                    END) allocateitemOut,
+			                                SUM(
+			                                    CASE
+			                                        WHEN io.REASON = 'PD'
+			                                        THEN NVL(ITEM_COUNT_IN,0)
+			                                        ELSE 0
+			                                    END) checkstorageIn,
+			                                SUM(
+			                                    CASE
+			                                        WHEN io.REASON = 'PD'
+			                                        THEN NVL(ITEM_COUNT_OUT,0)
+			                                        ELSE 0
+			                                    END) checkstorageOut,
+			                                SUM(
+			                                    CASE
+			                                        WHEN io.REASON = 'LLKU'
+			                                        THEN NVL(ITEM_COUNT_OUT,0)
+			                                        ELSE 0
+			                                    END) theoryDeduct,
+			                                SUM(
+			                                    CASE
+			                                        WHEN io.REASON = 'CPRK'
+			                                        THEN NVL(ITEM_COUNT_IN,0)
+			                                        ELSE 0
+			                                    END) publicstorageIn,
+			                                SUM(
+			                                    CASE
+			                                        WHEN io.REASON = 'CPCK'
+			                                        THEN NVL(ITEM_COUNT_OUT,0)
+			                                        ELSE 0
+			                                    END) publicstorageOut,
+			                                SUM(
+			                                    CASE
+			                                        WHEN io.REASON = 'YKCK'
+			                                        THEN NVL(ITEM_COUNT_OUT,0)
+			                                        ELSE 0
+			                                    END) crossstorageOut,
+			                                SUM(
+			                                    CASE
+			                                        WHEN io.REASON = 'WBCH'
+			                                        THEN NVL(ITEM_COUNT_OUT,0)
+			                                        ELSE 0
+			                                    END) outerOut,
+			                                SUM(
+			                                    CASE
+			                                        WHEN io.REASON = 'SCLL'
+			                                        THEN NVL(ITEM_COUNT_OUT,0)
+			                                        ELSE 0
+			                                    END) scll,
+			                                SUM(
+			                                    CASE
+			                                        WHEN io.REASON = 'SCCL'
+			                                        THEN NVL(ITEM_COUNT_OUT,0)
+			                                        ELSE 0
+			                                    END) sccl,
+			                                SUM(
+			                                    CASE
+			                                        WHEN io.REASON = 'SCTL'
+			                                        THEN NVL(ITEM_COUNT_OUT,0)
+			                                        ELSE 0
+			                                    END) sctl,
+			                                SUM(
+			                                    CASE
+			                                        WHEN io.REASON = 'FGLL'
+			                                        THEN NVL(ITEM_COUNT_OUT,0)
+			                                        ELSE 0
+			                                    END) fgll,
+			                                SUM(
+			                                    CASE
+			                                        WHEN io.REASON = 'SSRK'
+			                                        THEN NVL(ITEM_COUNT_IN,0)
+			                                        ELSE 0
+			                                    END) semiesin,
+			                                SUM(
+			                                    CASE
+			                                        WHEN io.REASON = 'SSHL'
+			                                        THEN NVL(ITEM_COUNT_OUT,0)
+			                                        ELSE 0
+			                                    END) rawout
+			                            FROM
+			                                :{Com_("D_T0_STORAGE_IN_OUT")} io
+			                            LEFT JOIN
+			                                :{Com_("D_T2_BRANCH")} b
+			                            ON
+			                                io.BRANCH_ID = b.BRANCH_ID
+			                            INNER JOIN
+			                                :{Com_("D_T2_ITEM_META")} m
+			                            ON
+			                                io.item_id = m.item_id
+			                            WHERE
+			                                1 = 1 :{strs[0]+strs[3] :: ''}
+			                            GROUP BY
+			                                io.BRANCH_ID ,
+			                                io.STORAGE_ID,
+			                                io.ITEM_ID,
+			                                m.item_name,
+			                                m.item_dimension
+			                        )
+			                    SELECT
+			                        NVL(s.orgiCount,0)                            orgiCount,
+			                        NVL(s2.resultcount,0)                          resultcount,
+			                        NVL(p.ITEM_PRICE,0)                            ITEM_PRICE,
+			                        DECODE(s.item_id,NULL,c.ITEM_ID,s.item_id)                      item_id,
+			                        DECODE(s.item_id,NULL,c.item_name,s.item_name)                  item_name,
+			                        DECODE(s.item_dimension,NULL,c.item_dimension,s.item_dimension) item_dimension,
+			                        NVL(itemCountIn-checkstorageIn,0)                               itemCountIn,
+			                        NVL(itemCountInMoney-checkstorageIn*p.ITEM_PRICE,0)             itemCountInMoney,
+			                        NVL(itemCountOut-checkstorageOut,0)      itemCountOut,
+			                        NVL(itemCountOutMoney-checkstorageOut*p.ITEM_PRICE,0) itemCountOutMoney,
+			                        NVL(putinstorage,0)      putinstorage,
+			                        NVL(distribution,0)      distribution ,
+			                        NVL(antiauditIn,0)       antiauditIn,
+			                        NVL(antiauditOut,0)      antiauditOut,
+			                        NVL(dreject,0)           dreject,
+			                        NVL(dreject2,0)          dreject2,
+			                        NVL(preject,0)           preject,
+			                        NVL(preject2,0)           preject2,
+			                        NVL(rawLoss,0)           rawLoss,
+			                        NVL(dishLoss,0)          dishLoss,
+			                        NVL(allocateitemIn,0)    allocateitemIn,
+			                        NVL(allocateitemOut,0)   allocateitemOut,
+			                        NVL(outerOut,0)          outerOut,
+			                        NVL(checkstorageIn,0)    checkstorageIn,
+			                        NVL(checkstorageOut,0)   checkstorageOut,
+			                        NVL(theoryDeduct,0)      theoryDeduct,
+			                        NVL(publicstorageIn,0)   publicstorageIn,
+			                        NVL(publicstorageOut,0)  publicstorageOut,
+			                        NVL(crossstorageOut,0)   crossstorageOut,
+			                        NVL(distributionOut,0)   distributionOut,
+			                        NVL(rejectinstorage,0)   rejectinstorage,
+			                        NVL(scll,0)              scll,
+			                        NVL(sccl,0)              sccl,
+			                        NVL(sctl,0)              sctl,
+			                        NVL(fgll,0)              fgll,
+			                        NVL(semiesin,0)          semiesin,
+			                        NVL(rawout,0)            rawout,
+			                        b.BRANCH_NAME,
+			                        bs.STORAGE_NAME
+			                    FROM
+			                        c
+			                    FULL JOIN
+			                        begins s
+			                    ON
+			                        c.item_id = s.item_id
+			                    AND c.STORAGE_ID = s.STORAGE_ID
+			                    LEFT JOIN
+			                        ends s2
+			                    ON
+			                        DECODE(s.item_id,NULL,c.ITEM_ID,s.item_id) = s2.item_id
+			                    AND DECODE(s.STORAGE_ID ,NULL,c.STORAGE_ID,s.STORAGE_ID) = s2.STORAGE_ID
+			                    LEFT JOIN
+			                        :{Com_("D_T2_BRANCH")} b
+			                    ON
+			                        b.BRANCH_ID = DECODE( s.branch_id ,NULL,c.branch_id,s.branch_id)
+			                    LEFT JOIN
+			                        :{Com_("D_T2_BRANCH_STORAGE")} bs
+			                    ON
+			                        bs.STORAGE_ID = DECODE(s.STORAGE_ID ,NULL,c.STORAGE_ID,s.STORAGE_ID)
+			                    LEFT JOIN
+			                        :{Com_("D_T2_ITEM_PRICE")} p
+			                    ON
+			                        DECODE(s.item_id,NULL,c.ITEM_ID,s.item_id) = p.item_id
+			                    AND p.PRICE_TYPE = 'BENCHMARK'
+			                    AND p.IS_CURRENT = 1) t
+			            WHERE
+			                ROWNUM < :endRow)
+			    WHERE
+			        rowNumber >= :startRow};
+		List<Map> headerLst = processIter(headerIter);
+		headerIter.close();
+		closeDefaultContext(myCtx);
+		return headerLst;
+	}
+	
+	private List<Map> processIter(HeaderIter headerIter) 
+			throws SQLException {
+		List<Map> headerLst = new ArrayList<Map>();
+		
+		while(headerIter.next()) {
+			Map header = new HashMap();
+			
+			header.put("item_id", headerIter.item_id());
+			header.put("item_name", headerIter.item_name());
+			header.put("item_dimension", headerIter.item_dimension());
+			header.put("branch_name", headerIter.branch_name());
+			header.put("storage_name", headerIter.storage_name());
+			header.put("itemcountin", headerIter.itemcountin());
+			header.put("itemcountinmoney", headerIter.itemcountinmoney());
+			header.put("itemcountout", headerIter.itemcountout());
+			header.put("itemcountoutmoney", headerIter.itemcountoutmoney());
+			header.put("putinstorage", headerIter.putinstorage());
+			header.put("distribution", headerIter.distribution());
+			header.put("antiauditin", headerIter.antiauditin());
+			header.put("antiauditout", headerIter.antiauditout());
+			header.put("dreject", headerIter.dreject());
+			header.put("dreject2", headerIter.dreject2());
+			
+			header.put("preject", headerIter.preject());
+			header.put("preject2", headerIter.preject2());
+			
+			header.put("rawloss", headerIter.rawloss());
+			header.put("dishloss", headerIter.dishloss());
+			header.put("allocateitemin", headerIter.allocateitemin());
+			header.put("allocateitemout", headerIter.allocateitemout());
+			header.put("checkstoragein", headerIter.checkstoragein());
+			header.put("checkstorageout", headerIter.checkstorageout());
+			header.put("publicstoragein", headerIter.publicstoragein());
+			header.put("publicstorageout", headerIter.publicstorageout());
+			header.put("crossstorageout", headerIter.crossstorageout());
+			header.put("theoryDeduct", headerIter.theoryDeduct());
+			header.put("orgiCount", headerIter.orgiCount());
+			header.put("orgicountmoney", headerIter.orgicountmoney());
+			header.put("resultcount", headerIter.resultcount());
+			header.put("resultcountmoney", headerIter.resultcountmoney());
+			
+			header.put("distributionOut", headerIter.distributionOut());
+			header.put("rejectinstorage", headerIter.rejectinstorage());
+			
+			header.put("scll", headerIter.scll());
+			header.put("sccl", headerIter.sccl());
+			header.put("sctl", headerIter.sctl());
+			header.put("fgll", headerIter.fgll());
+			header.put("semiesin", headerIter.semiesin());
+			header.put("rawout", headerIter.rawout());
+			
+			header.put("outerOut", headerIter.outerOut());
+			
+			headerLst.add(header);
+		}
+		return headerLst;
+	}
+}

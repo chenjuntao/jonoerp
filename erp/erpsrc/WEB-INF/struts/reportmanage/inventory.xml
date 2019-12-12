@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE struts PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN"
+    "http://struts.apache.org/dtds/struts-2.0.dtd">
+
+<struts>
+<!--     餐厅仓库明细账 -->
+	<package name="reportmanage_inventory_restaurant_detail" namespace="/reportmanage/inventory/restaurant/detail" extends="trust-default">
+		<action name="mainView" class="action.reportmanage.ReportManageAction">
+			<result name="success">/jsp/restaurant/reportmanage/inventory/detail/main.jsp</result>
+		</action>
+	</package>
+	
+<!-- 	餐厅仓库汇总账 -->
+	<package name="reportmanage_inventory_restaurant_summary" namespace="/reportmanage/inventory/restaurant/summary" extends="trust-default">
+		<action name="mainView" class="action.reportmanage.ReportManageAction">
+			<result name="success">/jsp/restaurant/reportmanage/inventory/summary/main.jsp</result>
+		</action>
+	</package>
+	
+<!--     物流中心仓库明细账 -->
+	<package name="reportmanage_inventory_lc_detail" namespace="/reportmanage/inventory/lc/detail" extends="trust-default">
+		<action name="mainView" class="action.reportmanage.ReportManageAction">
+			<result name="success">/jsp/lc/reportmanage/inventory/detail/main.jsp</result>
+		</action>
+	</package>
+	
+<!-- 	物流中心仓库汇总账 -->
+	<package name="reportmanage_inventory_lc_summary" namespace="/reportmanage/inventory/lc/summary" extends="trust-default">
+		<action name="mainView" class="action.reportmanage.ReportManageAction">
+			<result name="success">/jsp/lc/reportmanage/inventory/summary/main.jsp</result>
+		</action>
+	</package>
+	
+<!--     中央工厂仓库明细账 -->
+	<package name="reportmanage_inventory_centralfactory_detail" namespace="/reportmanage/inventory/centralfactory/detail" extends="trust-default">
+		<action name="mainView" class="action.reportmanage.ReportManageAction">
+			<result name="success">/jsp/centralfactory/reportmanage/inventory/detail/main.jsp</result>
+		</action>
+	</package>
+	
+<!-- 	中央工厂仓库汇总账 -->
+	<package name="reportmanage_inventory_centralfactory_summary" namespace="/reportmanage/inventory/centralfactory/summary" extends="trust-default">
+		<action name="mainView" class="action.reportmanage.ReportManageAction">
+			<result name="success">/jsp/centralfactory/reportmanage/inventory/summary/main.jsp</result>
+		</action>
+	</package>
+</struts>
+

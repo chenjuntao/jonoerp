@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:aop = "http://www.springframework.org/schema/aop" 
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+	http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+	http://www.springframework.org/schema/aop 
+	http://www.springframework.org/schema/aop/spring-aop-4.0.xsd
+	http://www.springframework.org/schema/tx 
+	http://www.springframework.org/schema/tx/spring-tx.xsd" 
+	default-autowire="byName">
+
+    <!-- mysql数据库 -->
+    <bean id="mysqlDS" class="org.apache.commons.dbcp.BasicDataSource" destroy-method="close">  
+        <property name="driverClassName" value="com.mysql.jdbc.Driver" />
+        <property name="url" value="jdbc:mysql://114.55.33.130:3306/com" />
+        <property name="username" value="root" />
+        <property name="password" value="passwd" />
+        <property name="initialSize" value="1"/>
+        <property name="maxActive" value="2"/> 
+        <property name="maxIdle" value="3"/>
+        <property name="minIdle" value="1"/>
+        <property name="maxWait" value="60000"/>
+    </bean>
+  
+    <!-- spring和MyBatis完美整合，不需要mybatis的配置映射文件 -->  
+    <bean id="mybatisSF" class="org.mybatis.spring.SqlSessionFactoryBean">
+        <property name="dataSource" ref="mysqlDS" />  
+        <!-- 自动扫描mapping.xml文件，如果接口文件和XML文件位于同样的位置则可以省略 -->  
+<!--         <property name="mapperLocations" value="classpath:mapper/**/*Mapper.xml"></property> -->
+        <!-- 指定MyBatis配置文件路径 -->
+<!--   		<property name="configLocation" value="MyBatisConf.xml"/> -->
+    </bean>  
+  
+    <!-- DAOMapper接口所在包名，Spring会自动查找其下的类 -->  
+<!--     <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">   -->
+<!--         <property name="basePackage" value="mapper" />   -->
+<!--         <property name="sqlSessionFactoryBeanName" value="mybatisSF"></property>   -->
+<!--     </bean>   -->
+  
+    <!-- (事务管理)transaction manager, use JtaTransactionManager for global tx -->  
+    <bean id="transactionManager"  
+        class="org.springframework.jdbc.datasource.DataSourceTransactionManager">  
+        <property name="dataSource" ref="mysqlDS" />  
+    </bean>
+    <import resource="mybatis/restapi.xml"/>
+    <import resource="mybatis/businessquery.xml"/>
+    <import resource="mybatis/store.xml"/>
+</beans>
+

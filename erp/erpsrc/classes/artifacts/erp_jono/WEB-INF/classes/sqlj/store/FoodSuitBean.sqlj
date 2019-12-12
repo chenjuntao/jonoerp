@@ -1,0 +1,399 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on Tue Feb 10 11:46:15 CST 2015 by lyz
+ * Last edited on Tue Feb 10 11:46:15 CST 2015 by lyz
+ * 
+ * comment: 存储出品套餐各个子项以及子项可替代品
+ */
+package logic.store;
+
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
+
+import pojo.store.FoodSuit;
+import sqlj.runtime.ref.DefaultContext;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.TextUtil;
+import com.tanry.framework.acl.NoPrivilegeException;
+
+public class FoodSuitBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(FoodSuitBean.class);
+
+	/**
+	 * 判断子项是否存在
+	 */
+	public boolean exist(String foodSuitId, String foodId) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		int total = 0;
+		#sql [myCtx] {
+			SELECT
+				COUNT(*) into :total
+			FROM
+			:{Com_("D_T2_ITEM_FOOD_SUIT")}
+			WHERE
+				FOOD_SUIT_ID = :foodSuitId
+			AND FOOD_OPTION_ID IS NULL --换品
+			AND FOOD_ID = :foodId --子项
+		};
+		closeDefaultContext(myCtx);
+		
+		if (total > 0) {
+			return true;
+		}
+		return false;
+	}
+	
+	/**
+	 * 判断换品是否存在
+	 */
+	public boolean exist(String foodSuitId, String foodId, String foodOptionId) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		int total = 0;
+		#sql [myCtx] {
+			SELECT
+				COUNT(*) into :total
+			FROM
+			:{Com_("D_T2_ITEM_FOOD_SUIT")}
+			WHERE
+				FOOD_SUIT_ID = :foodSuitId
+			AND FOOD_OPTION_ID = :foodOptionId
+			AND FOOD_ID = :foodId --子项
+		};
+		closeDefaultContext(myCtx);
+		
+		if (total > 0) {
+			return true;
+		}
+		return false;
+	}
+	
+	public int saveEntity(FoodSuit suit)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		String foodSuitId = suit.getFoodSuitId();
+		String foodId = suit.getFoodId();
+		String foodOptionId = suit.getFoodOptionId();
+		Double itemCount = suit.getItemCount();
+		Integer isCurrent = suit.getIsCurrent();
+
+		#sql [myCtx] {
+			INSERT INTO :{Com_("D_T2_ITEM_FOOD_SUIT")} 
+				(FOOD_SUIT_ID, FOOD_ID, FOOD_OPTION_ID, ITEM_COUNT, IS_CURRENT) 
+			VALUES (:foodSuitId, :foodId, :foodOptionId, :itemCount, :isCurrent)
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public int updateSubItem(FoodSuit suit)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		String foodSuitId = suit.getFoodSuitId();
+		String foodId = suit.getFoodId();
+		String foodOptionId = suit.getFoodOptionId();
+		Double itemCount = suit.getItemCount();
+		Double itemPrice = suit.getItemPrice();
+		Integer isCurrent = suit.getIsCurrent();
+
+		#sql [myCtx] {
+			UPDATE
+			:{Com_("D_T2_ITEM_FOOD_SUIT")}
+			SET
+				ITEM_COUNT = :itemCount,
+				ITEM_PRICE = :itemPrice,
+				IS_CURRENT = :isCurrent
+			WHERE 
+				FOOD_SUIT_ID = :foodSuitId
+			AND FOOD_OPTION_ID IS NULL --换品
+			AND FOOD_ID = :foodId --子项
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+
+	public int updateOption(FoodSuit suit)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		String foodSuitId = suit.getFoodSuitId();
+		String foodId = suit.getFoodId();
+		String foodOptionId = suit.getFoodOptionId();
+		Double itemCount = suit.getItemCount();
+		Integer isCurrent = suit.getIsCurrent();
+
+		#sql [myCtx] {
+			UPDATE
+			:{Com_("D_T2_ITEM_FOOD_SUIT")}
+			SET
+				ITEM_COUNT = :itemCount,
+				IS_CURRENT = :isCurrent
+			WHERE 
+				FOOD_SUIT_ID = :foodSuitId
+			AND FOOD_OPTION_ID = :foodOptionId
+			AND FOOD_ID = :foodId --子项
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+
+	public int deleteEntity(String foodSuitId)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		#sql [myCtx] {
+			DELETE
+			FROM
+			:{Com_("D_T2_ITEM_FOOD_SUIT")}
+			WHERE
+				FOOD_SUIT_ID = :foodSuitId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	/**
+	 * 删除除此之外的其它套餐子项，同时删除子项对应的换品
+	 */
+	public int deleteSubExcept(String suitId, List<String> itemIdLst)
+			throws NoPrivilegeException, SQLException, NoConnection {
+		String query = " FOOD_ID IS NOT NULL ";
+		if (itemIdLst.size() != 0) { // 非空处理
+			query = " FOOD_ID NOT IN ('" + StringUtils.join(itemIdLst, ",").replaceAll(",", "','") + "') ";
+		}
+		
+		DefaultContext myCtx = getDefaultContext();
+		#sql [myCtx] {
+			DELETE
+			FROM
+			:{Com_("D_T2_ITEM_FOOD_SUIT")}
+			WHERE
+				FOOD_SUIT_ID = :suitId
+		--	AND FOOD_OPTION_ID IS NULL
+			AND	:{query :: 1=1}
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	/**
+	 * 删除除此之外的其它套餐子项的换品
+	 */
+	public int deleteOptionExcept(String suitId, String subItemId, List<String> itemIdLst)
+			throws NoPrivilegeException, SQLException, NoConnection {
+		String query = " FOOD_OPTION_ID IS NOT NULL ";
+		if (itemIdLst.size() != 0) { // 非空处理
+			query = " FOOD_OPTION_ID NOT IN ('" + StringUtils.join(itemIdLst, ",").replaceAll(",", "','") + "') ";
+		}
+		
+		DefaultContext myCtx = getDefaultContext();
+		#sql [myCtx] {
+			DELETE
+			FROM
+			:{Com_("D_T2_ITEM_FOOD_SUIT")}
+			WHERE
+				FOOD_SUIT_ID = :suitId
+			AND FOOD_ID = :subItemId
+			AND	:{query :: 1=1}
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+
+	#sql private iterator SubItemIter(String food_suit_id, String food_id, String sub_item_name,
+			String item_dimension, Double item_count, Double sale_price);
+	
+	public List<Map> querySubItem(String suitId) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		SubItemIter itemIter = null;
+		#sql [myCtx] itemIter = {
+			SELECT
+			    s.*,
+			    m.ITEM_NAME AS SUB_ITEM_NAME,
+			    m.ITEM_DIMENSION,
+			    NVL(s.ITEM_PRICE,p.ITEM_PRICE) sale_price, --如果套餐价为空，则取价格表的(出品售卖价:SALE)
+			    p.PRICE_TYPE
+			FROM
+			:{Com_("D_T2_ITEM_FOOD_SUIT")} s
+			LEFT JOIN
+			:{Com_("D_T2_ITEM_META")} m
+			ON
+			    m.ITEM_ID = s.FOOD_ID
+			LEFT JOIN
+			:{Com_("D_T2_ITEM_PRICE")} p
+			ON
+			    p.ITEM_ID = m.ITEM_ID
+			AND p.PRICE_TYPE = 'SALE'
+			WHERE
+			    s.FOOD_SUIT_ID = :suitId
+			AND s.FOOD_OPTION_ID IS NULL
+		};
+
+		List<Map> itemLst = new ArrayList<Map>();
+		while(itemIter.next()) {
+			Map<String, Object> item = new HashMap<String, Object>();
+			item.put("suitId", itemIter.food_suit_id());
+			item.put("subItemId", itemIter.food_id());
+			item.put("subItemName", itemIter.sub_item_name());
+			item.put("itemDimension", itemIter.item_dimension());
+			item.put("itemCount", itemIter.item_count());
+			item.put("salePrice", itemIter.sale_price());
+			itemLst.add(item);
+		}
+		itemIter.close();
+		closeDefaultContext(myCtx);
+		return itemLst;
+	}
+	
+	#sql private iterator OptionIter(String food_suit_id, String food_id, String food_option_id, String option_name,
+			String item_dimension, Double item_count, Double sale_price);
+	
+	public List<Map> queryOption(String suitId, String subItemId) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		OptionIter itemIter = null;
+		#sql [myCtx] itemIter = {
+			SELECT
+			    s.*,
+			    m.ITEM_NAME AS OPTION_NAME,
+			    m.ITEM_DIMENSION,
+			    p.ITEM_PRICE AS sale_price,
+			    p.PRICE_TYPE
+			FROM
+			:{Com_("D_T2_ITEM_FOOD_SUIT")} s
+			LEFT JOIN
+			:{Com_("D_T2_ITEM_META")} m
+			ON
+			    m.ITEM_ID = s.FOOD_OPTION_ID -- join condition
+			LEFT JOIN
+			:{Com_("D_T2_ITEM_PRICE")} p
+			ON
+			    p.ITEM_ID = m.ITEM_ID
+			AND p.PRICE_TYPE = 'SALE'
+			WHERE
+			    s.FOOD_SUIT_ID = :suitId
+			AND s.FOOD_ID = :subItemId
+			AND s.FOOD_OPTION_ID IS NOT NULL
+		};
+
+		List<Map> itemLst = new ArrayList<Map>();
+		while(itemIter.next()) {
+			Map<String, Object> item = new HashMap<String, Object>();
+			item.put("suitId", itemIter.food_suit_id());
+			item.put("subItemId", itemIter.food_id());
+			item.put("optionId", itemIter.food_option_id());
+			item.put("optionName", itemIter.option_name());
+			item.put("itemDimension", itemIter.item_dimension());
+			item.put("itemCount", itemIter.item_count());
+			item.put("salePrice", itemIter.sale_price());
+			itemLst.add(item);
+		}
+		itemIter.close();
+		closeDefaultContext(myCtx);
+		return itemLst;
+	}
+	
+	#sql private iterator ProductIter(String item_id, String item_name,
+			String item_dimension, Double sale_price);
+	
+	public List<Map> queryProduct(String itemName) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		itemName = "%" + itemName + "%";
+		
+		List<Map> itemLst = new ArrayList<Map>();
+		DefaultContext myCtx = getDefaultContext();
+		ProductIter productIter = null;
+		#sql [myCtx] productIter = {
+			SELECT
+			    m.*,
+			    p.ITEM_PRICE AS sale_price
+			FROM
+			:{Com_("D_T2_ITEM_META")} m
+			LEFT JOIN
+			:{Com_("D_T2_ITEM_PRICE")} p
+			ON
+			    p.ITEM_ID = m.ITEM_ID
+			AND p.PRICE_TYPE = 'SALE'
+			WHERE
+				m.ITEM_TYPE = 'PRODUCT'
+            AND (
+                    m.ITEM_ID LIKE :itemName
+                OR  m.ITEM_NAME LIKE :itemName)
+		};
+		while (productIter.next()) {
+			Map<String, Object> item = new HashMap<String, Object>();
+			item.put("itemId", productIter.item_id());
+			item.put("itemName", productIter.item_name());
+			item.put("itemDimension", productIter.item_dimension());
+			item.put("salePrice", productIter.sale_price());
+			itemLst.add(item);
+		}
+		productIter.close();
+		closeDefaultContext(myCtx);
+		return itemLst;
+	}
+
+	public List<Map> queryProduct(String itemName, String exceptId) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		itemName = "%" + itemName + "%";
+		
+		DefaultContext myCtx = getDefaultContext();
+		ProductIter productIter = null;
+		#sql [myCtx] productIter = {
+			SELECT
+			    m.*,
+			    p.ITEM_PRICE AS sale_price
+			FROM
+			:{Com_("D_T2_ITEM_META")} m
+			LEFT JOIN
+			:{Com_("D_T2_ITEM_PRICE")} p
+			ON
+			    p.ITEM_ID = m.ITEM_ID
+			AND p.PRICE_TYPE = 'SALE'
+			WHERE
+				m.ITEM_TYPE = 'PRODUCT'
+            AND (
+                    m.ITEM_ID LIKE :itemName
+                OR  m.ITEM_NAME LIKE :itemName)
+            AND m.ITEM_ID != :exceptId
+		};
+		
+		List<Map> itemLst = new ArrayList<Map>();
+		while (productIter.next()) {
+			Map<String, Object> item = new HashMap<String, Object>();
+			item.put("itemId", productIter.item_id());
+			item.put("itemName", productIter.item_name());
+			item.put("itemDimension", productIter.item_dimension());
+			item.put("salePrice", productIter.sale_price());
+			itemLst.add(item);
+		}
+		productIter.close();
+		closeDefaultContext(myCtx);
+		return itemLst;
+	}
+}

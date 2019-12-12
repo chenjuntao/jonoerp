@@ -1,0 +1,327 @@
+package logic.reportmanage;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import java.util.Map;
+import java.util.HashMap;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import sqlj.runtime.ref.DefaultContext;
+
+import com.tanry.business.form.FormConstant;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.TextUtil;
+import com.tanry.framework.acl.NoPrivilegeException;
+
+public class LcCostBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(LcCostBean.class);
+	
+	#sql private iterator HeaderIter(
+			String branchId,
+			String branchName, 
+			String storageId,
+			String storageName,
+			Double rawAmt,
+			Double beginAmt,
+			Double inAmt,   
+			Double resultAmt,
+			Double actualCost,
+			Double receiveAmt,
+			Double diffAmt
+		);
+	
+	public List<Map> query(java.util.Date startDate, java.util.Date endDate,java.util.Date startPreDate)  
+			throws NoPrivilegeException,SQLException,NoConnection {
+		Date sDate = SqlDateUtil.getSqlDate(startDate);
+		Date eDate = SqlDateUtil.getSqlDate(endDate);
+		
+		Date sPreDate = SqlDateUtil.getSqlDate(startPreDate);
+		
+		DefaultContext myCtx = getDefaultContext();
+		HeaderIter headerIter = null;
+		#sql [myCtx] headerIter = {
+			WITH
+			    p AS
+			    (
+			        SELECT
+			            p.ITEM_ID,
+			            p.ITEM_PRICE
+			        FROM
+			        	:{Com_("D_T2_ITEM_PRICE")} p 
+			        WHERE
+			            p.IS_CURRENT = 1
+			        AND p.PRICE_TYPE = 'BENCHMARK'
+			    )
+			    ,
+			    tp AS
+			    (
+			        SELECT
+			            trim(t.THERAPY_ID)                                      ITEM_ID,
+			            NVL(ROUND( SUM(t.ITEM_GROSS_COUNT * p.item_price),3),0) unitPrice
+			        FROM
+			        	:{Com_("D_T2_THERAPY")} t 
+			        LEFT JOIN
+			            p
+			        ON
+			            t.ITEM_ID = p.ITEM_ID
+			        GROUP BY
+			            trim(t.THERAPY_ID)
+			    )
+			    ,
+			    f AS
+			    (
+			        SELECT
+			            *
+			        FROM
+			            (
+			                SELECT
+			                    t.*,
+			                    row_number() over(partition BY CHECK_BRANCH_ID,CHECK_STORAGE_ID ORDER BY AUDIT_TIME DESC ) rn
+			                FROM
+			                    (
+			                        SELECT
+			                            h.CHECK_BRANCH_ID,
+			                            h.CHECK_STORAGE_ID,
+			                            h.FORM_ID,
+			                            h.AUDIT_TIME
+			                        FROM
+			                        	:{Com_("D_T1_CHECK_HEADER")} h 
+			                        WHERE
+			                            1=1
+			                        AND h.FORM_TYPE = 'form'
+			                        AND h.AUDIT_TIME <= :sPreDate ) t )
+			        WHERE
+			            rn=1
+			    )
+			    ,
+			    g AS
+			    (
+			        SELECT
+			            f.CHECK_BRANCH_ID ,
+			            f.CHECK_STORAGE_ID,
+			            SUM(d.CHECK_COUNT) beginAmt
+			        FROM
+			            f
+			        LEFT JOIN
+			        	:{Com_("D_T1_CHECK_DETAIL")} d 
+			        ON
+			            f.form_id = d.FORM_ID
+			        LEFT JOIN
+			            p
+			        ON
+			            d.ITEM_ID = p.item_id
+			        GROUP BY
+			            f.CHECK_BRANCH_ID ,f.CHECK_STORAGE_ID
+			    )
+			    ,
+			    h AS
+			    (
+			        SELECT
+			            *
+			        FROM
+			            (
+			                SELECT
+			                    t.*,
+			                    row_number() over(partition BY CHECK_BRANCH_ID,CHECK_STORAGE_ID ORDER BY AUDIT_TIME DESC ) rn
+			                FROM
+			                    (
+			                        SELECT
+			                            h.CHECK_BRANCH_ID,
+			                            h.CHECK_STORAGE_ID,
+			                            h.FORM_ID,
+			                            h.AUDIT_TIME
+			                        FROM
+			                        	:{Com_("D_T1_CHECK_HEADER")} h 
+			                        WHERE
+			                            1=1
+			                        AND h.FORM_TYPE = 'form'
+			                        AND h.AUDIT_TIME <= :eDate ) t )
+			        WHERE
+			            rn=1
+			    )
+			    ,
+			    i AS
+			    (
+			        SELECT
+			            h.CHECK_BRANCH_ID,
+			            h.CHECK_STORAGE_ID,
+			            SUM(d.CHECK_COUNT) resultAmt
+			        FROM
+			            h
+			        LEFT JOIN
+			        	:{Com_("D_T1_CHECK_DETAIL")} d  
+			        ON
+			            h.form_id = d.FORM_ID
+			        LEFT JOIN
+			            p
+			        ON
+			            d.ITEM_ID = p.item_id
+			        GROUP BY
+			            h.CHECK_BRANCH_ID,h.CHECK_STORAGE_ID
+			    )
+			    ,
+			    b AS
+			    (
+		        	SELECT
+			    	    b.BRANCH_ID,
+			    	    b.BRANCH_NAME,
+			    	    bs.STORAGE_ID,
+			    	    bs.STORAGE_NAME
+			    	FROM
+			    		:{Com_("D_T2_BRANCH")} b 
+			    	INNER JOIN
+			    		:{Com_("D_T2_BRANCH_STORAGE")} bs 
+			    	ON
+			    	    b.BRANCH_ID = bs.BRANCH_ID
+			    	WHERE
+			    	    b.BRANCH_TYPE = 'LOGISTICSCENTER'
+			    )
+			    ,
+			    j AS
+			    (
+			        SELECT
+			            io.BRANCH_ID,
+			            io.STORAGE_ID,
+			    	    SUM(
+			    	            CASE
+			    	                WHEN io.REASON IN ('PSTH',
+			    	                                   'PSRK',
+			    	                                   'CGRK',
+			    	                                   'JSRK',
+			    	                                   'DB',
+			    	                                   'PSFSH',
+			    	                                   'CGTH',
+			    	                                   'PSCK')
+			    	                THEN nvl(p.ITEM_PRICE*io.ITEM_COUNT_IN,0)-nvl(p.ITEM_PRICE*io.ITEM_COUNT_OUT,0)
+			    	                ELSE 0
+			    	            END)amt1,
+			            SUM(
+			                CASE
+			                    WHEN io.REASON IN('YLBS')
+			                    THEN p.ITEM_PRICE*io.ITEM_COUNT_OUT
+			                    ELSE 0
+			                END) amt2
+			        FROM
+			        	:{Com_("D_T0_STORAGE_IN_OUT")} io 
+			        LEFT JOIN
+			            p
+			        ON
+			            io.item_id = p.item_id
+			        WHERE
+			            io.BUSINESS_DATE >= :sDate
+			        AND io.BUSINESS_DATE <= :eDate
+			        GROUP BY
+			        	io.BRANCH_ID,io.STORAGE_ID
+			    )
+			    ,
+			    k AS
+			    (
+			        SELECT
+			            h.PROVIDER_ID,
+			            h.OUT_STORAGE_ID,
+			            SUM(d.RECEIVE_COUNT* p.ITEM_PRICE)                                   receiveAmt,
+			            SUM(d.DELIVERY_COUNT* p.ITEM_PRICE - d.RECEIVE_COUNT* p.ITEM_PRICE ) diffAmt
+			        FROM
+			        	:{Com_("D_T1_SHIPPING_HEADER")} h 
+			        INNER JOIN
+			        	:{Com_("D_T2_BRANCH")} b 
+			        ON
+			            h.PROVIDER_ID = b.BRANCH_ID
+			        AND b.BRANCH_TYPE = 'LOGISTICSCENTER'
+			        INNER JOIN
+			        	:{Com_("D_T1_SHIPPING_DETAIL")} d 
+			        ON
+			            h.FORM_ID = d.FORM_ID
+			        LEFT JOIN
+			            p
+			        ON
+			            d.ITEM_ID = p.item_id
+			        WHERE
+			            h.INPUT_TIME IS NOT NULL
+			        GROUP BY
+			            h.PROVIDER_ID,h.OUT_STORAGE_ID
+			    )
+			    ,
+			    m AS
+			    (
+			        SELECT
+			            b.*,
+			            ROUND(NVL(g.beginAmt,0),2)  beginAmt,
+			            ROUND(NVL(i.RESULTAMT,0),2) RESULTAMT,
+			            ROUND(NVL(amt1,0),2)   inAmt,
+			            ROUND(NVL(amt2,0),2)        lossAmt,
+			            ROUND(NVL(receiveAmt,0),2)  receiveAmt,
+			            ROUND(NVL(diffAmt,0),2)     diffAmt
+			        FROM
+			            b
+			        LEFT JOIN
+			            g
+			        ON
+			            b.BRANCH_ID = g.CHECK_BRANCH_ID  AND b.STORAGE_ID = g.CHECK_STORAGE_ID
+			        LEFT JOIN
+			            i
+			        ON
+			            b.BRANCH_ID = i.CHECK_BRANCH_ID  AND b.STORAGE_ID = i.CHECK_STORAGE_ID
+			        LEFT JOIN
+			            j
+			        ON
+			            b.BRANCH_ID = j.BRANCH_ID AND b.STORAGE_ID = j.STORAGE_ID
+			        LEFT JOIN
+			            k
+			        ON
+			            b.BRANCH_ID = k.PROVIDER_ID AND b.STORAGE_ID = k.OUT_STORAGE_ID
+			    )
+			SELECT
+			    BRANCH_ID branchId,
+			    DECODE(BRANCH_ID , NULL,'合计', '['|| BRANCH_ID|| ']' ||BRANCH_NAME) branchName,
+			    STORAGE_ID storageId,
+	    	    STORAGE_NAME storageName,
+			    SUM(BEGINAMT)                                                      beginAmt,
+			    SUM(RESULTAMT)                                                     resultAmt,
+			    SUM(INAMT)                                                         inAmt ,
+			    SUM(BEGINAMT +INAMT - RESULTAMT) 								   actualCost,
+			    SUM(LOSSAMT)                                                       rawAmt,
+			    SUM(RECEIVEAMT)                                                    receiveAmt,
+			    SUM(DIFFAMT)                                                       diffAmt
+			FROM
+			    m
+			GROUP BY
+			    GROUPING SETS((BRANCH_ID,BRANCH_NAME,STORAGE_ID,STORAGE_NAME,BEGINAMT,RESULTAMT,INAMT,LOSSAMT, RECEIVEAMT,DIFFAMT),NULL
+			    )order by 1,3};
+		List<Map> headerLst = processIter(headerIter);
+		headerIter.close();
+		closeDefaultContext(myCtx);
+		return headerLst;
+	}
+	
+	
+	private List<Map> processIter(HeaderIter headerIter) 
+			throws SQLException {
+		List<Map> headerLst = new ArrayList<Map>();
+		
+		while(headerIter.next()) {
+			Map header = new HashMap();
+			header.put("branchId", headerIter.branchId());
+			header.put("branchName", headerIter.branchName());
+			header.put("rawAmt", headerIter.rawAmt());
+			header.put("beginAmt", headerIter.beginAmt());
+			header.put("inAmt", headerIter.inAmt());
+			header.put("resultAmt", headerIter.resultAmt());
+			header.put("actualCost", headerIter.actualCost());
+			header.put("receiveAmt", headerIter.receiveAmt());
+			header.put("diffAmt", headerIter.diffAmt());
+			header.put("storageId", headerIter.storageId());
+			header.put("storageName", headerIter.storageName());
+			headerLst.add(header);
+		}
+		return headerLst;
+	}
+}

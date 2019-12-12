@@ -1,0 +1,77 @@
+
+#orderGrid {
+	position: absolute;
+	right: 0;
+	top: 65px;
+	bottom: 0;
+	width: 100%;
+	height: auto; /* override default height: 30em; in dgrid.css */
+}
+
+.createGrid {
+	position: absolute;
+	right: 0;
+	top: 32px;
+	bottom: 0;
+	width: 100%;
+	height: auto; /* override default height: 30em; in dgrid.css */
+}
+
+.scanGrid {
+	position: absolute;
+	right: 0;
+	top: 152px;
+	bottom: 0;
+	width: 100%;
+	height: auto; /* override default height: 30em; in dgrid.css */
+}
+
+
+th[role="columnheader"] {
+	text-align: center;
+}
+
+.dgrid-column-set-0 {
+	width: 300px;
+}
+
+.field-rownumber, .field-formId, .field-itemId, .field-formTime,.field-auditTime,.field-workshop,
+.field-formMaker, .field-payAmt, .field-allPayAmt,.field-itemDimension,.field-itemDimension2,
+.field-requestCount, .field-period,.field-productionCycle,.field-businessDate,.field-completeTime,
+.field-realCount, .field-itemCategory,.field-receiver,.field-minOrderCount{
+	text-align: center !important;
+}
+
+.field-itemUnitPrice,.field-suggestAmt,.field-itemCount,.field-orderCount,.field-orderCount2 {
+	text-align: right ;
+}
+
+.field-inventory, .field-payAmt, .field-suggestAmt,.field-workshop, .field-payAmt,.field-minOrderCount {
+	width: 100px ;
+}
+
+.field-rownumber,.field-itemDimension,.field-itemDimension2 {
+	width: 65px !important;
+}
+
+.field-itemId {
+	width: 60px ;
+}
+
+
+.input-provider,.field-formId  {
+	width: 160px ;
+}
+
+/* for observable warn,sort consideration */
+ .field-itemUnitPrice ,.field-productionCycle,.field-period{
+	width: 60px ;
+}
+
+.field-itemId,.field-itemCount,.field-businessDate,.field-orderCount ,.field-orderCount2,.field-suggestAmt{
+	width: 80px ;
+}
+
+.field-itemName,.field-itemCategoryName,.field-itemSpecification,.field-itemCategory,.field-completeTime,.field-receiver{
+	width: 120px ;
+}

@@ -1,0 +1,98 @@
+<project name="erp" default="all" basedir="..">
+
+	<!-- ==================== File and Directory Names ======================== -->
+
+	<property name="app.name" value="jono" />
+	<property name="build.home" value="${basedir}" />
+	<property name="src.home" value="${basedir}/src" />
+	<property name="generated.home" value="generated" />
+
+	<!--  ==================== Compilation Control Options ==================== -->
+
+	<property name="compile.debug" value="true" />
+	<property name="compile.deprecation" value="false" />
+	<property name="compile.optimize" value="true" />
+
+	<!-- ==================== Compilation Classpath =========================== -->
+	<path id="compile.classpath">
+		<pathelement location="${build.home}/WEB-INF/classes" />
+		<fileset dir="${build.home}/WEB-INF/lib">
+			<include name="*.jar" />
+		</fileset>
+	</path>
+	<!-- ==================== Compile Target ================================== -->
+
+	<!--
+  <target name="precompile"   description="preCompile Java sources">
+
+  <mkdir dir="${build.home}/WEB-INF/classes"/>
+  <javac srcdir="${src.home}/logic/pool;${src.home}/acl"
+          destdir="${build.home}/WEB-INF/classes"
+            debug="${compile.debug}"
+      deprecation="${compile.deprecation}"
+         optimize="${compile.optimize}">
+    <classpath refid="compile.classpath"/>
+  </javac>
+</target>
+<target name="jidl" description="Generate IDL mapping">
+
+  <mkdir dir="generated"/>
+  <exec executable="jidl">
+    <arg line="-I../idl no-skeletons output-dir generated ../idl/DataTrace.idl"/>
+  </exec>
+</target>
+-->
+	<target name="compile" description="Compile Java sources">
+		<mkdir dir="${build.home}/WEB-INF/classes" />
+		<javac srcdir="${src.home}" destdir="${build.home}/WEB-INF/classes" 
+			debug="${compile.debug}" failonerror="false" deprecation="${compile.deprecation}" 
+			optimize="${compile.optimize}" encoding="UTF-8" includeAntRuntime="false">
+			<classpath refid="compile.classpath" />
+		</javac>
+		<copy todir="${build.home}/WEB-INF/classes">
+			<fileset dir="${src.home}">
+				<include name="**/*.properties" />
+				<include name="**/*.xml" />
+			</fileset>
+		</copy>
+	</target>
+	<!--
+	<target name="sqlj" depends="" description="Generate sqlj code">
+		<mkdir dir="${build.home}/WEB-INF/classes" />
+		<exec executable="sqlj">
+			<arg line="-codegen=iso -encoding=UTF-8 -compile=false" />
+			<arg value="-dir=${src.home}" />
+			<arg value="-d=${build.home}/WEB-INF/classes" />
+			<arg value="${src.home}/logic/pool/ConnectionPool.java" />
+			<arg value="${src.home}/sqlj/businessquery/*.sqlj" />
+			<arg value="${src.home}/sqlj/store/*.sqlj" />
+			<arg value="${src.home}/sqlj/form/*.sqlj" />
+			<arg value="${src.home}/sqlj/module/restaurant/*.sqlj" />
+			<arg value="${src.home}/sqlj/module/lc/*.sqlj" />
+		</exec>
+	</target>-->
+
+	<path id="cp-tanry">
+		<fileset dir="${build.home}/ant_build/lib">
+			<include name="*.jar" />
+		</fileset>
+	</path>
+	<taskdef name="iterateSqlj" classname="com.tanry.framework.util.ant.IterateSqlj" classpathref="cp-tanry" />
+	<target name="sqlj" depends="" description="Generate sqlj code">
+		<iterateSqlj sqljRoot="${src.home}/sqlj" rparam="pathLst" />
+		<echo>sqlj code generating...</echo>
+		<mkdir dir="${build.home}/WEB-INF/classes" />
+		<exec executable="sh">
+			<arg value="${build.home}/ant_build/sqlj.sh" />
+			<arg line="-codegen=iso -encoding=UTF-8 -compile=false" />
+			<arg value="-dir=${src.home}" />
+			<arg value="-d=${build.home}/WEB-INF/classes" />
+			<arg value="${src.home}/logic/pool/ConnectionPool.java" />
+			<arg line="${pathLst}" />
+		</exec>
+	</target>
+
+	<target name="all" depends="sqlj, compile" description="Buil application">
+	</target>
+
+</project>

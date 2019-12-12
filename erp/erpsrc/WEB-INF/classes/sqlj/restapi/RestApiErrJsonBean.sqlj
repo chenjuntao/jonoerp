@@ -1,0 +1,105 @@
+/**
+ * Copyright (c) 2013
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on 2016年1月25日 by cjt
+ * Last edited on 2016年1月25日 by cjt
+ */
+
+package logic.restapi;
+
+import java.sql.SQLException;
+
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.HashMap;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import sqlj.runtime.ref.DefaultContext;
+
+import com.tanry.framework.acl.NoPrivilegeException;
+
+/**
+ * 传递数据出现错误的JSON数据表
+ */
+public class RestApiErrJsonBean extends ConnectionPool {
+
+	private String comId = "com";
+	public static Logger log = Logger.getLogger("RestApiErrJsonBean");
+	
+	#sql public static iterator ErrJsonIter(
+			String LOG_ID, 
+			String ERR_ID, 
+			String JSON_STR
+		);
+	
+	public int saveEntity(Map map) throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getComContext(comId);
+
+		String logId = map.get("logId").toString();
+		String errId = map.get("errId").toString();
+		String jsonStr = map.get("jsonStr").toString();
+		
+		#sql [myCtx] {
+			INSERT INTO :{Com_("D_T_RESTAPI_ERR_JSON")}
+				(LOG_ID, ERR_ID, JSON_STR) 
+			VALUES 
+				(:logId, :errId, :jsonStr)
+			};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public int saveEntity(List<Map> maps) throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getComContext(comId);
+		for(int i=0;i<maps.size();i++){
+			Map map = maps.get(i);
+			String logId = map.get("logId").toString();
+			String errId = map.get("errId").toString();
+			String jsonStr = map.get("jsonStr").toString();
+			
+			#sql [myCtx] {
+				INSERT INTO :{Com_("D_T_RESTAPI_ERR_JSON")}
+					(LOG_ID, ERR_ID, JSON_STR) 
+				VALUES 
+					(:logId, :errId, :jsonStr)
+			};
+		}
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public List<Map> listErrJson(String logId) throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getComContext(comId);
+		ErrJsonIter errJsonIter = null;
+		List<Map> errJsonLst = new ArrayList<Map>();
+		
+		#sql [myCtx] errJsonIter = {
+			SELECT * FROM :{Com_("D_T_RESTAPI_ERR_JSON")} 
+			WHERE LOG_ID = :logId
+			ORDER BY ERR_ID
+		};
+
+		while(errJsonIter.next()){
+			Map errJson = new HashMap();
+			errJson.put("logId", errJsonIter.LOG_ID());
+			errJson.put("errId", errJsonIter.ERR_ID());
+			errJson.put("jsonStr", errJsonIter.JSON_STR());
+			errJsonLst.add(errJson);
+		}
+		errJsonIter.close();
+		
+		closeDefaultContext(myCtx);
+		return errJsonLst;
+	}
+}

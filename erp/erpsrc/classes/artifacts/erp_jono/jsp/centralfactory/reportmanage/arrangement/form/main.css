@@ -1,0 +1,72 @@
+#dataGrid {
+	position: absolute;
+    top: 35px;
+    bottom: 0px;
+    width: 100%;
+    height: auto;
+}
+
+td[role="columnheader"] {
+	text-align: center !important; 
+}
+
+td[colid="rownumber"] {
+	text-align: center !important; 
+	min-width: 50px  !important; 
+	max-width: 50px  !important; 
+}
+
+td[colid="form_id"] {
+	text-align: center !important; 
+	min-width: 200px  !important; 
+}
+
+td[colid="form_ref_id"] {
+	text-align: center !important; 
+	min-width: 160px  !important; 
+}
+
+td[colid="input_department"] {
+	min-width: 100px  !important; 
+}
+
+td[colid="form_maker_id"] {
+	text-align: center !important; 
+	min-width: 100px  !important; 
+}
+
+td[colid="form_maker"] {
+	text-align: center !important; 
+	min-width: 100px  !important; 
+}
+
+td[colid="form_time"] {
+	text-align: center !important; 
+	min-width: 80px  !important; 
+}
+
+td[colid="audit_time"] {
+	text-align: center !important; 
+	min-width: 80px  !important; 
+}
+
+td[colid="auditor_id"] {
+	text-align: center !important; 
+	min-width: 100px  !important; 
+}
+
+td[colid="auditor"] {
+	text-align: center !important; 
+	min-width: 100px  !important; 
+}
+
+td[colid="form_note"] {
+	min-width: 100px  !important; 
+}
+
+
+td[colid="status"] {
+	text-align: center !important; 
+	min-width: 80px  !important; 
+}
+

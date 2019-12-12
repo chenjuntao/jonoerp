@@ -1,0 +1,166 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on Mar 25, 2015 by liyzh
+ * Last edited on Mar 25, 2015 by liyzh
+ * 
+ * 说明： 存储每个门店、物流中心和中央工厂以及财务对账时每月的月结记录
+ */
+package logic.module.hq;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+import sqlj.runtime.ref.DefaultContext;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.TextUtil;
+import com.tanry.framework.util.DateTimeUtil;
+import com.tanry.framework.acl.NoPrivilegeException;
+import com.tanry.business.module.hq.settle.pojo.MonthlySettleRecord;
+
+public class MonthlySettleRecordBean extends ConnectionPool {
+	
+    #sql private iterator SettleIter(String branch_id, String branch_name, Date month_date, 
+    	String operator_id, String operator_name, Date operating_time, String settle_status, String settle_note);
+
+	public int saveEntity(MonthlySettleRecord record)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+	
+		String branchId = record.getBranchId();
+		String branchName = record.getBranchName();
+		Date monthDate = SqlDateUtil.getSqlDate(record.getMonthDate());
+		String operatorId = record.getOperatorId();
+		String operatorName = record.getOperatorName();
+		Date operatingTime = SqlDateUtil.getSqlDate(record.getOperatingTime());
+		String settleStatus = record.getSettleStatus();
+		String settleNote = record.getSettleNote();
+
+		#sql [myCtx] {
+			INSERT INTO :{Com_("D_T3_MONTHLY_SETTLE_RECORD")}
+				(BRANCH_ID, BRANCH_NAME, MONTH_DATE, OPERATOR_ID, 
+					OPERATOR_NAME, OPERATING_TIME, SETTLE_STATUS, SETTLE_NOTE) 
+			VALUES (:branchId, 
+					:branchName,
+					:monthDate, 
+					:operatorId,
+					:operatorName,  
+					:operatingTime,
+					:settleStatus, 
+					:settleNote)
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+
+	public boolean exist(int year, int month) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		int total = 0;
+		#sql [myCtx] {
+			SELECT 
+				COUNT(*) INTO :total 
+			FROM 
+			:{Com_("D_T3_MONTHLY_SETTLE_RECORD")}
+			WHERE
+			--TO_CHAR(sysdate, 'yyyy-MM') = :monthDate
+			    EXTRACT(YEAR FROM MONTH_DATE) = :year
+			AND EXTRACT(MONTH FROM MONTH_DATE) = :month
+		};
+		closeDefaultContext(myCtx);
+		
+		if (total > 0) {
+			return true;
+		}
+		return false;
+	}
+	
+	public boolean exist(java.util.Date monthDate) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		Date mDate = SqlDateUtil.getSqlDate(monthDate);
+		int total = 0;
+		#sql [myCtx] {
+			SELECT 
+				COUNT(*) INTO :total 
+			FROM 
+			:{Com_("D_T3_MONTHLY_SETTLE_RECORD")}
+			WHERE
+				MONTH_DATE >= :mDate
+		};
+		closeDefaultContext(myCtx);
+		
+		if (total > 0) {
+			return true;
+		}
+		return false;
+	}
+	
+	public List<MonthlySettleRecord> query(java.util.Date startDate, java.util.Date endDate) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		Date sDate = SqlDateUtil.getSqlDate(startDate);
+		Date eDate = SqlDateUtil.getSqlDate(endDate);
+		
+		DefaultContext myCtx = getDefaultContext();
+		SettleIter settleIter = null;
+		#sql [myCtx] settleIter = {
+			SELECT * FROM :{Com_("D_T3_MONTHLY_SETTLE_RECORD")}
+			WHERE (MONTH_DATE >= :sDate or :sDate is null)
+			and (MONTH_DATE <= :eDate or :eDate is null)
+		};
+		List<MonthlySettleRecord> settleLst = processIter(settleIter);
+		settleIter.close();
+		closeDefaultContext(myCtx);
+		return settleLst;
+	}
+
+	private List<MonthlySettleRecord> processIter(SettleIter settleIter) 
+			throws SQLException {
+		List<MonthlySettleRecord> settleLst = new ArrayList<MonthlySettleRecord>();
+		while(settleIter.next()) {
+			MonthlySettleRecord record = new MonthlySettleRecord();
+			record.setBranchId(settleIter.branch_id());
+			record.setBranchName(settleIter.branch_name());
+			record.setMonthDate(SqlDateUtil.getUtilDate(settleIter.month_date()));
+			record.setOperatorId(settleIter.operator_id());
+			record.setOperatorName(settleIter.operator_name());
+			record.setOperatingTime(SqlDateUtil.getUtilDate(settleIter.operating_time()));
+			record.setSettleStatus(settleIter.settle_status());
+			record.setSettleNote(settleIter.settle_note());
+			settleLst.add(record);
+		}
+		return settleLst;
+	}
+	
+
+	/**
+	 * 查询最近的月结操作月份
+	 */
+	public java.util.Date queryLastSettleMonth() 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		Date lastMonth = null;
+		
+		DefaultContext myCtx = getDefaultContext();
+		#sql [myCtx] {
+			SELECT
+			    MAX(MONTH_DATE) into :lastMonth
+			FROM
+			:{Com_("D_T3_MONTHLY_SETTLE_RECORD")}
+		};
+
+		if(lastMonth ==null){
+			lastMonth = SqlDateUtil.getSqlDate(DateTimeUtil.parse("1990-10-18"));
+		}
+		closeDefaultContext(myCtx);
+		return SqlDateUtil.getUtilDate(lastMonth);
+	}
+}

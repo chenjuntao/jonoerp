@@ -1,0 +1,158 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on Fri Jul 17 16:50:11 CST 2015 by pw
+ * Last edited on Fri Jul 17 16:50:11 CST 2015 by pw
+ * 
+ * comment: 单据操作版本号表
+ */
+package logic.form;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import pojo.form.OperationVersion;
+import sqlj.runtime.ref.DefaultContext;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.TextUtil;
+import com.tanry.framework.acl.NoPrivilegeException;
+
+public class OperationVersionBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(OperationVersionBean.class);
+	
+	#sql private iterator DetailIter(String form_id,String operation_id, String operation_name, Date operation_time, Integer version, String operation_content);
+	
+	public int saveEntity(OperationVersion detail)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		String formId = detail.getFormId();
+		String operationId = detail.getOperationId();
+		String operationName = detail.getOperationName();
+		Date operationTime = SqlDateUtil.getSqlDate(detail.getOperationTime());
+		Integer version = detail.getVersion();
+		String operationContent = detail.getOperationContent();
+
+		#sql [myCtx] {
+			INSERT INTO :{Com_("D_T0_OPERATION_VERSION")}
+				(FORM_ID, OPERATION_ID, OPERATION_NAME, OPERATION_TIME, VERSION, OPERATION_CONTENT) 
+			VALUES (:formId,:operationId, :operationName, :operationTime, :version, :operationContent)
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public OperationVersion queryVersion(String formId) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		DetailIter detailIter = null;
+		OperationVersion operationVersion = new OperationVersion();
+		
+		#sql [myCtx] detailIter = {
+		SELECT
+		    *
+		    FROM
+		    :{Com_("D_T0_OPERATION_VERSION")} v
+		    WHERE
+		        v.FORM_ID = :formId};
+		
+		if(detailIter.next()) {
+			operationVersion.setFormId(detailIter.form_id());
+			operationVersion.setOperationId(detailIter.operation_id());
+			operationVersion.setOperationName(detailIter.operation_name());
+			operationVersion.setOperationTime(SqlDateUtil.getUtilDate(detailIter.operation_time()));
+			operationVersion.setVersion(detailIter.version());
+			operationVersion.setOperationContent(detailIter.operation_content());
+		}
+		
+		if(operationVersion.getVersion() == null){
+			operationVersion.setVersion(1);
+		}
+		
+		detailIter.close();
+		closeDefaultContext(myCtx);
+		return operationVersion;
+	}
+	
+	public String getMaxFormIndex(String formBody)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		
+		DefaultContext myCtx = getDefaultContext();
+		String indexStr = "";
+		
+		#sql [myCtx] {
+		SELECT
+		    SUBSTR(MAX(m.FORM_ID),-4) into :indexStr
+		FROM
+		:{Com_("D_T0_OPERATION_VERSION")} m
+		WHERE
+		    m.FORM_ID LIKE :formBody};
+		 
+		 if(indexStr == null){
+			 indexStr = "0000";
+		 }
+		 
+		closeDefaultContext(myCtx);
+		
+		return indexStr;
+	}
+	
+	
+	public int updateEntity(OperationVersion detail)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		String formId = detail.getFormId();
+		String operationId = detail.getOperationId();
+		String operationName = detail.getOperationName();
+		Date operationTime = SqlDateUtil.getSqlDate(detail.getOperationTime());
+		Integer version = detail.getVersion();
+		String operationContent = detail.getOperationContent();
+
+		#sql [myCtx] {
+			UPDATE
+			:{Com_("D_T0_OPERATION_VERSION")} v
+			SET
+			    v.OPERATION_ID = :operationId,
+			    v.OPERATION_NAME = :operationName,
+			    v.OPERATION_TIME = :operationTime,
+			    v.OPERATION_CONTENT = :operationContent,
+				v.VERSION = :version
+			WHERE 
+				FORM_ID = :formId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+
+	private List<OperationVersion> processIter(DetailIter detailIter) 
+			throws SQLException {
+		List<OperationVersion> detailLst = new ArrayList<OperationVersion>();
+		while(detailIter.next()) {
+			OperationVersion detail = new OperationVersion();
+			detail.setFormId(detailIter.form_id());
+			detail.setOperationId(detailIter.operation_id());
+			detail.setOperationName(detailIter.operation_name());
+			detail.setOperationTime(SqlDateUtil.getUtilDate(detailIter.operation_time()));
+			detail.setVersion(detailIter.version());
+			detail.setOperationContent(detailIter.operation_content());
+			detailLst.add(detail);
+		}
+		return detailLst;
+	}
+}

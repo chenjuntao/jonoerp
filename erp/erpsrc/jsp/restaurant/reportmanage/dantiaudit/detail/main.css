@@ -1,0 +1,100 @@
+#dataGrid {
+	position: absolute;
+    top: 62px;
+    bottom: 0px;
+    width: 100%;
+    height: auto;
+}
+
+td[role="columnheader"] {
+	text-align: center !important; 
+}
+
+td[colid="rownumber"] {
+	text-align: center !important; 
+	min-width: 50px  !important; 
+	max-width: 50px  !important; 
+}
+
+td[colid="form_id"] {
+	text-align: center !important; 
+	min-width: 160px  !important; 
+}
+
+td[colid="form_ref_id"] {
+	text-align: center !important; 
+	min-width: 160px  !important; 
+}
+
+
+td[colid="antiaudit_time"] {
+	text-align: center !important; 
+	min-width: 80px  !important; 
+}
+
+td[colid="antiauditor"] {
+	text-align: center !important; 
+	min-width: 80px  !important; 
+}
+
+td[colid="receive_time"] {
+	text-align: center !important; 
+	min-width: 80px  !important; 
+}
+
+td[colid="antiaudit_branch"] {
+	min-width: 120px  !important; 
+}
+
+td[colid="returner"] {
+	text-align: center !important; 
+	min-width: 80px  !important; 
+}
+
+td[colid="provider"] {
+	min-width: 80px  !important; 
+}
+
+td[colid="in_storage"] {
+	min-width: 150px  !important; 
+}
+
+td[colid="out_storage"] {
+	min-width: 150px  !important; 
+}
+
+td[colid="requester"] {
+	min-width: 120px  !important; 
+}
+
+td[colid="item_name"] {
+	min-width: 100px  !important; 
+}
+
+td[colid="item_id"] {
+	text-align: center !important; 
+	min-width: 80px  !important; 
+}
+
+td[colid="return_reason"] {
+	min-width: 120px  !important; 
+}
+
+td[colid="return_count"] {
+	min-width: 80px  !important; 
+}
+
+td[colid="return_pay_amt"] {
+	min-width: 80px  !important; 
+}
+
+td[colid="antiaudit_receive_count"] {
+	text-align: right !important; 
+	min-width: 100px  !important; 
+}
+
+td[colid="antiaudit_pay_amt"] {
+	text-align: right !important; 
+	min-width: 100px  !important; 
+}
+

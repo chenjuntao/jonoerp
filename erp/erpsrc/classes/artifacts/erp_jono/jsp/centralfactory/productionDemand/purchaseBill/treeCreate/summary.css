@@ -1,0 +1,53 @@
+body {
+	overflow: hidden;
+}
+
+th[role="columnheader"] {
+	text-align: center;
+}
+
+.field-formId, .field-itemId, .field-onTheWayCount,.field-itemCount,
+.field-realCount, .field-netRequirement, .field-safeCount, .field-auditTime,.field-item_count,
+.field-itemDimension	
+	{
+	text-align: center !important;
+}
+
+#deliveryTc {
+	position: absolute;
+	right: 0;
+	top: 92px;
+	bottom: 0;
+	width: 100%;
+	height: auto;
+}
+
+.dgrid-column-set-0 {
+	width: 250px;
+}
+
+.dijitTabPane {
+	padding: 0px !important;
+}
+
+.field-rownumber{
+	width: 100px;
+}
+
+.field-formId{
+	width: 180px;
+}
+
+.field-provider{
+	width: 130px;
+}
+
+.field-itemName{
+	width: 100px;
+}
+
+.field-itemDimension,.field-itemSpecification,.field-item_count,.field-safeCount,.field-realCount,.field-onTheWayCount,.field-netRequirement
+,.field-itemId{
+	width: 70px;
+}
+

@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE struts PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN"
+    "http://struts.apache.org/dtds/struts-2.0.dtd">
+
+<struts>
+    <package name="reportmanage_special_losscheck" namespace="/reportmanage/special/losscheck" extends="trust-default">
+		<action name="mainView" class="action.reportmanage.SpecialReportManageAction">
+			<result name="success">/jsp/restaurant/losscheck/main.jsp</result>
+		</action>
+	</package>
+	
+	<package name="reportmanage_special_branchincome" namespace="/reportmanage/special/branchincome" extends="trust-default">
+		<action name="mainView" class="action.reportmanage.SpecialReportManageAction">
+			<result name="success">/jsp/lc/reportmanage/special/bincome/main.jsp</result>
+		</action>
+	</package>
+	
+	<package name="reportmanage_special_departmentincome" namespace="/reportmanage/special/departmentincome" extends="trust-default">
+		<action name="mainView" class="action.reportmanage.SpecialReportManageAction">
+			<result name="success">/jsp/lc/reportmanage/special/departmentincome/main.jsp</result>
+		</action>
+	</package>
+	
+	<package name="reportmanage_special_tincome" namespace="/reportmanage/special/tincome" extends="trust-default">
+		<action name="mainView" class="action.reportmanage.SpecialReportManageAction">
+			<result name="success">/jsp/lc/reportmanage/special/tincome/main.jsp</result>
+		</action>
+	</package>
+	
+	<package name="reportmanage_special_foodcrt" namespace="/reportmanage/special/foodcrt" extends="trust-default">
+		<action name="mainView" class="action.reportmanage.SpecialReportManageAction">
+			<result name="success">/jsp/businessquery/ctrQuery/main.jsp</result>
+		</action>
+	</package>
+	
+	<package name="reportmanage_special_common" namespace="/reportmanage/special/common" extends="trust-default">
+		<action name="doQuery" method="doQuery" class="action.reportmanage.SpecialReportManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="export" method="export" class="action.reportmanage.SpecialReportManageAction">
+			<result type="json" />
+		</action>
+	</package>
+</struts>
+

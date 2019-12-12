@@ -1,0 +1,221 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on Aug 5, 2015 by liyzh
+ * Last edited on Aug 5, 2015 by liyzh
+ * 
+ * 说明： 物流中心处理配送差异
+ */
+package logic.module.lc;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import pojo.form.ShippingDetail;
+import pojo.form.ShippingHeader;
+import sqlj.runtime.ref.DefaultContext;
+
+import com.tanry.framework.acl.NoPrivilegeException;
+import com.tanry.framework.util.SqlDateUtil;
+
+public class DisDiffHandleBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(DisDiffHandleBean.class);
+
+	#sql private iterator HeaderIter(
+			String form_id, String form_ref_id,
+			String provider_id,
+			String provider,
+			Date receive_time,
+			String requester_id,
+			String requester,
+			String request_address,
+			String form_maker_id,
+			String form_maker,
+			Date form_time,
+			String auditor_id,
+			String auditor,
+			Date audit_time,
+			String inputer_id,
+			String inputer,
+			Date input_time,
+			String form_note,
+			Double all_pay_amt,
+			String max_pay_item,
+			String out_storage_id,
+			String out_storage,
+			String in_storage_id,
+			String in_storage);
+	
+	public List<ShippingHeader> query()
+			throws NoPrivilegeException,SQLException,NoConnection {
+		//配退是最后的标志，如果该配送单已经做了配退，那么该单就不能再做差异处理。
+		//同时，如果要做配退，则必须这张配送单是没有差异的
+		
+		DefaultContext myCtx = getDefaultContext();
+		HeaderIter headerIter = null;
+		#sql [myCtx] headerIter = {
+			WITH
+			    diff AS
+			    (
+			        SELECT
+			            h.FORM_ID
+			        FROM
+			        :{Com_("D_T1_SHIPPING_DETAIL")} d
+			        INNER JOIN
+			        :{Com_("D_T1_SHIPPING_HEADER")} h
+			        ON
+			            h.FORM_ID = d.FORM_ID
+			        AND NVL(h.DIFFERENT_STATUS, 'null') != '已处理差异'
+	        		AND h.RETURN_STATUS is null
+			        WHERE
+			            d.RECEIVE_COUNT IS NOT NULL
+			        AND d.DELIVERY_COUNT != d.RECEIVE_COUNT
+			        GROUP BY
+			            h.FORM_ID
+			    )
+			SELECT
+			    h.*
+			FROM
+			:{Com_("D_T1_SHIPPING_HEADER")} h
+			INNER JOIN
+			    diff f
+			ON
+			    f.form_id = h.form_id
+			ORDER BY
+			    h.FORM_TIME DESC,
+			    h.form_id
+		};
+		List<ShippingHeader> headerLst = processIter(headerIter);
+		headerIter.close();
+		closeDefaultContext(myCtx);
+		return headerLst;
+	}
+
+	private List<ShippingHeader> processIter(HeaderIter headerIter) 
+			throws SQLException {
+		List<ShippingHeader> headerLst = new ArrayList<ShippingHeader>();
+		while(headerIter.next()) {
+			ShippingHeader header = new ShippingHeader();
+			header.setFormId(headerIter.form_id());
+			header.setFormRefId(headerIter.form_ref_id());
+			header.setProviderId(headerIter.provider_id());
+			header.setProvider(headerIter.provider());
+			header.setReceiveTime(SqlDateUtil.getUtilDate(headerIter.receive_time()));
+			header.setRequesterId(headerIter.requester_id());
+			header.setRequester(headerIter.requester());
+			header.setRequestAddress(headerIter.request_address());
+			header.setFormMakerId(headerIter.form_maker_id());
+			header.setFormMaker(headerIter.form_maker());
+			header.setFormTime(SqlDateUtil.getUtilDate(headerIter.form_time()));
+			header.setAuditorId(headerIter.auditor_id());
+			header.setAuditor(headerIter.auditor());
+			header.setAuditTime(SqlDateUtil.getUtilDate(headerIter.audit_time()));
+			header.setInputerId(headerIter.inputer_id());
+			header.setInputer(headerIter.inputer());
+			header.setInputTime(SqlDateUtil.getUtilDate(headerIter.input_time()));
+			header.setFormNote(headerIter.form_note());
+			header.setAllPayAmt(headerIter.all_pay_amt());
+			header.setMaxPayItem(headerIter.max_pay_item());
+			header.setOutStorageId(headerIter.out_storage_id());
+			header.setOutStorage(headerIter.out_storage());
+			header.setInStorageId(headerIter.in_storage_id());
+			header.setInStorage(headerIter.in_storage());
+			headerLst.add(header);
+		}
+		return headerLst;
+	}
+
+	#sql private iterator DetailIter(String form_id,
+			String item_id,
+			String item_name,
+			String item_dimension,
+			String item_specification,
+			String item_category,
+			Double packaging_factor,
+			String packaging_unit, Double packaging_count,
+			Double request_count,
+			Double shipping_count,
+			Double delivery_count,
+			Double receive_count,
+			Double different_count,
+			String different_reason,
+			Double item_unit_price,
+			Double pay_amt);
+	
+	public List<ShippingDetail> queryDetail(String formId)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		DetailIter detailIter = null;
+		#sql [myCtx] detailIter = {
+			SELECT
+			    d.FORM_ID,
+			    d.ITEM_ID,
+			    d.ITEM_NAME,
+			    d.ITEM_DIMENSION,
+			    d.ITEM_SPECIFICATION,
+			    d.ITEM_CATEGORY,
+			    d.PACKAGING_FACTOR,
+			    d.PACKAGING_UNIT,
+			    d.PACKAGING_COUNT,
+			    d.REQUEST_COUNT,
+			    d.SHIPPING_COUNT,
+			    d.DELIVERY_COUNT,
+			    d.RECEIVE_COUNT,
+			    d.DIFFERENT_COUNT,
+			    d.DIFFERENT_REASON,
+			    d.ITEM_UNIT_PRICE,
+			    ROUND(d.ITEM_UNIT_PRICE * d.DIFFERENT_COUNT,2)PAY_AMT,
+			    d.EXPIRED_TIME
+			FROM
+			:{Com_("D_T1_SHIPPING_DETAIL")} d
+			WHERE
+			    d.FORM_ID = :formId
+			AND d.RECEIVE_COUNT IS NOT NULL
+			AND d.DELIVERY_COUNT != d.RECEIVE_COUNT
+			ORDER BY
+			    d.ITEM_ID};
+		List<ShippingDetail> detailLst = processDetailIter(detailIter);
+		detailIter.close();
+		closeDefaultContext(myCtx);
+		return detailLst;
+	}
+	
+	private List<ShippingDetail> processDetailIter(DetailIter detailIter) 
+			throws SQLException {
+		List<ShippingDetail> detailLst = new ArrayList<ShippingDetail>();
+		while(detailIter.next()) {
+			ShippingDetail detail = new ShippingDetail();
+			detail.setFormId(detailIter.form_id());
+			detail.setItemId(detailIter.item_id());
+			detail.setItemName(detailIter.item_name());
+			detail.setItemDimension(detailIter.item_dimension());
+			detail.setItemSpecification(detailIter.item_specification());
+			detail.setItemCategory(detailIter.item_category());
+			detail.setPackagingFactor(detailIter.packaging_factor());
+			detail.setPackagingUnit(detailIter.packaging_unit());
+			detail.setPackagingCount(detailIter.packaging_count());
+			detail.setRequestCount(detailIter.request_count());
+			detail.setShippingCount(detailIter.shipping_count());
+			detail.setDeliveryCount(detailIter.delivery_count());
+			detail.setReceiveCount(detailIter.receive_count());
+			detail.setDifferentCount(detailIter.different_count());
+			detail.setDifferentReason(detailIter.different_reason());
+			detail.setItemUnitPrice(detailIter.item_unit_price());
+			detail.setPayAmt(detailIter.pay_amt());
+			detailLst.add(detail);
+		}
+		return detailLst;
+	}
+}

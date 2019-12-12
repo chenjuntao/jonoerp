@@ -1,0 +1,39 @@
+#dataGrid {
+	position: absolute;
+	right: 0;
+	top: 60px;
+	bottom: 0px;
+	width: 100%;
+	height: auto;
+}
+
+#commandTable {
+	position: absolute;
+	bottom: 0;
+	width: 100%;
+}
+
+.dgrid-cell {
+	width: 85px;
+}
+
+.dgrid-column-set-0 {
+	width: 280px;
+}
+
+.field-inputer{
+	width: 100px;
+}
+
+.field-requester, .field-provider,.field-formId{
+	width: 120px;
+}
+
+.field-inStorage,.field-outStorage{
+	width: 160px;
+}
+
+.field-maxPayItem {
+	width: 150px;
+}
+

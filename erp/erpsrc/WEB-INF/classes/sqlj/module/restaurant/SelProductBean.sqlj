@@ -1,0 +1,160 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on Apr 30, 2015 by liyzh
+ * Last edited on Apr 30, 2015 by liyzh
+ * 
+ * 说明：生成报损单时选择出品（餐厅）或半成品（央厂）
+ */
+package logic.module.restaurant;
+
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+import java.sql.Date;
+import com.tanry.framework.util.SqlDateUtil;
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import sqlj.runtime.ref.DefaultContext;
+
+import vo.restaurant.RequestItemVO;
+import com.tanry.framework.acl.NoPrivilegeException;
+import com.tanry.framework.util.constant.ItemType;
+
+public class SelProductBean extends ConnectionPool {
+	
+	public static Logger log = Logger.getLogger(SelProductBean.class);
+	
+	#sql private iterator ItemIter(
+			String item_id,
+			String item_name, 
+			String query_code,
+			String item_category,
+			String item_dimension,
+			String item_specification, 
+			Double item_price,
+			Double item_unit_price,
+			String itemCategoryName,
+			String workshop,
+			Double productionCycle,
+			Date businessDate, 
+			Date completeTime
+	);
+	
+	/**
+	 * 生成报损单时选择出品（餐厅）或半成品（央厂），获取成本价
+	 */
+	public List<RequestItemVO> queryProduct(String itemName, String itemType ,String priceType)   
+			throws NoPrivilegeException,SQLException,NoConnection {
+		itemName = "%" + itemName + "%";
+		String query = " m.ITEM_TYPE = '" + itemType + "'";
+		
+		DefaultContext myCtx = getDefaultContext();
+		ItemIter itemIter = null;
+		#sql [myCtx] itemIter = {
+				SELECT
+			    m.ITEM_ID,
+			    m.ITEM_NAME,
+			    m.QUERY_CODE,
+			    m.CATEGORY_ID AS item_category,
+			    m.ITEM_DIMENSION,
+			    m.ITEM_SPECIFICATION,
+		    t.cost_price                                  	AS ITEM_PRICE,
+		    p3.ITEM_PRICE                    				AS ITEM_UNIT_PRICE,
+			    c.CATEGORY_NAME                                  itemCategoryName,
+			    NVL(fw.WORKSHOP,fws.WORKSHOP)                    workshop,
+			    bd.BUSINESS_DATE                                 businessDate,
+			    NVL(pc.PRODUCTION_CYCLE,0)                       productionCycle,
+			    bd.BUSINESS_DATE + NVL(pc.PRODUCTION_CYCLE,0)    completeTime
+			FROM
+				:{Com_("D_T2_ITEM_META")} m
+			LEFT JOIN
+			    (
+			        SELECT
+			            t.THERAPY_ID,
+			            ROUND(SUM(t.ITEM_GROSS_COUNT*p.ITEM_PRICE), 2) AS cost_price
+			        FROM
+			        :{Com_("D_T2_THERAPY")} t
+			        LEFT JOIN
+			        :{Com_("D_T2_ITEM_PRICE")} p
+			        ON
+			            p.ITEM_ID = t.ITEM_ID
+			        AND p.PRICE_TYPE = 'PURCHASE'
+			        GROUP BY
+			            t.THERAPY_ID) t
+			ON
+			    t.THERAPY_ID = m.ITEM_ID
+			LEFT JOIN
+				:{Com_("D_T2_BRANCH")} bd
+			ON
+			    bd.BRANCH_ID = 'F00'
+			LEFT JOIN
+				:{Com_("D_T2_PRODUCTION_CYCLE")} pc
+			ON
+			    pc.ITEM_ID = m.item_id
+			LEFT JOIN
+				:{Com_("D_T2_ITEM_PRICE")} p3
+	    	ON
+	    	    p3.PRICE_TYPE = :priceType
+	    	AND p3.ITEM_ID = m.ITEM_ID
+	    	AND p3.IS_CURRENT =1
+			LEFT JOIN
+				:{Com_("D_T2_DELIVERY_UNIT")} u
+			ON
+			    m.item_id = u.ITEM_ID
+			LEFT JOIN
+				:{Com_("D_T2_ITEM_CATEGORY")} c
+			ON
+			    m.CATEGORY_ID = c.CATEGORY_ID
+			LEFT JOIN
+				:{Com_("D_T2_ITEM_WORKSHOP")} wp
+			ON
+			    m.ITEM_ID=wp.ITEM_ID
+			LEFT JOIN
+				:{Com_("D_T2_FACTORY_WORKSHOP")} fw
+			ON
+			    fw.WORK_ORDER_ID=wp.WORK_ORDER_ID
+			LEFT JOIN
+				:{Com_("D_T2_FACTORY_WORKSHOP")} fws
+			ON
+			    fws.FACTORY_ID ='F00'
+			AND fws.PRIORITY ='0'
+		WHERE
+			:{query :: 1=1}
+			AND m.ENABLED = 1
+	        AND (
+	                m.ITEM_ID LIKE :itemName
+	            OR  m.ITEM_NAME LIKE :itemName)
+				ORDER BY
+				    WORKSHOP
+		};
+		List<RequestItemVO> itemLst = new ArrayList<RequestItemVO>();
+		while(itemIter.next()) {
+			RequestItemVO item = new RequestItemVO();
+			item.setItemId(itemIter.item_id());
+			item.setItemName(itemIter.item_name());
+			item.setQueryCode(itemIter.query_code());
+			item.setItemCategory(itemIter.item_category());
+			item.setItemDimension(itemIter.item_dimension());
+			item.setItemSpecification(itemIter.item_specification());
+			item.setItemPrice(itemIter.item_price());
+			item.setItemUnitPrice(itemIter.item_unit_price());
+			item.setItemCategoryName(itemIter.itemCategoryName());
+			item.setWorkshop(itemIter.workshop());
+			item.setProductionCycle(itemIter.productionCycle());
+			item.setBusinessDate(SqlDateUtil.getUtilDate(itemIter.businessDate()));
+			item.setCompleteTime(SqlDateUtil.getUtilDate(itemIter.completeTime()));
+			itemLst.add(item);
+		}
+		itemIter.close();
+		closeDefaultContext(myCtx);
+		return itemLst;
+	}
+}

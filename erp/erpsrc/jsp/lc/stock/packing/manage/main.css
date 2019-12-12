@@ -1,0 +1,87 @@
+#billTree {
+	position: absolute;
+	left: 0;
+	right: 0;
+	top: 30px;
+	bottom: 0px;
+	width: 20%;
+	height: auto; /* override default height: 30em; in dgrid.css */
+}
+
+#billInfo {
+	position: absolute;
+	right: 0;
+	top: 30px;
+	bottom: 0px;
+	width: 80%;
+	height: auto; /* override default height: 30em; in dgrid.css */
+}
+
+#dataGrid {
+	position: absolute;
+	right: 0;
+	top: 150px;
+	bottom: 0px;
+	width: 100%;
+	height: auto; /* override default height: 30em; in dgrid.css */
+}
+
+#commandTable {
+	position: absolute;
+	bottom: 0;
+	width: 100%;
+}
+
+.dgrid-column-set-0 {
+	width: 350px;
+}
+
+th[role="columnheader"] {
+	text-align: center;
+}
+
+.dgrid-cell {
+	/* 	width: 80px; make all the columns 80px wide */
+	vertical-align: middle;
+}
+
+.field-rownumber, .field-itemId, .field-itemDimension {
+	text-align: center;
+}
+
+.field-rownumber {
+	width: 40px;
+}
+
+.field-boxName {
+	width: 180px;
+}
+
+.field-branchId {
+	width: 80px;
+}
+
+.field-itemId {
+	width: 80px;
+}
+
+.field-itemName {
+	width: 150px;
+}
+
+.field-itemCategory {
+	width: 90px;
+}
+
+.field-itemDimension {
+	width: 60px;
+}
+
+.field-itemSpecification {
+	width: 80px;
+}
+
+.grid-number {
+	width: 70px;
+	text-align: right;
+}

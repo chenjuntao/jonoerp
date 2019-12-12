@@ -1,0 +1,1352 @@
+//===============================================
+//
+// Copyright (c) 2014
+// Tanry Electronic Technology Co., Ltd.
+// ChangSha, China
+//
+// All Rights Reserved.
+//
+// First created on 2014.8.7 by cjt
+// Last edited on 2014.8.25 by lyz
+//
+// Comments:read:{Com_("D_T2_THERAPY")} table.
+// 说明：读取配方明细信息表。
+//
+//===============================================
+
+package logic.store;
+
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
+
+import net.sf.json.JSONArray;
+import net.sf.json.JSONObject;
+import org.apache.commons.lang3.StringUtils;
+
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+//import org.apache.commons.lang.StringUtils;
+import pojo.store.Therapy;
+import sqlj.runtime.ref.DefaultContext;
+
+import com.tanry.business.module.hq.config.item.vo.ItemVO;
+import com.tanry.framework.acl.NoPrivilegeException;
+import com.tanry.framework.util.TextUtil;
+
+public class TherapyBean extends ConnectionPool
+{
+	
+	public int saveEntity(Therapy therapy)
+			throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		String therapyId = therapy.getTherapyId();
+		String therapyName = therapy.getTherapyName();
+		String therapyDimension = therapy.getTherapyDimension();
+		String itemId = therapy.getItemId();
+		String itemName = therapy.getItemName();
+		String itemDimension = therapy.getItemDimension();
+		Double unitConvertFactor = therapy.getUnitConvertFactor();
+		Double itemCount = therapy.getItemCount();
+		Double itemUsageRate = therapy.getItemUsageRate();
+		Double itemGrossCount = therapy.getItemGrossCount();
+		Double itemAmt = therapy.getItemAmt();
+		String itemType = therapy.getItemType();
+		String owner = therapy.getOwner();
+
+		#sql [myCtx] {
+			INSERT
+			INTO
+			:{Com_("D_T2_THERAPY")}
+			    (
+			        THERAPY_ID,
+			        THERAPY_NAME,
+			        THERAPY_DIMENSION,
+			        ITEM_ID,
+			        ITEM_NAME,
+			        ITEM_DIMENSION,
+			        UNIT_CONVERT_FACTOR,
+			        ITEM_COUNT,
+			        ITEM_USEAGE_RATE,
+			        ITEM_GROSS_COUNT,
+			        ITEM_AMT,
+			        ITEM_TYPE,
+			        OWNER
+			    )
+			    VALUES
+			    (
+			    	:therapyId,
+			    	:therapyName,
+			        :therapyDimension,
+			    	:itemId,
+			    	:itemName,
+			        :itemDimension,
+			        :unitConvertFactor,
+			    	:itemCount,
+			    	:itemUsageRate,
+			        :itemGrossCount,
+			    	:itemAmt,
+			        :itemType, :owner
+			    )
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public int updateEntity(Therapy therapy)
+			throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		String therapyId = therapy.getTherapyId();
+		String therapyName = therapy.getTherapyName();
+		String therapyDimension = therapy.getTherapyDimension();
+		String itemId = therapy.getItemId();
+		String itemName = therapy.getItemName();
+		String itemDimension = therapy.getItemDimension();
+		Double unitConvertFactor = therapy.getUnitConvertFactor();
+		Double itemCount = therapy.getItemCount();
+		Double itemUsageRate = therapy.getItemUsageRate();
+		Double itemGrossCount = therapy.getItemGrossCount();
+		Double itemAmt = therapy.getItemAmt();
+		String itemType = therapy.getItemType();
+		String owner = therapy.getOwner();
+
+		#sql [myCtx] {
+			UPDATE
+			:{Com_("D_T2_THERAPY")}
+			SET
+			    THERAPY_DIMENSION = :therapyDimension,
+			    ITEM_DIMENSION = :itemDimension,
+			    UNIT_CONVERT_FACTOR = :unitConvertFactor,
+			    ITEM_COUNT = :itemCount,
+			    ITEM_USEAGE_RATE = :itemUsageRate,
+			    ITEM_GROSS_COUNT = :itemGrossCount,
+			    ITEM_AMT = :itemAmt
+			WHERE 
+		    	THERAPY_ID = :therapyId
+			AND	ITEM_ID = :itemId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+
+	public int updateEntity(Therapy therapy,Double ratio)
+			throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		String itemId = therapy.getItemId();
+		String itemDimension = therapy.getItemDimension();
+		Double unitConvertFactor = therapy.getUnitConvertFactor();
+		Double itemCount = therapy.getItemCount();
+		Double itemUsageRate = therapy.getItemUsageRate();
+		Double itemGrossCount = therapy.getItemGrossCount();
+
+		#sql [myCtx] {
+			UPDATE
+				:{Com_("D_T2_THERAPY")} t
+			SET
+			    t.ITEM_DIMENSION = :itemDimension,
+			    t.UNIT_CONVERT_FACTOR = :unitConvertFactor,
+			    t.ITEM_COUNT =t.ITEM_COUNT*:ratio,
+			    t.ITEM_GROSS_COUNT =t.ITEM_GROSS_COUNT*:ratio
+			WHERE 
+		    	ITEM_ID = :itemId
+		};
+		
+		#sql [myCtx] {
+			UPDATE
+				:{Com_("D_T2_THERAPY")} t
+			SET
+				ITEM_GROSS_COUNT = ITEM_COUNT*100/(ITEM_USEAGE_RATE*UNIT_CONVERT_FACTOR)
+			WHERE 
+		    	ITEM_ID = :itemId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	/**
+	 * 删除除此之外的其它记录
+	 */
+	public int deleteExcept(String therapyId, List<String> itemIdLst)
+			throws NoPrivilegeException, SQLException, NoConnection {
+		String query = " 1=1 ";
+		if (!itemIdLst.isEmpty()) {
+			query = " ITEM_ID NOT IN ('" + StringUtils.join(itemIdLst, ",").replaceAll(",", "','") + "') ";
+		}
+		
+		DefaultContext myCtx = getDefaultContext();
+		#sql [myCtx] {
+			DELETE
+			FROM
+			:{Com_("D_T2_THERAPY")}
+			WHERE
+		    	THERAPY_ID = :therapyId
+			AND	:{query :: 1=1}
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public int deleteEntity(String therapyId)
+			throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		#sql [myCtx] {
+			DELETE
+			FROM
+			:{Com_("D_T2_THERAPY")}
+			WHERE
+		    	THERAPY_ID = :therapyId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	#sql public static iterator TherapyIter(
+		String therapy_id, 
+		String therapy_name, 
+		String item_id, 
+		String item_name, 
+		String stock_dimension, 
+		String item_dimension, 
+		Double unit_convert_factor,
+		String item_category, 
+		Double item_count, 
+		Double item_useage_rate,
+		Double item_gross_count, 
+		Double item_price, 
+		Double item_amt,
+		String item_type
+	);
+
+	/**
+	 * 根据ID获取配方明细信息项
+	 * 
+	 * @param therapyId
+	 * @param itemId
+	 */
+	public Therapy queryDetail(String therapyId, String itemId) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		Therapy therapy = null;
+		DefaultContext myCtx = getDefaultContext();
+		TherapyIter therapyIter = null;
+		if (myCtx != null)
+		{
+			#sql [myCtx] therapyIter = {
+				SELECT
+				    t.*,
+				    '' AS stock_dimension,
+				    '' AS item_category,
+				    0 AS item_price
+				FROM
+				:{Com_("D_T2_THERAPY")} t
+				WHERE
+				    THERAPY_ID = :therapyId
+				AND ITEM_ID = :itemId
+			};
+			if(therapyIter.next()) {
+				therapy = new Therapy();
+				therapy.setTherapyId(therapyIter.therapy_id());
+				therapy.setItemId(therapyIter.item_id());
+				therapy.setItemName(therapyIter.item_name());
+				therapy.setItemDimension(therapyIter.item_dimension());
+				therapy.setItemCount(therapyIter.item_count());
+			}
+			therapyIter.close();
+		}
+		else
+		{
+			throw new NoConnection();
+		}
+		closeDefaultContext(myCtx);
+		return therapy;
+	}
+
+	#sql public static iterator TherapyItem(
+			String therapy_id, 
+			String therapy_name, 
+			String item_id, 
+			String item_name, 
+			String stock_dimension,  
+			String item_dimension, 
+			Double unit_convert_factor, 
+			String item_category, 
+			Double item_count, 
+			Double item_useage_rate,
+			Double item_gross_count,
+			Double purchase_price,
+			Double purchaseAmt,
+			Double benchmark_price,
+			Double benchmarkAmt,
+			Double item_amt,
+			String item_type, 
+			String existFlag
+		);
+	
+	//根据配方编码获取属于该配方的明细信息项集合
+	public List<Therapy> GetTherapysById(String therapyId,String hasSum) 
+			throws NoPrivilegeException,SQLException,NoConnection
+	{
+		List<Therapy> result = new ArrayList<Therapy>();
+		DefaultContext myCtx = getDefaultContext();
+		TherapyItem therapyIter = null;
+		if (myCtx != null)
+		{
+			#sql [myCtx] therapyIter = {
+				SELECT
+				  	t.THERAPY_ID,
+				    t.THERAPY_NAME,
+				    t.THERAPY_DIMENSION,
+				    t.ITEM_ID,
+				    m.ITEM_NAME,
+				    t.ITEM_DIMENSION,
+				    t.UNIT_CONVERT_FACTOR,
+				    t.ITEM_COUNT,
+				    t.ITEM_USEAGE_RATE,
+				    DECODE(NVL(t.UNIT_CONVERT_FACTOR,0),0,'',ROUND(t.ITEM_COUNT*100/t.ITEM_USEAGE_RATE,2)) ITEM_GROSS_COUNT,
+				    t.ITEM_AMT,
+				    t.ITEM_TYPE,
+				    t.OWNER,
+				    m.ITEM_DIMENSION                               AS stock_dimension,
+				    m.CATEGORY_ID                                   AS item_category,
+				    p.ITEM_PRICE                                    AS purchase_price,
+				    SUM(ROUND(t.ITEM_GROSS_COUNT* p.ITEM_PRICE,4))     purchaseAmt ,
+				    bp.ITEM_PRICE                                   AS benchmark_price,
+				    SUM(ROUND(t.ITEM_GROSS_COUNT*bp.ITEM_PRICE ,4))    benchmarkAmt ,
+				    DECODE(m.ITEM_ID,NULL,'不存在','')                    existFlag
+				FROM
+				:{Com_("d_t2_therapy")} t
+				LEFT JOIN
+				:{Com_("D_T2_ITEM_META")} m
+				ON
+				    m.ITEM_ID = t.ITEM_ID
+				LEFT JOIN
+				:{Com_("D_T2_ITEM_PRICE")} p
+				ON
+				    t.ITEM_ID = p.ITEM_ID
+				AND p.PRICE_TYPE = 'PURCHASE'  --进货价
+				AND p.IS_CURRENT =1
+				LEFT JOIN
+				:{Com_("D_T2_ITEM_PRICE")} bp
+				ON
+				    t.ITEM_ID = bp.ITEM_ID
+				AND bp.PRICE_TYPE = 'BENCHMARK'  --标准价
+				AND bp.IS_CURRENT =1
+				WHERE 
+					t.therapy_id = :therapyId
+				GROUP BY
+			    GROUPING SETS( ( t.THERAPY_ID, t.THERAPY_NAME, t.THERAPY_DIMENSION, t.ITEM_ID, m.ITEM_NAME,
+			    	    t.ITEM_DIMENSION, t.UNIT_CONVERT_FACTOR, t.ITEM_COUNT, t.ITEM_USEAGE_RATE, t.ITEM_GROSS_COUNT,
+			    	    t.ITEM_AMT, t.ITEM_TYPE, t.OWNER, m.ITEM_DIMENSION, m.CATEGORY_ID ,p.ITEM_PRICE, ROUND
+			    	    (t.ITEM_GROSS_COUNT* p.ITEM_PRICE,4) ,bp.ITEM_PRICE, ROUND(t.ITEM_GROSS_COUNT*bp.ITEM_PRICE ,4)
+			    	    , DECODE(m.ITEM_ID,NULL,'不存在','')) ,NULL)
+				ORDER BY
+					t.ITEM_ID
+			};
+			while(therapyIter.next())
+			{
+				Therapy therapy = new Therapy();
+				therapy.setTherapyId(therapyIter.therapy_id());
+				therapy.setTherapyName(therapyIter.therapy_name());
+				therapy.setItemId(therapyIter.item_id());
+				therapy.setItemName(therapyIter.item_name());
+				therapy.setStockDimension(therapyIter.stock_dimension());
+				therapy.setItemDimension(therapyIter.item_dimension());
+				therapy.setUnitConvertFactor(therapyIter.unit_convert_factor());
+				therapy.setItemCategory(therapyIter.item_category());
+				therapy.setItemCount(therapyIter.item_count());
+				therapy.setItemUsageRate(therapyIter.item_useage_rate());
+				therapy.setItemGrossCount(therapyIter.item_gross_count());
+				therapy.setItemAmt(therapyIter.item_amt());
+				therapy.setItemType(therapyIter.item_type());
+				therapy.setPurchasePrice(therapyIter.purchase_price());
+				therapy.setPurchaseAmt(therapyIter.purchaseAmt());
+				therapy.setBenchmarkAmt(therapyIter.benchmarkAmt());
+				therapy.setBenchmarkPrice(therapyIter.benchmark_price());
+				therapy.setExistFlag(therapyIter.existFlag());
+				result.add(therapy);
+			}
+			
+			if(result.size()>0){
+				if(TextUtil.isEmpty(hasSum)){
+					result.remove(result.size()-1);
+				}
+			}
+			
+			therapyIter.close();
+		}
+		else
+		{
+			throw new NoConnection();
+		}
+		closeDefaultContext(myCtx);
+		return result;
+	}
+	
+	//根据配方编码获取属于该配方的明细信息项集合
+	public List<Therapy> GetTherapysById(String therapyId) 
+			throws NoPrivilegeException,SQLException,NoConnection
+	{
+		List<Therapy> result = new ArrayList<Therapy>();
+		DefaultContext myCtx = getDefaultContext();
+		TherapyItem therapyIter = null;
+		if (myCtx != null)
+		{
+			#sql [myCtx] therapyIter = {
+				SELECT
+					t.THERAPY_ID,
+				    t.THERAPY_NAME,
+				    t.THERAPY_DIMENSION,
+				    t.ITEM_ID,
+				    m.ITEM_NAME ITEM_NAME,
+				    t.ITEM_DIMENSION,
+				    t.UNIT_CONVERT_FACTOR,
+				    t.ITEM_COUNT,
+				    t.ITEM_USEAGE_RATE,
+				    t.ITEM_GROSS_COUNT,
+				    t.ITEM_AMT,
+				    t.ITEM_TYPE,
+				    t.OWNER,
+				    m.ITEM_DIMENSION AS stock_dimension,
+				    m.CATEGORY_ID AS item_category,
+				    p.ITEM_PRICE AS purchase_price,
+				    bp.ITEM_PRICE AS benchmark_price,
+				    '' purchaseAmt,
+				    '' benchmarkAmt,
+				    decode(m.ITEM_ID,null,'不存在','') existFlag
+				FROM
+				:{Com_("d_t2_therapy")} t
+				LEFT JOIN
+				:{Com_("D_T2_ITEM_META")} m
+				ON
+				    m.ITEM_ID = t.ITEM_ID
+				LEFT JOIN
+				:{Com_("D_T2_ITEM_PRICE")} p
+				ON
+				    t.ITEM_ID = p.ITEM_ID
+				AND p.PRICE_TYPE = 'PURCHASE'  --进货价
+				AND p.IS_CURRENT =1
+				LEFT JOIN
+				:{Com_("D_T2_ITEM_PRICE")} bp
+				ON
+				    t.ITEM_ID = bp.ITEM_ID
+				AND bp.PRICE_TYPE = 'BENCHMARK'  --标准价
+				AND bp.IS_CURRENT =1
+				WHERE 
+					t.therapy_id = :therapyId
+				ORDER BY
+					t.ITEM_ID
+			};
+			while(therapyIter.next())
+			{
+				Therapy therapy = new Therapy();
+				therapy.setTherapyId(therapyIter.therapy_id());
+				therapy.setTherapyName(therapyIter.therapy_name());
+				therapy.setItemId(therapyIter.item_id());
+				therapy.setItemName(therapyIter.item_name());
+				therapy.setStockDimension(therapyIter.stock_dimension());
+				therapy.setItemDimension(therapyIter.item_dimension());
+				therapy.setUnitConvertFactor(therapyIter.unit_convert_factor());
+				therapy.setItemCategory(therapyIter.item_category());
+				therapy.setItemCount(therapyIter.item_count());
+				therapy.setItemUsageRate(therapyIter.item_useage_rate());
+				therapy.setItemGrossCount(therapyIter.item_gross_count());
+				therapy.setItemAmt(therapyIter.item_amt());
+				therapy.setItemType(therapyIter.item_type());
+				therapy.setPurchasePrice(therapyIter.purchase_price());
+				therapy.setBenchmarkPrice(therapyIter.benchmark_price());
+				therapy.setPurchaseAmt(therapyIter.purchaseAmt());
+				therapy.setBenchmarkAmt(therapyIter.benchmarkAmt());
+				therapy.setExistFlag(therapyIter.existFlag());
+				result.add(therapy);
+			}
+			therapyIter.close();
+		}
+		else
+		{
+			throw new NoConnection();
+		}
+		closeDefaultContext(myCtx);
+		return result;
+	}
+	
+	
+	#sql public static iterator TherapyItems(String item_id,String therapy_id, Double item_gross_count, Double unit_convert_factor,
+			String item_name,String therapy_name, String item_specification,  String item_dimension, String therapy_dimension,  String item_category, Double benchmark_price);
+	//根据配方编码获取属于该配方的明细信息项集合
+	public List<Therapy> GetTherapyItems(String therapyIds) 
+			throws NoPrivilegeException,SQLException,NoConnection
+	{
+		String query = " t.THERAPY_ID IN ('" + therapyIds.replaceAll(",", "','") + "') ";
+		List<Therapy> result = new ArrayList<Therapy>();
+		DefaultContext myCtx = getDefaultContext();
+		TherapyItems therapyIter = null;
+		if (myCtx != null)
+		{
+			#sql [myCtx] therapyIter = {
+				SELECT
+				    m.ITEM_ID,
+				    m.ITEM_NAME,
+				    m.ITEM_SPECIFICATION,
+				    m.ITEM_DIMENSION AS item_dimension,
+				    m.CATEGORY_ID    AS item_category,
+				    bp.ITEM_PRICE    AS benchmark_price,
+				    t.ITEM_GROSS_COUNT,
+				    t.UNIT_CONVERT_FACTOR,
+				    t.THERAPY_ID ,
+				    m2.ITEM_NAME THERAPY_NAME ,
+				    nvl(t.THERAPY_DIMENSION,' ') THERAPY_DIMENSION
+				FROM
+				:{Com_("d_t2_therapy")} t
+				INNER JOIN
+				:{Com_("D_T2_ITEM_META")} m
+				ON
+				    m.ITEM_ID = t.ITEM_ID
+	    		INNER JOIN
+					:{Com_("D_T2_ITEM_META")} m2
+				ON
+				    m2.ITEM_ID = t.THERAPY_ID
+				LEFT JOIN
+				:{Com_("D_T2_ITEM_PRICE")} bp
+				ON
+				    t.ITEM_ID = bp.ITEM_ID
+				AND bp.PRICE_TYPE = 'BENCHMARK' --标准价
+				AND bp.IS_CURRENT =1
+				WHERE 
+					:{query :: 1=1}
+				ORDER BY
+					t.THERAPY_ID
+			};
+			while(therapyIter.next())
+			{
+				Therapy therapy = new Therapy();
+				therapy.setItemId(therapyIter.item_id());
+				therapy.setItemName(therapyIter.item_name());
+				therapy.setItemDimension(therapyIter.item_dimension());
+				therapy.setTherapyId(therapyIter.therapy_id());
+				therapy.setTherapyName(therapyIter.therapy_name());
+				therapy.setTherapyDimension(therapyIter.therapy_dimension());
+				therapy.setItemSpecification(therapyIter.item_specification());
+				therapy.setItemCategory(therapyIter.item_category());
+				therapy.setBenchmarkPrice(therapyIter.benchmark_price());
+				therapy.setItemGrossCount(therapyIter.item_gross_count());
+				therapy.setUnitConvertFactor(therapyIter.unit_convert_factor());
+				result.add(therapy);
+			}
+			therapyIter.close();
+		}
+		else
+		{
+			throw new NoConnection();
+		}
+		closeDefaultContext(myCtx);
+		return result;
+	}
+	
+	#sql public static iterator Therapys(String item_id,String therapy_id, Double item_gross_count, Double unit_convert_factor,
+			String item_name,String therapy_name, Double purchase_price,Double item_amt,Double item_price);
+	
+	//根据原料编码获取包含此原料的半成品项集合
+		public List<Therapy> GetTherapys(String itemIds) 
+				throws NoPrivilegeException,SQLException,NoConnection
+		{
+			String query = " t.ITEM_ID IN ('" + itemIds.replaceAll(",", "','") + "') ";
+			List<Therapy> result = new ArrayList<Therapy>();
+			DefaultContext myCtx = getDefaultContext();
+			Therapys therapyIter = null;
+			if (myCtx != null)
+			{
+				#sql [myCtx] therapyIter = {
+					SELECT
+					    t.ITEM_ID,
+					    t.ITEM_NAME,
+					    nvl(bp.ITEM_PRICE,0)    AS purchase_price,
+					    nvl(p.ITEM_PRICE,0) AS ITEM_PRICE,
+					    t.ITEM_GROSS_COUNT,
+					    t.UNIT_CONVERT_FACTOR,
+					    t.THERAPY_ID ,
+					    t.THERAPY_NAME,
+					    t.ITEM_GROSS_COUNT / t.UNIT_CONVERT_FACTOR * p.ITEM_PRICE ITEM_AMT
+					FROM
+					:{Com_("d_t2_therapy")} t
+					INNER JOIN
+					:{Com_("D_T2_ITEM_META")} m
+				    ON
+				    	t.THERAPY_ID=m.ITEM_ID 
+				    	and m.ITEM_TYPE='SEMIS'
+					INNER JOIN
+					:{Com_("D_T2_ITEM_PRICE")} p
+					ON
+					    t.ITEM_ID = p.ITEM_ID
+					AND p.PRICE_TYPE = 'PURCHASE' --进货价
+					LEFT JOIN
+					:{Com_("D_T2_ITEM_PRICE")} bp
+					ON
+					    t.THERAPY_ID = bp.ITEM_ID
+					AND bp.PRICE_TYPE = 'PURCHASE' --进货价
+					AND bp.IS_CURRENT =1
+					WHERE 
+						:{query :: 1=1}
+					ORDER BY
+						t.THERAPY_ID
+				};
+				while(therapyIter.next())
+				{
+					Therapy therapy = new Therapy();
+					therapy.setItemId(therapyIter.item_id());
+					therapy.setItemName(therapyIter.item_name());
+					therapy.setTherapyId(therapyIter.therapy_id());
+					therapy.setTherapyName(therapyIter.therapy_name());
+					therapy.setPurchasePrice(therapyIter.purchase_price());
+					therapy.setItemAmt(therapyIter.item_amt());
+					therapy.setItemPrice(therapyIter.item_price());
+					therapy.setItemGrossCount(therapyIter.item_gross_count());
+					therapy.setUnitConvertFactor(therapyIter.unit_convert_factor());
+					result.add(therapy);
+				}
+				therapyIter.close();
+			}
+			else
+			{
+				throw new NoConnection();
+			}
+			closeDefaultContext(myCtx);
+			return result;
+		}
+
+		
+		#sql public static iterator TherapyAmtItem(
+				String therapy_id, 
+				Double purchase_price
+			);
+		//根据配方编码获取该配方的成本价集合
+		public List<Therapy> GetTherapysAmt(String therapyIds,String itemType) 
+				throws NoPrivilegeException,SQLException,NoConnection
+		{
+			String query="1=1";
+			if(!TextUtil.isEmpty(therapyIds)){
+				query = " t.THERAPY_ID IN ('" + therapyIds.replaceAll(",", "','") + "') ";
+			}
+			List<Therapy> result = new ArrayList<Therapy>();
+			DefaultContext myCtx = getDefaultContext();
+			TherapyAmtItem therapyIter = null;
+			if (myCtx != null)
+			{
+				#sql [myCtx] therapyIter = {
+						WITH
+					    item AS
+					    (
+					        SELECT
+					            t.THERAPY_ID,
+					            SUM(ROUND(t.ITEM_GROSS_COUNT* p.ITEM_PRICE,4)) purchaseAmt
+					        FROM
+					        :{Com_("d_t2_therapy")} t
+					        INNER JOIN
+					        :{Com_("D_T2_ITEM_META")} m
+					        ON
+					            m.ITEM_ID = t.THERAPY_ID 
+					            AND m.ITEM_TYPE=:itemType
+					        LEFT JOIN
+					        :{Com_("D_T2_ITEM_PRICE")} p
+					        ON
+					            t.ITEM_ID = p.ITEM_ID
+					        AND p.PRICE_TYPE = 'PURCHASE' --进货价
+					        AND p.IS_CURRENT =1
+			        		WHERE 
+							:{query :: 1=1}
+					        GROUP BY
+					            t.THERAPY_ID,
+					            t.ITEM_GROSS_COUNT,
+					            p.ITEM_PRICE
+					        ORDER BY
+					            t.THERAPY_ID
+					    )
+					SELECT
+					    i.therapy_id,
+					    SUM(i.purchaseAmt) purchase_price
+					FROM
+					    item i
+					GROUP BY
+					    i.therapy_id};
+				while(therapyIter.next())
+				{
+					Therapy therapy = new Therapy();
+					therapy.setTherapyId(therapyIter.therapy_id());
+					therapy.setPurchasePrice(therapyIter.purchase_price());
+					result.add(therapy);
+				}
+				therapyIter.close();
+			}
+			else
+			{
+				throw new NoConnection();
+			}
+			closeDefaultContext(myCtx);
+			return result;
+		}
+		
+		
+		public List<Therapy> GetTherapys(String itemIds,String itemType) 
+				throws NoPrivilegeException,SQLException,NoConnection
+		{
+			String query="1=1";
+			if(!TextUtil.isEmpty(itemIds)){
+				query = "  m.ITEM_ID IN ('" + itemIds.replaceAll(",", "','") + "') ";
+			}
+			List<Therapy> result = new ArrayList<Therapy>();
+			DefaultContext myCtx = getDefaultContext();
+			TherapyAmtItem therapyIter = null;
+			if (myCtx != null)
+			{
+				#sql [myCtx] therapyIter = {
+						WITH
+					    item AS
+					    (
+					        SELECT DISTINCT
+					            t.THERAPY_ID
+					        FROM
+					        	:{Com_("D_T2_THERAPY")} t
+					        INNER JOIN
+					        	:{Com_("D_T2_ITEM_META")} m
+					        ON
+					            m.ITEM_ID = t.ITEM_ID
+			        		WHERE 
+							:{query :: 1=1}
+					    )
+					    ,
+					    item2 AS
+					    (
+					    		SELECT
+					            t.THERAPY_ID,
+					            SUM(ROUND(t.ITEM_GROSS_COUNT* p.ITEM_PRICE,4)) purchaseAmt
+					        FROM
+					        :{Com_("d_t2_therapy")} t
+					        INNER JOIN
+					        :{Com_("D_T2_ITEM_META")} m
+					        ON
+					        m.ITEM_ID = t.THERAPY_ID 
+					        AND m.ITEM_TYPE=:itemType
+					        LEFT JOIN
+					        :{Com_("D_T2_ITEM_PRICE")} p
+					        ON
+					            t.ITEM_ID = p.ITEM_ID
+					        AND p.PRICE_TYPE = 'PURCHASE' --进货价
+					        AND p.IS_CURRENT =1
+					        INNER JOIN
+					            item a
+					        ON
+					            a.THERAPY_ID=t.THERAPY_ID
+					        GROUP BY
+					            t.THERAPY_ID,
+					            t.ITEM_GROSS_COUNT,
+					            p.ITEM_PRICE
+					        ORDER BY
+					            t.THERAPY_ID
+					    )
+					SELECT
+					    i.therapy_id,
+					    SUM(i.purchaseAmt) purchase_price
+					FROM
+					    item2 i
+					GROUP BY
+					    i.therapy_id};
+				while(therapyIter.next())
+				{
+					Therapy therapy = new Therapy();
+					therapy.setTherapyId(therapyIter.therapy_id());
+					therapy.setPurchasePrice(therapyIter.purchase_price());
+					result.add(therapy);
+				}
+				therapyIter.close();
+			}
+			else
+			{
+				throw new NoConnection();
+			}
+			closeDefaultContext(myCtx);
+			return result;
+		}
+	/**
+	 * 根据配方编码累计该出口的成本价格
+	 */
+	public Double getItemAmt(String therapyId) 
+		throws NoPrivilegeException,SQLException,NoConnection
+	{
+		Double sum = null;
+		DefaultContext myCtx = getDefaultContext();
+		if (myCtx != null)
+		{
+			#sql [myCtx] {select sum(item_amt) into :sum 
+				from :{Com_("d_t2_therapy")}
+			where therapy_id = :therapyId};
+		}
+		else
+		{
+			throw new NoConnection();
+		}
+		myCtx.close();
+		return sum;
+	}
+	
+	
+	#sql public static iterator NodeIter(String id,String name,String parent_id,String isLeaf);
+	
+	public void queryTree(String therapyId,JSONArray arr) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		List<String> idLists = new ArrayList<String>();
+		
+		NodeIter nodeIter = null;
+		#sql [myCtx] nodeIter = {
+			WITH
+			    items AS
+			    (
+			        SELECT
+			            LEVEL        levelNum,
+			            t.THERAPY_ID parent_id,
+			            t.ITEM_ID    id,
+			            t.ITEM_NAME  name
+			        FROM
+			        :{Com_("d_t2_therapy")} t 
+			        CONNECT BY PRIOR t.ITEM_ID = t.THERAPY_ID 
+			        START WITH t.THERAPY_ID = :therapyId
+			    )
+			SELECT
+			    i.*,
+			    DECODE(m.ITEM_TYPE,'','Y','RAW','Y','SEMIS','N') isLeaf
+			FROM
+			    items i
+			LEFT JOIN
+			:{Com_("D_T2_ITEM_META")} m
+			ON
+			    i.id = m.ITEM_ID
+			ORDER BY
+			    i.levelNum,
+			    i.parent_id,
+			    isLeaf DESC,
+			    m.ITEM_ID};
+		
+		List<Map> nodeLst = new ArrayList<Map>();
+		while(nodeIter.next()) {
+			JSONObject item = new JSONObject();
+			item.put("id",nodeIter.id());
+			item.put("name",nodeIter.name());
+			item.put("parent_id",nodeIter.parent_id());
+			item.put("isLeaf",nodeIter.isLeaf());
+			arr.add(item);
+		}
+		
+		nodeIter.close();
+		closeDefaultContext(myCtx);
+	}
+	
+
+	#sql private static iterator ItemIter(
+			String item_id, String item_name,String shelf_name,
+			String item_type, String category_id, String category_name, String item_dimension, 
+			String query_code, String item_specification, String box_type, Integer enabled, 
+			String infos,String mainSuppiler,Integer item_count);
+	
+	public int countItemByCate(String categoryId) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		int counts = 0;
+		
+		DefaultContext myCtx = getDefaultContext();
+		#sql [myCtx]{
+				SELECT
+        			COUNT(*)
+    			INTO
+    				:counts
+        	    FROM
+        	    :{Com_("D_T2_ITEM_META")} h
+        	    WHERE
+			    h.CATEGORY_ID = :categoryId
+		};
+		closeDefaultContext(myCtx);
+		return counts;
+	}
+	
+	/**
+	 * 根据类别查询商品列表，显示是否存在成本卡
+	 */
+	public List<Map> queryItemByCate(String categoryId, int startRow,int endRow) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		ItemIter itemIter = null;
+		#sql [myCtx] itemIter = {
+		SELECT
+	    *
+	    FROM
+	        (
+	            SELECT
+	                t.*,
+	                ROWNUM rowNumber
+	            FROM
+	                (
+				WITH
+	    	    d AS
+	    	    (
+    	    		 SELECT
+	    	             ITEM_ID,
+	    	            listagg('('||PRICE_TYPE||'|' || ITEM_PRICE ||')',',') within GROUP
+	    	            (ORDER BY PRICE_TYPE) infos
+	    	        FROM
+	    	            (
+	    	            		 SELECT DISTINCT
+ 	    	                    ps.ITEM_ID,
+ 	    	                    ps.PRICE_TYPE,
+ 	    	                   '供应商价' PRICE_GROUP_NAME,
+ 	    	                   nvl(ps.ITEM_PRICE, 0) ITEM_PRICE
+ 	    	                FROM
+ 	    	                :{Com_("D_T2_ITEM_PRICE")} ps
+ 	    	               INNER JOIN 
+ 	    	              :{Com_("D_T2_SUPPLIER_BRANCH_ITEM")} s
+ 	    	              ON
+ 	    	              s.ITEM_ID = ps.ITEM_ID
+ 	            		  WHERE
+	    	                      ps.PRICE_TYPE ='SUPPLIER'
+	    	                  AND s.PRIORITY =0
+	    	                  AND s.BRANCH_ID='L00'
+	    	                  AND s.SUPPLIER_ID=ps.SUPPLIER_ID
+ 	    	             UNION ALL
+	    	            		SELECT
+	    	                    p.ITEM_ID,
+	    	                    p.PRICE_TYPE,
+	    	                    g.PRICE_GROUP_NAME,
+	    	                    nvl(p.ITEM_PRICE, 0) ITEM_PRICE
+	    	                FROM
+	    	                :{Com_("D_T2_ITEM_PRICE")} p
+	    	                LEFT JOIN
+	    	                :{Com_("D_T2_PRICE_GROUP")}  g
+	    	                ON
+	    	                    p.PRICE_TYPE = g.PRICE_GROUP_ID
+ 	                    WHERE
+ 	                   (p.SUPPLIER_ID IS NULL or p.SUPPLIER_ID='NULL'))
+	    	        GROUP BY
+	    	          ITEM_ID
+	    	    )
+			SELECT
+			    m.*,
+			    c.CATEGORY_NAME,
+			    sf.SHELF_NAME,
+			    d.infos,
+			    b.BRANCH_NAME    mainSuppiler,
+			    t2.item_count
+			    FROM
+				:{Com_("D_T2_ITEM_META")} m
+				LEFT JOIN
+				:{Com_("D_T2_ITEM_CATEGORY")} c
+				ON
+				    c.CATEGORY_ID = m.CATEGORY_ID
+				LEFT JOIN
+				:{Com_("D_T2_SHELF_ITEM")} si 
+				ON
+				    si.ITEM_ID= m.ITEM_ID  AND si.PRIORITY = '0'
+				LEFT JOIN
+				:{Com_("D_T2_SHELF")} sf
+				ON
+				    si.SHELF_ID= sf.SHELF_ID
+				LEFT JOIN
+				:{Com_("D_T2_SUPPLIER_BRANCH_ITEM")} bi
+				ON
+				    m.ITEM_ID = bi.ITEM_ID
+				AND bi.BRANCH_ID = 'L00'
+				AND bi.PRIORITY = 0
+				LEFT JOIN
+				:{Com_("D_T2_BRANCH")} b
+				ON
+				    b.BRANCH_ID = bi.SUPPLIER_ID
+	    		LEFT JOIN
+	    			d
+	    		ON 
+	    			d.ITEM_ID = m.ITEM_ID
+    			LEFT JOIN
+			    (
+			        SELECT
+			            t.THERAPY_ID,
+			            COUNT(*) AS item_count
+			        FROM
+			        :{Com_("D_T2_THERAPY")} t
+			        WHERE
+			            t.OWNER = 'CENTRALFACTORY'
+			        GROUP BY
+			            t.THERAPY_ID) t2
+			ON
+			    m.ITEM_ID = t2.THERAPY_ID
+			WHERE
+			    m.CATEGORY_ID = :categoryId
+			ORDER BY
+				m.ITEM_ID) t
+	        	            WHERE
+	                        ROWNUM < :endRow)
+	            WHERE
+	                rowNumber >= :startRow};
+		
+		List<Map> itemLst =processIter(itemIter);
+		itemIter.close();
+		closeDefaultContext(myCtx);
+		return itemLst;
+	}
+	
+	public int countByItemName(String itemName) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		int counts = 0;
+		itemName = "%" + itemName + "%";
+		DefaultContext myCtx = getDefaultContext();
+		#sql [myCtx]{
+				SELECT
+        			COUNT(*)
+    			INTO
+    				:counts
+        	    FROM
+        	    :{Com_("D_T2_ITEM_META")} m
+    			WHERE
+    			    1=1
+    			AND (
+    			        m.ITEM_ID LIKE :itemName
+    			    OR  m.ITEM_NAME LIKE :itemName)
+    			AND m.ITEM_TYPE IN (
+    			                    'SEMIS')
+		};
+		closeDefaultContext(myCtx);
+		return counts;
+	}
+	
+	public List<Map> queryByItemName(String itemName, int startRow,int endRow)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		itemName = "%" + itemName + "%";
+		
+		DefaultContext myCtx = getDefaultContext();
+		ItemIter itemIter = null;
+		#sql [myCtx] itemIter = {
+		SELECT
+	    *
+	    FROM
+	        (
+	            SELECT
+	                t.*,
+	                ROWNUM rowNumber
+	            FROM
+	                (
+				WITH
+	    	    d AS
+	    	    (
+    	    		 SELECT
+	    	             ITEM_ID,
+	    	            listagg('('||PRICE_TYPE||'|' || ITEM_PRICE ||')',',') within GROUP
+	    	            (ORDER BY PRICE_TYPE) infos
+	    	        FROM
+	    	            (
+	    	            		 SELECT DISTINCT
+ 	    	                    ps.ITEM_ID,
+ 	    	                    ps.PRICE_TYPE,
+ 	    	                   '供应商价' PRICE_GROUP_NAME,
+ 	    	                   nvl(ps.ITEM_PRICE, 0) ITEM_PRICE
+ 	    	                FROM
+ 	    	                :{Com_("D_T2_ITEM_PRICE")} ps
+ 	    	               INNER JOIN 
+ 	    	              :{Com_("D_T2_SUPPLIER_BRANCH_ITEM")} s
+ 	    	              ON
+ 	    	              s.ITEM_ID = ps.ITEM_ID
+ 	            		  WHERE
+	    	                      ps.PRICE_TYPE ='SUPPLIER'
+	    	                  AND s.PRIORITY =0
+	    	                  AND s.BRANCH_ID='L00'
+	    	                  AND s.SUPPLIER_ID=ps.SUPPLIER_ID
+ 	    	             UNION ALL
+	    	            		SELECT
+	    	                    p.ITEM_ID,
+	    	                    p.PRICE_TYPE,
+	    	                    g.PRICE_GROUP_NAME,
+	    	                    nvl(p.ITEM_PRICE, 0) ITEM_PRICE
+	    	                FROM
+	    	                :{Com_("D_T2_ITEM_PRICE")} p
+	    	                LEFT JOIN
+	    	                :{Com_("D_T2_PRICE_GROUP")}  g
+	    	                ON
+	    	                    p.PRICE_TYPE = g.PRICE_GROUP_ID
+ 	                    WHERE
+ 	                   (p.SUPPLIER_ID IS NULL or p.SUPPLIER_ID='NULL'))
+	    	        GROUP BY
+	    	          ITEM_ID
+	    	    )
+			SELECT
+			    m.*,
+			    c.CATEGORY_NAME,
+			    sf.SHELF_NAME,
+			    d.infos,
+			    b.BRANCH_NAME    mainSuppiler,
+			    t2.item_count
+		    FROM
+			:{Com_("D_T2_ITEM_META")} m
+			LEFT JOIN
+			:{Com_("D_T2_ITEM_CATEGORY")} c
+			ON
+			    c.CATEGORY_ID = m.CATEGORY_ID
+			LEFT JOIN
+			:{Com_("D_T2_SHELF_ITEM")} si 
+			ON
+			    si.ITEM_ID= m.ITEM_ID  AND si.PRIORITY = '0'
+			LEFT JOIN
+			:{Com_("D_T2_SHELF")} sf
+			ON
+			    si.SHELF_ID= sf.SHELF_ID
+			LEFT JOIN
+			:{Com_("D_T2_SUPPLIER_BRANCH_ITEM")} bi
+			ON
+			    m.ITEM_ID = bi.ITEM_ID
+			AND bi.BRANCH_ID = 'L00'
+			AND bi.PRIORITY = 0
+			LEFT JOIN
+			:{Com_("D_T2_BRANCH")} b
+			ON
+			    b.BRANCH_ID = bi.SUPPLIER_ID
+    		LEFT JOIN
+    			d
+    		ON 
+    			d.ITEM_ID = m.ITEM_ID
+			LEFT JOIN
+			    (
+			        SELECT
+			            t.THERAPY_ID,
+			            COUNT(*) AS item_count
+			        FROM
+			        :{Com_("D_T2_THERAPY")} t
+			        WHERE
+			            t.OWNER = 'CENTRALFACTORY'
+			        GROUP BY
+			            t.THERAPY_ID) t2
+			ON
+			    m.ITEM_ID = t2.THERAPY_ID
+			WHERE
+			    m.ITEM_TYPE = 'SEMIS'
+			AND (
+			        m.ITEM_ID LIKE :itemName
+			    OR  m.ITEM_NAME LIKE :itemName)
+			ORDER BY
+			    m.ITEM_ID) t
+	            WHERE
+                ROWNUM < :endRow)
+    WHERE
+        rowNumber >= :startRow};
+		
+		List<Map> itemLst =processIter(itemIter);
+		itemIter.close();
+		closeDefaultContext(myCtx);
+		return itemLst;
+	}
+	
+	#sql private iterator CountIter(
+			int total);
+	
+	public int countByRaw(String itemName) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		CountIter countIter =null;
+		DefaultContext myCtx = getDefaultContext();
+		#sql [myCtx] countIter = {
+			WITH
+		    filter AS
+		    (
+		        SELECT DISTINCT
+		            t.THERAPY_ID
+		        FROM
+		        :{Com_("D_T2_THERAPY")} t
+		        WHERE
+		            1=1
+		        AND (
+		                t.ITEM_ID = :itemName
+		            OR  t.ITEM_NAME = :itemName)
+		        ORDER BY
+		            t.THERAPY_ID
+		    )
+			SELECT
+    			COUNT(*) total
+    	    FROM
+    	    filter
+    	    INNER JOIN
+    	    :{Com_("D_T2_ITEM_META")} m
+		ON
+		    filter.THERAPY_ID = m.ITEM_ID
+    	    WHERE
+    			m.ITEM_TYPE IN ('SEMIS')
+		};
+		int total = 0;
+		while(countIter.next()) {
+			total= countIter.total();
+		}
+		countIter.close();
+		closeDefaultContext(myCtx);
+		return total;
+	}
+	public List<Map> queryByRaw(String itemName, int startRow,int endRow) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		ItemIter itemIter = null;
+		#sql [myCtx] itemIter = {
+		SELECT
+	    *
+	    FROM
+	        (
+	            SELECT
+	                t.*,
+	                ROWNUM rowNumber
+	            FROM
+	                (			
+				WITH
+	    	    d AS
+	    	    (
+    	    		 SELECT
+	    	             ITEM_ID,
+	    	            listagg('('||PRICE_TYPE||'|' || ITEM_PRICE ||')',',') within GROUP
+	    	            (ORDER BY PRICE_TYPE) infos
+	    	        FROM
+	    	            (
+	    	            		 SELECT DISTINCT
+ 	    	                    ps.ITEM_ID,
+ 	    	                    ps.PRICE_TYPE,
+ 	    	                   '供应商价' PRICE_GROUP_NAME,
+ 	    	                   nvl(ps.ITEM_PRICE, 0) ITEM_PRICE
+ 	    	                FROM
+ 	    	                :{Com_("D_T2_ITEM_PRICE")} ps
+ 	    	               INNER JOIN 
+ 	    	              :{Com_("D_T2_SUPPLIER_BRANCH_ITEM")} s
+ 	    	              ON
+ 	    	              s.ITEM_ID = ps.ITEM_ID
+ 	            		  WHERE
+	    	                      ps.PRICE_TYPE ='SUPPLIER'
+	    	                  AND s.PRIORITY =0
+	    	                  AND s.BRANCH_ID='L00'
+	    	                  AND s.SUPPLIER_ID=ps.SUPPLIER_ID
+ 	    	             UNION ALL
+	    	            		SELECT
+	    	                    p.ITEM_ID,
+	    	                    p.PRICE_TYPE,
+	    	                    g.PRICE_GROUP_NAME,
+	    	                    nvl(p.ITEM_PRICE, 0) ITEM_PRICE
+	    	                FROM
+	    	                :{Com_("D_T2_ITEM_PRICE")} p
+	    	                LEFT JOIN
+	    	                :{Com_("D_T2_PRICE_GROUP")}  g
+	    	                ON
+	    	                    p.PRICE_TYPE = g.PRICE_GROUP_ID
+ 	                    WHERE
+ 	                   (p.SUPPLIER_ID IS NULL or p.SUPPLIER_ID='NULL'))
+	    	        GROUP BY
+	    	          ITEM_ID
+	    	    ),
+			    filter AS
+			    (
+			        SELECT DISTINCT
+			            t.THERAPY_ID
+			        FROM
+			        :{Com_("D_T2_THERAPY")} t
+			        WHERE
+			            1=1
+			        AND (
+			                t.ITEM_ID = :itemName
+			            OR  t.ITEM_NAME = :itemName)
+			        ORDER BY
+			            t.THERAPY_ID
+			    )
+			SELECT
+			    m.*,
+			    c.CATEGORY_NAME,
+			    sf.SHELF_NAME,
+			    d.infos,
+			    b.BRANCH_NAME    mainSuppiler,
+			    1 item_count
+		    FROM
+			:{Com_("D_T2_ITEM_META")} m
+			LEFT JOIN
+			:{Com_("D_T2_ITEM_CATEGORY")} c
+			ON
+			    c.CATEGORY_ID = m.CATEGORY_ID
+			LEFT JOIN
+			:{Com_("D_T2_SHELF_ITEM")} si 
+			ON
+			    si.ITEM_ID= m.ITEM_ID  AND si.PRIORITY = '0'
+			LEFT JOIN
+			:{Com_("D_T2_SHELF")} sf
+			ON
+			    si.SHELF_ID= sf.SHELF_ID
+			LEFT JOIN
+			:{Com_("D_T2_SUPPLIER_BRANCH_ITEM")} bi
+			ON
+			    m.ITEM_ID = bi.ITEM_ID
+			AND bi.BRANCH_ID = 'L00'
+			AND bi.PRIORITY = 0
+			LEFT JOIN
+			:{Com_("D_T2_BRANCH")} b
+			ON
+			    b.BRANCH_ID = bi.SUPPLIER_ID
+    		LEFT JOIN
+    			d
+    		ON 
+    			d.ITEM_ID = m.ITEM_ID
+			INNER JOIN
+			    filter
+			ON
+			    filter.THERAPY_ID = m.ITEM_ID
+			WHERE
+			    m.ITEM_TYPE = 'SEMIS'
+			ORDER BY
+			    m.ITEM_ID) t
+	            WHERE
+                ROWNUM < :endRow)
+    WHERE
+        rowNumber >= :startRow};
+		
+		List<Map> itemLst =processIter(itemIter);
+		itemIter.close();
+		closeDefaultContext(myCtx);
+		return itemLst;
+	}
+	
+	private List<Map> processIter(ItemIter itemIter) 
+			throws SQLException {
+		List<Map> headerLst = new ArrayList<Map>();
+		
+		while(itemIter.next()) {
+			Map header = new HashMap();
+			header.put("itemId", itemIter.item_id());
+			header.put("itemName", itemIter.item_name());
+			header.put("itemDimension", itemIter.item_dimension());
+			header.put("shelfName",itemIter.shelf_name());
+			header.put("itemType",itemIter.item_type());
+			header.put("categoryId",itemIter.category_id());
+			header.put("categoryName",itemIter.category_name());
+			header.put("queryCode",itemIter.query_code());
+			header.put("itemSpecification",itemIter.item_specification());
+			header.put("boxType",itemIter.box_type());
+			header.put("enabled",itemIter.enabled());
+			header.put("mainSuppiler",itemIter.mainSuppiler());
+			Integer itemCount = itemIter.item_count();
+			if (itemCount != null) {
+				header.put("hasTherapy", true);
+			}
+			String info = itemIter.infos();
+			if(!TextUtil.isEmpty(info)){
+				String[] infos = info.toString().split(",");
+				for (int i = 0; i < infos.length; i++) {
+					String[] temp = infos[i].replace("(", "").replace(")", "").split("\\|");
+					
+					for (int j = 0; j < temp.length; j++) {
+						header.put(temp[0], temp[1]);
+					}
+				}
+			}
+			headerLst.add(header);
+		}
+		return headerLst;
+	}
+}

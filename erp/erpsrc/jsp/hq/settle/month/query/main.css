@@ -1,0 +1,32 @@
+#dataGrid {
+	position: absolute;
+	right: 0;
+	top: 32px;
+	bottom: 0px;
+	width: 100%;
+	height: auto; /* override default height: 30em; in dgrid.css */
+}
+
+th[role="columnheader"] {
+	text-align: center;
+}
+
+.field-rownumber, .field-monthDate, .field-operatingTime {
+	text-align: center;
+}
+
+.field-rownumber {
+	width: 40px;
+}
+
+.field-monthDate, .field-operatingTime {
+	width: 100px;
+}
+
+.field-operatorName {
+	width: 120px;
+}
+
+.field-settleNote {
+	width: 320px;
+}

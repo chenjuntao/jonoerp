@@ -1,0 +1,211 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"   
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">  
+
+<mapper namespace="mapper.businessquery.BusinessCountMapper">  
+<resultMap id="BillPayDetailResultMap" type="pojo.businessquery.BusinessCount">
+	<id property="shift" column="billC" />
+	<result property="billNum" column="billNum" />
+	<result property="guestNum" column="guestNum" />
+	<result property="foodAmt" column="foodAmt" />
+	<result property="disAmt" column="disAmt" />
+	<result property="roundAmt" column="roundAmt" />
+	<result property="oughtAmt" column="oughtAmt" />
+	<result property="payAmt" column="payAmt" />
+	<result property="presentAmt" column="presentAmt" />
+	<result property="shopC" column="shopC" />
+	<result property="shopN" column="shopN" />
+	<result property="period" column="period" />
+</resultMap>
+
+<select id="shiftSum" resultMap="BillPayDetailResultMap">
+	SELECT
+		SUM(billNum)    billNum,
+		SUM(guestNum)   guestNum,
+		SUM(foodAmt)    foodAmt,
+		SUM(disAmt)     disAmt,
+		SUM(roundAmt)   roundAmt,
+		SUM(oughtAmt)   oughtAmt,
+		SUM(payAmt)     payAmt,
+		SUM(presentAmt) presentAmt
+	FROM
+	(
+		SELECT
+			b.CSHIFT_N       shift,
+			COUNT(cBranch_C) billNum,
+			SUM(iGuestNum)   guestNum,
+			SUM(nFoodAmt)    foodAmt,
+			SUM(nDisAmt)     disAmt,
+			SUM(nRoundAmt)   roundAmt,
+			SUM(nOughtAmt)   oughtAmt,
+			SUM(nPayAmt)     payAmt,
+			SUM(nPresentAmt) presentAmt,
+			cBranch_C        shopC,
+			cBranch_N        shopN
+		FROM
+			${com}.d_t_food_bill b
+		WHERE
+			DBUSINESS &gt;=#{startDate}
+		AND DBUSINESS &lt;=#{endDate}
+		AND b.CBRANCH_C LIKE #{shopC}
+		GROUP BY
+			b.CSHIFT_N ,
+			cBranch_C,
+			cBranch_N
+		) t
+</select>
+
+<select id="periodSum" resultMap="BillPayDetailResultMap">
+	SELECT
+		SUM(billNum)    billNum,
+		SUM(guestNum)   guestNum,
+		SUM(foodAmt)    foodAmt,
+		SUM(disAmt)     disAmt,
+		SUM(roundAmt)   roundAmt,
+		SUM(oughtAmt)   oughtAmt,
+		SUM(payAmt)     payAmt,
+		SUM(presentAmt) presentAmt
+	FROM
+	(
+		SELECT
+			b.CPERIOD_N      period,
+			COUNT(cBranch_C) billNum,
+			SUM(iGuestNum)   guestNum,
+			SUM(nFoodAmt)    foodAmt,
+			SUM(nDisAmt)     disAmt,
+			SUM(nRoundAmt)   roundAmt,
+			SUM(nOughtAmt)   oughtAmt,
+			SUM(nPayAmt)     payAmt,
+			SUM(nPresentAmt) presentAmt,
+			cBranch_C        shopC,
+			cBranch_N        shopName
+		FROM
+			${com}.d_t_food_bill b
+		WHERE
+			DBUSINESS &gt;=#{startDate}
+		AND DBUSINESS &lt;=#{endDate}
+		AND b.CBRANCH_C LIKE #{shopC}
+		GROUP BY
+			b.CPERIOD_N ,
+			cBranch_C,
+			cBranch_N
+	) t
+</select>
+
+<select id="floorSum" resultMap="BillPayDetailResultMap">
+	SELECT
+		SUM(billNum)    billNum,
+		SUM(guestNum)   guestNum,
+		SUM(foodAmt)    foodAmt,
+		SUM(disAmt)     disAmt,
+		SUM(roundAmt)   roundAmt,
+		SUM(oughtAmt)   oughtAmt,
+		SUM(payAmt)     payAmt,
+		SUM(presentAmt) presentAmt
+	FROM
+	(
+		SELECT
+			cBranch_C        shopC,
+			cBranch_N        shopN,
+			COUNT(cBranch_C) billNum,
+			SUM(iGuestNum)   guestNum,
+			SUM(nFoodAmt)    foodAmt,
+			SUM(nDisAmt)     disAmt,
+			SUM(nRoundAmt)   roundAmt,
+			SUM(nOughtAmt)   oughtAmt,
+			SUM(nPayAmt)     payAmt,
+			SUM(nPresentAmt) presentAmt
+		FROM
+			${com}.d_t_food_bill b
+		WHERE
+			DBUSINESS &gt;=#{startDate}
+		AND DBUSINESS &lt;=#{endDate}
+		AND b.CBRANCH_C LIKE #{shopC}
+		GROUP BY
+			cBranch_C,
+			cBranch_N
+			ORDER BY
+			b.CBRANCH_C
+	) t
+</select>
+
+<select id="shift" resultMap="BillPayDetailResultMap">
+	SELECT
+		b.CSHIFT_N       conditionN,
+		COUNT(cBranch_C) billNum,
+		SUM(iGuestNum)   guestNum,
+		SUM(nFoodAmt)    foodAmt,
+		SUM(nDisAmt)     disAmt,
+		SUM(nRoundAmt)   roundAmt,
+		SUM(nOughtAmt)   oughtAmt,
+		SUM(nPayAmt)     payAmt,
+		SUM(nPresentAmt) presentAmt,
+		cBranch_C        shopC,
+		cBranch_N        shopN
+	FROM
+		${com}.d_t_food_bill b
+	WHERE
+		DBUSINESS &gt;=#{startDate}
+		AND DBUSINESS &lt;=#{endDate}
+	AND b.CBRANCH_C LIKE #{shopC}
+	GROUP BY
+		b.CSHIFT_N ,
+		cBranch_C,
+		cBranch_N
+	ORDER BY
+		b.CSHIFT_N,
+		cBranch_C
+</select>
+
+<select id="period" resultMap="BillPayDetailResultMap">
+	SELECT
+		b.CPERIOD_N      conditionN,
+		COUNT(cBranch_C) billNum,
+		SUM(iGuestNum)   guestNum,
+		SUM(nFoodAmt)    foodAmt,
+		SUM(nDisAmt)     disAmt,
+		SUM(nRoundAmt)   roundAmt,
+		SUM(nOughtAmt)   oughtAmt,
+		SUM(nPayAmt)     payAmt,
+		SUM(nPresentAmt) presentAmt,
+		cBranch_C        shopC,
+		cBranch_N        shopN
+	FROM
+		${com}.d_t_food_bill b
+	WHERE
+		DBUSINESS &gt;=#{startDate}
+	AND DBUSINESS &lt;=#{endDate}
+	AND b.CBRANCH_C LIKE #{shopC}
+	GROUP BY
+		b.CPERIOD_N ,
+		cBranch_C,
+		cBranch_N
+	ORDER BY
+		b.CPERIOD_N
+</select>
+
+<select id="floor" resultMap="BillPayDetailResultMap">
+	SELECT
+		cBranch_C        shopC,
+		cBranch_N        shopN,
+		COUNT(cBranch_C) billNum,
+		SUM(iGuestNum)   guestNum,
+		SUM(nFoodAmt)    foodAmt,
+		SUM(nDisAmt)     disAmt,
+		SUM(nRoundAmt)   roundAmt,
+		SUM(nOughtAmt)   oughtAmt,
+		SUM(nPayAmt)     payAmt,
+		SUM(nPresentAmt) presentAmt
+	FROM
+		${com}.d_t_food_bill b
+	WHERE
+		DBUSINESS &gt;=#{startDate}
+	AND DBUSINESS &lt;=#{endDate}
+	AND b.CBRANCH_C LIKE #{shopC}
+	GROUP BY
+		cBranch_C,
+		cBranch_N
+	ORDER BY
+		b.CBRANCH_C
+</select>
+</mapper>

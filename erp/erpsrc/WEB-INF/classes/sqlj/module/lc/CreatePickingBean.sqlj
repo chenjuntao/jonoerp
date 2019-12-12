@@ -1,0 +1,287 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on Dec 10, 2014 by liyzh
+ * Last edited on Dec 10, 2014 by liyzh
+ * 
+ * 说明： 创建拣货单
+ */
+package logic.module.lc;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import pojo.form.CollectDetail;
+import pojo.form.RequestHeader;
+import sqlj.runtime.ref.DefaultContext;
+import com.tanry.business.form.FormConstant;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.TextUtil;
+import com.tanry.framework.acl.NoPrivilegeException;
+
+public class CreatePickingBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(CreatePickingBean.class);
+
+	#sql private iterator DetailIter(String shelf_id, String shelf_name, String box_type, String category_name, 
+			String form_id, String item_id, String item_name, String item_dimension,
+			String delivery_unit, Double unit_volume, String item_specification, String item_category,
+			String requester_id, String requester, Double packaging_count);
+	
+	/**
+	 * 根据配送单编号查询库位等信息，用于手动构造捡货单（方便保存捡货单与配送单的对应关系）
+	 */
+	public List<Map> query(String ids)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		String query = " h.FORM_ID IN ('" + ids.replaceAll(",", "','") + "') ";
+		
+		DefaultContext myCtx = getDefaultContext();
+		DetailIter detailIter = null;
+		#sql [myCtx] detailIter = {
+			SELECT
+			    s.SHELF_ID,
+			    s.SHELF_NAME,
+			    m.BOX_TYPE,
+			    c.CATEGORY_NAME,
+			    u.DELIVERY_UNIT,
+			    u.UNIT_VOLUME AS unit_volume,
+			    d.FORM_ID,
+			    d.ITEM_ID,
+			    d.ITEM_NAME,
+			    d.ITEM_DIMENSION,
+			    d.ITEM_SPECIFICATION,
+			    d.ITEM_CATEGORY,
+			    h.REQUESTER_ID,
+			    h.REQUESTER,
+			    d.PACKAGING_COUNT
+			FROM
+			:{Com_("D_T1_SHIPPING_HEADER")} h
+			INNER JOIN
+			:{Com_("D_T1_SHIPPING_DETAIL")} d
+			ON
+			    d.FORM_ID = h.FORM_ID
+			LEFT JOIN
+			:{Com_("D_T2_ITEM_CATEGORY")} c
+			ON
+			    c.CATEGORY_ID = d.ITEM_CATEGORY
+			INNER JOIN
+			:{Com_("D_T2_ITEM_META")} m
+			ON
+			    m.ITEM_ID = d.ITEM_ID
+			INNER JOIN
+			:{Com_("D_T2_SHELF_ITEM")} i
+			ON
+			    i.ITEM_ID = m.ITEM_ID AND i.PRIORITY = 0
+			INNER JOIN
+			:{Com_("D_T2_SHELF")} s
+			ON
+			    s.SHELF_ID = i.SHELF_ID
+			LEFT JOIN
+				:{Com_("D_T2_DELIVERY_UNIT")} u
+			ON
+			    u.ITEM_ID = m.ITEM_ID
+	        WHERE
+				:{query :: 1=1}
+			ORDER BY
+			    s.SHELF_ID,
+			    m.ITEM_ID
+		};
+		List<Map> detailLst = processDetailIter(detailIter);
+		detailIter.close();
+		closeDefaultContext(myCtx);
+		return detailLst;
+	}
+
+	private List<Map> processDetailIter(DetailIter detailIter) 
+			throws SQLException {
+		List<Map> detailLst = new ArrayList<Map>();
+		while(detailIter.next()) {
+			Map<String, Object> detail = new HashMap<String, Object>();
+			detail.put("shelfId", detailIter.shelf_id());
+			detail.put("shelfName", detailIter.shelf_name());
+			detail.put("formId", detailIter.form_id());
+			detail.put("itemId", detailIter.item_id());
+			detail.put("categoryName", detailIter.category_name());
+			detail.put("itemName", detailIter.item_name());
+			detail.put("itemDimension", detailIter.item_dimension());
+			detail.put("deliveryUnit", detailIter.delivery_unit());
+			detail.put("unitVolume", detailIter.unit_volume());
+			detail.put("itemSpecification", detailIter.item_specification());
+			detail.put("itemCategory", detailIter.item_category());
+			detail.put("requesterId", detailIter.requester_id());
+			detail.put("requester", detailIter.requester());
+			detail.put("packagingCount", detailIter.packaging_count());
+			detail.put("boxType", detailIter.box_type());
+			detailLst.add(detail);
+		}
+		return detailLst;
+	}
+	
+	#sql private iterator HeaderIter(String shelf_id, String shelf_name, String box_type, String category_name, 
+			 String item_id, String item_name, String item_dimension,String infos,
+			String delivery_unit, Double unit_volume, String item_specification, String item_category);
+	
+	public List<Map> queryGroup(String ids)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		String query = " h.FORM_ID IN ('" + ids.replaceAll(",", "','") + "') ";
+		
+		DefaultContext myCtx = getDefaultContext();
+		HeaderIter headerIter = null;
+		#sql [myCtx] headerIter = {
+				WITH
+			    temp AS
+			    (
+			        SELECT
+			            d.ITEM_ID,
+			            h.REQUESTER_ID,
+			            SUM(d.SHIPPING_COUNT) SHIPPING_COUNT
+			        FROM
+			        :{Com_("D_T1_SHIPPING_DETAIL")} d
+			        INNER JOIN
+			        :{Com_("D_T1_SHIPPING_HEADER")} h
+			        ON
+			            d.form_id = h.form_id
+			        WHERE
+					 :{query :: 1=1}
+			        GROUP BY
+			            ROLLUP( d.ITEM_ID, h.REQUESTER_ID)
+			    )
+			    ,
+			    temp2 AS
+			    (
+			        SELECT
+			            DECODE(p.ITEM_ID,NULL,'合计',p.ITEM_ID) ITEM_ID,
+			            listagg('('||REQUESTER_ID||'|' || SHIPPING_COUNT ||')',',') within GROUP (ORDER BY
+			            REQUESTER_ID) infos
+			        FROM
+			            temp p
+			        GROUP BY
+			            p.ITEM_ID
+			    )
+			SELECT
+			    s.SHELF_ID,
+			    s.SHELF_NAME,
+			    m.BOX_TYPE,
+			    c.CATEGORY_NAME,
+			    u.DELIVERY_UNIT,
+			    u.UNIT_VOLUME AS unit_volume,
+			    m.ITEM_NAME,
+			    m.ITEM_DIMENSION,
+			    m.ITEM_SPECIFICATION,
+			    m.CATEGORY_ID ITEM_CATEGORY,
+			    p2.*
+			FROM
+			    temp2 p2
+			INNER JOIN
+			:{Com_("D_T2_ITEM_META")} m
+			ON
+			    m.ITEM_ID = p2.ITEM_ID
+			INNER JOIN
+			:{Com_("D_T2_ITEM_CATEGORY")} c
+			ON
+			    c.CATEGORY_ID = m.CATEGORY_ID
+			INNER JOIN
+			:{Com_("D_T2_SHELF_ITEM")} i
+			ON
+			    i.ITEM_ID = m.ITEM_ID
+			AND i.PRIORITY = 0
+			INNER JOIN
+			:{Com_("D_T2_SHELF")} s
+			ON
+			    s.SHELF_ID = i.SHELF_ID
+			LEFT JOIN
+			:{Com_("D_T2_DELIVERY_UNIT")} u
+			ON
+			    u.ITEM_ID = m.ITEM_ID
+			ORDER BY
+			    s.SHELF_ID,
+			    m.ITEM_ID
+		};
+		List<Map> headerLst = processHeaderIter(headerIter);
+		headerIter.close();
+		closeDefaultContext(myCtx);
+		return headerLst;
+	}
+	private List<Map> processHeaderIter(HeaderIter headerIter) 
+			throws SQLException {
+		List<Map> headerLst = new ArrayList<Map>();
+		
+		while(headerIter.next()) {
+			Map header = new HashMap();
+			String[] infos = headerIter.infos().toString().split(",");
+			for (int i = 0; i < infos.length; i++) {
+				String[] temp = infos[i].replace("(", "").replace(")", "").split("\\|");
+				
+				for (int j = 0; j < temp.length; j++) {
+					if(!TextUtil.isEmpty(temp[0])){
+						header.put(temp[0], temp[1]);
+					}else{
+						header.put("sum", temp[1]);
+					}
+				}
+			}
+			header.put("shelfId", headerIter.shelf_id());
+			header.put("shelfName", headerIter.shelf_name());
+			header.put("itemId", headerIter.item_id());
+			header.put("categoryName", headerIter.category_name());
+			header.put("item_name", headerIter.item_name());
+			header.put("itemDimension", headerIter.item_dimension());
+			header.put("deliveryUnit", headerIter.delivery_unit());
+			header.put("unitVolume", headerIter.unit_volume());
+			header.put("itemSpecification", headerIter.item_specification());
+			header.put("itemCategory", headerIter.item_category());
+			header.put("boxType", headerIter.box_type());
+			
+			headerLst.add(header);
+		}
+		return headerLst;
+	}
+	#sql private iterator BranchIter(
+			String branch_id,
+			String branch_name
+		);
+	
+	public List<Map> queryBranch(String ids)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		String query = " h.FORM_ID IN ('" + ids.replaceAll(",", "','") + "') ";
+		
+		DefaultContext myCtx = getDefaultContext();
+		BranchIter branchIter = null;
+		#sql [myCtx] branchIter = {
+			SELECT DISTINCT
+			    h.REQUESTER_ID BRANCH_ID,
+			    h.REQUESTER BRANCH_NAME
+			FROM
+			:{Com_("D_T1_SHIPPING_HEADER")} h
+		     WHERE
+			 	:{query :: 1=1}
+			  order by h.REQUESTER_ID desc
+			};
+		List<Map> branchLst = new ArrayList<Map>();
+		
+		while(branchIter.next()) {
+			Map header = new HashMap();
+			header.put("branch_id", branchIter.branch_id());
+			header.put("branch_name", branchIter.branch_name());
+			
+			branchLst.add(header);
+		}
+		
+		branchIter.close();
+		closeDefaultContext(myCtx);
+		return branchLst;
+	}
+}

@@ -1,0 +1,75 @@
+#dataGrid {
+	position: absolute;
+    top: 35px;
+    bottom: 0px;
+    width: 100%;
+    height: auto;
+}
+
+td[role="columnheader"] {
+	text-align: center !important; 
+}
+
+td[colid="rownumber"] {
+	text-align: center !important; 
+	min-width: 50px  !important; 
+	max-width: 50px  !important; 
+}
+
+td[colid="form_id"] {
+	text-align: center !important; 
+	min-width: 180px  !important; 
+}
+
+td[colid="form_ref_id"] {
+	text-align: center !important; 
+	min-width: 160px  !important; 
+}
+
+td[colid="input_department"] {
+	min-width: 100px  !important; 
+}
+
+td[colid="return_time"] {
+	text-align: center !important; 
+	min-width: 80px  !important; 
+}
+
+td[colid="input_time"] {
+	text-align: center !important; 
+	min-width: 80px  !important; 
+}
+
+td[colid="returner"] {
+	text-align: center !important; 
+	min-width: 80px  !important; 
+}
+
+td[colid="max_pay_item"] {
+	min-width: 150px  !important; 
+}
+
+td[colid="form_note"] {
+	min-width: 100px  !important; 
+}
+
+td[colid="audit_time"] {
+	text-align: center !important; 
+	min-width: 80px  !important; 
+}
+
+td[colid="all_pay_amt"] {
+	text-align: right !important; 
+	min-width: 80px  !important; 
+}
+
+td[colid="storage"] {
+	min-width: 150px  !important; 
+}
+
+
+td[colid="status"] {
+	text-align: center !important; 
+	min-width: 80px  !important; 
+}
+

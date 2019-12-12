@@ -1,0 +1,215 @@
+package logic.reportmanage;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import java.util.Map;
+import java.util.HashMap;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import sqlj.runtime.ref.DefaultContext;
+
+import com.tanry.business.form.FormConstant;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.TextUtil;
+import com.tanry.framework.acl.NoPrivilegeException;
+
+public class WorkOrderDetailBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(WorkOrderDetailBean.class);
+	
+	#sql private iterator HeaderIter(
+			String form_id, 
+			String item_id, 
+			String item_name, 
+			String production_name, 
+			Integer production_step, 
+			Date production_time,
+			Double production_count,
+			String production_man, 
+			String production_note, 
+			Integer is_completed,
+			Date complete_time);
+	
+	#sql private iterator SumIter(
+			Double production_count);
+	
+	public Map getColmunType(){
+		Map map  = new HashMap();
+		map.put("form_id", "String");
+		map.put("item_id", "String");
+		map.put("item_name", "String");
+		map.put("production_name", "String");
+		map.put("production_step", "Number");
+		map.put("production_time", "Date");
+		map.put("production_count", "Number");
+		map.put("production_man", "String");
+		map.put("production_note", "String");
+		map.put("is_completed", "Number");
+		map.put("complete_time", "Date");
+		return map;
+	}
+	
+	public Map getColmunPrefix(){
+		Map map  = new HashMap();
+		map.put("form_id", "d");
+		map.put("item_id", "h");
+		map.put("item_name", "h");
+		map.put("production_name", "d");
+		map.put("production_step", "d");
+		map.put("production_time", "d");
+		map.put("production_count", "d");
+		map.put("production_man", "d");
+		map.put("production_note", "d");
+		map.put("is_completed", "d");
+		map.put("complete_time", "td");
+		return map;
+	}
+	
+	public int count(String queryStr)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		
+		DefaultContext myCtx = getDefaultContext();
+		int total = 0;
+		#sql [myCtx] {
+		SELECT
+    	    count(*) into :total
+    	FROM
+    	:{Com_("D_T1_WORK_ORDER_DETAIL")} d
+		LEFT JOIN
+		:{Com_("D_T1_WORK_ORDER_HEADER")} h
+    	ON
+    	    d.FORM_ID = h.FORM_ID
+    	JOIN
+    	:{Com_("D_T1_ARRENGMENT_DETAIL")} td
+    	ON
+    	    d.FORM_ID = td.WORK_ORDER_ID
+    	JOIN
+    	:{Com_("D_T0_FORM_STATUS")} s
+    	ON
+    	    d.FORM_ID = s.FORM_ID
+    	AND s.IS_CURRENT = 1 
+       WHERE
+       	     1 = 1   :{queryStr :: ''}};
+		closeDefaultContext(myCtx);
+		return total;
+	}
+	
+	
+	public List<Map> query(int startRow, int endRow,String queryStr,String sortStr)  
+			throws NoPrivilegeException,SQLException,NoConnection {
+		
+		DefaultContext myCtx = getDefaultContext();
+		HeaderIter headerIter = null;
+		#sql [myCtx] headerIter = {
+			SELECT
+			    *
+			    FROM
+			        (
+			            SELECT
+			                t.*,
+			                ROWNUM rowNumber
+			            FROM 
+			                (SELECT
+			                	    d.*,
+			                	    h.ITEM_ID,
+			                	    h.ITEM_NAME,
+			                	    td.COMPLETE_TIME,
+			                	    '已审核' STATUS
+			                	FROM
+			                	:{Com_("D_T1_WORK_ORDER_DETAIL")} d
+			                	LEFT JOIN
+			                	:{Com_("D_T1_WORK_ORDER_HEADER")} h
+			                	ON
+			                	    d.FORM_ID = h.FORM_ID
+			                	JOIN
+			                	:{Com_("D_T1_ARRENGMENT_DETAIL")} td
+			                	ON
+			                	    d.FORM_ID = td.WORK_ORDER_ID
+			                	WHERE
+			                	    1 = 1 AND h.AUDIT_TIME IS NOT NULL :{queryStr :: ''}:{sortStr :: ''}) t
+			            WHERE
+			                ROWNUM < :endRow)
+			    WHERE
+			        rowNumber >= :startRow};
+		List<Map> headerLst = processIter(headerIter);
+		headerIter.close();
+		closeDefaultContext(myCtx);
+		return headerLst;
+	}
+	
+	private Map processSumIter(SumIter sumIter) 
+			throws SQLException {
+		Map sumMap = new HashMap();
+		
+		while(sumIter.next()) {
+			sumMap.put("production_count", sumIter.production_count());
+		}
+			
+		return sumMap;
+	}
+	
+	public Map sum( String queryStr) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		
+		DefaultContext myCtx = getDefaultContext();
+		
+		SumIter sumIter = null;
+		
+		#sql [myCtx] sumIter = {
+			SELECT
+        	  sum(d.PRODUCTION_COUNT) PRODUCTION_COUNT 
+        	FROM
+        	:{Com_("D_T1_WORK_ORDER_DETAIL")} d
+    		LEFT JOIN
+    		:{Com_("D_T1_WORK_ORDER_HEADER")} h
+        	ON
+        	    d.FORM_ID = h.FORM_ID
+        	JOIN
+        	:{Com_("D_T1_ARRENGMENT_DETAIL")} td
+        	ON
+        	    d.FORM_ID = td.WORK_ORDER_ID
+        	JOIN
+        	:{Com_("D_T0_FORM_STATUS")} s
+        	ON
+        	    d.FORM_ID = s.FORM_ID
+        	AND s.IS_CURRENT = 1
+        	WHERE
+        	  1 = 1   :{queryStr :: ''}};
+		
+		closeDefaultContext(myCtx);
+		
+		Map sumMap = processSumIter(sumIter);
+		sumIter.close();
+		
+		return sumMap;
+	}
+
+	private List<Map> processIter(HeaderIter headerIter) 
+			throws SQLException {
+		List<Map> headerLst = new ArrayList<Map>();
+		
+		while(headerIter.next()) {
+			Map header = new HashMap();
+			header.put("form_id", headerIter.form_id());
+			header.put("item_id", headerIter.item_id());
+			header.put("item_name", headerIter.item_name());
+			header.put("production_name", headerIter.production_name());
+			header.put("production_step", headerIter.production_step());
+			header.put("production_time", headerIter.production_time());
+			header.put("production_count", headerIter.production_count());
+			header.put("production_man", headerIter.production_man());
+			header.put("production_note", headerIter.production_note());
+			header.put("is_completed", headerIter.is_completed());
+			header.put("complete_time", headerIter.complete_time());
+			headerLst.add(header);
+		}
+		return headerLst;
+	}
+}

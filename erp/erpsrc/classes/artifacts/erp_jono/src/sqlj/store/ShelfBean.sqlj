@@ -1,0 +1,179 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on Thu Apr 16 10:47:57 CST 2015 by lyz
+ * Last edited on Thu Apr 16 10:47:57 CST 2015 by lyz
+ * 
+ * comment: 库位信息表，主要供物流中心捡货使用
+ */
+package logic.store;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import pojo.store.Shelf;
+import sqlj.runtime.ref.DefaultContext;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.TextUtil;
+import com.tanry.framework.acl.NoPrivilegeException;
+
+public class ShelfBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(ShelfBean.class);
+	
+	#sql private iterator ShelfIter(String shelf_id, String shelf_name, String description);
+	
+	public int saveEntity(Shelf shelf)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		String shelfId = shelf.getShelfId();
+		String shelfName = shelf.getShelfName();
+		String description = shelf.getDescription();
+
+		#sql [myCtx] {
+			INSERT INTO :{Com_("D_T2_SHELF")} 
+				(SHELF_ID, SHELF_NAME, DESCRIPTION) 
+			VALUES (:shelfId, :shelfName, :description)
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public int updateEntity(Shelf shelf)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		String shelfId = shelf.getShelfId();
+		String shelfName = shelf.getShelfName();
+		String description = shelf.getDescription();
+
+		#sql [myCtx] {
+			UPDATE
+			:{Com_("D_T2_SHELF")}
+			SET
+				SHELF_ID = :shelfId,
+				SHELF_NAME = :shelfName,
+				DESCRIPTION = :description
+			WHERE 
+				SHELF_ID = :shelfId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+
+	public boolean deletable(String shelfId) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		int total = 0;
+		#sql [myCtx] {
+			SELECT
+			    COUNT(*) into :total
+			FROM
+			:{Com_("D_T2_SHELF_ITEM")}
+			WHERE
+				SHELF_ID = :shelfId
+		};
+		closeDefaultContext(myCtx);
+		
+		if (total > 0) {
+			return false;
+		}
+		return true;
+	}
+
+	public int deleteEntity(String shelfId)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		#sql [myCtx] {
+			DELETE
+			FROM
+			:{Com_("D_T2_SHELF")}
+			WHERE
+				SHELF_ID = :shelfId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+
+	public int count(java.util.Date startDate, java.util.Date endDate, String branchId, String queryType)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		int total = 0;
+		#sql [myCtx] {
+			SELECT
+			    count(*) into :total
+			FROM
+			:{Com_("D_T2_SHELF")} h
+		};
+		closeDefaultContext(myCtx);
+		return total;
+	}
+	
+	public List<Shelf> query() 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		ShelfIter shelfIter = null;
+		#sql [myCtx] shelfIter = {
+			SELECT
+			    *
+			FROM
+			:{Com_("D_T2_SHELF")} s
+			ORDER BY
+				s.SHELF_ID
+		};
+		List<Shelf> shelfLst = processIter(shelfIter);
+		shelfIter.close();
+		closeDefaultContext(myCtx);
+		return shelfLst;
+	}
+	
+	public Shelf queryById(String shelfId) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		ShelfIter shelfIter = null;
+		#sql [myCtx] shelfIter = {
+			SELECT
+			    *
+			FROM
+			:{Com_("D_T2_SHELF")} h
+			WHERE
+				h.SHELF_ID = :shelfId
+		};
+		List<Shelf> shelfLst = processIter(shelfIter);
+		shelfIter.close();
+		closeDefaultContext(myCtx);
+		if (shelfLst !=null && !shelfLst.isEmpty()) {
+			return shelfLst.get(0);
+		}
+		return null;
+	}
+	
+	private List<Shelf> processIter(ShelfIter shelfIter) 
+			throws SQLException {
+		List<Shelf> shelfLst = new ArrayList<Shelf>();
+		while(shelfIter.next()) {
+			Shelf shelf = new Shelf();
+			shelf.setShelfId(shelfIter.shelf_id());
+			shelf.setShelfName(shelfIter.shelf_name());
+			shelf.setDescription(shelfIter.description());
+			shelfLst.add(shelf);
+		}
+		return shelfLst;
+	}
+}

@@ -1,0 +1,25 @@
+
+.dgrid-cell {
+	width: 80px;
+}
+
+.dgrid-column-set-0 {
+	width: 300px;
+}
+
+.field-requestAddress {
+	width: 250px;
+}
+
+.field-formRefId,.field-maxPayItem,.field-requester,.field-provider,.field-formId,.field-formRefId{
+	width: 160px;
+}
+
+.field-buyerName ,.field-inputDepartment,.field-storage,.field-inputer{
+	width: 120px;
+}
+
+.field-scan,.field-operate,.field-itemDimension {
+	width: 90px;
+}
+

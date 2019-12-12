@@ -1,0 +1,239 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on Dec 10, 2014 by liyzh
+ * Last edited on Dec 10, 2014 by liyzh
+ * 
+ * 说明： 直配单餐厅入库
+ */
+package logic.module.restaurant;
+
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import sqlj.runtime.ref.DefaultContext;
+
+import com.tanry.framework.acl.NoPrivilegeException;
+import com.tanry.framework.util.constant.BillStatus;
+
+public class DirectStockInBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(DirectStockInBean.class);
+
+	/**
+	 * 未入库的采购单，树形结构
+	 */
+	#sql private iterator UnstorageIter(String id, String name, String parent, String dtype, String form_status);
+	
+	/**
+	 * 根据制单日期获取所有未入库的采购单，树形结构数据，
+	 * 单据当前状态为未入库，或者已入库（分多次入库的情况，已结案才是真正地完成入库操作）
+	 */
+	public List<Map> queryUnStorage(String branchId) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		String query = " 1=1";
+		if (!"-1".equals(branchId)) {
+			query = query + " AND h.RECEIVER_ID = '" + branchId + "'";
+		}
+		query = query + " AND (NVL( s.STATUS, 'null') = '" + BillStatus.AUDITED_CN + "'"
+				+ " OR NVL( s.STATUS, 'null') = '" + BillStatus.STORED_CN + "')";
+		DefaultContext myCtx = getDefaultContext();
+		UnstorageIter unstorageIter = null;
+		#sql [myCtx] unstorageIter = {
+			WITH
+			    purchase AS
+			    (
+			        SELECT
+			            h.FORM_ID,
+			            h.FORM_TIME,
+			            s.STATUS AS form_status
+			        FROM
+			        :{Com_("D_T1_PURCHASING_HEADER")} h
+			        LEFT JOIN
+			        :{Com_("D_T0_FORM_STATUS")} s
+			        ON
+			            s.FORM_ID = h.FORM_ID
+			        AND s.IS_CURRENT = 1
+			        WHERE
+			            h.DELIVERY_TYPE = 'DIRECT'
+			        AND h.RECEIVE_ADDRESS IS NOT NULL --直配单获取小单
+			        AND :{query :: 1=1}
+			    )
+			SELECT
+			    *
+			FROM
+			    (
+			        SELECT
+			            TO_CHAR( h.FORM_TIME, 'yyyy-MM-dd') AS id,
+			            TO_CHAR( h.FORM_TIME, 'yyyy-MM-dd') AS name,
+			            'root'                              AS parent,
+			            ''                                  AS dtype,
+			            ''                                  AS form_status
+			        FROM
+			            purchase h
+			        GROUP BY
+			            h.FORM_TIME
+			        ORDER BY
+			            h.FORM_TIME DESC) a
+			UNION ALL
+			SELECT
+			    *
+			FROM
+			    (
+			        SELECT
+			            h.form_id                           AS id,
+			            h.form_id                           AS name,
+			            TO_CHAR( h.FORM_TIME, 'yyyy-MM-dd') AS parent,
+			            'DIRECT'                            AS dtype,
+			            form_status
+			        FROM
+			            purchase h
+			        ORDER BY
+			            SUBSTR(h.FORM_ID, 3) DESC )};
+		List<Map> nodeLst = new ArrayList<Map>();
+		while(unstorageIter.next()) {
+			Map<String, String> node = new HashMap<String, String>();
+			node.put("id", unstorageIter.id());
+			node.put("name", unstorageIter.name());
+			node.put("parent", unstorageIter.parent());
+			node.put("dtype", unstorageIter.dtype());
+			node.put("status", unstorageIter.form_status());
+			nodeLst.add(node);
+		}
+		unstorageIter.close();
+		closeDefaultContext(myCtx);
+		return nodeLst;
+	}
+	
+	public List<Map> queryUnStorage(String branchId,String itemName) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		String query = " 1=1";
+		if (!"-1".equals(branchId)) {
+			query = query + " AND h.RECEIVER_ID = '" + branchId + "'";
+		}
+		query = query + " AND (NVL( s.STATUS, 'null') = '" + BillStatus.AUDITED_CN + "'"
+				+ " OR NVL( s.STATUS, 'null') = '" + BillStatus.STORED_CN + "')";
+		
+		DefaultContext myCtx = getDefaultContext();
+		UnstorageIter unstorageIter = null;
+		#sql [myCtx] unstorageIter = {
+			WITH
+			 a AS (
+			        SELECT DISTINCT
+			            t.FORM_ID
+			        FROM
+			        :{Com_("D_T1_PURCHASING_DETAIL")} t
+			        WHERE
+			            1=1
+			        AND (
+			                t.ITEM_ID = :itemName
+			            OR  t.ITEM_NAME = :itemName)
+			        ORDER BY
+			            t.FORM_ID
+			    ),
+			    purchase AS
+			    (
+			        SELECT
+			            h.FORM_ID,
+			            h.FORM_TIME,
+			            s.STATUS AS form_status
+			        FROM
+			        :{Com_("D_T1_PURCHASING_HEADER")} h
+			        INNER JOIN
+			        	a
+			        ON
+			             a.FORM_ID = h.FORM_ID
+			        LEFT JOIN
+			        :{Com_("D_T0_FORM_STATUS")} s
+			        ON
+			            s.FORM_ID = h.FORM_ID
+			        AND s.IS_CURRENT = 1
+
+			        WHERE
+			            h.DELIVERY_TYPE = 'DIRECT'
+			        AND h.RECEIVE_ADDRESS IS NOT NULL --直配单获取小单
+			        AND :{query :: 1=1}
+			    )
+			SELECT
+			    *
+			FROM
+			    (
+			        SELECT
+			            TO_CHAR( h.FORM_TIME, 'yyyy-MM-dd') AS id,
+			            TO_CHAR( h.FORM_TIME, 'yyyy-MM-dd') AS name,
+			            'root'                              AS parent,
+			            ''                                  AS dtype,
+			            ''                                  AS form_status
+			        FROM
+			            purchase h
+			        GROUP BY
+			            h.FORM_TIME
+			        ORDER BY
+			            h.FORM_TIME DESC) a
+			UNION ALL
+			SELECT
+			    *
+			FROM
+			    (
+			        SELECT
+			            h.form_id                           AS id,
+			            h.form_id                           AS name,
+			            TO_CHAR( h.FORM_TIME, 'yyyy-MM-dd') AS parent,
+			            'DIRECT'                            AS dtype,
+			            form_status
+			        FROM
+			            purchase h
+			        ORDER BY
+			            SUBSTR(h.FORM_ID, 3) DESC )};
+		List<Map> nodeLst = new ArrayList<Map>();
+		while(unstorageIter.next()) {
+			Map<String, String> node = new HashMap<String, String>();
+			node.put("id", unstorageIter.id());
+			node.put("name", unstorageIter.name());
+			node.put("parent", unstorageIter.parent());
+			node.put("dtype", unstorageIter.dtype());
+			node.put("status", unstorageIter.form_status());
+			nodeLst.add(node);
+		}
+		unstorageIter.close();
+		closeDefaultContext(myCtx);
+		return nodeLst;
+	}
+	
+	public boolean checkAudit(String pFormId) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		int count = 0;
+		#sql [myCtx] {
+			SELECT
+			    COUNT(*) into :count
+			FROM
+			:{Com_("D_T1_INPUT_HEADER")} h
+			INNER JOIN
+			:{Com_("D_T0_FORM_STATUS")} s
+			ON
+			    s.FORM_ID = h.FORM_ID
+			AND s.IS_CURRENT = 1
+			AND s.STATUS = '未审核'
+			WHERE
+			    h.FORM_REF_ID = :pFormId
+		};
+		closeDefaultContext(myCtx);
+		if (count > 0) {
+			return true;
+		}
+		return false;
+	}
+}

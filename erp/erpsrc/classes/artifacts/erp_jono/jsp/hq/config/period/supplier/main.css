@@ -1,0 +1,81 @@
+#branchTree {
+	position: absolute;
+	left: 0;
+	top: 32px;
+	bottom: 0px;
+	width: 20%;
+	height: auto; /* override default height: 30em; in dgrid.css */
+}
+
+#categoryTree {
+	position: absolute;
+	left: 20%;
+	top: 32px;
+	bottom: 0px;
+	width: 20%;
+	height: auto; /* override default height: 30em; in dgrid.css */
+}
+
+#dataGrid {
+	position: absolute;
+	right: 0;
+	top: 32px;
+	bottom: 0px;
+	width: 60%;
+	height: auto; /* override default height: 30em; in dgrid.css */
+}
+
+#commandTable {
+	position: absolute;
+	bottom: 0;
+	width: 100%;
+}
+
+th[role="columnheader"] {
+	text-align: center;
+}
+
+th.edit-note {
+	color: red;
+}
+
+.dgrid-cell {
+	/* 	width: 80px; make all the columns 80px wide */
+	vertical-align: middle;
+}
+
+.field-rownumber, .field-categoryId, .field-itemId, .field-scycle {
+	text-align: center;
+}
+
+.field-rownumber {
+	width: 40px;
+}
+
+.field-itemId, .field-categoryId {
+	width: 70px;
+}
+
+.field-itemName {
+	width: 120px;
+}
+
+.field-queryCode {
+	width: 60px;
+}
+
+.field-itemDimension {
+	width: 50px;
+}
+
+.field-scycle {
+	width: 80px;
+}
+
+.field-inventorysCycle {
+	width: 80px;
+}
+
+.grid-number {
+	text-align: right;
+}

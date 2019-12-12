@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE struts PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN"
+    "http://struts.apache.org/dtds/struts-2.0.dtd">
+
+<struts>
+	<package name="setting_user" namespace="/setting/user" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.setting.user.action.UserManageAction">
+			<result name="success">/jsp/setting/user/main.jsp</result>
+		</action>
+		
+		<action name="addView" method="editView" class="com.tanry.business.module.setting.user.action.UserManageAction">
+			<result name="success">/jsp/setting/user/add.jsp</result>
+		</action>
+		
+		<action name="editView" method="editView" class="com.tanry.business.module.setting.user.action.UserManageAction">
+			<result name="success">/jsp/setting/user/edit.jsp</result>
+		</action>
+		
+		<action name="setRoleView" method="setRoleView" class="com.tanry.business.module.setting.user.action.UserManageAction">
+			<result name="success">/jsp/setting/user/setRole.jsp</result>
+		</action>
+		
+		<action name="setDeptView" method="setDeptView" class="com.tanry.business.module.setting.user.action.UserManageAction">
+			<result name="success">/jsp/setting/user/setDept.jsp</result>
+		</action>
+		
+		<action name="checkUserId" method="checkUserId" class="com.tanry.business.module.setting.user.action.UserManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="queryDeptTree" method="queryDeptTree" class="com.tanry.business.module.setting.user.action.UserManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="queryDept" method="queryDept" class="com.tanry.business.module.setting.user.action.UserManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doQuery" method="doQuery" class="com.tanry.business.module.setting.user.action.UserManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doSave" method="doSave" class="com.tanry.business.module.setting.user.action.UserManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doDelete" method="doDelete" class="com.tanry.business.module.setting.user.action.UserManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="setUserRole" method="setUserRole" class="com.tanry.business.module.setting.user.action.UserManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="setMultiDept" method="setMultiDept" class="com.tanry.business.module.setting.user.action.UserManageAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="setting_user_dept" namespace="/setting/user/dept" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.setting.user.action.UserManageAction">
+			<result name="success">/jsp/setting/user/dept/main.jsp</result>
+		</action>
+	</package>
+	
+	<package name="setting_user_password" namespace="/setting/user/password" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.setting.user.action.ModifyPasswordAction">
+			<result name="success">/jsp/setting/password/main.jsp</result>
+		</action>
+		
+		<action name="checkOldPwd" method="checkOldPwd" class="com.tanry.business.module.setting.user.action.ModifyPasswordAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doModify" method="doModify" class="com.tanry.business.module.setting.user.action.ModifyPasswordAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doReset" method="doReset" class="com.tanry.business.module.setting.user.action.ModifyPasswordAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="power_search" namespace="/setting/power" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.setting.user.action.UserManageAction">
+			<result name="success">/jsp/setting/power/main.jsp</result>
+		</action>
+		
+		<action name="searchPower" method="searchPower" class="com.tanry.business.module.setting.user.action.UserManageAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="role_search" namespace="/setting/rolesearch" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.setting.user.action.UserManageAction">
+			<result name="success">/jsp/setting/rolesearch/main.jsp</result>
+		</action>
+		
+		<action name="searchRole" method="searchRole" class="com.tanry.business.module.setting.user.action.UserManageAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+</struts>
+

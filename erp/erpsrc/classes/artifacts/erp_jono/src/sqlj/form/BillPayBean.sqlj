@@ -1,0 +1,160 @@
+
+package logic.form;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import pojo.form.BillPay;
+import sqlj.runtime.ref.DefaultContext;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.TextUtil;
+import com.tanry.framework.acl.NoPrivilegeException;
+
+public class BillPayBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger("logic.form.BillPayBean");
+	
+	#sql private iterator HeaderIter(
+			String cbill_c, String cpay_c, String cpay_n, String sunit, Double npayamt,
+			String cvip_c, String cvip_n, String carrear_c, String carrear_n);
+	
+	/**
+	 * companyId由调用者通过参数指定
+	 */
+	public int saveEntity(BillPay header, String comId)
+			throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getComContext(comId);
+
+		String cbillC = header.getCbillC();
+		String cpayC = header.getCpayC();
+		String cpayN = header.getCpayN();
+		String sunit = header.getSunit();
+		Double npayamt = header.getNpayamt();
+		String cvipC = header.getCvipC();
+		String cvipN = header.getCvipN();
+		String carrearC = header.getCarrearC();
+		String carrearN = header.getCarrearN();
+		
+		String comTb = comId + ".D_T_BILL_PAY";
+
+		#sql [myCtx] {
+			INSERT INTO :{comTb} 
+				(cBill_c, cPay_c, cPay_n, sUnit, nPayAmt, cvip_c, cvip_n, cArrear_c, cArrear_n) 
+			VALUES (:cbillC, :cpayC, :cpayN, :sunit, :npayamt, :cvipC, :cvipN, :carrearC, :carrearN)
+		};
+		closeDefaultContext(myCtx);
+		return 1;
+	}
+
+	public int deleteEntity(java.util.Date startDate, java.util.Date endDate, String branchId)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		Date sDate = SqlDateUtil.getSqlDate(startDate);
+		Date eDate = SqlDateUtil.getSqlDate(endDate);
+
+		#sql [myCtx] {
+			DELETE FROM
+		(
+					SELECT
+					p.*
+				FROM
+					:{Com_("d_t_bill_pay")} p
+				INNER JOIN
+					:{Com_("d_t_food_bill")} fb
+				ON
+					fb.CBILL_C = p.CBILL_C
+				WHERE
+					fb.DBUSINESS >= :sDate
+				AND fb.DBUSINESS <= :eDate
+				AND fb.CBRANCH_C = :branchId
+		)
+		};
+		closeDefaultContext(myCtx);
+		return 1;
+	}
+
+	public int count(java.util.Date startDate, java.util.Date endDate, String branchId)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		
+		Date sDate = SqlDateUtil.getSqlDate(startDate);
+		Date eDate = SqlDateUtil.getSqlDate(endDate);
+		
+		DefaultContext myCtx = getDefaultContext();
+		int total = 0;
+		#sql [myCtx] {
+			SELECT
+				count(*) into :total
+			FROM
+				:{Com_("d_t_bill_pay")} p
+			INNER JOIN
+				:{Com_("d_t_food_bill")} fb
+			ON
+				fb.CBILL_C = p.CBILL_C
+			WHERE
+				fb.DBUSINESS >= :sDate
+			AND fb.DBUSINESS <= :eDate
+			AND fb.CBRANCH_C = :branchId
+		};
+		closeDefaultContext(myCtx);
+		return total;
+	}
+
+	public List<BillPay> query(java.util.Date startDate, java.util.Date endDate, String branchId) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		
+		Date sDate = SqlDateUtil.getSqlDate(startDate);
+		Date eDate = SqlDateUtil.getSqlDate(endDate);
+		
+		DefaultContext myCtx = getDefaultContext();
+		HeaderIter headerIter = null;
+		#sql [myCtx] headerIter = {
+			SELECT
+			p.cBill_c, p.cPay_c, p.cPay_n, p.sUnit, p.nPayAmt, 
+			p.cVIP_c, p.cVIP_n, p.cArrear_c, p.cArrear_n,
+				fb.DBUSINESS,
+				fb.CBRANCH_C,
+				fb.CBRANCH_N
+			FROM
+				:{Com_("d_t_bill_pay")} p
+			INNER JOIN
+				:{Com_("d_t_food_bill")} fb
+			ON
+				fb.CBILL_C = p.CBILL_C
+			WHERE
+				fb.DBUSINESS >= :sDate
+			AND fb.DBUSINESS <= :eDate
+			AND fb.CBRANCH_C = :branchId
+		};
+		List<BillPay> headerLst = processIter(headerIter);
+		headerIter.close();
+		closeDefaultContext(myCtx);
+		return headerLst;
+	}
+	
+	private List<BillPay> processIter(HeaderIter headerIter) 
+			throws SQLException {
+		List<BillPay> headerLst = new ArrayList<BillPay>();
+		while(headerIter.next()) {
+			BillPay header = new BillPay();
+			header.setCbillC(headerIter.cbill_c());
+			header.setCpayC(headerIter.cpay_c());
+			header.setCpayN(headerIter.cpay_n());
+			header.setSunit(headerIter.sunit());
+			header.setNpayamt(headerIter.npayamt());
+			header.setCvipC(headerIter.cvip_c());
+			header.setCvipN(headerIter.cvip_n());
+			header.setCarrearC(headerIter.carrear_c());
+			header.setCarrearN(headerIter.carrear_n());
+			headerLst.add(header);
+		}
+		return headerLst;
+	}
+}

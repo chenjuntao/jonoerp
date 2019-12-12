@@ -1,0 +1,24 @@
+.dgrid {
+	position: absolute;
+	right: 0;
+	top: 33px;
+	bottom: 0px;
+	width: 100%;
+	height: auto;
+}
+
+.dgrid-cell {
+	width: 100px;
+}
+
+.field-roleId{
+	width: 80px;
+}
+
+.field-powerName{
+	width: 150px;
+}
+
+.field-none {
+	width: 200px;
+}

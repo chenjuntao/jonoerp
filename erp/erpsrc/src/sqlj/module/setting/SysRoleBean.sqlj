@@ -1,0 +1,266 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on Tue Mar 17 15:04:23 CST 2015 by lyz
+ * Last edited on Tue Mar 17 15:04:23 CST 2015 by lyz
+ * 
+ * comment: 系统角色表
+ */
+package logic.module.setting;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import sqlj.runtime.ref.DefaultContext;
+
+import com.tanry.business.module.setting.user.pojo.SysRole;
+import com.tanry.framework.acl.NoPrivilegeException;
+
+public class SysRoleBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(SysRoleBean.class);
+	
+	#sql private iterator RoleIter(String role_id, String role_name, String branch_type, String branch_type_name, String description);
+	
+	public int saveEntity(SysRole role)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		String roleId = role.getRoleId();
+		String roleName = role.getRoleName();
+		String branchType = role.getBranchType();
+		String description = role.getDescription();
+
+		#sql [myCtx] {
+			INSERT INTO :{Com_("D_T0_ROLE")} 
+				(ROLE_ID, ROLE_NAME, BRANCH_TYPE, DESCRIPTION) 
+			VALUES (:roleId, :roleName, :branchType, :description)
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public int updateEntity(String oldRoleId, SysRole role)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		String roleId = role.getRoleId();
+		String roleName = role.getRoleName();
+		String description = role.getDescription();
+
+		#sql [myCtx] {
+			UPDATE
+			:{Com_("D_T0_ROLE")}
+			SET
+				ROLE_ID = :roleId,
+				ROLE_NAME = :roleName,
+				DESCRIPTION = :description
+			WHERE 
+				ROLE_ID = :oldRoleId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+
+	public boolean deletable(String roleId) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		int total = 0;
+		#sql [myCtx] {
+			SELECT
+			    COUNT(*) into :total
+			FROM
+			:{Com_("D_T0_USERTOROLE")} u2r
+		    WHERE
+		        u2r.ROLE_ID = :roleId
+		};
+		closeDefaultContext(myCtx);
+		
+		if (total > 0) {
+			return false;
+		}
+		return true;
+	}
+
+	public int deleteEntity(String roleId)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		#sql [myCtx] {
+			DELETE
+			FROM
+			:{Com_("D_T0_ROLE")}
+			WHERE
+				ROLE_ID = :roleId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public int deleteMenuUser(String roleId)
+			throws NoPrivilegeException, SQLException, NoConnection {
+			DefaultContext myCtx = getDefaultContext();
+
+			#sql [myCtx] {
+				DELETE
+				FROM
+					:{Com_("D_T0_PERMISSION")}
+				WHERE
+					PRINCIPAL_TYPE = 'role'
+				and
+					PRINCIPAL_ID = :roleId
+			};
+			closeDefaultContext(myCtx);
+			
+			return 1;
+		}
+	
+	public List<SysRole> query() 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		RoleIter roleIter = null;
+		#sql [myCtx] roleIter = {
+			SELECT
+			    r.*,
+			    t.TYPE_NAME AS branch_type_name
+			FROM
+			:{Com_("D_T0_ROLE")} r
+			LEFT JOIN
+			:{Com_("D_T2_BRANCH_TYPE")} t
+			ON
+			    t.TYPE_ID = r.BRANCH_TYPE
+			ORDER BY
+				r.BRANCH_TYPE,
+				r.ROLE_ID
+		};
+		List<SysRole> roleLst = processIter(roleIter);
+		roleIter.close();
+		closeDefaultContext(myCtx);
+		return roleLst;
+	}
+	#sql private iterator SysRoleIter(String role_id);
+	
+	public List<SysRole> listSysRole() 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		SysRoleIter roleIter = null;
+		#sql [myCtx] roleIter = {
+			SELECT
+			    r.*
+			FROM
+			:{Com_("D_T0_ROLE")} r
+		};
+		List<SysRole> roleLst = new ArrayList<SysRole>();
+		while(roleIter.next()) {
+			SysRole sysRole = new SysRole();
+			sysRole.setRoleId(roleIter.role_id());
+			roleLst.add(sysRole);
+		}
+		roleIter.close();
+		closeDefaultContext(myCtx);
+		return roleLst;
+	}
+	/**
+	 * 根据部门类型查询角色
+	 */
+	public List<SysRole> queryByBranchType(String branchType) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		RoleIter roleIter = null;
+		#sql [myCtx] roleIter = {
+			SELECT
+			    r.*,
+			    '' AS branch_type_name
+			FROM
+			:{Com_("D_T0_ROLE")} r
+			WHERE
+				BRANCH_TYPE = :branchType
+			ORDER BY
+				r.ROLE_ID
+		};
+		List<SysRole> roleLst = processIter(roleIter);
+		roleIter.close();
+		closeDefaultContext(myCtx);
+		return roleLst;
+	}
+	
+	public SysRole queryById(String roleId) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		RoleIter roleIter = null;
+		#sql [myCtx] roleIter = {
+			SELECT
+			    r.*,
+			    t.TYPE_NAME AS branch_type_name
+			FROM
+			:{Com_("D_T0_ROLE")} r
+			LEFT JOIN
+			:{Com_("D_T2_BRANCH_TYPE")} t
+			ON
+			    t.TYPE_ID = r.BRANCH_TYPE
+			WHERE
+				ROLE_ID = :roleId
+		};
+		List<SysRole> roleLst = processIter(roleIter);
+		roleIter.close();
+		closeDefaultContext(myCtx);
+		if (roleLst !=null && !roleLst.isEmpty()) {
+			return roleLst.get(0);
+		}
+		return null;
+	}
+
+	public SysRole queryRole(String userId) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		RoleIter roleIter = null;
+		#sql [myCtx] roleIter = {
+			SELECT
+			    r.*, '' as branch_type_name
+			FROM
+			:{Com_("D_T0_USERTOROLE")} u2r
+			INNER JOIN
+			:{Com_("D_T0_ROLE")} r
+			ON
+			    r.ROLE_ID = u2r.ROLE_ID
+			WHERE
+			    u2r.USER_ID = :userId
+		};
+		List<SysRole> roleLst = processIter(roleIter);
+		roleIter.close();
+		closeDefaultContext(myCtx);
+		if (roleLst !=null && !roleLst.isEmpty()) {
+			return roleLst.get(0);
+		}
+		return null;
+	}
+	
+	private List<SysRole> processIter(RoleIter roleIter) 
+			throws SQLException {
+		List<SysRole> roleLst = new ArrayList<SysRole>();
+		while(roleIter.next()) {
+			SysRole role = new SysRole();
+			role.setRoleId(roleIter.role_id());
+			role.setRoleName(roleIter.role_name());
+			role.setBranchType(roleIter.branch_type());
+			role.setBranchTypeName(roleIter.branch_type_name());
+			role.setDescription(roleIter.description());
+			roleLst.add(role);
+		}
+		return roleLst;
+	}
+}

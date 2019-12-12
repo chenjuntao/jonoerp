@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+	http://www.springframework.org/schema/beans/spring-beans-4.0.xsd" 
+	default-autowire="byName">
+
+	<bean id="BranchDao" class="dao.store.BranchDao" />
+    <bean id="BranchMapper" class="org.mybatis.spring.mapper.MapperFactoryBean">  
+        <property name="mapperInterface" value="mapper.store.BranchMapper"/>  
+        <property name="sqlSessionFactory" ref="mybatisSF"/>  
+    </bean>
+
+	<bean id="DeliveryRegionDao" class="dao.store.DeliveryRegionDao" />
+    <bean id="DeliveryRegionMapper" class="org.mybatis.spring.mapper.MapperFactoryBean">  
+        <property name="mapperInterface" value="mapper.store.DeliveryRegionMapper"/>  
+        <property name="sqlSessionFactory" ref="mybatisSF"/>  
+    </bean>
+   
+</beans>
+

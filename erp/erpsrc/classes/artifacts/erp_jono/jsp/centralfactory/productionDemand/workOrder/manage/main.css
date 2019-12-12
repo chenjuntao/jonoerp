@@ -1,0 +1,70 @@
+#dataGrid {
+	position: absolute;
+	right: 0;
+	top: 92px;
+	bottom: 0;
+	width: 100%;
+	height: auto; /* override default height: 30em; in dgrid.css */
+}
+
+#auditDataGrid {
+	width: 100%;
+	height: 300px; /* override default height: 30em; in dgrid.css */
+}
+
+th[role="columnheader"] {
+	text-align: center;
+}
+
+.dgrid-cell {
+	/* 	width: 80px; make all the columns 80px wide */
+	vertical-align: middle;
+	width: 90px;
+}
+
+.field-rownumber,.field-formId,.field-formTime,.field-formMaker,.field-receiveTime,.field-formStatus,.field-operate
+	{
+	text-align: center;
+}
+
+.field-rownumber {
+	width: 40px;
+}
+
+.field-formId,.field-formNote {
+	width: 180px;
+}
+
+.dgrid-column-set-0,.field-none  {
+	width: 250px;
+}
+
+.field-formStatus {
+	width: 80px;
+}
+
+.field-maxPayItem,.field-productionName  {
+	width: 150px;
+}
+
+.field-operate {
+	width: 60px;
+}
+
+.field-allPayAmt {
+	width: 80px;
+	text-align: right;
+}
+
+/* …Û∫À */
+.field-itemCategory {
+	width: 120px;
+}
+
+.field-formRefId{
+	width: 200px;
+}
+
+.field-itemDimension,.field-itemCount ,.field-itemUnitPrice,.field-payAmt{
+	width: 65px;
+}

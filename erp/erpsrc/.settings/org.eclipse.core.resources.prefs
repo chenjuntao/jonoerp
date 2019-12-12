@@ -1,0 +1,15 @@
+eclipse.preferences.version=1
+encoding//ant_build/local_build.xml=GBK
+encoding//doc/\u6570\u636E\u5E93\u8868\u5B57\u6BB5\u5DEE\u5F02.txt=GBK
+encoding//jsp/common/js/common.js=UTF-8
+encoding//jsp/lc/reportmanage/purchasing/collect/main.js=UTF-8
+encoding//jsp/restaurant/allocateitem/create/main.js=UTF-8
+encoding//jsp/restaurant/common/stock/category/main.js=UTF-8
+encoding//src/action/common/BaseAction.java=UTF-8
+encoding//src/action/reportmanage/ReportManageAction.java=UTF-8
+encoding//src/action/supplier/PoscanAction.java=GBK
+encoding//src/sqlj/form/InputHeaderBean.sqlj=UTF-8
+encoding//src/sqlj/outorder/OutOrderScanBean.sqlj=UTF-8
+encoding//src/sqlj/reportmanage/InputHeaderBean.sqlj=UTF-8
+encoding//src/sqlj/store/BranchBean.sqlj=UTF-8
+encoding/<project>=UTF-8

@@ -1,0 +1,59 @@
+#dataGrid {
+	position: absolute;
+	right: 0;
+	top: 90px;
+	bottom: 0;
+	width: 100%;
+	height: auto; /* override default height: 30em; in dgrid.css */
+}
+
+/* create bill page, pick model dialog using this class */
+#pickGrid {
+	position: absolute;
+	right: 0;
+	top: 60px;
+	bottom: 0;
+	width: 100%;
+	height: auto; /* override default height: 30em; in dgrid.css */
+}
+
+th[role="columnheader"] {
+	text-align: center;
+}
+
+.dgrid-cell {
+	/* 	width: 80px; make all the columns 80px wide */
+	vertical-align: middle;
+}
+
+.field-rownumber, .field-templateId, .field-branchId, .field-categoryId,
+	.field-templateNote, .field-scan, .field-manage {
+	text-align: center;
+}
+
+.field-rownumber {
+	width: 40px;
+}
+
+.field-templateId {
+	width: 200px;
+}
+
+.field-templateName, .field-branchId, .field-categoryId,
+	.field-templateNote {
+	width: 120px;
+}
+
+.field-arrivePeriod {
+	width: 80px;
+	text-align: right;
+}
+
+.field-scan, .field-manage {
+	width: 60px;
+}
+
+.field-none {
+	/* 	width: 60px; */
+	
+}

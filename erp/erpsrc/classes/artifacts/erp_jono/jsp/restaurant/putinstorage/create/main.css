@@ -1,0 +1,43 @@
+#billTree {
+	position: absolute;
+	left: 0;
+	right: 0;
+	top: 30px;
+	bottom: 0px;
+	width: 20%;
+	height: auto; /* override default height: 30em; in dgrid.css */
+}
+
+#billInfo {
+	position: absolute;
+	right: 0;
+	top: 30px;
+	bottom: 0px;
+	width: 80%;
+	height: auto; /* override default height: 30em; in dgrid.css */
+}
+
+.dgrid-cell {
+	width: 65px;
+}
+
+.field-ref {
+	width: 180px;
+}
+
+.field-itemName {
+	width: 120px;
+}
+
+.field-itemDimension {
+	width: 50px;
+}
+
+.field-receiver {
+	width: 110px;
+}
+
+.field-receiveAddress {
+	width: 150px;
+}
+

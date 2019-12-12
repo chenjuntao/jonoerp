@@ -1,0 +1,42 @@
+#dataGrid {
+	position: absolute;
+	right: 0;
+	top: 92px;
+	bottom: 0;
+	width: 100%;
+	height: auto; /* override default height: 30em; in dgrid.css */
+}
+
+#auditDataGrid {
+	width: 100%;
+	height: 300px; /* override default height: 30em; in dgrid.css */
+}
+
+th[role="columnheader"] {
+	text-align: center;
+}
+
+.dgrid-cell {
+	/* 	width: 80px; make all the columns 80px wide */
+	vertical-align: middle;
+}
+
+.field-rownumber, .field-productionTime {
+	text-align: center;
+}
+
+.field-productionCount {
+	text-align: right;
+}
+
+.field-rownumber {
+	width: 40px;
+}
+
+.field-productionName, .field-productionNote {
+	width: 180px;
+}
+
+.field-productionTime, .field-productionCount, .field-productionMan {
+	width: 100px;
+}

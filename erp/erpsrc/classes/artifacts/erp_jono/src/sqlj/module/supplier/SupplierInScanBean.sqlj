@@ -1,0 +1,210 @@
+package logic.module.supplier;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
+
+import pojo.form.CollectDetail;
+import pojo.form.RequestHeader;
+import sqlj.runtime.ref.DefaultContext;
+
+import com.tanry.business.form.FormConstant;
+import com.tanry.framework.acl.NoPrivilegeException;
+import com.tanry.framework.util.DateTimeUtil;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.TextUtil;
+
+public class SupplierInScanBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(SupplierInScanBean.class);
+	
+	#sql private iterator HeaderIter(
+			String form_id, 
+			String provider,
+			String form_ref_id, 
+			String input_department, 
+			String inputer, 
+			String form_type, 
+			Date input_time, 
+			String form_note, 
+			Date audit_time,
+			Double all_pay_amt, 
+			String status, 
+			String max_pay_item);
+	
+	
+	private String formQuery( String supplierId,String branchId,String formIdText1,String formIdText2,String initStatus,String status){
+		String query = " 1=1 ";
+		if (!TextUtil.isEmpty(supplierId)) { 
+			query = query + " AND h.PROVIDER_ID = '" + supplierId + "'";
+		}
+		
+		if (!TextUtil.isEmpty(branchId)) { 
+			query = query + " AND h.INPUT_DEPARTMENT_ID = '" + branchId + "'";
+		}
+		
+		if (!TextUtil.isEmpty(formIdText1)) { 
+			query = query + " AND upper(h.FORM_ID)  like'%" + formIdText1 + "%'";
+		}
+		
+		if (!TextUtil.isEmpty(formIdText2)) { 
+			query = query + " AND upper(h.FORM_REF_ID)  like'%" + formIdText2 + "%'";
+		}
+		
+		if (!TextUtil.isEmpty(initStatus)) { 
+			query = query + " AND s.status  in('" + initStatus.replaceAll(",", "','") + "')";
+		}
+		
+		if (!TextUtil.isEmpty(status)) {
+			if("供应商已确认".equals(status)){
+				query = query + " AND s1.status  = '" + status + "'";
+			}else{
+				query = query + " AND s1.status is null ";
+			}
+		}
+		
+		return query;
+	}
+	
+	/**
+	 * startDate 	审核开始日期
+	 * endDate	  	审核结束日期
+	 * supplierId 	供应商Id
+	 * 
+	 * 查看入库单状态
+	 */
+	public List<Map> inScan(java.util.Date startDate, java.util.Date endDate, String supplierId,String branchId,String formIdText1,String formIdText2,String initStatus,String status,int startRow,int endRow)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		String query = formQuery(supplierId,branchId,formIdText1,formIdText2,initStatus,status);
+		
+		Date sDate = SqlDateUtil.getSqlDate(startDate);
+		Date eDate = SqlDateUtil.getSqlDate(endDate);
+		
+		DefaultContext myCtx = getDefaultContext();
+		HeaderIter headerIter = null;
+		#sql [myCtx] headerIter = {
+			SELECT
+			    *
+			    FROM
+			        (
+			            SELECT
+			                t.*,
+			                ROWNUM rowNumber
+			            FROM
+			                (
+			                    SELECT
+			                       h.*,
+			                       s1.status status
+			                    FROM
+			                    :{Com_("D_T1_INPUT_HEADER")} h
+			                    LEFT JOIN
+			                    :{Com_("D_T0_FORM_STATUS")} s
+			                    ON
+			                        s.FORM_ID = h.FORM_ID
+			                    LEFT JOIN
+			                    :{Com_("d_t2_branch")} b
+			                    ON
+			                        h.PROVIDER_ID = b.BRANCH_ID
+                    			LEFT JOIN
+                    			:{Com_("D_T0_FORM_STATUS")} s1
+	                        	ON
+	                        		s1.FORM_ID = h.FORM_ID
+                        		AND s1.IS_CURRENT = 2
+			                    WHERE
+			                    	:{query :: 1=1}
+			                    AND b.BRANCH_TYPE = 'SUPPLIER'
+							    AND s.IS_CURRENT = 1
+							    AND (
+							            h.AUDIT_TIME >= :sDate
+							        OR  :sDate IS NULL)
+							    AND (
+							            h.AUDIT_TIME <= :eDate
+							        OR  :eDate IS NULL)
+							        ORDER BY h.AUDIT_TIME DESC
+			                		) t
+			            WHERE
+			            	ROWNUM < :endRow )
+			    WHERE
+			    	rowNumber >= :startRow};
+		List<Map> headerLst = processIter(headerIter);
+		headerIter.close();
+		closeDefaultContext(myCtx);
+		return headerLst;
+	}
+	
+	public int count(java.util.Date startDate, java.util.Date endDate, String supplierId,String branchId,String formIdText1,String formIdText2,String initStatus,String status)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		String query = formQuery(supplierId,branchId,formIdText1,formIdText2,initStatus,status);
+		
+		Date sDate = SqlDateUtil.getSqlDate(startDate);
+		Date eDate = SqlDateUtil.getSqlDate(endDate);
+		
+		int counts = 0;
+		
+		DefaultContext myCtx = getDefaultContext();
+		#sql [myCtx]  {
+			SELECT
+			     count(*) into :counts
+			    FROM
+			    :{Com_("D_T1_INPUT_HEADER")} h
+			    LEFT JOIN
+			    :{Com_("D_T0_FORM_STATUS")} s
+			    ON
+			        s.FORM_ID = h.FORM_ID
+			    LEFT JOIN
+			    :{Com_("d_t2_branch")} b
+			    ON
+			        h.PROVIDER_ID = b.BRANCH_ID
+        		LEFT JOIN
+    			:{Com_("D_T0_FORM_STATUS")} s1
+            	ON
+            		s1.FORM_ID = h.FORM_ID
+        		AND s1.IS_CURRENT = 2					
+                WHERE
+                	:{query :: 1=1}
+                AND b.BRANCH_TYPE = 'SUPPLIER'
+			    AND s.IS_CURRENT = 1
+			    AND (
+			            h.AUDIT_TIME >= :sDate
+			        OR  :sDate IS NULL)
+			    AND (
+			            h.AUDIT_TIME <= :eDate
+			        OR  :eDate IS NULL)};
+		closeDefaultContext(myCtx);
+		return counts;
+	}
+	
+	
+	private List<Map> processIter(HeaderIter headerIter) 
+			throws SQLException {
+		List<Map> headLst = new ArrayList<Map>();
+		while(headerIter.next()) {
+			Map<String, Object> head = new HashMap<String, Object>();
+			head.put("form_id", headerIter.form_id());
+			head.put("provider", headerIter.provider());
+			head.put("form_ref_id", headerIter.form_ref_id());
+			head.put("input_department", headerIter.input_department());
+			head.put("inputer", headerIter.inputer());
+			head.put("form_type", headerIter.form_type());
+			head.put("input_time", headerIter.input_time());
+			head.put("form_note", headerIter.form_note());
+			head.put("audit_time", headerIter.audit_time());
+			head.put("status", headerIter.status());
+			head.put("all_pay_amt", headerIter.all_pay_amt());
+			head.put("max_pay_item", headerIter.max_pay_item());
+			
+			headLst.add(head);
+		}
+		return headLst;
+	}
+	
+}

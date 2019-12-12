@@ -1,0 +1,325 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on Sat Sep 20 21:22:57 CST 2014 by lyz
+ * Last edited on Sat Sep 20 21:22:57 CST 2014 by lyz
+ * 
+ * comment: 餐厅退货单表头
+ */
+package logic.form;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import pojo.form.ReturnGoodsHeader;
+import sqlj.runtime.ref.DefaultContext;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.TextUtil;
+import com.tanry.framework.acl.NoPrivilegeException;
+
+public class ReturnGoodsHeaderBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(ReturnGoodsHeaderBean.class);
+	
+	#sql private iterator HeaderIter(
+			String form_id, 
+			String form_ref_id,
+			String form_note,
+			String returner_id,
+			String returner,
+			Date return_time,
+			Double all_pay_amt,
+			String max_pay_item,
+			String provider,
+			Date receive_time,
+			String requester,
+			String inputer,
+			Date input_time,
+			Date audit_time,
+			String snote,
+			String smax,
+			String status,
+			Date audit_time_actual
+			);
+	
+	public int saveEntity(ReturnGoodsHeader header)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		String formId = header.getFormId();
+		String formRefId = header.getFormRefId();
+		String formNote = header.getFormNote();
+		String returnerId = header.getReturnerId();
+		String returner = header.getReturner();
+		Date returnTime = SqlDateUtil.getSqlDate(header.getReturnTime());
+		Date auditTime = SqlDateUtil.getSqlDate(header.getAuditTime());
+		Double allPayAmt = header.getAllPayAmt();
+		String maxPayItem = header.getMaxPayItem();
+
+		#sql [myCtx] {
+			INSERT INTO :{Com_("D_T1_RETURN_GOODS_HEADER")} 
+				(FORM_ID, FORM_REF_ID, FORM_NOTE, RETURNER_ID, RETURNER, RETURN_TIME,AUDIT_TIME, ALL_PAY_AMT, MAX_PAY_ITEM) 
+			VALUES (:formId, :formRefId, :formNote, :returnerId, :returner, :returnTime, :auditTime, :allPayAmt, :maxPayItem)
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public int updateEntity(ReturnGoodsHeader header)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		String formId = header.getFormId();
+		String formRefId = header.getFormRefId();
+		String formNote = header.getFormNote();
+		String returnerId = header.getReturnerId();
+		String returner = header.getReturner();
+		Date returnTime = SqlDateUtil.getSqlDate(header.getReturnTime());
+		Date auditTime = SqlDateUtil.getSqlDate(header.getAuditTime());
+		Double allPayAmt = header.getAllPayAmt();
+		String maxPayItem = header.getMaxPayItem();
+
+		#sql [myCtx] {
+			UPDATE
+			:{Com_("D_T1_RETURN_GOODS_HEADER")}
+			SET
+				FORM_ID = :formId,
+				FORM_NOTE = :formNote,
+				ALL_PAY_AMT = :allPayAmt,
+				MAX_PAY_ITEM = :maxPayItem
+			WHERE 
+				FORM_ID = :formId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+
+	public int deleteEntity(String formId)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		#sql [myCtx] {
+			DELETE
+			FROM
+			:{Com_("D_T1_RETURN_GOODS_HEADER")}
+			WHERE
+				FORM_ID = :formId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public int audit(String formId, java.util.Date auditTime)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		Date auditTimeActual = SqlDateUtil.getSqlDate(new java.util.Date());
+		Date sAuditTime = SqlDateUtil.getSqlDate(auditTime);
+		#sql [myCtx] {
+			UPDATE
+			:{Com_("D_T1_RETURN_GOODS_HEADER")}
+			SET
+				audit_time = :sAuditTime,
+				AUDIT_TIME_ACTUAL =:auditTimeActual
+			WHERE 
+				FORM_ID = :formId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+
+	public int count(java.util.Date startDate, java.util.Date endDate, String branchId, String queryType,String branchType)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		String query = formQuery(branchId, queryType,branchType);
+		Date sDate = SqlDateUtil.getSqlDate(startDate);
+		Date eDate = SqlDateUtil.getSqlDate(endDate);
+		
+		DefaultContext myCtx = getDefaultContext();
+		int total = 0;
+		#sql [myCtx] {
+		SELECT
+		    COUNT(*)
+		INTO
+		    :total
+		FROM
+		:{Com_("D_T1_RETURN_GOODS_HEADER")} rh
+		LEFT JOIN
+		:{Com_("D_T0_FORM_STATUS")} s
+		ON
+		    s.FORM_ID = rh.FORM_ID
+		AND s.IS_CURRENT = 1
+		INNER JOIN
+		:{Com_("D_T1_SHIPPING_HEADER")} h
+		ON
+		    h.FORM_ID = rh.FORM_REF_ID
+		LEFT JOIN
+		:{Com_("d_t2_branch")} b
+		ON
+		    h.REQUESTER_ID = b.BRANCH_ID
+		WHERE
+		    :{query ::}
+		AND (
+		        rh.RETURN_TIME >= :sDate
+		    OR  :sDate IS NULL)
+		AND (
+		        rh.RETURN_TIME <= :eDate
+		    OR  :eDate IS NULL)};
+		closeDefaultContext(myCtx);
+		return total;
+	}
+	
+	private String formQuery(String branchId, String queryType,String branchType) {
+		String query = " 1=1";
+		if (!"-1".equals(branchId)&&!TextUtil.isEmpty(branchId)) {
+			query = query + " AND h.REQUESTER_ID = '" + branchId + "'";
+		}
+		if ("audit".equals(queryType)) { // 获取未审核记录
+			query = query + " AND NVL( s.STATUS, 'null') = '未审核'"; 
+		}
+		
+		return query;
+	}
+	
+	public List<ReturnGoodsHeader> query(java.util.Date startDate, java.util.Date endDate, String branchId, String queryType,String branchType,int startRow, int endRow)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		String query = formQuery(branchId, queryType,branchType);
+		Date sDate = SqlDateUtil.getSqlDate(startDate);
+		Date eDate = SqlDateUtil.getSqlDate(endDate);
+		
+		DefaultContext myCtx = getDefaultContext();
+		HeaderIter headerIter = null;
+		#sql [myCtx] headerIter = {
+		SELECT
+			    *
+			    FROM
+			        (
+			            SELECT
+			                t.*,
+			                ROWNUM rowNumber
+			            FROM
+			                (SELECT
+			                	    rh.*,
+			                	    h.PROVIDER,
+			                	    h.RECEIVE_TIME,
+			                	    h.REQUESTER,
+			                	    h.INPUTER,
+			                	    h.INPUT_TIME,
+			                	    h.FORM_NOTE    AS snote,
+			                	    h.MAX_PAY_ITEM AS smax,
+			                	    s.status 
+			                	FROM
+			                	:{Com_("D_T1_RETURN_GOODS_HEADER")} rh
+			                	LEFT JOIN
+			                	:{Com_("D_T0_FORM_STATUS")} s
+			                	ON
+			                	    s.FORM_ID = rh.FORM_ID
+			                	AND s.IS_CURRENT = 1
+			                	INNER JOIN
+			                	:{Com_("D_T1_SHIPPING_HEADER")} h
+			                	ON
+			                	    h.FORM_ID = rh.FORM_REF_ID
+			                	LEFT JOIN
+			                	:{Com_("d_t2_branch")} b
+			                	ON
+			                	    h.REQUESTER_ID = b.BRANCH_ID
+			                	WHERE
+			                	    :{query ::}
+			                	AND (
+			                	        rh.RETURN_TIME >= :sDate
+			                	    OR  :sDate IS NULL)
+			                	AND (
+			                	        rh.RETURN_TIME <= :eDate
+			                	    OR  :eDate IS NULL)
+			                	ORDER BY
+			                	    rh.form_id) t
+			            WHERE
+			                ROWNUM < :endRow)
+			    WHERE
+			        rowNumber >= :startRow};
+		List<ReturnGoodsHeader> headerLst = processIter(headerIter);
+		headerIter.close();
+		closeDefaultContext(myCtx);
+		return headerLst;
+	}
+	
+	public ReturnGoodsHeader queryById(String formId) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		HeaderIter headerIter = null;
+		#sql [myCtx] headerIter = {
+			SELECT
+			    rh.*,
+			    h.PROVIDER,
+			    h.RECEIVE_TIME,
+			    h.AUDIT_TIME,
+			    h.REQUESTER,
+			    h.INPUTER,
+			    h.INPUT_TIME,
+			    h.FORM_NOTE as snote,
+			    h.MAX_PAY_ITEM AS smax,
+			    s.status 
+			FROM
+			:{Com_("D_T1_RETURN_GOODS_HEADER")} rh
+			LEFT JOIN
+			:{Com_("D_T0_FORM_STATUS")} s
+			ON
+			    s.FORM_ID = rh.FORM_ID
+			AND s.IS_CURRENT = 1
+			INNER JOIN
+			:{Com_("D_T1_SHIPPING_HEADER")} h
+			ON
+			    h.FORM_ID = rh.FORM_REF_ID
+			WHERE
+				rh.form_id = :formId
+		};
+		List<ReturnGoodsHeader> headerLst = processIter(headerIter);
+		headerIter.close();
+		closeDefaultContext(myCtx);
+		if (headerLst !=null && !headerLst.isEmpty()) {
+			return headerLst.get(0);
+		}
+		return null;
+	}
+	
+	private List<ReturnGoodsHeader> processIter(HeaderIter headerIter) 
+			throws SQLException {
+		List<ReturnGoodsHeader> headerLst = new ArrayList<ReturnGoodsHeader>();
+		while(headerIter.next()) {
+			ReturnGoodsHeader header = new ReturnGoodsHeader();
+			header.setFormId(headerIter.form_id());
+			header.setFormRefId(headerIter.form_ref_id());
+			header.setFormNote(headerIter.form_note());
+			header.setReturnerId(headerIter.returner_id());
+			header.setReturner(headerIter.returner());
+			header.setReturnTime(SqlDateUtil.getUtilDate(headerIter.return_time()));
+			header.setAuditTime(SqlDateUtil.getUtilDate(headerIter.audit_time()));
+			header.setAllPayAmt(headerIter.all_pay_amt());
+			header.setProvider(headerIter.provider());
+			header.setReceiveTime(SqlDateUtil.getUtilDate(headerIter.receive_time()));
+			header.setRequester(headerIter.requester());
+			header.setInputer(headerIter.inputer());
+			header.setInputTime(SqlDateUtil.getUtilDate(headerIter.input_time()));
+			header.setSnote(headerIter.snote());
+			header.setMaxPayItem(headerIter.smax());
+			header.setStatus(headerIter.status());
+			header.setAuditTimeActual(SqlDateUtil.getUtilDate(headerIter.audit_time_actual()));
+			headerLst.add(header);
+		}
+		return headerLst;
+	}
+}

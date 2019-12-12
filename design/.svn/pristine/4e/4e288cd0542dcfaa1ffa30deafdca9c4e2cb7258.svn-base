@@ -1,0 +1,36 @@
+﻿1. 菜单编码：setting05
+   菜单名称：权限查询 
+   排序：1
+2. 菜单编码：setting0501 
+   菜单名称：用户-角色查询 
+   菜单地址：/setting/rolesearch/mainView.action
+   排序：1
+3. 菜单编码：setting0502 
+   菜单名称：角色权限查询 
+   菜单地址：/setting/power/mainView.action
+   排序：1
+4.菜单编码：outer04
+   菜单名称： 外部入库管理
+   菜单地址：
+   排序：1
+5.将外部订货--外部订货对账的出货单查看菜单改名为出货单入库管理，并将菜单移动到外部入库管理
+
+6.菜单编码：outer0208
+   菜单名称： 已入库出货单查询
+   菜单地址：/restaurant/putinstorage/distribution/outsideMainView.action?branchType=OUTER
+   排序：1
+   
+ 7.菜单编码：outer05
+   菜单名称： 外部日结管理
+   菜单地址：
+   排序：1
+   
+ 8.菜单编码：outer0401
+   菜单名称：外部日结管理
+   菜单地址：/restaurant/dailysettlement/mainView.action?branchType=OUTERORDER
+   排序：1
+   
+ 9.菜单编码：outer0402
+   菜单名称：外部逆日结管理
+   菜单地址：/restaurant/dailyManage/settleView.action
+   排序：1

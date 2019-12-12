@@ -1,0 +1,271 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on Fri Mar 13 15:24:46 CST 2015 by pw
+ * Last edited on Fri Mar 13 15:24:46 CST 2015 by pw
+ * 
+ * comment: 对账单明细
+ */
+package logic.form;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import pojo.form.StatementDetail;
+import com.tanry.framework.util.DateTimeUtil;
+import sqlj.runtime.ref.DefaultContext;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.TextUtil;
+import com.tanry.framework.acl.NoPrivilegeException;
+
+public class StatementDetailBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(StatementDetailBean.class);
+	
+	#sql private iterator DetailIter(String status,String form_id, String sub_form_id, String form_ref_id, Double all_pay_amt, String form_operate_id, String form_operate, Date form_operate_time, String form_note);
+	
+	public int saveEntity(StatementDetail detail)
+			throws NoPrivilegeException, SQLException, NoConnection {
+			DefaultContext myCtx = getDefaultContext();
+			
+			String formId = detail.getFormId();
+			String subFormId = detail.getSubFormId();
+			String formRefId = detail.getFormRefId();
+			Double allPayAmt = detail.getAllPayAmt();
+			String formOperateId = detail.getFormOperateId();
+			String formOperate = detail.getFormOperate();
+			Date formOperateTime = SqlDateUtil.getSqlDate(detail.getFormOperateTime());
+			String formNote = detail.getFormNote();
+
+			#sql [myCtx] {
+				INSERT INTO :{Com_("D_T1_STATEMENT_DETAIL")} 
+					(FORM_ID, SUB_FORM_ID, FORM_REF_ID, ALL_PAY_AMT, FORM_OPERATE_ID, FORM_OPERATE, FORM_OPERATE_TIME, FORM_NOTE) 
+				VALUES (:formId, :subFormId, :formRefId, :allPayAmt, :formOperateId, :formOperate, :formOperateTime, :formNote)
+			};
+			closeDefaultContext(myCtx);
+			
+			return 1;
+		}
+
+	public int deleteByForm(String formId)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		#sql [myCtx] {
+			DELETE
+			FROM
+			:{Com_("D_T1_STATEMENT_DETAIL")}
+			WHERE
+				SUB_FORM_ID = :formId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public List<StatementDetail> query(String formId)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		DetailIter detailIter = null;
+		#sql [myCtx] detailIter = {SELECT
+			    d.*,
+			    s.STATUS
+			FROM
+			:{Com_("D_T1_STATEMENT_DETAIL")} d
+			LEFT JOIN
+			:{Com_("D_T0_FORM_STATUS")} s
+			ON
+			    d.SUB_FORM_ID = s.FORM_ID
+			AND s.IS_CURRENT = 2
+			WHERE
+			    d.FORM_ID = :formId
+			};
+		List<StatementDetail> detailLst = processIter(detailIter);
+		detailIter.close();
+		closeDefaultContext(myCtx);
+		return detailLst;
+	}
+	
+	public Double sumByFormId(String formId)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		
+		DefaultContext myCtx = getDefaultContext();
+		Double total = 0.0;
+		#sql [myCtx] {
+		SELECT
+		    SUM(d.ALL_PAY_AMT)
+		INTO
+		    :total
+		FROM
+		:{Com_("D_T1_STATEMENT_DETAIL")} d
+		WHERE
+		    d.FORM_ID = :formId};
+		closeDefaultContext(myCtx);
+		return total;
+	}
+
+	private List<StatementDetail> processIter(DetailIter detailIter) 
+			throws SQLException {
+		List<StatementDetail> detailLst = new ArrayList<StatementDetail>();
+		while(detailIter.next()) {
+			StatementDetail detail = new StatementDetail();
+			detail.setFormId(detailIter.form_id());
+			detail.setSubFormId(detailIter.sub_form_id());
+			detail.setFormRefId(detailIter.form_ref_id());
+			detail.setAllPayAmt(detailIter.all_pay_amt());
+			detail.setFormOperateId(detailIter.form_operate_id());
+			detail.setFormOperate(detailIter.form_operate());
+			detail.setFormOperateTime(SqlDateUtil.getUtilDate(detailIter.form_operate_time()));
+			detail.setFormNote(detailIter.form_note());
+			detail.setStatus(detailIter.status());
+			detailLst.add(detail);
+		}
+		return detailLst;
+	}
+	
+	
+	#sql private iterator ExportIter(
+			Date AUDIT_TIME,
+			String FORM_ID,
+			String ITEM_ID,
+			String ITEM_NAME,
+			String ITEM_DIMENSION,
+			Double ITEM_COUNT,
+			Double PRICE,
+			Double AMT
+			);
+	
+	public List<Map> exportQuery(String formIds,String storageId,String sppId)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		String query = " A.FORM_ID IN ('" + formIds.replaceAll(",", "','") + "') ";
+		DefaultContext myCtx = getDefaultContext();
+		ExportIter iter = null;
+		#sql [myCtx] iter = {
+				WITH 
+					A AS(
+						SELECT
+							RH.RETURN_TIME AUDIT_TIME,
+							RH.FORM_ID FORM_ID,
+							RD.ITEM_ID ITEM_ID,
+							RD.RETURN_COUNT ITEM_COUNT,
+							ID1.RECEIVE_PRICE PRICE,
+							ID1.RECEIVE_AMT AMT 
+						FROM 
+							D_T1_RETURN_GOODS_HEADER RH 
+						LEFT JOIN 
+							D_T1_RETURN_GOODS_DETAIL RD 
+						ON 
+							RH.FORM_ID = RD.FORM_ID 
+						INNER JOIN 
+							D_T1_INPUT_DETAIL ID1 
+						ON 
+							RH.FORM_REF_ID = ID1.FORM_ID
+						AND 
+							RD.ITEM_ID = ID1.ITEM_ID
+					UNION ALL
+						SELECT 
+							RH.RETURN_TIME AUDIT_TIME,
+							RH.FORM_ID FORM_ID,
+							RD.ITEM_ID ITEM_ID,
+							RD.RETURN_COUNT ITEM_COUNT,
+							SD1.ITEM_UNIT_PRICE PRICE,
+							SD1.PAY_AMT AMT 
+						FROM 
+							D_T1_RETURN_GOODS_HEADER RH 
+						LEFT JOIN 
+							D_T1_RETURN_GOODS_DETAIL RD 
+						ON 
+							RH.FORM_ID = RD.FORM_ID 
+						INNER JOIN 
+							D_T1_SHIPPING_DETAIL SD1 
+						ON 
+							RH.FORM_REF_ID = SD1.FORM_ID
+						AND 
+							RD.ITEM_ID = SD1.ITEM_ID
+					UNION ALL
+						SELECT 
+							SH.FORM_TIME_ACTUAL AUDIT_TIME,
+							SH.FORM_ID FORM_ID,
+							SD.ITEM_ID ITEM_ID,
+							SD.RECEIVE_COUNT ITEM_COUNT,
+							SD.ITEM_UNIT_PRICE PRICE,
+							SD.PAY_AMT AMT 
+						FROM
+							D_T1_SHIPPING_HEADER SH 
+						LEFT JOIN 
+							D_T1_SHIPPING_DETAIL SD 
+						ON 
+							SH.FORM_ID = SD.FORM_ID
+					UNION ALL
+						SELECT 
+							IH.AUDIT_TIME AUDIT_TIME,
+							IH.FORM_ID FORM_ID,
+							ID.ITEM_ID ITEM_ID,
+							ID.RECEIVE_COUNT ITEM_COUNT,
+							ID.RECEIVE_PRICE PRICE,
+							ID.RECEIVE_AMT AMT 
+						FROM 
+							D_T1_INPUT_HEADER IH 
+						LEFT JOIN 
+							D_T1_INPUT_DETAIL ID 
+						ON 
+							IH.FORM_ID = ID.FORM_ID
+					),
+					B AS
+					(
+						SELECT 
+							M.ITEM_ID,M.ITEM_NAME,M.ITEM_DIMENSION 
+						FROM 
+							D_T2_ITEM_META M
+					)
+				SELECT 
+					A.AUDIT_TIME,
+					A.FORM_ID,
+					A.ITEM_ID,
+					B.ITEM_NAME,
+					B.ITEM_DIMENSION,
+					A.ITEM_COUNT,
+					A.PRICE,
+					A.AMT
+				FROM 
+					A 
+				LEFT JOIN 
+					B 
+				ON 
+					A.ITEM_ID = B.ITEM_ID 
+				WHERE 
+					:{query :: 1=1}
+				ORDER BY 
+					A.FORM_ID,A.ITEM_ID
+		};
+		List<Map> detailLst = new ArrayList();
+		while(iter.next()) {
+			Map<String, Object> map = new HashMap<String, Object>();
+			map.put("AUDIT_TIME", DateTimeUtil.getDateStr(SqlDateUtil.getUtilDate(iter.AUDIT_TIME())));
+			map.put("FORM_ID",iter.FORM_ID());
+			map.put("ITEM_ID",iter.ITEM_ID());
+			map.put("ITEM_NAME",iter.ITEM_NAME());
+			map.put("ITEM_DIMENSION",iter.ITEM_DIMENSION());
+			map.put("ITEM_COUNT",iter.ITEM_COUNT());
+			map.put("PRICE",iter.PRICE());
+			map.put("STORAGE",storageId);
+			map.put("SUPPLIER",sppId);
+			map.put("AMT",iter.AMT());
+			detailLst.add(map);
+		}
+		return detailLst;
+	}
+}

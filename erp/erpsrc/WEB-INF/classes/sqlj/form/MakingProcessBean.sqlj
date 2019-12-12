@@ -1,0 +1,181 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on Sat Nov 15 11:33:05 CST 2014 by pw
+ * Last edited on Sat Nov 15 11:33:05 CST 2014 by pw
+ * 
+ * comment: 半成品制程表
+ */
+package logic.form;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import pojo.form.MakingProcess;
+import sqlj.runtime.ref.DefaultContext;
+import com.tanry.business.form.FormConstant;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.TextUtil;
+import com.tanry.framework.acl.NoPrivilegeException;
+
+public class MakingProcessBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(MakingProcessBean.class);
+	
+	#sql private iterator ProcessIter(String item_id, Integer step, String step_operation, String step_note);
+	
+	public int saveEntity(MakingProcess process)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		String itemId = process.getItemId();
+		Integer step = process.getStep();
+		String stepOperation = process.getStepOperation();
+		String stepNote = process.getStepNote();
+
+		#sql [myCtx] {
+			INSERT INTO :{Com_("D_T2_MAKING_PROCESS")} 
+				(ITEM_ID, STEP, STEP_OPERATION, STEP_NOTE) 
+			VALUES (:itemId, :step, :stepOperation, :stepNote)
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+
+	public int updateEntity(String oldStep, MakingProcess process)
+			throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		String itemId = process.getItemId();
+		Integer step = process.getStep();
+		String stepOperation = process.getStepOperation();
+		String stepNote = process.getStepNote();
+
+		#sql [myCtx] {
+			UPDATE
+			:{Com_("D_T2_MAKING_PROCESS")}
+			SET
+				STEP = :step,
+	    		STEP_OPERATION = :stepOperation,
+	    		STEP_NOTE = :stepNote
+			WHERE 
+				ITEM_ID = :itemId
+			AND STEP = :oldStep
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public int delete(String itemId, String step)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		#sql [myCtx] {
+			DELETE
+			FROM
+			:{Com_("D_T2_MAKING_PROCESS")}
+			WHERE
+				ITEM_ID = :itemId
+			AND STEP = :step
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+
+	/**
+	 * 创建生产工单时获取工序信息
+	 */
+	public List<MakingProcess> queryDetail(String workOrderId) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		ProcessIter processIter = null;
+		#sql [myCtx] processIter = {
+				SELECT
+			    	p.*
+			    FROM
+			    :{Com_("D_T1_ARRENGMENT_DETAIL")} d
+			    LEFT JOIN
+			    :{Com_("D_T2_MAKING_PROCESS")} p
+			    ON
+			        d.ITEM_ID = p.ITEM_ID
+			    WHERE
+			        d.WORK_ORDER_ID = :workOrderId
+			    ORDER BY
+			        p.STEP};
+		List<MakingProcess> processLst = processIter(processIter);
+		processIter.close();
+		closeDefaultContext(myCtx);
+		return processLst;
+	}
+
+	public List<MakingProcess> queryByItem(String itemId) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		ProcessIter processIter = null;
+		#sql [myCtx] processIter = {
+			SELECT
+			    *
+			FROM
+			:{Com_("D_T2_MAKING_PROCESS")} p
+			WHERE
+				p.ITEM_ID = :itemId 
+			ORDER BY
+		        p.STEP
+		};
+		List<MakingProcess> processLst = processIter(processIter);
+		processIter.close();
+		closeDefaultContext(myCtx);
+		return processLst;
+	}
+
+	public MakingProcess query(String itemId, String step) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		ProcessIter processIter = null;
+		#sql [myCtx] processIter = {
+			SELECT
+			    *
+			FROM
+			:{Com_("D_T2_MAKING_PROCESS")} p
+			WHERE
+				p.ITEM_ID = :itemId 
+			AND p.STEP = :step
+		};
+		List<MakingProcess> processLst = processIter(processIter);
+		processIter.close();
+		closeDefaultContext(myCtx);
+		
+		if (processLst !=null && !processLst.isEmpty()) {
+			return processLst.get(0);
+		}
+		return null;
+	}
+
+	private List<MakingProcess> processIter(ProcessIter processIter) 
+			throws SQLException {
+		List<MakingProcess> processLst = new ArrayList<MakingProcess>();
+		while(processIter.next()) {
+			MakingProcess process = new MakingProcess();
+			process.setItemId(processIter.item_id());
+			process.setStep(processIter.step());
+			process.setStepOperation(processIter.step_operation());
+			process.setStepNote(processIter.step_note());
+			processLst.add(process);
+		}
+		return processLst;
+	}
+}

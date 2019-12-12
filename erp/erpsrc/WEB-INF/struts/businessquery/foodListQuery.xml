@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE struts PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN"
+    "http://struts.apache.org/dtds/struts-2.0.dtd">
+
+<struts>
+	<package name="businessquery_foodListQuery" namespace="/jsp/businessquery" extends="trust-default">
+		<action name="foodlist" method="listFood" class="action.businessquery.FoodAction">
+			<result name="success">/jsp/businessquery/foodlist/main.jsp</result>
+		</action>
+		
+	</package>
+	
+	<package name="bq_foodlist_export" namespace="/bq/foodlist/export" extends="trust-default">
+		<action name="doQuery" method="doQuery" class="action.businessquery.export.FoodExportAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+</struts>
+

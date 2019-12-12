@@ -1,0 +1,379 @@
+package logic.special;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import sqlj.runtime.ref.DefaultContext;
+import com.tanry.business.form.FormConstant;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.TextUtil;
+import com.tanry.framework.util.constant.BillStatus;
+import com.tanry.framework.acl.NoPrivilegeException;
+
+public class FoodCTRBean extends ConnectionPool {
+	public static Logger log = Logger.getLogger(FoodCTRBean.class);
+	
+	#sql private iterator HeaderIter(
+			String clitcls_c,
+			String clitcls_n,
+			String cfood_c,
+			String cfood_n,
+			Double nqty,
+			Double bills,
+			Double ctr,
+			Double gdp,
+			String item_id,
+			Double sprice,
+			String infos);
+	
+	#sql private iterator TotalIter(
+			Integer totals
+	);
+	
+	public int count(String queryStr)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		TotalIter totalIter = null;
+		Integer total = null;
+		
+		String[] strs = queryStr.split("\\|_\\|");
+		String str= strs[0];
+		String str1= strs[1];
+		String str2= strs[2];
+		
+		#sql [myCtx] totalIter =  {
+		WITH
+		    a AS
+		    (
+		        SELECT
+		            bs.CBILL_C,
+		            bs.CFOOD_C,
+		            bs.CFOOD_N,
+		            bs.cLitCls_c,
+		            bs.clitCls_n,
+		            bs.nQty
+		        FROM
+		        	:{Com_("d_t_food_bill")} b 
+		        INNER JOIN
+		        	:{Com_("D_T_FOOD_BILLS")}  bs
+		        ON
+		            b.CBILL_C = bs.CBILL_C
+        		LEFT JOIN
+             		:{Com_("D_T2_TAG_DETAIL")} d1
+             	ON
+             		bs.CFOOD_C = d1.CODE
+            	AND d1.TAG_ID = :str1
+		        WHERE
+		        	:{str2 + str :: 1=1}
+		    )
+		    ,
+		    b AS
+		    (
+		        SELECT
+		            CFOOD_C,
+		            CFOOD_N,
+		            cLitCls_c,
+		            clitCls_n,
+		            SUM(nQty) nQty
+		        FROM
+		            a
+		        GROUP BY
+		            grouping sets (( CFOOD_C, CFOOD_N, cLitCls_c, clitCls_n),cLitCls_c,NULL)
+		    )
+		SELECT
+		    count(*) totals
+		FROM
+		    b};
+		
+		if(totalIter.next()) {
+			total = totalIter.totals();
+		}
+		
+		total = total == null ? 0:total;
+		closeDefaultContext(myCtx);
+		return total;
+	}
+	
+	public List<Map> query(String queryStr,int startRow, int endRow)  
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		String[] strs = queryStr.split("\\|_\\|");
+		String str= strs[0];
+		String str1= strs[1];
+		String str2= strs[2];
+		
+		HeaderIter headerIter = null;
+		#sql [myCtx] headerIter = {
+			SELECT
+			    *
+			    FROM
+			        (
+			            SELECT
+			                t.*,
+			                ROWNUM rowNumber
+			            FROM
+			                (
+			                    WITH
+			                        p AS
+			                        (
+			                            SELECT
+			                                p.ITEM_ID,
+			                                p.PRICE_TYPE,
+			                                p.ITEM_PRICE
+			                            FROM
+			                                :{Com_("D_T2_ITEM_PRICE")} p
+			                            WHERE
+			                                p.IS_CURRENT = 1
+			                            AND p.PRICE_TYPE IN ('BENCHMARK',
+			                                                 'PURCHASE')
+			                        )
+			                        ,
+			                        tp AS
+			                        (
+			                            SELECT
+			                                t.THERAPY_ID ITEM_ID,
+			                                p.PRICE_TYPE,
+			                                NVL(ROUND( SUM(t.ITEM_GROSS_COUNT * p.item_price),2),0) unitPrice
+			                            FROM
+			                                :{Com_("D_T2_THERAPY")} t
+			                            LEFT JOIN
+			                                p
+			                            ON
+			                                t.ITEM_ID = p.ITEM_ID
+			                            WHERE
+			                                p.PRICE_TYPE IS NOT NULL
+			                            GROUP BY
+			                                t.THERAPY_ID,
+			                                p.PRICE_TYPE
+			                        )
+			                        ,
+			                        items AS
+			                        (
+			                            SELECT
+			                                tp.*,
+			                                CASE
+			                                    WHEN NVL(p2.ITEM_PRICE,0)=0
+			                                    THEN NULL
+			                                    ELSE ROUND((p2.ITEM_PRICE-UNITPRICE)/p2.ITEM_PRICE,4)
+			                                END           prams,
+			                                p2.ITEM_PRICE sPrice,
+			                                m.CATEGORY_ID
+			                            FROM
+			                                tp
+			                            INNER JOIN
+			                                :{Com_("D_T2_ITEM_META")} m
+			                            ON
+			                                tp.ITEM_ID = m.ITEM_ID
+			                            LEFT JOIN
+			                                :{Com_("D_T2_ITEM_PRICE")} p2
+			                            ON
+			                                tp.ITEM_ID = p2.ITEM_ID
+			                            AND p2.IS_CURRENT = 1
+			                            AND p2.PRICE_TYPE= 'SALE'
+			                            LEFT JOIN
+			                            	:{Com_("D_T2_TAG_DETAIL")} d1
+			    			            ON
+			    			            	tp.ITEM_ID = d1.CODE
+    			            			 AND d1.TAG_ID = :str1
+    			            			 WHERE
+			                            	1=1   :{str :: }
+			                        )
+			                        ,
+			                        items2 AS
+			                        (
+			                            SELECT
+			                                CATEGORY_ID,
+			                                ITEM_ID,
+			                                SPRICE,
+			                                LISTAGG('('||PRICE_TYPE||'|'||UNITPRICE||'|'||PRAMS||')', ',') WITHIN
+			                                GROUP (ORDER BY ITEM_ID) AS infos
+			                            FROM
+			                                (
+			                                    SELECT
+			                                        *
+			                                    FROM
+			                                        items )
+			                            GROUP BY
+			                                CATEGORY_ID,
+			                                ITEM_ID,
+			                                SPRICE
+			                        )
+			                        ,
+			                        bs AS
+			                        (
+			                            SELECT
+			                                *
+			                            FROM
+			                                :{Com_("D_T_FOOD_BILLS")} bs
+					                    LEFT JOIN
+		                            		:{Com_("D_T2_TAG_DETAIL")} d1
+		                            	ON
+			    			            	bs.CFOOD_C = d1.CODE  AND d1.TAG_ID = :str1		
+			                            WHERE
+			                                1=1 :{str :: }
+			                        )
+			                        ,
+			                        a AS
+			                        (
+			                            SELECT
+			                                bs.CBILL_C,
+			                                bs.CFOOD_C,
+			                                bs.CFOOD_N,
+			                                bs.cLitCls_c,
+			                                bs.clitCls_n,
+			                                bs.nQty
+			                            FROM
+			                                :{Com_("d_t_food_bill")} b
+			                            INNER JOIN
+			                                bs
+			                            ON
+			                                b.CBILL_C = bs.CBILL_C
+			                            WHERE
+			                            	:{str2 :: 1=1}
+			                        )
+			                        ,
+			                        b AS
+			                        (
+			                            SELECT
+			                                CFOOD_C,
+			                                CFOOD_N,
+			                                cLitCls_c,
+			                                clitCls_n,
+			                                SUM(nQty) nQty
+			                            FROM
+			                                a
+			                            GROUP BY
+			                                grouping sets (( CFOOD_C, CFOOD_N, cLitCls_c, clitCls_n),(cLitCls_c,
+			                                clitCls_n),NULL )
+			                        )
+			                        ,
+			                        c AS
+			                        (
+			                            SELECT
+			                                COUNT(DISTINCT CBILL_C) bills
+			                            FROM
+			                                a
+			                        )
+			                        ,
+			                        d AS
+			                        (
+			                            SELECT
+			                                b.CLITCLS_C,
+			                                b.CLITCLS_N,
+			                                b.CFOOD_C,
+			                                b.CFOOD_N,
+			                                b.nQty,
+			                                c.*,
+			                                ROUND(NQTY/BILLS,4) ctr,
+			                                DECODE ( b.CFOOD_C,NULL,ROUND(NQTY/
+			                                (
+			                                    SELECT
+			                                        NQTY
+			                                    FROM
+			                                        b
+			                                    WHERE
+			                                        CFOOD_C IS NULL
+			                                    AND CLITCLS_C IS NULL),4), '' ) gdp
+			                            FROM
+			                                b,
+			                                c
+			                        )
+			                    SELECT
+			                    	CLITCLS_C,
+			                        CASE
+			                        WHEN CLITCLS_C IS NOT NULL
+				                        AND CFOOD_N IS NULL
+				                        THEN CLITCLS_N||'汇总'
+				                        WHEN CLITCLS_C IS NULL
+				                        THEN '合计'
+				                        ELSE CLITCLS_N
+			                        END CLITCLS_N ,
+			                        d.CFOOD_C,
+			                        d.CFOOD_N,
+			                        d.NQTY,
+			                        d.BILLS,
+			                        d.CTR,
+			                        d.GDP,
+			                        i.*
+			                    FROM
+			                        d
+			                    LEFT JOIN
+			                        items2 i
+			                    ON
+			                        d.CFOOD_C = i.item_id
+			                    AND d.CLITCLS_C = i.CATEGORY_ID
+			                    ORDER BY
+			                        CLITCLS_C,
+			                        CFOOD_C) t
+			            WHERE
+			                ROWNUM < :endRow)
+			    WHERE
+			        rowNumber >= :startRow};
+		List<Map> headerLst = processIter(headerIter);
+		headerIter.close();
+		closeDefaultContext(myCtx);
+		return headerLst;
+	}
+	
+	
+	private List<Map> processIter(HeaderIter headerIter) 
+			throws SQLException {
+		List<Map> headerLst = new ArrayList<Map>();
+		
+		while(headerIter.next()) {
+			Map header = new HashMap();
+			header.put("clitcls_c", headerIter.clitcls_c());
+			header.put("clitcls_n", headerIter.clitcls_n());
+			header.put("cfood_c", headerIter.cfood_c());
+			header.put("cfood_n", headerIter.cfood_n());
+			header.put("nqty", headerIter.nqty());
+			header.put("bills", headerIter.bills());
+			header.put("ctr", headerIter.ctr());
+			header.put("gdp", headerIter.gdp());
+			header.put("item_id", headerIter.item_id());
+			header.put("sprice", headerIter.sprice());
+			
+			if(headerIter.infos() != null){
+				String[] infos = headerIter.infos().toString().split(",");
+				for (int i = 0; i < infos.length; i++) {
+					String[] temp = infos[i].replace("(", "").replace(")", "").split("\\|");
+					
+					
+					for (int j = 0,length =temp.length ; j < length; j++) {
+						if("BENCHMARK".equals(temp[0])){
+							if(length>=3){
+								header.put("bprice", temp[1]);
+								header.put("bper", temp[2]);
+							}else if(length>=2){
+								header.put("bprice", temp[1]);
+							}
+						}
+						
+						if("PURCHASE".equals(temp[0])){
+							if(length>=3){
+								header.put("pprice", temp[1]);
+								header.put("pper", temp[2]);
+							}else if(length>=2){
+								header.put("pprice", temp[1]);
+							}
+						}
+					}
+				}
+			}
+			
+			headerLst.add(header);
+		}
+		return headerLst;
+	}
+}

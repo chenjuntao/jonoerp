@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE struts PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN"
+    "http://struts.apache.org/dtds/struts-2.0.dtd">
+
+<struts>
+	<package name="restaurant_putinstorage_queryCurrentStorage" namespace="/restaurant/putinstorage/querycurrentstorage" extends="trust-default">
+		<action name="mainView" class="action.restaurant.putinstorage.QueryCurrentStorageAction">
+			<result name="success">/jsp/restaurant/putinstorage/querycurrentstorage/queryCurrentStorage.jsp</result>
+		</action>
+	</package>
+
+	<package name="restaurant_putinstorage_create" namespace="/restaurant/putinstorage/create" extends="trust-default">
+		<action name="mainView" class="action.restaurant.putinstorage.CreateBillAction">
+			<result name="success">/jsp/restaurant/putinstorage/create/main.jsp</result>
+		</action>
+		
+		<action name="editView" method="editView" class="action.restaurant.putinstorage.CreateBillAction">
+			<result name="success">/jsp/restaurant/putinstorage/create/edit.jsp</result>
+		</action>
+		
+		<action name="commitView" method="commitView" class="action.restaurant.putinstorage.CreateBillAction">
+			<result name="success">/jsp/restaurant/putinstorage/create/commit.jsp</result>
+			<result name="input" type="json" />
+		</action>
+		
+		<action name="doSave" method="doSave" class="action.restaurant.putinstorage.CreateBillAction">
+			<interceptor-ref name="defaultStack" />
+			<interceptor-ref name="token" />
+			<result type="json" />
+		</action>
+		
+		<action name="loadTree" method="loadTree" class="action.restaurant.putinstorage.CreateBillAction">
+			<result type="json" />
+		</action>
+		
+		<action name="queryBill" method="queryBill" class="action.restaurant.putinstorage.CreateBillAction">
+			<result type="json" />
+		</action>
+		
+		<action name="queryDetail" method="queryDetail" class="action.restaurant.putinstorage.CreateBillAction">
+			<result type="json" />
+		</action>
+		
+		<action name="checkStatus" method="checkStatus" class="action.restaurant.putinstorage.CreateBillAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doFinish" method="doFinish" class="action.restaurant.putinstorage.CreateBillAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="restaurant_putinstorage_confirm" namespace="/restaurant/putinstorage/confirm" extends="trust-default">
+		<action name="mainView" class="action.restaurant.putinstorage.ConfirmBillAction">
+			<result name="success">/jsp/restaurant/putinstorage/confirm/main.jsp</result>
+		</action>
+		
+		<action name="auditView" method="auditView" class="action.restaurant.putinstorage.ConfirmBillAction">
+			<result name="success">/jsp/restaurant/putinstorage/confirm/audit.jsp</result>
+		</action>
+		
+		<action name="doAudit" method="doAudit" class="action.restaurant.putinstorage.ConfirmBillAction">
+			<interceptor-ref name="defaultStack" />
+			<interceptor-ref name="token" />
+			<result type="json" />
+		</action>
+		
+		<action name="auditById" method="auditById" class="action.restaurant.putinstorage.ConfirmBillAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="restaurant_putinstorage_outside" namespace="/restaurant/putinstorage/outside" extends="trust-default">
+		<action name="mainView" class="action.restaurant.putinstorage.BillManageAction">
+			<result name="success">/jsp/restaurant/putinstorage/outside/main.jsp</result>
+		</action>
+		
+		<action name="editView" method="editView" class="action.restaurant.putinstorage.BillManageAction">
+			<result name="success">/jsp/restaurant/putinstorage/outside/edit.jsp</result>
+		</action>
+		
+		<action name="scanView" method="scanView" class="action.restaurant.putinstorage.BillManageAction">
+			<result name="success">/jsp/restaurant/putinstorage/outside/scan.jsp</result>
+		</action>
+		
+		<action name="doQuery" method="doQuery" class="action.restaurant.putinstorage.BillManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doQueryNew" method="doQueryNew" class="action.restaurant.putinstorage.BillManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="queryDetail" method="queryDetail" class="action.restaurant.putinstorage.BillManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="queryReturnDetail" method="queryReturnDetail" class="action.restaurant.putinstorage.BillManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doSave" method="doSave" class="action.restaurant.putinstorage.BillManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doDelete" method="doDelete" class="action.restaurant.putinstorage.BillManageAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="restaurant_putinstorage_distribution" namespace="/restaurant/putinstorage/distribution" extends="trust-default">
+		<action name="mainView" class="action.restaurant.putinstorage.DistributionBillAction">
+			<result name="success">/jsp/restaurant/putinstorage/distribution/main.jsp</result>
+		</action>
+		
+		<action name="outsideMainView" class="action.restaurant.putinstorage.DistributionBillAction">
+			<result name="success">/jsp/restaurant/putinstorage/distribution/outsideMain.jsp</result>
+		</action>
+		
+		<action name="editView" method="editView" class="action.restaurant.putinstorage.DistributionBillAction">
+			<result name="success">/jsp/restaurant/putinstorage/distribution/edit.jsp</result>
+		</action>
+		
+		<action name="checkView" method="checkView" class="action.restaurant.putinstorage.DistributionBillAction">
+			<result name="success">/jsp/restaurant/putinstorage/distribution/check.jsp</result>
+		</action>
+		
+		<action name="doQuery" method="doQuery" class="action.restaurant.putinstorage.DistributionBillAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doInputQuery" method="doInputQuery" class="action.restaurant.putinstorage.DistributionBillAction">
+			<result type="json" />
+		</action>
+		
+		<action name="queryDetail" method="queryDetail" class="action.restaurant.putinstorage.DistributionBillAction">
+			<result type="json" />
+		</action>
+		
+		<action name="fillBill" method="fillBill" class="action.restaurant.putinstorage.DistributionBillAction">
+			<interceptor-ref name="defaultStack" />
+			<interceptor-ref name="token" />
+			<result type="json" />
+		</action>
+	</package>
+</struts>
+

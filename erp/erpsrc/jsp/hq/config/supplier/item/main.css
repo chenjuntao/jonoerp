@@ -1,0 +1,94 @@
+#supplierTree {
+	position: absolute;
+	left: 0;
+	top: 0px;
+	bottom: 0px;
+	width: 30%;
+	height: auto; /* override default height: 30em; in dgrid.css */
+}
+
+#itemGrid {
+	position: absolute;
+	right: 0;
+	top: 0px;
+	bottom: 0px;
+	width: 70%;
+	height: 220px; /* override default height: 30em; in dgrid.css */
+}
+
+#branchGrid {
+	position: absolute;
+	right: 0;
+	top: 220px;
+	bottom: 0px;
+	width: 70%;
+	height: auto; /* override default height: 30em; in dgrid.css */
+}
+
+#commandTable {
+	position: absolute;
+	bottom: 0;
+	width: 100%;
+}
+
+.dgrid-column-set-0 {
+	width: 250px;
+}
+
+th[role="columnheader"] {
+	text-align: center;
+}
+
+th.edit-note {
+	color: red;
+}
+
+.dgrid-cell {
+	/* 	width: 80px; make all the columns 80px wide */
+	vertical-align: middle;
+}
+
+.field-rownumber, .field-categoryId, .field-itemId, .field-branchId,
+	.field-scycle, .field-priority {
+	text-align: center;
+}
+
+.field-rownumber {
+	width: 40px;
+}
+
+.field-itemId, .field-categoryId, .field-branchId {
+	width: 70px;
+}
+
+.field-itemName, .field-branchName {
+	width: 120px;
+}
+
+.field-queryCode {
+	width: 90px;
+}
+
+.field-itemDimension {
+	width: 50px;
+}
+
+.field-address {
+	width: 120px;
+}
+
+.field-contactMan {
+	width: 110px;
+}
+
+.field-telephone {
+	width: 110px;
+}
+
+.field-priority,.field-delete {
+	width: 60px;
+}
+
+.grid-number {
+	text-align: right;
+}

@@ -1,0 +1,58 @@
+#selectItemDiv {
+	position: absolute;
+	left: 0;
+	top: 0;
+	bottom: 0;
+	width: 25%;
+	height: auto;
+}
+
+#categoryTree {
+	position: absolute;
+	left: 0;
+	top: 30px;
+	bottom: 0;
+	width: 100%;
+	height: auto;
+}
+
+#queryStorageGrid {
+	position: absolute;
+	right: 0;
+	top: 0;
+	bottom: 0;
+	width: 75%;
+	height: auto;
+}
+
+#storageGrid {
+	position: absolute;
+	left: 0;
+	right: 0;
+	top: 32px;
+	bottom: 0;
+	height: auto;
+}
+
+
+th[role="columnheader"] {
+	text-align: center;
+}
+
+
+.field-checkId {
+	width: 20px;
+}
+
+.field-item_id ,.field-manage {
+	width: 80px;
+}
+
+.field-item_name {
+	width: 160px;
+}
+
+.field-category_name{
+	width: 120px;
+}
+

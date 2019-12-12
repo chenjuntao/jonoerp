@@ -1,0 +1,87 @@
+
+#orderGrid {
+	position: absolute;
+	right: 0;
+	top: 65px;
+	bottom: 0;
+	width: 100%;
+	height: auto; /* override default height: 30em; in dgrid.css */
+}
+
+.createGrid {
+	position: absolute;
+	right: 0;
+	top: 92px;
+	bottom: 0;
+	width: 100%;
+	height: auto; /* override default height: 30em; in dgrid.css */
+}
+
+/* .dgrid-column-set-0 { */
+/* 	width: 250px; */
+/* } */
+
+th[role="columnheader"] {
+	text-align: center;
+}
+
+.field-form_id,.field-all_pay_amt,.field-status,.field-allPayAmt,.field-startDate,.field-endDate,.field-formTimeActual{
+	text-align: center !important;
+}
+
+.field-all_pay_amt,.field-rownumber,.field-rownumber,.field-allPayAmt {
+	width: 60px ;
+}
+
+.field-status,.field-input_department,.field-startDate,.field-endDate,.field-formTime ,.field-branchName{
+	width: 100px ;
+}
+
+.field-audit_time{
+	width: 80px ;
+}
+
+.field-form_id ,.field-max_pay_item ,.field-form_ref_id,.field-form_note{
+	width: 180px ;
+}
+
+ .field-formMaker{
+	width: 80px ;
+}
+
+.field-provider{
+	width: 130px ;
+}
+
+.field-formId{
+	width: 120px ;
+}
+
+.field-formId,.field-formRefId,.field-status,.field-allPayAmt,.field-inputTime,.field-rownumber,.field-inputer,.field-confirm{
+	text-align: center !important;
+}
+
+.field-rownumber{
+	width: 40px ;
+}
+
+.field-all_pay_amt,.field-allPayAmt,.field-confirm,.field-operate{
+	width: 60px ;
+}
+
+.field-form_maker{
+	width: 120px ;
+}
+
+.field-form_time,.field-delivery_type {
+	width: 80px ;
+}
+
+.field-formRefId,.field-formTimeActual {
+	width: 160px ;
+}
+
+ .field-requester,.field-status{
+	width: 100px ;
+}
+

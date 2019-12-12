@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE struts PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN"
+    "http://struts.apache.org/dtds/struts-2.0.dtd">
+
+<struts>
+	<package name="main_test" namespace="/main/test" extends="trust-default">
+		<action name="mainView" class="test.MainTest">
+			<result name="success">/jsp/test/main.jsp</result>
+		</action>
+		
+		<action name="doTestGoodsBill" method="doTestGoodsBill" class="test.MainTest">
+			<result type="json" />
+		</action>
+		
+		<action name="doSaveMenu" method="doSaveMenu" class="test.MainTest">
+			<result type="json" />
+		</action>
+		
+		<action name="doTestSettle" method="doTestSettle" class="test.MainTest">
+			<result type="json" />
+		</action>
+		
+		<action name="doDeleteGoodsBill" method="doDeleteGoodsBill" class="test.MainTest">
+			<result type="json" />
+		</action>
+		
+		<action name="doTestLoss" method="doTestLoss" class="test.MainTest">
+			<result type="json" />
+		</action>
+		
+		<action name="doUpdate" method="doUpdate" class="com.tanry.business.module.hq.priceadjust.PurchasePriceAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doBack" method="doBack" class="com.tanry.business.module.hq.priceadjust.PurchasePriceAction">
+			<result type="json" />
+		</action>
+		
+			<action name="doTest" method="doTest" class="com.tanry.business.module.hq.priceadjust.PurchasePriceAction">
+			<result type="json" />
+		</action>
+	</package>
+
+	<package name="setting_backup" namespace="/setting/backup" extends="trust-default">
+		<action name="mainView" class="action.setting.BackupAction">
+			<result name="success">/jsp/setting/backup/main.jsp</result>
+		</action>
+		
+		<action name="queryUserTree" method="queryUserTree" class="action.setting.BackupAction">
+			<result type="json" />
+		</action>
+		
+		<action name="exportSys" method="exportSys" class="action.setting.BackupAction">
+			<result type="json" />
+		</action>
+		
+		<action name="export" method="export" class="action.setting.BackupAction">
+			<result type="json" />
+		</action>
+		
+		<action name="exportCsv" method="exportCsv" class="action.setting.BackupAction">
+			<result type="json" />
+		</action>
+		
+		<action name="timerBackup" method="timerBackup" class="action.setting.BackupAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="setting_branch_backup" namespace="/setting/branch/backup" extends="trust-default">
+		<action name="branchView" class="action.setting.BackupAction">
+			<result name="success">/jsp/setting/backup/branchMain.jsp</result>
+		</action>
+		
+		<action name="queryUserTree" method="queryUserTree" class="action.setting.BackupAction">
+			<result type="json" />
+		</action>
+		
+		<action name="exportCsv" method="exportCsv" class="action.setting.BackupAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="setting_sysUser_backup" namespace="/setting/sysUser/backup" extends="trust-default">
+		<action name="userView" class="action.setting.BackupAction">
+			<result name="success">/jsp/setting/backup/userMain.jsp</result>
+		</action>
+		
+		<action name="queryUserTree" method="queryUserTree" class="action.setting.BackupAction">
+			<result type="json" />
+		</action>
+		
+		<action name="exportCsv" method="exportCsv" class="action.setting.BackupAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="setting_form_backup" namespace="/setting/form/backup" extends="trust-default">
+		<action name="formView" class="action.setting.BackupAction">
+			<result name="success">/jsp/setting/backup/formMain.jsp</result>
+		</action>
+		
+		<action name="queryUserTree" method="queryUserTree" class="action.setting.BackupAction">
+			<result type="json" />
+		</action>
+		
+		<action name="exportForm" method="exportForm" class="action.setting.BackupAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="setting_backup_selStore" namespace="/backup/selStore" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.store.SelProductAction">
+			<result name="success">/jsp/setting/backup/selStore/main.jsp</result>
+		</action>
+	</package>
+	
+	<package name="setting_clear_foods" namespace="/setting/clear" extends="trust-default">
+		<action name="mainView" class="action.setting.BackupAction">
+			<result name="success">/jsp/setting/clear/main.jsp</result>
+		</action>
+		
+		<action name="clearFoods" method="clearFoods" class="action.setting.BackupAction">
+			<result type="json" />
+		</action>
+		
+		<action name="formView" class="action.setting.BackupAction">
+			<result name="success">/jsp/setting/clear/formMain.jsp</result>
+		</action>
+		
+		<action name="clearForms" method="clearForms" class="action.setting.BackupAction">
+			<result type="json" />
+		</action>
+	</package>
+</struts>

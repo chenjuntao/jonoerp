@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"   
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">  
+
+<mapper namespace="mapper.businessquery.FoodSummaryMapper">  
+
+<resultMap id="foodSummaryResultMap" type="pojo.businessquery.FoodSummary">
+	<id property="foodN" column="foodN"/>
+	<result property="foodC" column="foodC"/> 
+	<result property="unit" column="unit"/> 
+	<result property="qty" column="qty"/> 
+	<result property="pesentQty" column="pesentQty"/> 
+	<result property="returnQty" column="returnQty"/> 
+</resultMap>
+
+<select id="foodSummarySum" resultMap="foodSummaryResultMap">
+	SELECT
+		SUM(qty)       qty ,
+		SUM(pesentQty) pesentQty,
+		SUM(returnQty) returnQty
+	FROM
+	(
+		SELECT
+			bs.CFOOD_C foodC,
+			bs.cFood_N       foodN,
+			sUnit            unit,
+			SUM(nQty)        qty,
+			SUM(
+				CASE WHEN bs.eRetSendFlag = '赠送'
+				THEN nQty
+				ELSE 0
+				END) pesentQty,
+			SUM(
+				CASE WHEN bs.eRetSendFlag = '退品'
+				THEN nQty
+				ELSE 0
+				END) returnQty
+		FROM
+			${com}.d_t_food_bills bs
+		LEFT JOIN
+			${com}.d_t_food_bill b
+		ON
+			bs.cBill_C = b.cBill_C
+		WHERE
+			DBUSINESS &gt;= #{startDate}
+		AND DBUSINESS &lt;= #{endDate}
+		AND b.CBRANCH_C LIKE #{shopC}
+		AND bs.eSuitFlag &lt;&gt; '套餐'
+		GROUP BY
+			bs.CFOOD_C,
+			bs.cFood_N,
+			sUnit ) t
+
+</select>
+
+<select id="foodSummary" resultMap="foodSummaryResultMap">
+	SELECT
+		trim(bs.CFOOD_C) foodC,
+		bs.cFood_N                foodN,
+		sUnit                     unit,
+		SUM(nQty)                 qty,
+		SUM(
+			CASE WHEN bs.eRetSendFlag = '赠送'
+			THEN nQty
+			ELSE 0
+			END) pesentQty,
+		SUM(
+			CASE WHEN bs.eRetSendFlag = '退品'
+			THEN nQty
+			ELSE 0
+			END) returnQty
+	FROM
+		${com}.d_t_food_bills bs
+	LEFT JOIN
+		${com}.d_t_food_bill b
+	ON
+		bs.cBill_C = b.cBill_C
+	WHERE
+		DBUSINESS &gt;= #{startDate}
+	AND DBUSINESS &lt;= #{endDate}
+	AND b.CBRANCH_C LIKE #{shopC}
+	AND bs.eSuitFlag &lt;&gt; '套餐子项'
+	GROUP BY
+		trim(bs.CFOOD_C) ,
+		bs.cFood_N,
+		sUnit
+	ORDER BY
+		trim(bs.CFOOD_C)
+</select>
+</mapper>

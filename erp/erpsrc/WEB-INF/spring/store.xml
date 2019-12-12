@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:aop = "http://www.springframework.org/schema/aop"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+	http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+	http://www.springframework.org/schema/aop 
+	http://www.springframework.org/schema/aop/spring-aop-2.5.xsd"
+	default-autowire="byName">
+
+	<bean id="branchBean" class="logic.store.BranchBean" />
+	<bean id="branchTypeBean" class="logic.store.BranchTypeBean" />
+	<bean id="itemCategoryBean" class="logic.store.ItemCategoryBean" />
+	
+	<bean id="itemMetaBean" class="logic.store.ItemMetaBean" />
+	<bean id="therapyBean" class="logic.store.TherapyBean" />
+	<bean id="itemPriceBean" class="logic.store.ItemPriceBean" />
+	
+	<bean id="foodSuitBean" class="logic.store.FoodSuitBean" />
+	<bean id="supplierBean" class="logic.store.SupplierBean" />
+	<bean id="storageBean" class="logic.store.StorageBean" />
+	
+	<bean id="dailyBranchStorageBean" class="logic.store.DailyBranchStorageBean" />
+	<bean id="dailyFoodAmtBean" class="logic.store.DailyFoodAmtBean" />
+	<bean id="dailyRawAmtBean" class="logic.store.DailyRawAmtBean" />
+	
+	<bean id="dailySettleRecordBean" class="logic.store.DailySettleRecordBean" />
+	<bean id="optionBean" class="logic.store.OptionBean" />
+	<bean id="productionCycleBean" class="logic.store.ProductionCycleBean" />
+	
+	<bean id="safeStorageBean" class="logic.store.SafeStorageBean" />
+	<bean id="branchStorageBean" class="logic.store.BranchStorageBean" />
+	<bean id="factoryWorkShopBean" class="logic.store.FactoryWorkShopBean" />
+	<bean id="itemWorkShopBean" class="logic.store.ItemWorkShopBean" />
+	
+	<bean id="picBean" class="logic.store.PicBean" />
+	<bean id="stockQueryBean" class="logic.store.StockQueryBean" />
+	
+	<bean id="deliveryRegionBean" class="logic.store.DeliveryRegionBean" />
+	<bean id="deliveryUnitBean" class="logic.store.DeliveryUnitBean" />
+	
+	<bean id="deliveryTypeBean" class="logic.store.DeliveryTypeBean" />
+	<bean id="supplyCycleBean" class="logic.store.SupplyCycleBean" />
+	
+	<bean id="supplierBranchItemBean" class="logic.store.SupplierBranchItemBean" />
+	<bean id="brandBean" class="logic.store.BrandBean" />
+	<bean id="brandBranchBean" class="logic.store.BrandBranchBean" />
+	<bean id="brandProductBean" class="logic.store.BrandProductBean" />
+	
+	<bean id="priceGroupBean" class="logic.store.PriceGroupBean" />
+	<bean id="pgroupBranchBean" class="logic.store.PgroupBranchBean" />
+	
+	<bean id="boxTypeBean" class="logic.store.BoxTypeBean" />
+	<bean id="shelfBean" class="logic.store.ShelfBean" />
+	<bean id="shelfItemBean" class="logic.store.ShelfItemBean" />
+	<bean id="mRPQueryBean" class="logic.store.MRPQueryBean" />
+	
+	<bean id="printTimesBean" class="logic.store.PrintTimesBean" />
+	<bean id="tagHeaderBean" class="logic.store.TagHeaderBean" />
+	<bean id="tagDetailBean" class="logic.store.TagDetailBean" />
+</beans>
+

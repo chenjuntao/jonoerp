@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE struts PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN"
+    "http://struts.apache.org/dtds/struts-2.0.dtd">
+
+<struts>
+	<package name="reportmanage_workorder_cf_form" namespace="/reportmanage/workorder/cf/form" extends="trust-default">
+		<action name="mainView" class="action.reportmanage.ReportManageAction">
+			<result name="success">/jsp/centralfactory/reportmanage/workorder/form/main.jsp</result>
+			<result name="mobile">/mobile/module/cf/workorder/form/main.jsp</result>
+		</action>
+	</package>
+	
+	<package name="reportmanage_workorder_cf_collect" namespace="/reportmanage/workorder/cf/collect" extends="trust-default">
+		<action name="mainView" class="action.reportmanage.ReportManageAction">
+			<result name="success">/jsp/centralfactory/reportmanage/workorder/collect/main.jsp</result>
+				<result name="mobile">/mobile/module/cf/workorder/collect/main.jsp</result>
+		</action>
+	</package>
+	
+	<package name="reportmanage_workorder_cf_detail" namespace="/reportmanage/workorder/cf/detail" extends="trust-default">
+		<action name="mainView" class="action.reportmanage.ReportManageAction">
+			<result name="success">/jsp/centralfactory/reportmanage/workorder/detail/main.jsp</result>
+			<result name="mobile">/mobile/module/cf/workorder/detail/main.jsp</result>
+		</action>
+	</package>
+</struts>
+

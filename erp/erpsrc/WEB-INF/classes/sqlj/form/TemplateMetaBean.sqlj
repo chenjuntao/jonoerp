@@ -1,0 +1,291 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on Aug 29, 2014 by liyzh
+ * Last edited on Aug 29, 2014 by liyzh
+ * 
+ * 说明：餐厅要货、外部订货商订货需求模板元信息
+ */
+package logic.form;
+
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import pojo.form.TemplateMeta;
+import sqlj.runtime.ref.DefaultContext;
+import com.tanry.framework.util.TextUtil;
+import com.tanry.framework.acl.NoPrivilegeException;
+
+public class TemplateMetaBean extends ConnectionPool {
+	
+	public static Logger log = Logger.getLogger(TemplateMetaBean.class);
+	
+	#sql private iterator MetaIter(String template_id,
+			String template_name,
+			String template_type,
+			String branch_id,
+			String category_id,
+			String template_note, Integer arrive_period, String delivery_region, String delivery_type);
+	
+	/**
+	 * 保存
+	 */
+	public int saveEntity(TemplateMeta meta)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		String templateId = meta.getTemplateId();
+		String templateName = meta.getTemplateName();
+		String templateType = meta.getTemplateType();
+		String branchId = meta.getBranchId();
+		String categoryId = meta.getCategoryId();
+		String templateNote = meta.getTemplateNote();
+		Integer arrivePeriod = meta.getArrivePeriod();
+		String deliveryRegion = meta.getDeliveryRegion();
+		String deliveryType = meta.getDeliveryType();
+
+		#sql [myCtx] {
+			INSERT INTO :{Com_("D_T1_TEMPLATE_META")} 
+				(TEMPLATE_ID, TEMPLATE_NAME, TEMPLATE_TYPE, BRANCH_ID, CATEGORY_ID, TEMPLATE_NOTE, ARRIVE_PERIOD, DELIVERY_REGION, DELIVERY_TYPE) 
+			VALUES (:templateId, :templateName, :templateType, :branchId, :categoryId, :templateNote, :arrivePeriod, :deliveryRegion, :deliveryType)
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public int updateEntity(TemplateMeta meta)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		String templateId = meta.getTemplateId();
+		String templateName = meta.getTemplateName();
+		String categoryId = meta.getCategoryId();
+		Integer arrivePeriod = meta.getArrivePeriod();
+
+		#sql [myCtx] {
+			UPDATE :{Com_("D_T1_TEMPLATE_META")}
+			SET
+				TEMPLATE_NAME = :templateName,
+				CATEGORY_ID = :categoryId,
+				ARRIVE_PERIOD = :arrivePeriod
+			WHERE 
+				TEMPLATE_ID = :templateId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+
+	public int deleteEntity(String templateId)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		#sql [myCtx] {
+			DELETE
+			FROM
+			:{Com_("D_T1_TEMPLATE_META")}
+			WHERE
+				TEMPLATE_ID = :templateId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public int count(String branchId, String templateType, String itemName) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		if (!TextUtil.isEmpty(itemName)) {
+			return countByItem(branchId, templateType, itemName);
+		}
+		String query = formQuery(branchId);
+		DefaultContext myCtx = getDefaultContext();
+		int total = 0;
+		#sql [myCtx] {
+			SELECT
+			    count(*) into :total
+			FROM
+			:{Com_("D_T1_TEMPLATE_META")} m
+		    INNER JOIN
+		    :{Com_("D_T2_BRANCH")} b
+		    ON
+		        b.BRANCH_ID = m.BRANCH_ID
+			WHERE
+				:{query :: 1=1}
+			AND TEMPLATE_TYPE = :templateType
+		};
+		closeDefaultContext(myCtx);
+		return total;
+	}
+
+	/**
+	 * 根据原料名称或编码筛选模板
+	 */
+	public int countByItem(String branchId, String templateType, String itemName) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		String query = formQuery(branchId);
+		DefaultContext myCtx = getDefaultContext();
+		int total = 0;
+		itemName = "%" + itemName + "%";
+		#sql [myCtx] {
+			SELECT
+			    count(*) into :total
+			FROM
+			    (
+			        SELECT
+			            m.TEMPLATE_ID
+			        FROM
+			        	:{Com_("D_T1_TEMPLATE_META")} m,
+			        	:{Com_("D_T1_TEMPLATE_ITEM")} i,
+			        	:{Com_("D_T2_ITEM_META")} im,
+			        	:{Com_("D_T2_BRANCH")} b
+			        WHERE
+			            m.TEMPLATE_ID = i.TEMPLATE_ID
+			        AND im.item_id = i.ITEM_ID
+			    	AND b.BRANCH_ID = m.BRANCH_ID
+			        AND :{query :: 1=1}
+			        AND m.TEMPLATE_TYPE = :templateType
+	                AND (
+	                        i.ITEM_ID LIKE :itemName
+	                    OR  im.ITEM_NAME LIKE :itemName)
+			        GROUP BY
+			            m.TEMPLATE_ID)
+		};
+		closeDefaultContext(myCtx);
+		return total;
+	}
+	
+	private String formQuery(String branchId) {
+		String query = " 1=1";
+		if (!"-1".equals(branchId)) {
+			query = query + " AND m.BRANCH_ID = '" + branchId + "'";
+		} else {// 默认查询所有餐厅的模板
+			query = query + " AND b.BRANCH_TYPE = 'RESTAURANT'";
+		}
+		return query;
+	}
+	
+	public List<TemplateMeta> query(String branchId, String templateType, String itemName)  
+			throws NoPrivilegeException,SQLException,NoConnection {
+		if (!TextUtil.isEmpty(itemName)) {
+			return queryByItem(branchId, templateType, itemName);
+		}
+		String query = formQuery(branchId);
+		DefaultContext myCtx = getDefaultContext();
+		MetaIter metaIter = null;
+		#sql [myCtx] metaIter = {
+			SELECT
+			    m.*
+			FROM
+			:{Com_("D_T1_TEMPLATE_META")} m
+		    INNER JOIN
+		    :{Com_("D_T2_BRANCH")} b
+		    ON
+		        b.BRANCH_ID = m.BRANCH_ID
+			WHERE
+				:{query :: 1=1} 
+			AND (m.TEMPLATE_TYPE = :templateType)
+		};
+		List<TemplateMeta> metaLst = processIter(metaIter);
+		metaIter.close();
+		closeDefaultContext(myCtx);
+		return metaLst;
+	}
+
+	/**
+	 * 根据原料名称或编码筛选模板
+	 */
+	public List<TemplateMeta> queryByItem(String branchId, String templateType, String itemName)  
+			throws NoPrivilegeException,SQLException,NoConnection {
+		String query = formQuery(branchId);
+		itemName = "%" + itemName + "%";
+		DefaultContext myCtx = getDefaultContext();
+		MetaIter metaIter = null;
+		#sql [myCtx] metaIter = {
+			SELECT
+			    m.TEMPLATE_ID,
+			    m.TEMPLATE_NAME,
+			    m.TEMPLATE_TYPE,
+			    m.BRANCH_ID,
+			    m.CATEGORY_ID,
+			    m.TEMPLATE_NOTE,
+			    m.ARRIVE_PERIOD,
+			    m.DELIVERY_TYPE
+			FROM
+				:{Com_("D_T1_TEMPLATE_META")} m,
+				:{Com_("D_T1_TEMPLATE_ITEM")} i,
+				:{Com_("D_T2_ITEM_META")} im,
+				:{Com_("D_T2_BRANCH")} b
+			WHERE
+	            m.TEMPLATE_ID = i.TEMPLATE_ID
+	        AND im.item_id = i.ITEM_ID
+	        AND b.BRANCH_ID = m.BRANCH_ID
+	        AND :{query :: 1=1}
+	        AND m.TEMPLATE_TYPE = :templateType
+	        AND (
+	                i.ITEM_ID LIKE :itemName
+	            OR  im.ITEM_NAME LIKE :itemName)
+			GROUP BY
+			    m.TEMPLATE_ID,
+			    m.TEMPLATE_NAME,
+			    m.TEMPLATE_TYPE,
+			    m.BRANCH_ID,
+			    m.CATEGORY_ID,
+			    m.TEMPLATE_NOTE,
+			    m.ARRIVE_PERIOD,
+			    m.DELIVERY_TYPE
+		};
+		List<TemplateMeta> metaLst = processIter(metaIter);
+		metaIter.close();
+		closeDefaultContext(myCtx);
+		return metaLst;
+	}
+
+	public TemplateMeta queryById(String templateId) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		MetaIter metaIter = null;
+		#sql [myCtx] metaIter = {
+			SELECT
+			    *
+			FROM
+				:{Com_("D_T1_TEMPLATE_META")} m
+			WHERE
+				m.TEMPLATE_ID = :templateId
+		};
+		List<TemplateMeta> metaLst = processIter(metaIter);
+		metaIter.close();
+		closeDefaultContext(myCtx);
+		if (metaLst !=null && !metaLst.isEmpty()) {
+			return metaLst.get(0);
+		}
+		return null;
+	}
+	
+	private List<TemplateMeta> processIter(MetaIter metaIter) 
+			throws SQLException {
+		List<TemplateMeta> metaLst = new ArrayList<TemplateMeta>();
+		while(metaIter.next()) {
+			TemplateMeta meta = new TemplateMeta();
+			meta.setTemplateId(metaIter.template_id());
+			meta.setTemplateName(metaIter.template_name());
+			meta.setTemplateType(metaIter.template_type());
+			meta.setBranchId(metaIter.branch_id());
+			meta.setCategoryId(metaIter.category_id());
+			meta.setTemplateNote(metaIter.template_note());
+			meta.setArrivePeriod(metaIter.arrive_period());
+			meta.setDeliveryRegion(metaIter.delivery_region());
+			meta.setDeliveryType(metaIter.delivery_type());
+			metaLst.add(meta);
+		}
+		return metaLst;
+	}
+}

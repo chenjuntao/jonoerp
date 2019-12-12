@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE struts PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN"
+    "http://struts.apache.org/dtds/struts-2.0.dtd">
+<!-- 供应商入库单查询 -->
+<struts>
+	<package name="sp_inscan" namespace="/sp/inscan" extends="trust-default">
+		<action name="mainView" class="action.supplier.SupplierInscanAction">
+			<result name="success">/jsp/supplier/inscan/main.jsp</result>
+		</action>
+
+		<action name="checkView" method="checkView"	class="action.supplier.SupplierInscanAction">
+			<result name="success">/jsp/supplier/inscan/check.jsp</result>
+		</action>
+
+		<action name="doQuery" method="doQuery" class="action.supplier.SupplierInscanAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doConfirm" method="doConfirm" class="action.supplier.SupplierInscanAction">
+			<result type="json" />
+		</action>
+	</package>
+</struts>
+

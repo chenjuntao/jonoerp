@@ -1,0 +1,300 @@
+package logic.businessquery;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+import sqlj.runtime.ref.DefaultContext;
+import com.tanry.framework.util.DateTimeUtil;
+import com.tanry.framework.acl.NoPrivilegeException;
+import pojo.businessquery.ShopPayment;
+
+public class ShopPaymentBean extends ConnectionPool
+{
+	private String strDateFormat = "yyyy-MM-dd";//设置日期格式
+	
+	#sql public static iterator PayInfoIterator(
+			String businessDate,
+			String shopC,
+			String shopN,
+			Double foodAmt,
+			Integer billNum,
+			Double amtPerBill,
+			Integer guestNum,
+			Double amtPerGuest,
+			Integer tableNum,
+			Double amtPerTable,
+			Double guestPerTable,
+			Double disAmt,
+			Double roundAmt,
+			Double presentAmt,
+			Double oughtAmt,
+			Double payAmt,
+			String payC,
+			String payN,
+			Double payTypeAmt);
+	
+	public ShopPaymentBean() {
+	}
+
+	public List<ShopPayment> getShopPayInfo(String startDate, String endDate)
+			throws NoPrivilegeException,SQLException,NoConnection
+		{
+			List<ShopPayment> results = new ArrayList<ShopPayment>();
+			DefaultContext myCtx = getDefaultContext();
+			PayInfoIterator withoutDatePayInfoIterator = null;
+			if (myCtx != null)
+			{
+					//查询所有的门店列表及其付款金额
+					#sql [myCtx] withoutDatePayInfoIterator = {
+							SELECT
+						    a.*,
+						    b.payC,
+						    b.payN,
+						    b.payTypeAmt
+						FROM
+						    (
+						        SELECT
+						        	'all' businessDate,
+						            cBranch_C        shopC,
+						            cBranch_N        shopN,
+						            SUM(nFoodAmt)    foodAmt,
+						            COUNT(cBranch_C) billNum,
+						            CASE
+						                WHEN (COUNT(cBranch_C) = 0)
+						                THEN 0
+						                ELSE decode( COUNT(cBranch_C),0,0,  ROUND(SUM(nFoodAmt) / COUNT(cBranch_C),2))
+						            END            amtPerBill,
+						            SUM(iGuestNum) guestNum,
+						            CASE
+						                WHEN (SUM(iGuestNum) = 0)
+						                THEN 0
+						                ELSE decode( SUM(iGuestNum),0,0,ROUND(SUM(nFoodAmt) / SUM(iGuestNum) ,2)) 
+						            END                      amtPerGuest,
+						            COUNT(DISTINCT cTable_N) tableNum,
+						            CASE
+						                WHEN (SUM(nFoodAmt) = 0)
+						                THEN 0
+						                ELSE decode( COUNT(DISTINCT cTable_N),0,0,ROUND(SUM(nFoodAmt) / COUNT(DISTINCT cTable_N) ,2))
+						            END amtPerTable,
+						            CASE
+						                WHEN (SUM(iGuestNum)=0)
+						                THEN 0
+						                ELSE decode(COUNT(DISTINCT cTable_N),0,0,ROUND(SUM(iGuestNum) / COUNT(DISTINCT cTable_N) ,2))
+						            END              guestPerTable,
+						            SUM(nDisAmt)     disAmt,
+						            SUM(nRoundAmt)   roundAmt,
+						            SUM(nPresentAmt) presentAmt,
+						            SUM(nOughtAmt)   oughtAmt,
+						            SUM(nPayAmt)     payAmt
+						        FROM
+						            :{Com_("d_t_food_bill")}
+						        WHERE
+						            DBUSINESS >= to_date(:startDate, 'yyyy-mm-dd')
+						        AND DBUSINESS <= to_date(:endDate, 'yyyy-mm-dd')
+						        GROUP BY
+						            cBranch_C,
+						            cBranch_N
+						        ORDER BY
+						            cBranch_C)a,
+						    (
+						        SELECT
+						            b.cBranch_C    shopC,
+						            b.CBRANCH_N    ShopN,
+						            p.cPay_C       payC,
+						            p.cPay_N       payN,
+						            SUM(p.nPayAmt) payTypeAmt
+						        FROM
+						            :{Com_("d_t_food_bill")} b,
+						            :{Com_("d_t_bill_pay")} p
+						        WHERE
+						            b.cBill_C = p.cBill_C
+						        AND DBUSINESS >= to_date(:startDate, 'yyyy-mm-dd')
+						        AND DBUSINESS <= to_date(:endDate, 'yyyy-mm-dd')
+						        GROUP BY
+						            b.cBranch_C,
+						            b.CBRANCH_N,
+						            p.cPay_C,
+						            p.cPay_N
+						        ORDER BY
+						            b.cBranch_C,
+						            p.CPAY_C)b
+						WHERE
+						    a.shopC = b.shopC
+					};
+					
+					while(withoutDatePayInfoIterator.next())
+					{
+						ShopPayment bean = processIter(withoutDatePayInfoIterator);
+						results.add(bean);
+					}
+					withoutDatePayInfoIterator.close();
+			}
+			else
+	        {
+	            throw new NoConnection();
+	        }
+			closeDefaultContext(myCtx);
+			return results;
+		}
+	
+	
+	public List<ShopPayment> getShopPayInfoByDay(String startDate, String endDate)
+			throws NoPrivilegeException,SQLException,NoConnection
+		{
+			List<ShopPayment> results = new ArrayList<ShopPayment>();
+			DefaultContext myCtx = getDefaultContext();
+			PayInfoIterator withDateIterator = null;
+			if (myCtx != null)
+			{
+					#sql [myCtx] withDateIterator = {
+							SELECT
+						    a.*,
+						    b.PAYC,
+						    b.PAYN,
+						    b.PAYTYPEAMT
+						FROM
+						    (
+						        SELECT
+						            TO_CHAR(DBUSINESS, 'yyyy-MM-dd') businessDate,
+						            cBranch_C                        shopC,
+						            cBranch_N                        shopN,
+						            SUM(nFoodAmt)                    foodAmt,
+						            COUNT(cBranch_C)                 billNum,
+						            CASE
+						                WHEN (COUNT(cBranch_C) = 0)
+						                THEN 0
+						                ELSE decode(COUNT(cBranch_C),0,0,ROUND(SUM(nFoodAmt) / COUNT(cBranch_C),2))
+						            END            amtPerBill,
+						            SUM(iGuestNum) guestNum,
+						            CASE
+						                WHEN (SUM(iGuestNum) = 0)
+						                THEN 0
+						                ELSE decode(SUM(iGuestNum),0,0,ROUND(SUM(nFoodAmt) / SUM(iGuestNum) ,2))
+						            END                      amtPerGuest,
+						            COUNT(DISTINCT cTable_N) tableNum,
+						            CASE
+						                WHEN (SUM(nFoodAmt) = 0)
+						                THEN 0
+						                ELSE decode(COUNT(DISTINCT cTable_N),0,0,ROUND(SUM(nFoodAmt) / COUNT(DISTINCT cTable_N) ,2))
+						            END amtPerTable,
+						            CASE
+						                WHEN (SUM(iGuestNum)=0)
+						                THEN 0
+						                ELSE decode(COUNT(DISTINCT cTable_N),0,0,ROUND(SUM(iGuestNum) / COUNT(DISTINCT cTable_N) ,2)) 
+						            END              guestPerTable,
+						            SUM(nDisAmt)     disAmt,
+						            SUM(nRoundAmt)   roundAmt,
+						            SUM(nPresentAmt) presentAmt,
+						            SUM(nOughtAmt)   oughtAmt,
+						            SUM(nPayAmt)     payAmt
+						        FROM
+						            :{Com_("d_t_food_bill")}
+						        WHERE
+						            TO_CHAR(DBUSINESS, 'yyyy-MM-dd') IN
+						            (
+						                SELECT
+						                    TO_CHAR(DBUSINESS, 'yyyy-MM-dd')
+						                FROM
+						                    :{Com_("d_t_food_bill")} d
+						                WHERE
+						                    DBUSINESS >= to_date(:startDate, 'yyyy-MM-dd')
+						                AND DBUSINESS <= to_date(:endDate,'yyyy-MM-dd')
+						                GROUP BY
+						                    TO_CHAR(DBUSINESS, 'yyyy-MM-dd') )
+						        GROUP BY
+						            TO_CHAR(DBUSINESS, 'yyyy-MM-dd'),
+						            cBranch_C,
+						            cBranch_N
+						        ORDER BY
+						            TO_CHAR(DBUSINESS, 'yyyy-MM-dd'),
+						            cBranch_C)a,
+						    (
+						        SELECT
+						            TO_CHAR(a.DBUSINESS, 'yyyy-MM-dd') businessDate,
+						            a.cBranch_C                        shopC,
+						            a.CBRANCH_N                        shopN,
+						            b.cPay_C                           payC,
+						            b.cPay_N                           payN,
+						            SUM(b.nPayAmt)                     payTypeAmt
+						        FROM
+						            :{Com_("d_t_food_bill")} a,
+						            :{Com_("d_t_bill_pay")} b
+						        WHERE
+						            a.cBill_C = b.cBill_C
+						        AND TO_CHAR(a.DBUSINESS, 'yyyy-MM-dd') IN
+						            (
+						                SELECT
+						                    TO_CHAR(DBUSINESS, 'yyyy-MM-dd')
+						                FROM
+						                    :{Com_("d_t_food_bill")} d
+						                WHERE
+						                    DBUSINESS >= to_date(:startDate, 'yyyy-MM-dd')
+						                AND DBUSINESS <= to_date(:endDate,'yyyy-MM-dd')
+						                GROUP BY
+						                    TO_CHAR(DBUSINESS, 'yyyy-MM-dd') )
+						        GROUP BY
+						            TO_CHAR(a.DBUSINESS, 'yyyy-MM-dd'),
+						            a.cBranch_C,
+						            a.CBRANCH_N,
+						            b.cPay_C,
+						            b.cPay_N
+						        ORDER BY
+						            TO_CHAR(a.DBUSINESS, 'yyyy-MM-dd'),
+						            a.cBranch_C)b
+						WHERE
+						    a.businessDate = b.businessDate
+						AND a.shopC = b.shopC
+						ORDER BY
+						    a.BUSINESSDATE,
+						    a.SHOPC,
+						    b.PAYC
+					};
+					while(withDateIterator.next())
+					{
+						ShopPayment bean = processIter(withDateIterator);
+						results.add(bean);
+					}
+					withDateIterator.close();
+			}
+			else
+	        {
+	            throw new NoConnection();
+	        }
+			closeDefaultContext(myCtx);
+			return results;
+		}
+	
+	private ShopPayment processIter(PayInfoIterator payInfoIterator)throws SQLException
+	{
+		ShopPayment bean = new ShopPayment();
+		//pay
+		bean.payC = payInfoIterator.payC();
+		bean.payN = payInfoIterator.payN();
+		bean.payTypeAmt = payInfoIterator.payTypeAmt();
+		//shop
+		bean.shopC = payInfoIterator.shopC();
+		bean.shopN = payInfoIterator.shopN();
+		bean.foodAmt = payInfoIterator.foodAmt();
+		bean.billNum = payInfoIterator.billNum();
+		bean.amtPerBill = payInfoIterator.amtPerBill();
+		bean.guestNum = payInfoIterator.guestNum();
+		bean.amtPerGuest = payInfoIterator.amtPerGuest();
+		bean.tableNum = payInfoIterator.tableNum();
+		bean.amtPerTable = payInfoIterator.amtPerTable();
+		bean.guestPerTable = payInfoIterator.guestPerTable();
+		bean.disAmt = payInfoIterator.disAmt();
+		bean.roundAmt = payInfoIterator.roundAmt();
+		bean.presentAmt = payInfoIterator.presentAmt();
+		bean.oughtAmt = payInfoIterator.oughtAmt();
+		bean.payAmt = payInfoIterator.payAmt();
+		bean.businessDate = payInfoIterator.businessDate();
+		return bean;
+	}
+}

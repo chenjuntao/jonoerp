@@ -1,0 +1,102 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on Aug 29, 2014 by liyzh
+ * Last edited on Aug 29, 2014 by liyzh
+ * 
+ * 说明： 单据锁定状态表
+ */
+package logic.form;
+
+import java.sql.Date;
+import java.sql.SQLException;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import sqlj.runtime.ref.DefaultContext;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.acl.NoPrivilegeException;
+
+public class FormLockBean extends ConnectionPool {
+	
+	public static Logger log = Logger.getLogger(FormLockBean.class);
+	
+	/**
+	 * 保存
+	 */
+	public int addLock(String formId)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		Date lockTime = SqlDateUtil.getSqlDate(new java.util.Date());
+		#sql [myCtx] {
+			INSERT INTO :{Com_("D_T0_FORM_LOCK")} 
+				(FORM_ID, LOCK_STATUS, LOCK_TIME) VALUES (:formId, 1, :lockTime)
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public int releaseLock(String formId)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		#sql [myCtx] {
+			DELETE
+			FROM
+			:{Com_("D_T0_FORM_LOCK")}
+			WHERE
+				FORM_ID = :formId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public boolean hasLock(String formId)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		Date lockTime = null;
+		try {
+			#sql [myCtx] {
+				SELECT
+				    l.LOCK_TIME into :lockTime
+				FROM
+				:{Com_("D_T0_FORM_LOCK")} l
+				WHERE
+				    l.FORM_ID = :formId
+			};
+		} catch (SQLException e) {
+			log.debug("hasLock, formId ： " + formId);
+			log.debug("Error running the query: " + e);
+			String sqlState = e.getSQLState();
+			log.debug("SQL state = " + sqlState);
+		}
+		boolean hasLock = false;
+		if (lockTime != null) {
+			if (SqlDateUtil.beforeNow(lockTime, 30)) { // 如果超时，则释放锁
+				#sql [myCtx] {
+					DELETE
+					FROM
+					:{Com_("D_T0_FORM_LOCK")}
+					WHERE
+						FORM_ID = :formId
+				};
+			} else {
+				hasLock = true;
+			}
+		}
+		closeDefaultContext(myCtx);
+		
+		return hasLock;
+	}
+}

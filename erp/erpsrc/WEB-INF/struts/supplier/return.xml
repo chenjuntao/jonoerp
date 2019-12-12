@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE struts PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN"
+    "http://struts.apache.org/dtds/struts-2.0.dtd">
+
+<struts>
+	<package name="sp_return" namespace="/sp/return" extends="trust-default">
+		<action name="mainView" class="action.supplier.SupplierReturnAction">
+			<result name="success">/jsp/supplier/return/main.jsp</result>
+		</action>
+		
+		<action name="query" method="query" class="action.supplier.SupplierReturnAction">
+			<result type="json" />
+		</action>
+		
+		<action name="confirm" method="confirm" class="action.supplier.SupplierReturnAction">
+			<result name="success">/jsp/supplier/return/confirm.jsp</result>
+		</action>
+		
+		<action name="doConfirm" method="doConfirm" class="action.supplier.SupplierReturnAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="sp_return_scan" namespace="/sp/return/scan" extends="trust-default">
+		<action name="mainView" class="action.supplier.SupplierReturnAction">
+			<result name="success">/jsp/supplier/returnscan/main.jsp</result>
+		</action>
+		
+		<action name="confirm" method="confirm" class="action.supplier.SupplierReturnAction">
+			<result name="success">/jsp/supplier/returnscan/confirm.jsp</result>
+		</action>
+		
+		<action name="outConfirm" method="outConfirm" class="action.supplier.SupplierReturnAction">
+			<result name="success">/jsp/supplier/returnscan/outConfirm.jsp</result>
+		</action>
+	</package>
+</struts>
+

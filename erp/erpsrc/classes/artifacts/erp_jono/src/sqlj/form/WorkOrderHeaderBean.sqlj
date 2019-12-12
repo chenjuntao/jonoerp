@@ -1,0 +1,669 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on Thu Nov 06 14:41:20 CST 2014 by pw
+ * Last edited on Thu Nov 06 14:41:20 CST 2014 by pw
+ * 
+ * comment: 中央工厂生产工单表头
+ */
+package logic.form;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import pojo.form.WorkOrderHeader;
+import sqlj.runtime.ref.DefaultContext;
+
+import com.tanry.business.form.FormConstant;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.TextUtil;
+import com.tanry.framework.acl.NoPrivilegeException;
+
+public class WorkOrderHeaderBean extends ConnectionPool {
+	
+	public static final int ALL = 0;
+	public static final int UN_AUDIT = 1;
+	public static final int AUDIT_ED = 2;
+	public static final int AUDIT_ED_RECEIVE = 3;
+
+	public static Logger log = Logger.getLogger(WorkOrderHeaderBean.class);
+	
+	#sql private iterator HeaderIter(
+			String form_id, String item_id, String item_name, String item_dimension, String item_dimension2,String item_specification, 
+			Double item_count,Double item_count2, Double actual_count, String workshop, String form_maker_id, String form_maker, 
+			Date form_time, String auditor_id, String auditor, Date audit_time, String form_note,Double item_price, Double itemAmt,
+			Date complete_time,Double inputed_count,Double delivery_factor,String category_id);
+	
+	public int saveEntity(WorkOrderHeader header)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		String formId = header.getFormId();
+		String itemId = header.getItemId();
+		String itemName = header.getItemName();
+		String itemDimension = header.getItemDimension();
+		String itemDimension2 = header.getItemDimension2();
+		String itemSpecification = header.getItemSpecification();
+		Double itemCount = header.getItemCount();
+		Double itemCount2 = header.getItemCount2();
+		String workshop = header.getWorkshop();
+		String formBranchId = header.getFormBranchId();
+		String formMakerId = header.getFormMakerId();
+		String formMaker = header.getFormMaker();
+		Date formTime = SqlDateUtil.getSqlDate(header.getFormTime());
+		Date formTimeActual = SqlDateUtil.getSqlDate(new java.util.Date());
+		String auditorId = header.getAuditorId();
+		String auditor = header.getAuditor();
+		Date auditTime = SqlDateUtil.getSqlDate(header.getAuditTime());
+		String formNote = header.getFormNote(); 
+		
+		Double inputedCount = header.getInputedCount();
+		
+		String batchFlag = header.getBatchFlag();
+		//
+
+		#sql [myCtx] {
+			INSERT INTO :{Com_("D_T1_WORK_ORDER_HEADER")} 
+				(FORM_ID, ITEM_ID, ITEM_NAME, ITEM_DIMENSION,ITEM_DIMENSION2, ITEM_SPECIFICATION, ITEM_COUNT,  ITEM_COUNT2,WORKSHOP, FORM_BRANCH_ID, FORM_MAKER_ID, FORM_MAKER, FORM_TIME, FORM_TIME_ACTUAL,
+						AUDITOR_ID, AUDITOR, AUDIT_TIME, FORM_NOTE,RECEIVED_STATUS,INPUTED_COUNT,BATCH_FLAG) 
+			VALUES (:formId, :itemId, :itemName, :itemDimension,:itemDimension2, :itemSpecification, :itemCount,:itemCount2, :workshop, :formBranchId, :formMakerId, :formMaker, :formTime, :formTimeActual,
+					:auditorId, :auditor, :auditTime, :formNote,'default', :inputedCount,:batchFlag)
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public int updateEntity(WorkOrderHeader header)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		String formId = header.getFormId();
+		Double itemCount = header.getItemCount();
+		String formMakerId = header.getFormMakerId();
+		String formMaker = header.getFormMaker();
+		Date formTime = SqlDateUtil.getSqlDate(header.getFormTime());
+		Date auditTime = SqlDateUtil.getSqlDate(header.getAuditTime());
+		String formNote = header.getFormNote();
+
+		#sql [myCtx] {
+			UPDATE
+			:{Com_("D_T1_WORK_ORDER_HEADER")}
+			SET
+				ITEM_COUNT = :itemCount,
+				FORM_MAKER_ID = :formMakerId,
+				FORM_MAKER = :formMaker,
+				FORM_TIME = :formTime,
+				AUDIT_TIME = :auditTime,
+				FORM_NOTE = :formNote
+			WHERE 
+				FORM_ID = :formId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public int updateBatchFlag(String formId)
+			throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		#sql [myCtx] {
+			UPDATE
+			:{Com_("D_T1_WORK_ORDER_HEADER")}
+			SET
+			    BATCH_FLAG = 'Y'
+			WHERE 
+				FORM_ID = :formId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	
+	public int updateInputCount(WorkOrderHeader header)
+			throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		String formId = header.getFormId();
+		Double inputedCount = header.getInputedCount();
+		
+		#sql [myCtx] {
+			UPDATE
+			:{Com_("D_T1_WORK_ORDER_HEADER")}
+			SET
+				INPUTED_COUNT = :inputedCount
+			WHERE 
+				FORM_ID = :formId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public int output(WorkOrderHeader header)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		String formId = header.getFormId();
+		Double actualCount = header.getActualCount();
+
+		#sql [myCtx] {
+			UPDATE
+			:{Com_("D_T1_WORK_ORDER_HEADER")}
+			SET
+				ACTUAL_COUNT = :actualCount
+			WHERE 
+				FORM_ID = :formId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+
+	public int deleteEntity(String formId)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		#sql [myCtx] {
+			DELETE
+			FROM
+			:{Com_("D_T1_WORK_ORDER_HEADER")}
+			WHERE
+				FORM_ID = :formId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public int audit(String formId, String userId,String userName, java.util.Date auditTime)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		Date sAuditTime = SqlDateUtil.getSqlDate(auditTime);
+		#sql [myCtx] {
+			UPDATE
+			:{Com_("D_T1_WORK_ORDER_HEADER")}
+			SET
+				auditor = :userName,
+				auditor_id = :userId,
+				audit_time = :sAuditTime
+			WHERE 
+				FORM_ID = :formId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+
+	public int count(java.util.Date startDate, java.util.Date endDate, String queryStr) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		Date sDate = SqlDateUtil.getSqlDate(startDate);
+		Date eDate = SqlDateUtil.getSqlDate(endDate);
+		
+		DefaultContext myCtx = getDefaultContext();
+		int total = 0;
+		#sql [myCtx] {
+			SELECT
+			   count(*) into :total
+			FROM
+			:{Com_("D_T1_WORK_ORDER_HEADER")} h
+			JOIN
+			:{Com_("D_T1_ARRENGMENT_DETAIL")} d
+			ON
+			    h.FORM_ID = d.WORK_ORDER_ID
+			LEFT JOIN
+			:{Com_("D_T0_FORM_STATUS")} s
+			ON
+			    s.FORM_ID = h.FORM_ID
+			WHERE
+				:{queryStr ::}
+			AND s.IS_CURRENT = 1
+			AND (h.FORM_TIME >= :sDate or :sDate is null)
+			AND (h.FORM_TIME <= :eDate or :eDate is null)
+		};
+		closeDefaultContext(myCtx);
+		return total;
+	}
+	
+	public int countByFormTime(java.util.Date startDate, java.util.Date endDate, String queryStr) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		Date sDate = SqlDateUtil.getSqlDate(startDate);
+		Date eDate = SqlDateUtil.getSqlDate(endDate);
+		
+		DefaultContext myCtx = getDefaultContext();
+		int total = 0;
+		#sql [myCtx] {
+		SELECT
+		    COUNT(*)
+		INTO
+		    :total
+		FROM
+		:{Com_("D_T1_WORK_ORDER_HEADER")} h
+		JOIN
+		:{Com_("D_T1_ARRENGMENT_DETAIL")} d
+		ON
+		    h.FORM_ID = d.WORK_ORDER_ID
+		LEFT JOIN
+		:{Com_("D_T0_FORM_STATUS")} s
+		ON
+		    s.FORM_ID = h.FORM_ID
+		WHERE
+		    :{queryStr ::}
+		AND s.IS_CURRENT = 1
+		AND (
+		        h.FORM_TIME >= :sDate
+		    OR  :sDate IS NULL)
+		AND (
+		        h.FORM_TIME <= :eDate
+		    OR  :eDate IS NULL)};
+		closeDefaultContext(myCtx);
+		return total;
+	}
+	
+	/**
+	 * 与工单相关联的未审核领料单个数
+	 */
+	public int getCounts(String formId,String type) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		
+		DefaultContext myCtx = getDefaultContext();
+		int total = 0;
+		#sql [myCtx] {
+		SELECT
+		    COUNT(*)
+		INTO
+		    :total
+		FROM
+		:{Com_("D_T1_REQUISITION_HEADER")} h
+		LEFT JOIN
+		:{Com_("D_T0_FORM_STATUS")} s
+		ON
+		    h.FORM_ID = s.FORM_ID
+		AND s.IS_CURRENT = 1
+		WHERE
+		    h.FORM_REF_ID = :formId
+		AND s.STATUS = '未审核'
+		AND h.FORM_TYPE = :type
+	};
+		closeDefaultContext(myCtx);
+		return total;
+	}
+
+	public List<WorkOrderHeader> query(java.util.Date startDate, java.util.Date endDate,String queryStr) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		Date sDate = SqlDateUtil.getSqlDate(startDate);
+		Date eDate = SqlDateUtil.getSqlDate(endDate);
+		
+		DefaultContext myCtx = getDefaultContext();
+		HeaderIter headerIter = null;
+		#sql [myCtx] headerIter = {
+				WITH
+			    item AS
+			    (
+			        SELECT
+			            t.THERAPY_ID,
+			            t.THERAPY_NAME,
+			            ROUND( SUM(p.ITEM_PRICE*t.ITEM_GROSS_COUNT),2) itemAmt
+			        FROM
+			        :{Com_("D_T2_THERAPY")} t
+			        LEFT JOIN
+			        :{Com_("D_T2_ITEM_PRICE")} p
+			        ON
+			            t.ITEM_ID =p.ITEM_ID
+			        AND p.IS_CURRENT = 1
+			        AND p.PRICE_TYPE = 'PURCHASE'
+			        GROUP BY
+			            t.THERAPY_ID,
+			            t.THERAPY_NAME
+			    ),
+			    receiveCount AS(
+		    		SELECT
+			    	    d.ITEM_ID,
+			    	    h.FORM_REF_ID,
+			    	    SUM(d.RECEIVE_COUNT) RECEIVE_COUNT
+			    	FROM
+			    	:{Com_("D_T1_INPUT_HEADER")} h
+			    	INNER JOIN
+			    	:{Com_("D_T1_INPUT_DETAIL")} d
+			    	ON
+			    	    d.FORM_ID = h.FORM_ID
+			    	WHERE
+			    	    h.AUDIT_TIME IS NOT NULL
+			    	GROUP BY
+			    	    (d.ITEM_ID,h.FORM_REF_ID)
+			    		)
+			SELECT
+				h.FORM_ID,
+			    h.ITEM_ID,
+			    h.ITEM_NAME,
+			    h.ITEM_DIMENSION,
+			    h.ITEM_SPECIFICATION,
+			    ROUND((h.ITEM_COUNT-NVL(r.RECEIVE_COUNT,0))/nvl(u.DELIVERY_FACTOR,1),4) ITEM_COUNT,
+			    h.ACTUAL_COUNT,
+			    h.WORKSHOP,
+			    h.FORM_MAKER_ID,
+			    h.FORM_MAKER,
+			    h.FORM_TIME,
+			    h.AUDITOR_ID,
+			    h.AUDITOR,
+			    h.AUDIT_TIME,
+			    h.FORM_NOTE,
+			    h.FORM_TIME_ACTUAL,
+			    h.RECEIVED_STATUS,
+			    h.INPUTED_COUNT,
+			    h.FORM_BRANCH_ID,
+			    h.BATCH_FLAG,
+			    h.ITEM_DIMENSION2,
+			    h.ITEM_COUNT2,
+			    i.itemAmt,
+			    d.complete_time,
+			    p.ITEM_PRICE,
+			    u.DELIVERY_FACTOR,
+			    m.CATEGORY_ID,
+			    s.status
+			FROM
+			:{Com_("D_T1_WORK_ORDER_HEADER")} h
+			JOIN
+			:{Com_("D_T1_ARRENGMENT_DETAIL")} d
+			ON
+			    h.FORM_ID = d.WORK_ORDER_ID
+			LEFT JOIN
+			receiveCount r
+			ON 
+			r.FORM_REF_ID = h.FORM_ID
+			AND r.ITEM_ID = h.ITEM_ID
+    		LEFT JOIN
+    	    	item i
+    	    ON
+    	    	i.THERAPY_ID=h.ITEM_ID
+			LEFT JOIN
+			:{Com_("D_T0_FORM_STATUS")} s
+			ON
+			    s.FORM_ID = h.FORM_ID AND s.IS_CURRENT = 1
+    		LEFT JOIN
+		    :{Com_("D_T2_DELIVERY_UNIT")} u
+		    ON
+		    h.item_id = u.ITEM_ID
+    		LEFT JOIN
+		    :{Com_("D_T2_ITEM_META")} m
+		    ON
+		    h.item_id = m.ITEM_ID
+    		LEFT JOIN
+    		:{Com_("D_T2_ITEM_PRICE")} p
+		    ON
+			  p.ITEM_ID = h.ITEM_ID AND PRICE_TYPE='BENCHMARK'
+			WHERE
+				:{queryStr ::}
+			AND (h.FORM_TIME >= :sDate or :sDate is null)
+			AND (h.FORM_TIME <= :eDate or :eDate is null)
+			ORDER BY h.WORKSHOP,h.FORM_ID
+		};
+		List<WorkOrderHeader> headerLst = processIter(headerIter);
+		headerIter.close();
+		closeDefaultContext(myCtx);
+		return headerLst;
+	}
+	
+	public List<WorkOrderHeader> queryNew(java.util.Date startDate, java.util.Date endDate,String queryStr,int startRow,int endRow) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		Date sDate = SqlDateUtil.getSqlDate(startDate);
+		Date eDate = SqlDateUtil.getSqlDate(endDate);
+		
+		DefaultContext myCtx = getDefaultContext();
+		HeaderIter headerIter = null;
+		#sql [myCtx] headerIter = {
+			SELECT
+			    *
+			    FROM
+			        (
+			            SELECT
+			                t.*,
+			                ROWNUM rowNumber
+			            FROM
+			                (
+			            			SELECT
+			        			    h.*, 
+			        			    '' itemAmt,
+			        			    d.complete_time,
+			        			    p.item_price,
+			        			    u.DELIVERY_FACTOR,
+			        			    m.CATEGORY_ID,
+			        			    s.status
+			        			FROM
+			        			:{Com_("D_T1_WORK_ORDER_HEADER")} h
+			        			JOIN
+			        			:{Com_("D_T1_ARRENGMENT_DETAIL")} d
+			        			ON
+			        			    h.FORM_ID = d.WORK_ORDER_ID
+			        			LEFT JOIN
+			        			:{Com_("D_T0_FORM_STATUS")} s
+			        			ON
+			        			    s.FORM_ID = h.FORM_ID 
+			        			AND s.IS_CURRENT = 1
+	        					LEFT JOIN
+	        				    :{Com_("D_T2_DELIVERY_UNIT")} u
+	        				    ON
+	        				    h.item_id = u.ITEM_ID
+    				    		LEFT JOIN
+    				    		:{Com_("D_T2_ITEM_META")} m
+	        				    ON
+	        				    h.item_id = m.ITEM_ID
+        			    		LEFT JOIN
+        			    		:{Com_("D_T2_ITEM_PRICE")} p
+        					    ON
+        						  p.ITEM_ID = h.ITEM_ID AND PRICE_TYPE='BENCHMARK'
+			        			WHERE
+			        				:{queryStr ::}
+			        			AND (h.AUDIT_TIME >= :sDate or :sDate is null)
+			        			AND (h.AUDIT_TIME <= :eDate or :eDate is null)
+			        			ORDER BY  h.FORM_ID
+			        		) t
+			            WHERE
+			                ROWNUM < :endRow)
+			    WHERE
+			        rowNumber >= :startRow};
+		List<WorkOrderHeader> headerLst = processIter(headerIter);
+		headerIter.close();
+		closeDefaultContext(myCtx);
+		return headerLst;
+	}
+	
+	public List<WorkOrderHeader> queryByFormTime(java.util.Date startDate, java.util.Date endDate,String queryStr) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		Date sDate = SqlDateUtil.getSqlDate(startDate);
+		Date eDate = SqlDateUtil.getSqlDate(endDate);
+		
+		DefaultContext myCtx = getDefaultContext();
+		HeaderIter headerIter = null;
+		#sql [myCtx] headerIter = {
+			SELECT
+			    h.*,
+			    '' itemAmt,
+			    d.complete_time,
+			    p.item_price,
+			    u.DELIVERY_FACTOR,
+			    m.CATEGORY_ID,
+			    s.status
+			FROM
+			:{Com_("D_T1_WORK_ORDER_HEADER")} h
+			JOIN
+			:{Com_("D_T1_ARRENGMENT_DETAIL")} d
+			ON
+			    h.FORM_ID = d.WORK_ORDER_ID
+			LEFT JOIN
+			:{Com_("D_T0_FORM_STATUS")} s
+			ON
+			    s.FORM_ID = h.FORM_ID
+			AND s.IS_CURRENT = 1
+			LEFT JOIN
+		    :{Com_("D_T2_DELIVERY_UNIT")} u
+		    ON
+		    h.item_id = u.ITEM_ID
+    		LEFT JOIN
+    		:{Com_("D_T2_ITEM_META")} m
+		    ON
+		    h.item_id = m.ITEM_ID
+    		LEFT JOIN
+    		:{Com_("D_T2_ITEM_PRICE")} p
+		    ON
+			  p.ITEM_ID = h.ITEM_ID AND PRICE_TYPE='BENCHMARK'
+			WHERE
+			    :{queryStr ::}
+			AND (
+			        h.FORM_TIME >= :sDate
+			    OR  :sDate IS NULL)
+			AND (
+			        h.FORM_TIME <= :eDate
+			    OR  :eDate IS NULL)
+			ORDER BY
+			    h.FORM_ID};
+		List<WorkOrderHeader> headerLst = processIter(headerIter);
+		headerIter.close();
+		closeDefaultContext(myCtx);
+		return headerLst;
+	}
+	
+	public List<WorkOrderHeader> queryByTime(java.util.Date startDate, java.util.Date endDate,String queryStr,String branchId) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		Date sDate = SqlDateUtil.getSqlDate(startDate);
+		Date eDate = SqlDateUtil.getSqlDate(endDate);
+		
+		DefaultContext myCtx = getDefaultContext();
+		HeaderIter headerIter = null;
+		#sql [myCtx] headerIter = {
+			SELECT
+			    h.*,
+			    '' itemAmt,
+			    h.form_time + nvl(c.PRODUCTION_CYCLE,0) complete_time,
+			    p.item_price,
+			    u.DELIVERY_FACTOR,
+			    m.CATEGORY_ID,
+			    s.status
+			FROM
+				:{Com_("D_T1_WORK_ORDER_HEADER")} h
+			left join 
+				:{Com_("D_T2_PRODUCTION_CYCLE")} c 
+			on h.item_id = c.ITEM_ID 
+			and c.BRANCH_ID = :branchId
+			LEFT JOIN
+				:{Com_("D_T0_FORM_STATUS")} s
+			ON
+			    s.FORM_ID = h.FORM_ID
+			AND s.IS_CURRENT = 1
+			LEFT JOIN
+		    :{Com_("D_T2_DELIVERY_UNIT")} u
+		    ON
+		    h.item_id = u.ITEM_ID
+    		LEFT JOIN
+    		:{Com_("D_T2_ITEM_META")} m
+		    ON
+		    h.item_id = m.ITEM_ID
+    		LEFT JOIN
+    			:{Com_("D_T2_ITEM_PRICE")} p
+		    ON
+			  p.ITEM_ID = h.ITEM_ID AND PRICE_TYPE='BENCHMARK'			
+			WHERE
+			    :{queryStr ::}
+			AND (
+			        h.FORM_TIME >= :sDate
+			    OR  :sDate IS NULL)
+			AND (
+			        h.FORM_TIME <= :eDate
+			    OR  :eDate IS NULL)
+			ORDER BY
+			    h.FORM_ID};
+		List<WorkOrderHeader> headerLst = processIter(headerIter);
+		headerIter.close();
+		closeDefaultContext(myCtx);
+		return headerLst;
+	}
+	
+	
+	public WorkOrderHeader queryById(String formId) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		HeaderIter headerIter = null;
+		#sql [myCtx] headerIter = {
+			SELECT
+			    h.*,
+			    '' itemAmt,
+			    d.COMPLETE_TIME,
+			    u.DELIVERY_FACTOR,
+			    m.CATEGORY_ID,
+			    p.item_price
+			FROM
+			:{Com_("D_T1_WORK_ORDER_HEADER")} h
+			JOIN
+			:{Com_("D_T1_ARRENGMENT_DETAIL")} d
+			ON
+			    h.FORM_ID = d.WORK_ORDER_ID
+    		LEFT JOIN
+		    :{Com_("D_T2_DELIVERY_UNIT")} u
+		    ON
+		    h.item_id = u.ITEM_ID
+			LEFT JOIN
+			:{Com_("D_T2_ITEM_META")} m
+		    ON
+		    h.item_id = m.ITEM_ID
+    		LEFT JOIN
+    		:{Com_("D_T2_ITEM_PRICE")} p
+		    ON
+			  p.ITEM_ID = h.ITEM_ID AND PRICE_TYPE='BENCHMARK'
+			WHERE
+			    h.form_id = :formId};
+		List<WorkOrderHeader> headerLst = processIter(headerIter);
+		headerIter.close();
+		closeDefaultContext(myCtx);
+		if (headerLst !=null && !headerLst.isEmpty()) {
+			return headerLst.get(0);
+		}
+		return null;
+	}
+	
+	private List<WorkOrderHeader> processIter(HeaderIter headerIter) 
+			throws SQLException {
+		List<WorkOrderHeader> headerLst = new ArrayList<WorkOrderHeader>();
+		while(headerIter.next()) {
+			WorkOrderHeader header = new WorkOrderHeader();
+			header.setFormId(headerIter.form_id());
+			header.setItemId(headerIter.item_id());
+			header.setItemName(headerIter.item_name());
+			header.setItemDimension(headerIter.item_dimension());
+			header.setItemDimension2(headerIter.item_dimension2());
+			header.setItemSpecification(headerIter.item_specification());
+			header.setItemCount(headerIter.item_count());
+			header.setItemCount2(headerIter.item_count2());
+			header.setActualCount(headerIter.actual_count());
+			header.setWorkshop(headerIter.workshop());
+			header.setFormMakerId(headerIter.form_maker_id());
+			header.setFormMaker(headerIter.form_maker());
+			header.setFormTime(SqlDateUtil.getUtilDate(headerIter.form_time()));
+			header.setAuditorId(headerIter.auditor_id());
+			header.setAuditor(headerIter.auditor());
+			header.setAuditTime(SqlDateUtil.getUtilDate(headerIter.audit_time()));
+			header.setFormNote(headerIter.form_note());
+			header.setInputedCount(headerIter.inputed_count());
+			header.setCompleteTime(SqlDateUtil.getUtilDate(headerIter.complete_time()));
+			header.setItemPrice(headerIter.item_price());
+			header.setItemAmt(headerIter.itemAmt());
+			header.setDeliveryFactor(headerIter.delivery_factor());
+			header.setCategoryId(headerIter.category_id());
+			headerLst.add(header);
+		}
+		return headerLst;
+	}
+}

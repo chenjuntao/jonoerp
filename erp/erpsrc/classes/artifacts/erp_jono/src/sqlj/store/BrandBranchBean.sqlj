@@ -1,0 +1,214 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on Tue Mar 03 17:06:46 CST 2015 by lyz
+ * Last edited on Tue Mar 03 17:06:46 CST 2015 by lyz
+ * 
+ * comment: 多品牌分组与门店的对应关系
+ */
+package logic.store;
+
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import pojo.store.BrandBranch;
+import sqlj.runtime.ref.DefaultContext;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.TextUtil;
+import com.tanry.framework.acl.NoPrivilegeException;
+
+public class BrandBranchBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(BrandBranchBean.class);
+	
+	#sql private iterator RelationIter(String brand_id, String branch_id);
+	
+	public int saveEntity(BrandBranch relation)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		String brandId = relation.getBrandId();
+		String branchId = relation.getBranchId();
+
+		#sql [myCtx] {
+			INSERT INTO :{Com_("D_T2_BRAND_BRANCH")}
+				(BRAND_ID, BRANCH_ID) 
+			VALUES (:brandId, :branchId)
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public int updateEntity(BrandBranch relation)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		String brandId = relation.getBrandId();
+		String branchId = relation.getBranchId();
+
+		#sql [myCtx] {
+			UPDATE
+			:{Com_("D_T2_BRAND_BRANCH")}
+			SET
+				BRAND_ID = :brandId,
+				BRANCH_ID = :branchId
+			WHERE 
+				FORM_ID = :brandId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+
+	public int deleteByBrand(String brandId)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		#sql [myCtx] {
+			DELETE
+			FROM
+			:{Com_("D_T2_BRAND_BRANCH")}
+			WHERE
+				BRAND_ID = :brandId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	/**
+	 * 删除除此之外的其它记录
+	 */
+	public int deleteExcept(String brandId, String branchIds) 
+			throws NoPrivilegeException, SQLException, NoConnection {
+		String query = " BRANCH_ID NOT IN ('" + branchIds.replaceAll(",", "','") + "') ";
+		
+		DefaultContext myCtx = getDefaultContext();
+		#sql [myCtx] {
+			DELETE
+			FROM
+			:{Com_("D_T2_BRAND_BRANCH")}
+			WHERE
+				BRAND_ID = :brandId
+			AND	:{query :: 1=1}
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+
+	public boolean exist(String brandId, String branchId) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		int total = 0;
+		#sql [myCtx] {
+			SELECT
+				COUNT(*) into :total
+			FROM
+			:{Com_("D_T2_BRAND_BRANCH")} b
+			WHERE
+				b.BRAND_ID = :brandId
+			AND b.BRANCH_ID = :branchId
+		};
+		closeDefaultContext(myCtx);
+		
+		if (total > 0) {
+			return true;
+		}
+		return false;
+	}
+	
+	public List<BrandBranch> query() 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		RelationIter relationIter = null;
+		#sql [myCtx] relationIter = {
+			SELECT
+			    *
+			FROM
+			:{Com_("D_T2_BRAND_BRANCH")} h
+		};
+		List<BrandBranch> relationLst = processIter(relationIter);
+		relationIter.close();
+		closeDefaultContext(myCtx);
+		return relationLst;
+	}
+
+	#sql private iterator NodeIter(String id, String name, String parent, String type, String checked);
+	
+	public List<Map> queryTree(String brandId) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		NodeIter nodeIter = null;
+		#sql [myCtx] nodeIter = {
+			SELECT
+			    r.REGION_ID   AS id ,
+			    r.REGION_NAME AS name,
+			    'root'        AS parent,
+			    'region'      AS type,
+			    ''               checked
+			FROM
+			:{Com_("D_T2_DELIVERY_REGION")} r
+			UNION ALL
+			SELECT
+			    b.BRANCH_ID   AS id ,
+			    b.BRANCH_NAME AS name,
+			    rb.REGION_ID  AS parent,
+			    'branch'      AS type,
+			    CASE
+			        WHEN bb.BRANCH_ID IS NULL
+			        THEN ''
+			        ELSE 'checked'
+			    END AS checked
+			FROM
+			:{Com_("D_T2_DELIVERY_REGION_BRANCH")} rb
+			LEFT JOIN
+			:{Com_("D_T2_BRANCH")} b
+			ON
+			    b.BRANCH_ID = rb.BRANCH_ID
+			LEFT JOIN
+			:{Com_("D_T2_BRAND_BRANCH")} bb
+			ON
+			    b.BRANCH_ID = bb.BRANCH_ID
+			AND bb.BRAND_ID = :brandId
+		};
+		List<Map> nodeLst = new ArrayList<Map>();
+		while(nodeIter.next()) {
+			Map<String, String> node = new HashMap<String, String>();
+			node.put("id", nodeIter.id());
+			node.put("name", nodeIter.name());
+			node.put("parent", nodeIter.parent());
+			node.put("type", nodeIter.type());
+			node.put("checked", nodeIter.checked());
+			nodeLst.add(node);
+		}
+		nodeIter.close();
+		closeDefaultContext(myCtx);
+		return nodeLst;
+	}
+	
+	private List<BrandBranch> processIter(RelationIter relationIter) 
+			throws SQLException {
+		List<BrandBranch> relationLst = new ArrayList<BrandBranch>();
+		while(relationIter.next()) {
+			BrandBranch relation = new BrandBranch();
+			relation.setBrandId(relationIter.brand_id());
+			relation.setBranchId(relationIter.branch_id());
+			relationLst.add(relation);
+		}
+		return relationLst;
+	}
+}

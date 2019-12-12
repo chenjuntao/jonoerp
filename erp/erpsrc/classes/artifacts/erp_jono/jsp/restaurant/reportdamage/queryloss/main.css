@@ -1,0 +1,20 @@
+.dgrid-column-set-0 {
+	width: 300px;
+}
+
+.dgrid-cell {
+	width: 90px;
+}
+
+.field-lossBranch,.field-formId,.field-formNote {
+	width: 120px;
+}
+
+.field-storage,.field-maxPayItem  {
+	width: 150px;
+}
+
+.field-itemDimension,.field-formStatus {
+	width: 60px;
+}
+

@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE struts PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN"
+    "http://struts.apache.org/dtds/struts-2.0.dtd">
+
+<struts>
+	<package name="restapi" namespace="/api" extends="trust-default">
+		
+		<action name="testConnect" method="testConnect" class="action.restapi.RestApiAction">
+			<result type="json" />
+		</action>
+		
+		<action name="bill" method="postBill" class="action.restapi.RestApiAction">
+			<result type="json" />
+		</action>
+		
+		<action name="bills" method="postBills" class="action.restapi.RestApiAction">
+			<result type="json" />
+		</action>
+		
+		<action name="pay" method="postPay" class="action.restapi.RestApiAction">
+			<result type="json" />
+		</action>
+		
+		<action name="restaurant" method="postRestaurant" class="action.restapi.RestApiAction">
+			<result type="json" />
+		</action>
+
+		<action name="food" method="postFood" class="action.restapi.RestApiAction">
+			<result type="json" />
+		</action>
+		
+		<action name="food_category" method="postFoodCategory" class="action.restapi.RestApiAction">
+			<result type="json" />
+		</action>
+		
+		<action name="food_price" method="postFoodPrice" class="action.restapi.RestApiAction">
+			<result type="json" />
+		</action>
+
+		<action name="upload_weight" method="uploadWeight" class="action.restapi.UploadWeightAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="apilog" namespace="/api/log" extends="trust-default">
+		<action name="mainView" class="action.restapi.LogAction">
+			<result name="success">/jsp/restapi/log/main.jsp</result>
+		</action>
+		<action name="listLog" method="listLog" class="action.restapi.LogAction">
+			<result type="json" />
+		</action>
+		<action name="listErr" class="action.restapi.LogErrAction">
+			<result name="success">/jsp/restapi/log/err.jsp</result>
+		</action>
+		<action name="listErrJson" method="listErrJson" class="action.restapi.LogErrAction">
+			<result type="json" />
+		</action>
+		<action name="listErrMsg" method="listErrMsg" class="action.restapi.LogErrAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+</struts>

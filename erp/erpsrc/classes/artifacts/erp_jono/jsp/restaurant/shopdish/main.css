@@ -1,0 +1,43 @@
+#categoryTree {
+	position: absolute;
+	left: 0;
+	right: 0;
+	top: 30px;
+	bottom: 0;
+	width: 20%;
+	height: auto; /* override default height: 30em; in dgrid.css */
+}
+
+#dataGrid {
+	position: absolute;
+	right: 0;
+	top: 30px;
+	bottom: 0;
+	width: 80%;
+	height: auto; /* override default height: 30em; in dgrid.css */
+}
+
+.dgrid-cell {
+	width: 80px;
+}
+
+.field-itemName {
+	width: 180px;
+}
+
+.field-none{
+	width: 40px;
+}
+
+.field-itemDimension,.field-salePrice{
+	width: 60px;
+}
+
+.field-queryCode {
+	width: 120px;
+}
+
+.field-category {
+	width: 150px;
+}
+

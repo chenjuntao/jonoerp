@@ -1,0 +1,55 @@
+#subItemGrid {
+	height: 150px;
+}
+
+#optionGrid {
+	position: absolute;
+	right: 0;
+	top: 305px;
+	bottom: 0;
+	width: 100%;
+	height: auto; /* override default height: 30em; in dgrid.css */
+}
+
+th[role="columnheader"] {
+	text-align: center;
+}
+
+th.edit-note {
+	color: red;
+}
+
+.dgrid-cell {
+	/* 	width: 80px; make all the columns 80px wide */
+	vertical-align: middle;
+}
+
+.field-rownumber, .field-subItemId, .field-optionId,
+	.field-itemDimension, .field-itemType {
+	text-align: center;
+}
+
+.field-rownumber {
+	width: 40px;
+}
+
+.field-subItemId, .field-optionId {
+	width: 80px;
+}
+
+.field-subItemName, .field-optionName {
+	width: 180px;
+}
+
+.field-itemDimension, .field-stockUnit {
+	width: 60px;
+}
+
+.field-itemCount, .field-salePrice,.field-allPrice, .field-itemAmt {
+	width: 80px;
+	text-align: right;
+}
+
+.field-none {
+	width: 80px;
+}

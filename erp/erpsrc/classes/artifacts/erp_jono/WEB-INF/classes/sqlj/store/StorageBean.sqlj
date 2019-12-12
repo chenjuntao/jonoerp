@@ -1,0 +1,417 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on Sep 2, 2014 by liyzh
+ * Last edited on Sep 2, 2014 by liyzh
+ * 
+ * 说明： 仓库存储信息表
+ */
+package logic.store;
+
+import java.sql.SQLException;
+import java.sql.Date;
+import java.util.List;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import sqlj.runtime.ref.DefaultContext;
+import com.tanry.framework.acl.NoPrivilegeException;
+import com.tanry.framework.util.SqlDateUtil;
+
+import pojo.store.Storage;
+import com.tanry.framework.util.DateTimeUtil;
+
+import com.tanry.framework.util.TextUtil;
+public class StorageBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(StorageBean.class);
+
+	public int updateShelf(String shelf, String storeId, String itemId)
+			throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+			
+		#sql [myCtx] {
+			UPDATE
+			:{Com_("D_T2_STORAGE")}
+			SET
+				SHELF_ID = :shelf
+			WHERE
+			  STORAGE_ID = :storeId
+			AND ITEM_ID = :itemId
+		};
+		
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+
+	public String getShelf(String storeId,String itemId)
+			throws NoPrivilegeException, SQLException, NoConnection {
+		if (TextUtil.isEmpty(storeId) || TextUtil.isEmpty(itemId)){
+			return null;
+		}
+		
+		String shelf = "";
+		
+		DefaultContext myCtx = getDefaultContext();
+		try {
+			#sql [myCtx] {
+				SELECT
+					SHELF_ID into :shelf 
+				FROM
+				:{Com_("D_T2_STORAGE")} 
+				WHERE 
+					 STORAGE_ID = :storeId
+					 AND ITEM_ID = :itemId
+			};
+		} catch (SQLException e) {
+//			log.debug(" storeId : " + storeId);
+//			log.debug("Error running the query: " + e);
+//			String sqlState = e.getSQLState();
+//			log.debug("SQL state = " + sqlState);
+//			e.printStackTrace();
+		}finally{
+			closeDefaultContext(myCtx);
+		}
+		
+		return shelf;
+	}
+
+	/**
+	 * 根据材料ID和仓库ID获取相应的库存量
+	 */
+	public Double getItemCount(String itemId, String storeId)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		if (TextUtil.isEmpty(storeId) || TextUtil.isEmpty(itemId)){
+			return 0.0;
+		}
+		Double inventory = null;
+		DefaultContext myCtx = getDefaultContext();
+		try {
+			#sql [myCtx] {
+				SELECT
+					NVL(ITEM_COUNT,0) into :inventory 
+				FROM
+				:{Com_("D_T2_STORAGE")} 
+				where 
+					ITEM_ID = :itemId 
+				and STORAGE_ID = :storeId
+			};
+		} catch (SQLException e) {
+//			log.debug("itemId ： " + itemId + ", storeId : " + storeId);
+//			log.debug("Error running the query: " + e);
+//			String sqlState = e.getSQLState();
+//			log.debug("SQL state = " + sqlState);
+//			e.printStackTrace();
+		}finally{
+			closeDefaultContext(myCtx);
+		}
+		
+		return inventory;
+	}
+	
+	#sql private iterator ItemCountIter(
+			String item_id, 
+			Double inventory
+		);
+	
+	public List<Map> queryItemCount(String formId, String storeId)throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		ItemCountIter itemCountIter = null;
+		#sql [myCtx] itemCountIter = {
+			SELECT
+			    c.item_id,
+			    NVL(s.ITEM_COUNT,0) inventory
+			FROM
+			:{Com_("D_T1_CHECK_DETAIL")} c
+			LEFT JOIN
+			:{Com_("D_T2_STORAGE")} s
+			ON
+			    s.ITEM_ID = c.ITEM_ID
+			AND s.STORAGE_ID = :storeId
+			WHERE c.FORM_ID= :formId
+		};
+		List<Map> itemCountLst = processIter(itemCountIter);
+		itemCountIter.close();
+		closeDefaultContext(myCtx);
+		return itemCountLst;
+	}
+	
+	private List<Map> processIter(ItemCountIter itemCountIter) 
+			throws SQLException {
+		List<Map> itemCountLst = new ArrayList<Map>();
+		while(itemCountIter.next()) {
+			Map headerMap = new HashMap();
+			headerMap.put("itemId",itemCountIter.item_id());
+			headerMap.put("itemCount",itemCountIter.inventory());
+			itemCountLst.add(headerMap);
+		}
+		return itemCountLst;
+	}
+
+	public Double getItemCount(String itemId, String storeId,DefaultContext myCtx)
+			throws NoPrivilegeException, SQLException, NoConnection {
+		if (TextUtil.isEmpty(storeId) || TextUtil.isEmpty(itemId)){
+			return 0.0;
+		}
+			Double inventory = null;
+			try {
+				#sql [myCtx] {
+					SELECT
+						NVL(ITEM_COUNT,0) into :inventory 
+					FROM
+					:{Com_("D_T2_STORAGE")} 
+					where 
+						ITEM_ID = :itemId 
+					and STORAGE_ID = :storeId
+				};
+			} catch (SQLException e) {
+//				log.debug("itemId ： " + itemId + ", storeId : " + storeId);
+//				log.debug("Error running the query: " + e);
+//				String sqlState = e.getSQLState();
+//				log.debug("SQL state = " + sqlState);
+//				e.printStackTrace();
+			}
+			
+			return inventory;
+		}
+
+	/**
+	 * 根据材料ID和门店ID获取所有仓库的库存量
+	 */
+	public Double getAllItemCount(String itemId, String branchId)
+			throws NoPrivilegeException, SQLException, NoConnection {
+		Double inventory = 0.0;
+		if (TextUtil.isEmpty(branchId) || TextUtil.isEmpty(itemId)){
+			return 0.0;
+		}
+		DefaultContext myCtx = getDefaultContext();
+		try {
+			#sql [myCtx] {
+				SELECT
+					round(sum(NVL(s.ITEM_COUNT,0)),2) 
+				INTO
+				    :inventory
+				FROM
+				:{Com_("D_T2_STORAGE")} s
+				LEFT JOIN
+				:{Com_("D_T2_BRANCH_STORAGE")} bs
+				ON
+				    s.STORAGE_ID = bs.STORAGE_ID
+				WHERE
+				    s.ITEM_ID = :itemId
+				AND bs.BRANCH_ID = :branchId
+				GROUP BY
+				    s.ITEM_ID
+			};
+		} catch (SQLException e) {
+//			log.debug("itemId ： " + itemId + ", branchId : " + branchId);
+//			log.debug("Error running the query: " + e);
+//			String sqlState = e.getSQLState();
+//			log.debug("SQL state = " + sqlState);
+//			e.printStackTrace();
+		}finally{
+			closeDefaultContext(myCtx);
+		}
+		
+		return inventory;
+	}
+
+	public int saveEntity(Storage header, DefaultContext myCtx)
+			throws NoPrivilegeException, SQLException, NoConnection {
+		String storeId = header.getStorageId();
+		String itemId = header.getItemId();
+		Double itemCount = header.getItemCount();
+		String shelfId = header.getShelfId();
+		Date lastInTime = SqlDateUtil.getSqlDate(header.getLastInTime());
+		Date expiredTime = SqlDateUtil.getSqlDate(header.getExpiredTime());
+
+		#sql [myCtx] {
+			INSERT INTO :{Com_("D_T2_STORAGE")} 
+				(STORAGE_ID, ITEM_ID, ITEM_COUNT, SHELF_ID, LAST_IN_TIME, EXPIRED_TIME) 
+			VALUES (:storeId, :itemId, :itemCount, :shelfId, :lastInTime, :expiredTime)
+		};
+		
+		return 1;
+	}
+
+	public int updateEntity(Storage header, DefaultContext myCtx)
+			throws NoPrivilegeException, SQLException, NoConnection {
+		String storeId = header.getStorageId();
+		String itemId = header.getItemId();
+		Double itemCount = header.getItemCount();
+		String shelfId = header.getShelfId();
+		Date lastInTime = SqlDateUtil.getSqlDate(header.getLastInTime());
+		Date expiredTime = SqlDateUtil.getSqlDate(header.getExpiredTime());
+
+		#sql [myCtx] {
+			UPDATE
+			:{Com_("D_T2_STORAGE")}
+			SET
+				ITEM_COUNT = :itemCount,
+				LAST_IN_TIME = :lastInTime,
+				EXPIRED_TIME = :expiredTime
+			WHERE
+				ITEM_ID = :itemId
+			and STORAGE_ID = :storeId
+		};
+		
+		return 1;
+	}
+
+	/**
+	 * 盘点为赋值操作
+	 */
+	public int updateCheckStock(String itemId, String storeId, Double amount) throws NoPrivilegeException,
+			SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		Storage storage = new Storage();
+		storage.setStorageId(storeId);
+		storage.setItemId(itemId);
+		storage.setItemCount(amount);
+		storage.setLastInTime(DateTimeUtil.getNow());
+
+		// 有效期默认当前时间往后推一年
+		storage.setExpiredTime(DateTimeUtil.addYears(1));
+
+		Double itemCount = getItemCount(itemId, storeId, myCtx);
+		if (itemCount != null) {
+			updateEntity(storage, myCtx);
+		} else {
+			// 插入一条记录
+			saveEntity(storage, myCtx);
+		}
+
+		closeDefaultContext(myCtx);
+
+		return 1;
+	}
+
+	/**
+	 * 根据门店id和商品id修改库存，diff为正则增加库存，diff为负则减少库存
+	 */
+	public int updateItemCount(String itemId, String storeId, Double diff) throws NoPrivilegeException, SQLException,
+			NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		Storage storage = new Storage();
+		storage.setStorageId(storeId);
+		storage.setItemId(itemId);
+		storage.setItemCount(diff);
+		storage.setLastInTime(DateTimeUtil.getNow());
+
+		// 有效期默认当前时间往后推一年
+		storage.setExpiredTime(DateTimeUtil.addYears(1));
+
+		Double itemCount = getItemCount(itemId, storeId, myCtx);
+		if (itemCount != null) {
+			storage.setItemCount(itemCount + diff);
+			updateEntity(storage, myCtx);
+		} else {
+			// 插入一条记录
+			saveEntity(storage, myCtx);
+		}
+
+		closeDefaultContext(myCtx);
+
+		return 1;
+	}
+
+	public int updateItemCount(String itemId, String storeId, Double diff, DefaultContext myCtx)
+			throws NoPrivilegeException, SQLException, NoConnection {
+		Storage storage = new Storage();
+		storage.setStorageId(storeId);
+		storage.setItemId(itemId);
+		storage.setItemCount(diff);
+		storage.setLastInTime(DateTimeUtil.getNow());
+
+		// 有效期默认当前时间往后推一年
+		storage.setExpiredTime(DateTimeUtil.addYears(1));
+
+		Double itemCount = getItemCount(itemId, storeId, myCtx);
+		if (itemCount != null) {
+			storage.setItemCount(itemCount + diff);
+			updateEntity(storage, myCtx);
+		} else {
+			// 插入一条记录
+			saveEntity(storage, myCtx);
+		}
+
+		return 1;
+	}
+
+	public int updateItemCount(String itemId, String storeId, Double itemCount, Double diff)
+			throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		Storage storage = new Storage();
+		storage.setStorageId(storeId);
+		storage.setItemId(itemId);
+		storage.setItemCount(diff);
+		storage.setLastInTime(DateTimeUtil.getNow());
+
+		// 有效期默认当前时间往后推一年
+		storage.setExpiredTime(DateTimeUtil.addYears(1));
+
+		if (itemCount != null) {
+			storage.setItemCount(itemCount + diff);
+			updateEntity(storage, myCtx);
+		} else {
+			// 插入一条记录
+			saveEntity(storage, myCtx);
+		}
+
+		closeDefaultContext(myCtx);
+
+		return 1;
+	}
+
+	public int updateItemCount(String itemId, String storeId, Double itemCount, Double diff, DefaultContext myCtx)
+			throws NoPrivilegeException, SQLException, NoConnection {
+		Storage storage = new Storage();
+		storage.setStorageId(storeId);
+		storage.setItemId(itemId);
+		storage.setItemCount(diff);
+		storage.setLastInTime(DateTimeUtil.getNow());
+
+		// 有效期默认当前时间往后推一年
+		storage.setExpiredTime(DateTimeUtil.addYears(1));
+
+		if (itemCount != null) {
+			storage.setItemCount(itemCount + diff);
+			updateEntity(storage, myCtx);
+		} else {
+			// 插入一条记录
+			saveEntity(storage, myCtx);
+		}
+
+		return 1;
+	}
+
+	/**
+	 * eg: 同时修改门店和物流中心的库存; 门店增加，则中心减少，反之亦然
+	 */
+	public int storageInOut(String itemId, String inStoreId, String outStoreId, Double diff)
+			throws NoPrivilegeException, SQLException, NoConnection {
+
+		DefaultContext myCtx = getDefaultContext();
+		updateItemCount(itemId, inStoreId, diff, myCtx);
+		updateItemCount(itemId, outStoreId, -diff, myCtx);
+
+		closeDefaultContext(myCtx);
+
+		return 1;
+	}
+}

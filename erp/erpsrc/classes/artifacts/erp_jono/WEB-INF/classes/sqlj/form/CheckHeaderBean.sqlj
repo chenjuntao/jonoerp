@@ -1,0 +1,515 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on Sun Sep 28 11:08:09 CST 2014 by lyz
+ * Last edited on Sun Sep 28 11:08:09 CST 2014 by lyz
+ * 
+ * comment: 盘点单/清单表头
+ */
+package logic.form;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import pojo.form.CheckHeader;
+import sqlj.runtime.ref.DefaultContext;
+
+import com.tanry.business.form.FormConstant;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.TextUtil;
+import org.apache.commons.lang.StringUtils;
+import com.tanry.framework.acl.NoPrivilegeException;
+
+public class CheckHeaderBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(CheckHeaderBean.class);
+	
+	#sql private iterator HeaderIter(String form_id, String check_storage_id,String check_storage,String form_type,Date audit_time_actual, String check_batch_id, String check_branch_id, String check_branch, String form_maker_id, String form_maker, Date form_time,Date form_time_actual, String auditor_id, String auditor, Date audit_time, String form_note, Integer print_count, Double all_pay_amt, String max_pay_item);
+
+	#sql private iterator BatchIter(String check_batch_id);
+	#sql private iterator CheckListIter(String form_id,String check_batch_id);
+	
+	/**
+	 * 根据营业日期和部门得到最大的单据序号，用来生成下一个单据流水号
+	 */
+	public int newSerial(java.util.Date businessDate, String branchId, String formType) 
+			throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		String maxId = null;
+		int serialLen = FormConstant.DEFAULT_SERIAL_LENGTH;
+		//负数(-i)表示截取的开始位置为字符串右端向左数第i个字符
+		int negativePos = 0 - serialLen;
+		Date bDate = SqlDateUtil.getSqlDate(businessDate);
+		#sql [myCtx] {
+			SELECT
+				MAX(SUBSTR(h.FORM_ID, :negativePos, :serialLen) ) into :maxId
+			FROM
+				:{Com_("D_T1_CHECK_HEADER")} h
+			WHERE
+			    h.FORM_TIME = :bDate
+			AND h.CHECK_BRANCH_ID = :branchId
+			AND h.FORM_TYPE = :formType
+		};
+		closeDefaultContext(myCtx);
+		
+		int result = 1;
+		if (maxId != null) {
+			maxId = maxId.substring(maxId.length() - serialLen);
+			result = Integer.parseInt(maxId) + 1;
+		}
+		return result;
+	}
+	
+	public int saveEntity(CheckHeader header)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		String formId = header.getFormId();
+		String formType = header.getFormType();
+		String checkBatchId = header.getCheckBatchId();
+		String checkBranchId = header.getCheckBranchId();
+		String checkBranch = header.getCheckBranch();
+		String checkStorageId = header.getCheckStorageId();
+		String checkStorage = header.getCheckStorage();
+		String formMakerId = header.getFormMakerId();
+		String formMaker = header.getFormMaker();
+		Date formTime = SqlDateUtil.getSqlDate(header.getFormTime());
+		Date formTimeActual = SqlDateUtil.getSqlDate(new java.util.Date());
+		String auditorId = header.getAuditorId();
+		String auditor = header.getAuditor();
+		Date auditTime = SqlDateUtil.getSqlDate(header.getAuditTime());
+		String formNote = header.getFormNote();
+		Integer printCount = header.getPrintCount();
+		Double allPayAmt = header.getAllPayAmt();
+		String maxPayItem = header.getMaxPayItem();
+
+		#sql [myCtx] {
+			INSERT INTO :{Com_("D_T1_CHECK_HEADER")} 
+				(FORM_ID, FORM_TYPE, CHECK_BATCH_ID, CHECK_BRANCH_ID, CHECK_BRANCH, CHECK_STORAGE_ID, CHECK_STORAGE,
+						FORM_MAKER_ID, FORM_MAKER, FORM_TIME, FORM_TIME_ACTUAL, AUDITOR_ID, AUDITOR, AUDIT_TIME, FORM_NOTE, PRINT_COUNT, ALL_PAY_AMT, MAX_PAY_ITEM) 
+			VALUES (:formId, :formType, :checkBatchId, :checkBranchId, :checkBranch, :checkStorageId, :checkStorage,
+					:formMakerId, :formMaker, :formTime, :formTimeActual, :auditorId, :auditor, :auditTime, :formNote, :printCount, :allPayAmt, :maxPayItem)
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public int updateEntity(CheckHeader header)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		String formId = header.getFormId();
+		Double allPayAmt = header.getAllPayAmt();
+		String maxPayItem = header.getMaxPayItem();
+
+		#sql [myCtx] {
+			UPDATE
+				:{Com_("D_T1_CHECK_HEADER")}
+			SET
+				ALL_PAY_AMT = :allPayAmt,
+				MAX_PAY_ITEM = :maxPayItem
+			WHERE 
+				FORM_ID = :formId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+
+	public int deleteEntity(String formId)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		#sql [myCtx] {
+			DELETE
+			FROM
+				:{Com_("D_T1_CHECK_HEADER")}
+			WHERE
+				FORM_ID = :formId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	/**
+	 * 根据批次删除相应的盘点清单和盘点汇总单
+	 */
+	public int deleteByBatch(String batchId)
+			throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		#sql [myCtx] {
+			DELETE
+			FROM
+				:{Com_("D_T1_CHECK_HEADER")}
+			WHERE
+				CHECK_BATCH_ID = :batchId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public int audit(CheckHeader header)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		String formId = header.getFormId();
+		String auditorId = header.getAuditorId();
+		String auditor = header.getAuditor();
+		Date auditTime = SqlDateUtil.getSqlDate(header.getAuditTime());
+		Date auditTimeActual = SqlDateUtil.getSqlDate(new java.util.Date());
+		#sql [myCtx] {
+			UPDATE
+				:{Com_("D_T1_CHECK_HEADER")}
+			SET
+				auditor_id = :auditorId,
+				auditor = :auditor,
+				audit_time = :auditTime,
+				AUDIT_TIME_ACTUAL =:auditTimeActual
+			WHERE 
+				FORM_ID = :formId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+
+	public int count(java.util.Date startDate, java.util.Date endDate, String branchId, String formType, String queryType)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		String fromClause = getFromClause();
+		String query = formQuery(branchId, formType, queryType);
+		Date sDate = SqlDateUtil.getSqlDate(startDate);
+		Date eDate = SqlDateUtil.getSqlDate(endDate);
+		
+		DefaultContext myCtx = getDefaultContext();
+		int total = 0;
+		#sql [myCtx] {
+			SELECT
+			    count(*) into :total
+    		FROM :{fromClause :: a}
+			WHERE
+				:{query :: 1=1}
+    		AND h.FORM_TYPE = :formType
+			AND (h.FORM_TIME >= :sDate or :sDate is null)
+			AND (h.FORM_TIME <= :eDate or :eDate is null)
+		};
+		closeDefaultContext(myCtx);
+		return total;
+	}
+	
+	private String formQuery(String branchId, String formType, String queryType) {
+		String query = " 1=1";
+		if (!"-1".equals(branchId)) {
+			query = query + " AND h.CHECK_BRANCH_ID = '" + branchId + "'";
+		}
+		if ((FormConstant.CHECK_LIST).equals(formType)) { // 只获取未完成的清单
+//			query = query + " AND NVL(l.CHECK_BATCH_STATUS, 'null') != '已完成'";
+		}
+		if ("unaudit".equals(queryType)) {
+			query = query + " AND NVL( s.STATUS, 'null') = '未审核'"; 
+		}
+		return query;
+	}
+	
+	private String getFromClause() {
+		String com = getCompanyId();
+		String fromClause = " " + com +".D_T1_CHECK_HEADER h "
+				+ "LEFT JOIN "+com+".D_T0_FORM_STATUS s ON s.FORM_ID = h.FORM_ID AND s.IS_CURRENT = 1 "
+				+ "LEFT JOIN "+com+".D_T1_CHECK_LOCK l ON l.CHECK_BATCH_ID = h.CHECK_BATCH_ID";
+		return fromClause;
+	}
+	
+	public List<CheckHeader> query(java.util.Date startDate, java.util.Date endDate, String branchId, String formType, String queryType, int startRow, int endRow) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		String fromClause = getFromClause();
+		String query = formQuery(branchId, formType, queryType);
+		Date sDate = SqlDateUtil.getSqlDate(startDate);
+		Date eDate = SqlDateUtil.getSqlDate(endDate);
+		
+		DefaultContext myCtx = getDefaultContext();
+		HeaderIter headerIter = null;
+		#sql [myCtx] headerIter = {SELECT
+			    *
+			    FROM
+			        (
+			            SELECT
+			                t.*,
+			                ROWNUM rowNumber
+			            FROM
+			                (
+			                    SELECT
+				                    h.FORM_ID,
+				                    h.FORM_TYPE,
+				                    h.CHECK_BATCH_ID,
+				                    h.CHECK_BRANCH_ID,
+				                    h.CHECK_BRANCH,
+				                    H.CHECK_STORAGE_ID,
+				                    H.CHECK_STORAGE,
+				                    h.FORM_MAKER_ID,
+				                    h.FORM_MAKER,
+				                    h.FORM_TIME,
+				                    h.FORM_TIME_ACTUAL,
+				                    h.AUDITOR_ID,
+				                    h.AUDITOR,
+				                    h.AUDIT_TIME,
+				                    h.FORM_NOTE,
+				                    h.PRINT_COUNT,
+				                    h.AUDIT_TIME_ACTUAL,
+				                    CASE
+				                        WHEN h.ALL_PAY_AMT IS NULL
+				                        THEN 0
+				                        ELSE h.ALL_PAY_AMT
+				                    END ALL_PAY_AMT ,
+				                    h.MAX_PAY_ITEM
+				    			FROM :{fromClause :: a}
+			                    WHERE
+			                        :{query :: 1=1}
+			        			AND h.FORM_TYPE = :formType
+	        					AND (h.FORM_TIME >= :sDate or :sDate is null)
+	        					AND (h.FORM_TIME <= :eDate or :eDate is null)
+			                    ORDER BY
+			                    	h.FORM_TIME_ACTUAL desc) t
+			            WHERE
+			                ROWNUM < :endRow)
+			    WHERE
+			        rowNumber >= :startRow};
+		List<CheckHeader> headerLst = processIter(headerIter);
+		headerIter.close();
+		closeDefaultContext(myCtx);
+		return headerLst;
+	}
+	
+	public double sum(java.util.Date startDate, java.util.Date endDate, String branchId, String formType, String queryType) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		String query = formQuery(branchId, formType, queryType);
+		String fromClause = getFromClause();
+		Date sDate = SqlDateUtil.getSqlDate(startDate);
+		Date eDate = SqlDateUtil.getSqlDate(endDate);
+		
+		double allPayAmt = 0;
+		DefaultContext myCtx = getDefaultContext();
+		#sql [myCtx] {
+				SELECT
+				    CASE
+				        WHEN SUM(h.ALL_PAY_AMT) IS NULL
+				        THEN 0
+				        ELSE SUM(h.ALL_PAY_AMT)
+				    END
+			    INTO
+			    	:allPayAmt
+			    FROM :{fromClause :: a}
+				WHERE 
+					:{query :: 1=1}
+				AND h.FORM_TYPE = :formType
+				AND (h.FORM_TIME >= :sDate or :sDate is null)
+				AND (h.FORM_TIME <= :eDate or :eDate is null)
+		};
+		closeDefaultContext(myCtx);
+		return allPayAmt;
+	}
+	
+	public List<String> queryBatch(String branchId) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		String formType = FormConstant.CHECK_LIST;
+		String query = " 1=1";
+		if (!"-1".equals(branchId)) {
+			query = query + " AND h.CHECK_BRANCH_ID = '" + branchId + "'";
+		}
+		DefaultContext myCtx = getDefaultContext();
+		BatchIter batchIter = null;
+		#sql [myCtx] batchIter = {
+			SELECT
+			    distinct h.CHECK_BATCH_ID
+			FROM
+				:{Com_("D_T1_CHECK_HEADER")} h,
+				:{Com_("D_T1_CHECK_LOCK")} l
+			WHERE
+				:{query :: 1=1}
+			AND h.FORM_TYPE = :formType
+			AND h.CHECK_BATCH_ID = l.CHECK_BATCH_ID
+			AND NVL(l.CHECK_BATCH_STATUS, 'null') != '已完成'
+			ORDER BY
+				CHECK_BATCH_ID
+		};
+		List<String> batchLst = new ArrayList<String>();
+		while(batchIter.next()) {
+			batchLst.add(batchIter.check_batch_id());
+		}
+		batchIter.close();
+		closeDefaultContext(myCtx);
+		return batchLst;
+	}
+	
+	public List<CheckHeader> queryCheckList(String batchId) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		String formType = FormConstant.CHECK_LIST;
+		DefaultContext myCtx = getDefaultContext();
+		CheckListIter checkIter = null;
+		#sql [myCtx] checkIter = {
+			SELECT
+			    h.FORM_ID,
+			    h.CHECK_BATCH_ID
+			FROM
+				:{Com_("D_T1_CHECK_HEADER")} h
+			WHERE
+				h.CHECK_BATCH_ID = :batchId
+			AND h.FORM_TYPE = :formType
+		};
+		List<CheckHeader> checkLst = new ArrayList<CheckHeader>();
+		while(checkIter.next()) {
+			CheckHeader header = new CheckHeader();
+			header.setFormId(checkIter.form_id());
+			header.setCheckBatchId(checkIter.check_batch_id());
+			checkLst.add(header);
+		}
+		checkIter.close();
+		closeDefaultContext(myCtx);
+		return checkLst;
+	}
+	
+	
+	public List<CheckHeader> queryCheckLists(String batchIds) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		String formType = FormConstant.CHECK_LIST;
+		String query = " h.CHECK_BATCH_ID IN ('" + batchIds.replaceAll(",", "','") + "') ";
+		DefaultContext myCtx = getDefaultContext();
+		CheckListIter checkIter = null;
+		#sql [myCtx] checkIter = {
+			SELECT
+			    h.FORM_ID,
+			    h.CHECK_BATCH_ID
+			FROM
+				:{Com_("D_T1_CHECK_HEADER")} h
+			WHERE
+				:{query :: 1=1}
+			AND h.FORM_TYPE = :formType
+		};
+		List<CheckHeader> checkLst = new ArrayList<CheckHeader>();
+		while(checkIter.next()) {
+			CheckHeader header = new CheckHeader();
+			header.setFormId(checkIter.form_id());
+			header.setCheckBatchId(checkIter.check_batch_id());
+			checkLst.add(header);
+		}
+		checkIter.close();
+		closeDefaultContext(myCtx);
+		return checkLst;
+	}
+	
+	/**
+	 * 根据批次查询盘点清单
+	 */
+	public List<CheckHeader> query(String batchId) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		String formType = FormConstant.CHECK_LIST;
+		DefaultContext myCtx = getDefaultContext();
+		HeaderIter headerIter = null;
+		#sql [myCtx] headerIter = {
+			SELECT
+			    h.*
+			FROM
+				:{Com_("D_T1_CHECK_HEADER")} h
+			LEFT JOIN
+				:{Com_("D_T0_FORM_STATUS")} s
+			ON
+			    s.FORM_ID = h.FORM_ID
+			AND s.IS_CURRENT = 1
+			WHERE
+				h.CHECK_BATCH_ID = :batchId
+			AND h.FORM_TYPE = :formType
+--			AND NVL( s.STATUS, 'null') = '已输入'
+		};
+		List<CheckHeader> headerLst = processIter(headerIter);
+		headerIter.close();
+		closeDefaultContext(myCtx);
+		return headerLst;
+	}
+	
+	public CheckHeader queryById(String formId) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		HeaderIter headerIter = null;
+		#sql [myCtx] headerIter = {
+			SELECT
+			    *
+			FROM
+				:{Com_("D_T1_CHECK_HEADER")} h
+			WHERE
+				h.form_id = :formId
+		};
+		List<CheckHeader> headerLst = processIter(headerIter);
+		headerIter.close();
+		closeDefaultContext(myCtx);
+		if (headerLst !=null && !headerLst.isEmpty()) {
+			return headerLst.get(0);
+		}
+		return null;
+	}
+
+	public CheckHeader queryForm(String batchId) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		String formType = FormConstant.CHECK_FORM;
+		DefaultContext myCtx = getDefaultContext();
+		HeaderIter headerIter = null;
+		#sql [myCtx] headerIter = {
+			SELECT
+			    *
+			FROM
+				:{Com_("D_T1_CHECK_HEADER")} h
+			WHERE
+				h.CHECK_BATCH_ID = :batchId
+			AND h.FORM_TYPE = :formType
+		};
+		List<CheckHeader> headerLst = processIter(headerIter);
+		headerIter.close();
+		closeDefaultContext(myCtx);
+		if (headerLst !=null && !headerLst.isEmpty()) {
+			return headerLst.get(0);
+		}
+		return null;
+	}
+	
+	private List<CheckHeader> processIter(HeaderIter headerIter) 
+			throws SQLException {
+		List<CheckHeader> headerLst = new ArrayList<CheckHeader>();
+		while(headerIter.next()) {
+			CheckHeader header = new CheckHeader();
+			header.setFormId(headerIter.form_id());
+			header.setFormType(headerIter.form_type());
+			header.setCheckBatchId(headerIter.check_batch_id());
+			header.setCheckBranchId(headerIter.check_branch_id());
+			header.setCheckBranch(headerIter.check_branch());
+			header.setFormMakerId(headerIter.form_maker_id());
+			header.setFormMaker(headerIter.form_maker());
+			header.setFormTime(SqlDateUtil.getUtilDate(headerIter.form_time()));
+			header.setFormTimeActual(SqlDateUtil.getUtilDate(headerIter.form_time_actual()));
+			header.setAuditorId(headerIter.auditor_id());
+			header.setAuditor(headerIter.auditor());
+			header.setAuditTime(SqlDateUtil.getUtilDate(headerIter.audit_time()));
+			header.setFormNote(headerIter.form_note());
+			header.setPrintCount(headerIter.print_count());
+			header.setAllPayAmt(headerIter.all_pay_amt());
+			header.setMaxPayItem(headerIter.max_pay_item());
+			header.setCheckStorageId(headerIter.check_storage_id());
+			header.setCheckStorage(headerIter.check_storage());
+			header.setAuditTimeActual(SqlDateUtil.getUtilDate(headerIter.audit_time_actual()));
+			headerLst.add(header);
+		}
+		return headerLst;
+	}
+}

@@ -1,0 +1,75 @@
+.estimateGrid {
+	position: absolute;
+	right: 0;
+	top: 122px;
+	bottom: 0;
+	width: 100%;
+	height: auto;
+}
+
+.checkGrid {
+	position: absolute;
+	right: 0;
+	top: 212px;
+	bottom: 0;
+	width: 100%;
+	height: auto;
+}
+
+.htDimmed {
+	color: black !important;
+}
+
+.htNumeric {
+	color: red;
+}
+
+.editGrid {
+	width: 100%;
+	height: 150px;
+}
+
+th[role="columnheader"] {
+	text-align: center;
+}
+
+.dgrid-cell {
+	/* 	width: 80px; make all the columns 80px wide */
+	vertical-align: middle;
+}
+
+.field-rownumber, .field-itemId, .field-itemDimension {
+	text-align: center;
+}
+
+.field-rownumber,.field-none {
+	width: 60px;
+}
+
+.field-itemId, .field-itemCategory, .field-categoryName, .field-itemSpecification {
+	width: 80px;
+}
+
+.field-itemName {
+	width: 180px;
+}
+
+.field-itemDimension {
+	width: 60px;
+}
+
+.field-provider {
+	width: 220px;
+}
+
+.field-shelfName {
+	width: 120px;
+}
+.field-itemCount{
+	width: 70px;
+}
+
+.grid-number {
+	width: 70px;
+	text-align: right;
+}

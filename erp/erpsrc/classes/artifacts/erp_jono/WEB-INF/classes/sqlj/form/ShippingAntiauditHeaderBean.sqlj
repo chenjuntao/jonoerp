@@ -1,0 +1,400 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on Fri Sep 19 11:39:18 CST 2014 by lyz
+ * Last edited on Fri Sep 19 11:39:18 CST 2014 by lyz
+ * 
+ * comment: 餐厅配送反审核单表头
+ */
+package logic.form;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import pojo.form.ShippingAntiauditHeader;
+import sqlj.runtime.ref.DefaultContext;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.TextUtil;
+import com.tanry.framework.acl.NoPrivilegeException;
+import com.tanry.framework.util.constant.BranchType;
+
+public class ShippingAntiauditHeaderBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(ShippingAntiauditHeaderBean.class);
+	
+	public int saveEntity(ShippingAntiauditHeader header)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		String formRefId = header.getFormRefId();
+		String antiauditorId = header.getAntiauditorId();
+		String antiauditor = header.getAntiauditor();
+		String antiauditBranchId = header.getAntiauditBranchId();
+		String antiauditBranch = header.getAntiauditBranch();
+		Date antiauditTime = SqlDateUtil.getSqlDate(header.getAntiauditTime());
+		Date auditTime = SqlDateUtil.getSqlDate(header.getAuditTime());
+		String formNote = header.getFormNote();
+
+		#sql [myCtx] {
+			INSERT INTO :{Com_("D_T1_SHIPPING_ANTIAUDIT_HEADER")} 
+				(FORM_REF_ID, ANTIAUDITOR_ID, ANTIAUDITOR, ANTIAUDIT_BRANCH_ID, ANTIAUDIT_BRANCH, ANTIAUDIT_TIME,AUDIT_TIME, FORM_NOTE) 
+			VALUES (:formRefId, :antiauditorId, :antiauditor, :antiauditBranchId, :antiauditBranch, :antiauditTime, :auditTime, :formNote)
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public int updateEntity(ShippingAntiauditHeader header)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		String formRefId = header.getFormRefId();
+		String antiauditorId = header.getAntiauditorId();
+		String antiauditor = header.getAntiauditor();
+		String antiauditBranchId = header.getAntiauditBranchId();
+		String antiauditBranch = header.getAntiauditBranch();
+		Date antiauditTime = SqlDateUtil.getSqlDate(header.getAntiauditTime());
+		String formNote = header.getFormNote();
+
+		#sql [myCtx] {
+			UPDATE
+			:{Com_("D_T1_SHIPPING_ANTIAUDIT_HEADER")}
+			SET
+				FORM_NOTE = :formNote
+			WHERE 
+				FORM_REF_ID = :formRefId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+
+	public int deleteEntity(String formRefId)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		#sql [myCtx] {
+			DELETE
+			FROM
+			:{Com_("D_T1_SHIPPING_ANTIAUDIT_HEADER")}
+			WHERE
+				FORM_REF_ID = :formRefId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public int audit(String formRefId, java.util.Date auditTime)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		Date auditTimeActual = SqlDateUtil.getSqlDate(new java.util.Date());
+		Date sAuditTime = SqlDateUtil.getSqlDate(auditTime);
+		#sql [myCtx] {
+			UPDATE
+			:{Com_("D_T1_SHIPPING_ANTIAUDIT_HEADER")}
+			SET
+				audit_time = :sAuditTime,
+				AUDIT_TIME_ACTUAL =:auditTimeActual
+			WHERE 
+				FORM_REF_ID = :formRefId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public int count(java.util.Date startDate, java.util.Date endDate, String branchId, String storageId, String queryType,String branchType) 
+			throws NoPrivilegeException, SQLException, NoConnection {
+		String query = formQuery(branchId, storageId, queryType, branchType);
+		Date sDate = SqlDateUtil.getSqlDate(startDate);
+		Date eDate = SqlDateUtil.getSqlDate(endDate);
+		
+		DefaultContext myCtx = getDefaultContext();
+		int total = 0;
+		#sql [myCtx] {
+			SELECT
+				COUNT(*) INTO :total
+			FROM
+			:{Com_("D_T1_SHIPPING_ANTIAUDIT_HEADER")} ah
+			LEFT JOIN
+			:{Com_("D_T2_BRANCH")} b
+			ON
+				ah.ANTIAUDIT_BRANCH_ID = b.BRANCH_ID
+			LEFT JOIN
+			:{Com_("D_T0_FORM_STATUS")} s
+			ON
+			 	s.FORM_ID = ah.FORM_REF_ID
+			 	AND s.IS_CURRENT = 1
+			INNER JOIN
+			:{Com_("D_T1_SHIPPING_HEADER")} h
+			ON
+				h.FORM_ID = ah.FORM_REF_ID
+			WHERE
+				:{query :: 1=1}
+			AND (ah.ANTIAUDIT_TIME >= :sDate
+					OR  :sDate IS NULL)
+			AND (ah.ANTIAUDIT_TIME <= :eDate
+					OR  :eDate IS NULL)
+		};
+		closeDefaultContext(myCtx);
+		return total;
+	}
+	
+	public String formQuery(String branchId, String storageId, String queryType, String branchType) {
+		String query = " 1=1";
+		if (!"-1".equals(branchId)) { 
+			// 订货部门
+			if (BranchType.RESTAURANT.equals(branchType)) {
+				query = query + " AND h.REQUESTER_ID = '" + branchId + "'";
+			} else if (BranchType.LOGISTICSCENTER.equals(branchType)) {
+				//配送部门
+				query = query + " AND h.PROVIDER_ID = '" + branchId + "'";
+			}
+		}
+		
+		if (!TextUtil.isEmpty(storageId)) {
+			if("LOGISTICSCENTER".equals(branchType)) {
+				query = query + " AND h.OUT_STORAGE_ID = '" + storageId + "'";
+			}
+			if("RESTAURANT".equals(branchType)) {
+				query = query + " AND h.IN_STORAGE_ID = '" + storageId + "'";
+			}
+		}
+		
+		if ("unaudit".equals(queryType)) { // 获取反审核中记录
+			query = query + " AND h.ANTI_STATUS = '反审核中'"; 
+   		query = query + " AND '" + branchType + "' != b.BRANCH_TYPE "; 
+		}
+		
+//		if ("self".equals(queryType)) { // 
+//			query = query + " AND '" + branchType + "' = b.BRANCH_TYPE "; 
+//		}
+		
+		return query;
+	}
+
+	#sql private iterator HeaderIter(String form_ref_id, String antiauditor_id, String antiauditor,
+			String antiaudit_branch_id, String antiaudit_branch, Date antiaudit_time, Date audit_time,
+			String form_note,
+			String provider,
+			String outStorage,
+			String inStorage,
+			Date receive_time,
+			String requester,
+			String inputer,
+			Date input_time,
+			Date audit_time_actual,
+			String snote, String anti_status,String branch_type);
+
+	/**
+	 * 餐厅只能看到物流中心操作的反审核单，反之亦然
+	 */
+	public List<ShippingAntiauditHeader> query(java.util.Date startDate, java.util.Date endDate, String branchId,String storage, String queryType,String branchType)   
+			throws NoPrivilegeException,SQLException,NoConnection {
+		String query = formQuery(branchId,storage, queryType,branchType);
+		Date sDate = SqlDateUtil.getSqlDate(startDate);
+		Date eDate = SqlDateUtil.getSqlDate(endDate);
+		
+		DefaultContext myCtx = getDefaultContext();
+		HeaderIter headerIter = null;
+		#sql [myCtx] headerIter = {
+			SELECT
+				ah.*,
+				h.PROVIDER,
+				h.RECEIVE_TIME,
+				h.REQUESTER,
+				h.INPUTER,
+				h.INPUT_TIME,
+			    h.OUT_STORAGE outStorage,
+				h.IN_STORAGE inStorage,
+				h.FORM_NOTE    AS snote,
+				h.MAX_PAY_ITEM AS smax,
+				h.ANTI_STATUS,
+				b.BRANCH_TYPE
+			FROM
+			:{Com_("D_T1_SHIPPING_ANTIAUDIT_HEADER")} ah
+			LEFT JOIN
+			:{Com_("D_T2_BRANCH")} b
+			ON
+				ah.ANTIAUDIT_BRANCH_ID = b.BRANCH_ID
+			LEFT JOIN
+			:{Com_("D_T0_FORM_STATUS")} s
+			ON
+				s.FORM_ID = ah.FORM_REF_ID
+				AND s.IS_CURRENT = 1
+			INNER JOIN
+			:{Com_("D_T1_SHIPPING_HEADER")} h
+			ON
+				h.FORM_ID = ah.FORM_REF_ID
+			WHERE
+				:{query :: 1=1}
+			AND (ah.ANTIAUDIT_TIME >= :sDate
+					OR  :sDate IS NULL)
+			AND (ah.ANTIAUDIT_TIME <= :eDate
+					OR  :eDate IS NULL)
+			ORDER BY
+				ah.FORM_REF_ID
+		};
+		List<ShippingAntiauditHeader> headerLst = processIter(headerIter);
+		headerIter.close();
+		closeDefaultContext(myCtx);
+		return headerLst;
+	}
+
+	
+	public List<ShippingAntiauditHeader> query(java.util.Date startDate, java.util.Date endDate, String branchId,String storage, String queryType,String branchType, int startRow, int endRow)  
+			throws NoPrivilegeException,SQLException,NoConnection {
+		String query = formQuery(branchId,storage, queryType,branchType);
+		Date sDate = SqlDateUtil.getSqlDate(startDate);
+		Date eDate = SqlDateUtil.getSqlDate(endDate);
+		
+		DefaultContext myCtx = getDefaultContext();
+		HeaderIter headerIter = null;
+		#sql [myCtx] headerIter = {
+				SELECT
+			    *
+		    FROM
+		        (
+		            SELECT
+		                t.*,
+		                ROWNUM rowNumber
+		            FROM
+		                (
+		            			SELECT
+		        				ah.*,
+		        				h.PROVIDER,
+		        				h.RECEIVE_TIME,
+		        				h.REQUESTER,
+		        				h.INPUTER,
+		        				h.INPUT_TIME,
+		        			    h.OUT_STORAGE outStorage,
+		        				h.IN_STORAGE inStorage,
+		        				h.FORM_NOTE    AS snote,
+		        				h.MAX_PAY_ITEM AS smax,
+		        				h.ANTI_STATUS,
+		        				b.BRANCH_TYPE
+		        			FROM
+		        			:{Com_("D_T1_SHIPPING_ANTIAUDIT_HEADER")} ah
+		        			LEFT JOIN
+		        			:{Com_("D_T2_BRANCH")} b
+		        			ON
+		        				ah.ANTIAUDIT_BRANCH_ID = b.BRANCH_ID
+		        			LEFT JOIN
+		        			:{Com_("D_T0_FORM_STATUS")} s
+		        			ON
+		        				s.FORM_ID = ah.FORM_REF_ID
+		        				AND s.IS_CURRENT = 1
+		        			INNER JOIN
+		        			:{Com_("D_T1_SHIPPING_HEADER")} h
+		        			ON
+		        				h.FORM_ID = ah.FORM_REF_ID
+		        			WHERE
+		        				:{query :: 1=1}
+		        			AND (ah.ANTIAUDIT_TIME >= :sDate
+		        					OR  :sDate IS NULL)
+		        			AND (ah.ANTIAUDIT_TIME <= :eDate
+		        					OR  :eDate IS NULL)
+		        			ORDER BY
+		        				ah.FORM_REF_ID
+		        		) t
+		            WHERE
+		                ROWNUM < :endRow)
+		    WHERE
+		        rowNumber >= :startRow
+		};
+		List<ShippingAntiauditHeader> headerLst = processIter(headerIter);
+		headerIter.close();
+		closeDefaultContext(myCtx);
+		return headerLst;
+	}
+	
+	public ShippingAntiauditHeader queryById(String formId) 
+			throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		HeaderIter headerIter = null;
+		#sql [myCtx] headerIter = {
+			SELECT
+			    ah.*,
+			    h.PROVIDER,
+			    h.RECEIVE_TIME,
+			    h.REQUESTER,
+			    h.INPUTER,
+			    h.OUT_STORAGE outStorage,
+				h.IN_STORAGE inStorage,
+			    h.INPUT_TIME,
+			    h.FORM_NOTE as snote,
+				h.ANTI_STATUS,
+				b.BRANCH_TYPE
+			FROM
+			:{Com_("D_T1_SHIPPING_ANTIAUDIT_HEADER")} ah
+		    LEFT JOIN
+		    :{Com_("D_T0_FORM_STATUS")} s
+		    ON
+		        s.FORM_ID = ah.FORM_REF_ID
+		    AND s.IS_CURRENT = 1
+    		LEFT JOIN
+    		:{Com_("D_T2_BRANCH")} b
+		ON
+			ah.ANTIAUDIT_BRANCH_ID = b.BRANCH_ID
+		    INNER JOIN
+		    :{Com_("D_T1_SHIPPING_HEADER")} h
+		    ON
+		        h.FORM_ID = ah.FORM_REF_ID
+		    WHERE
+				ah.FORM_REF_ID = :formId
+		};
+		List<ShippingAntiauditHeader> headerLst = processIter(headerIter);
+		headerIter.close();
+		closeDefaultContext(myCtx);
+		if (headerLst !=null && !headerLst.isEmpty()) {
+			return headerLst.get(0);
+		}
+		return null;
+	}
+	
+	private List<ShippingAntiauditHeader> processIter(HeaderIter headerIter) 
+			throws SQLException {
+		List<ShippingAntiauditHeader> headerLst = new ArrayList<ShippingAntiauditHeader>();
+		while(headerIter.next()) {
+			ShippingAntiauditHeader header = new ShippingAntiauditHeader();
+			header.setFormRefId(headerIter.form_ref_id());
+			header.setAntiauditorId(headerIter.antiauditor_id());
+			header.setAntiauditor(headerIter.antiauditor());
+			header.setAntiauditBranchId(headerIter.antiaudit_branch_id());
+			header.setAntiauditBranch(headerIter.antiaudit_branch());
+			header.setAntiauditTime(SqlDateUtil.getUtilDate(headerIter.antiaudit_time()));
+			header.setAuditTime(SqlDateUtil.getUtilDate(headerIter.audit_time()));
+			header.setFormNote(headerIter.form_note());
+			
+			header.setOutStorage(headerIter.outStorage());
+			header.setInStorage(headerIter.inStorage());
+
+			header.setProvider(headerIter.provider());
+			header.setReceiveTime(SqlDateUtil.getUtilDate(headerIter.receive_time()));
+			header.setRequester(headerIter.requester());
+			header.setInputer(headerIter.inputer());
+			header.setInputTime(SqlDateUtil.getUtilDate(headerIter.input_time()));
+			header.setSnote(headerIter.snote());
+			header.setAntiStatus(headerIter.anti_status());
+			header.setBranchType(headerIter.branch_type());
+			header.setAuditTimeActual(SqlDateUtil.getUtilDate(headerIter.audit_time_actual()));
+			
+			headerLst.add(header);
+		}
+		return headerLst;
+	}
+}

@@ -1,0 +1,333 @@
+package logic.reportmanage;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import sqlj.runtime.ref.DefaultContext;
+import com.tanry.business.form.FormConstant;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.TextUtil;
+import com.tanry.framework.util.constant.BillStatus;
+import com.tanry.framework.acl.NoPrivilegeException;
+
+public class ShippingHeaderBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(ShippingHeaderBean.class);
+	
+	#sql private iterator HeaderIter(
+			String provider,
+			String out_storage,
+//			String in_storage,
+			String item_id,
+			String item_name,
+			String item_dimension,
+			String item_specification,
+			String item_category,
+			Double packaging_factor,
+			String packaging_unit,
+			Double packaging_count,
+			Double request_count,
+			Double shipping_count,
+			Double delivery_count,
+			Double different_count,
+			String category_name,
+			Double receive_count
+		);
+	
+	#sql private iterator SumIter(
+			Double request_count,
+			Double shipping_count,
+			Double delivery_count,
+			Double receive_count,
+			Double different_count);
+	
+	public Map getColmunType(){
+		Map map  = new HashMap();
+		map.put("provider", "String");
+		map.put("out_storage", "String");
+		map.put("category_name", "String");
+		map.put("item_id", "String");
+		map.put("item_name", "String"); 
+		map.put("item_dimension", "String"); 
+		map.put("item_specification", "String"); 
+		map.put("item_category", "String"); 
+		map.put("packaging_unit", "String"); 
+		map.put("packaging_factor", "Number"); 
+		map.put("packaging_count", "Number"); 
+		map.put("request_count", "Number"); 
+		map.put("shipping_count", "Number"); 
+		map.put("delivery_count", "Number"); 
+		map.put("different_count", "Number"); 
+		map.put("receive_count", "Number"); 
+		
+		return map;
+	}
+	
+	public Map getColmunPrefix(){
+		Map map  = new HashMap();
+		map.put("provider", "h");
+		map.put("out_storage", "h");
+		map.put("item_id", "d");
+		map.put("item_name", "d"); 
+		map.put("item_dimension", "d"); 
+		map.put("item_specification", "d"); 
+		map.put("item_category", "d"); 
+		map.put("packaging_unit", "d"); 
+		map.put("packaging_factor", "d"); 
+		map.put("packaging_count", "d"); 
+		map.put("request_count", "d"); 
+		map.put("shipping_count", "d"); 
+		map.put("delivery_count", "d"); 
+		map.put("different_count", "d"); 
+		map.put("receive_count", "d"); 
+		
+		map.put("category_name", "c"); 
+		
+		return map;
+	}
+	
+	public int count(String queryStr)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		int total = 0;
+		
+		#sql [myCtx] {
+		SELECT
+		    COUNT(*)
+		INTO
+		    :total
+		FROM
+		    (SELECT
+            	   count(*)
+            	FROM
+            	    :{Com_("D_T1_SHIPPING_HEADER")} h
+            	INNER JOIN
+            	    :{Com_("D_T0_FORM_STATUS")} s
+            	ON
+            	    h.FORM_ID = s.FORM_ID
+            	AND s.IS_CURRENT = 1
+            	INNER JOIN
+            	    :{Com_("D_T1_SHIPPING_DETAIL")} d
+            	ON
+            	    h.FORM_ID = d.FORM_ID
+            	INNER JOIN
+            	    :{Com_("D_T2_BRANCH")} b
+            	ON
+            	    h.PROVIDER_ID = b.BRANCH_ID
+            	LEFT JOIN
+            	    :{Com_("D_T2_ITEM_CATEGORY")} c
+            	ON
+            	    d.ITEM_CATEGORY = c.CATEGORY_ID
+            	WHERE
+            	    1 = 1
+            	AND s.STATUS = '已审核' :{queryStr :: ''}
+            	GROUP BY
+            	    h.provider,
+            	    h.PROVIDER_ID,
+            	    h.out_storage,
+            	    h.OUT_STORAGE_ID,
+            	    d.ITEM_ID,
+            	    d.ITEM_NAME,
+            	    d.ITEM_DIMENSION,
+            	    d.ITEM_SPECIFICATION,
+            	    d.ITEM_CATEGORY,
+            	    c.CATEGORY_NAME,
+            	    d.PACKAGING_FACTOR,
+            	    d.PACKAGING_UNIT ) a};
+		closeDefaultContext(myCtx);
+		return total;
+	}
+	
+	
+	public List<Map> query(int startRow, int endRow,String queryStr,String sortStr)  
+			throws NoPrivilegeException,SQLException,NoConnection {
+		
+		DefaultContext myCtx = getDefaultContext();
+		HeaderIter headerIter = null;
+		#sql [myCtx] headerIter = {
+			SELECT
+			    *
+			    FROM
+			        (
+			            SELECT
+			                t.*,
+			                ROWNUM rowNumber
+			            FROM
+			                (SELECT
+			                	    h.provider,
+			                	    h.PROVIDER_ID,
+			                	    h.out_storage,
+			                	    h.OUT_STORAGE_ID,
+			                	    d.ITEM_ID,
+			                	    d.ITEM_NAME,
+			                	    d.ITEM_DIMENSION,
+			                	    d.ITEM_SPECIFICATION,
+			                	    d.ITEM_CATEGORY,
+			                	    c.CATEGORY_NAME,
+			                	    d.PACKAGING_FACTOR,
+			                	    d.PACKAGING_UNIT,
+			                	    SUM( NVL(d.PACKAGING_COUNT,0)) PACKAGING_COUNT,
+			                	    SUM( NVL(d.REQUEST_COUNT,0))   REQUEST_COUNT,
+			                	    SUM( NVL(d.SHIPPING_COUNT,0))  SHIPPING_COUNT,
+			                	    SUM(NVL(d.DELIVERY_COUNT,0))   DELIVERY_COUNT,
+			                	    SUM(NVL(d.RECEIVE_COUNT,0))    RECEIVE_COUNT,
+			                	    SUM(NVL(d.DIFFERENT_COUNT,0))  DIFFERENT_COUNT
+			                	FROM
+			                	    :{Com_("D_T1_SHIPPING_HEADER")} h
+			                	INNER JOIN
+			                	    :{Com_("D_T1_SHIPPING_DETAIL")} d
+			                	ON
+			                	    h.FORM_ID = d.FORM_ID
+			                	INNER JOIN
+			                	    :{Com_("D_T2_BRANCH")} b
+			                	ON
+			                	    h.PROVIDER_ID = b.BRANCH_ID
+			                	LEFT JOIN
+			                	    :{Com_("D_T2_ITEM_CATEGORY")} c
+			                	ON
+			                	    d.ITEM_CATEGORY = c.CATEGORY_ID
+			                	WHERE
+			                	    1 = 1
+                	    		AND h.AUDIT_TIME IS NOT NULL :{queryStr :: ''}
+			                	GROUP BY
+			                	    h.provider,
+			                	    h.PROVIDER_ID,
+			                	    h.out_storage,
+			                	    h.OUT_STORAGE_ID,
+			                	    d.ITEM_ID,
+			                	    d.ITEM_NAME,
+			                	    d.ITEM_DIMENSION,
+			                	    d.ITEM_SPECIFICATION,
+			                	    d.ITEM_CATEGORY,
+			                	    c.CATEGORY_NAME,
+			                	    d.PACKAGING_FACTOR,
+			                	    d.PACKAGING_UNIT :{sortStr :: ''}) t
+			            WHERE
+			                ROWNUM < :endRow)
+			    WHERE
+			        rowNumber >= :startRow};
+		List<Map> headerLst = processIter(headerIter);
+		headerIter.close();
+		closeDefaultContext(myCtx);
+		return headerLst;
+	}
+	
+	public Map sum( String queryStr) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		SumIter sumIter = null;
+		
+		#sql [myCtx] sumIter = {
+			SELECT
+			    ROUND(SUM (REQUEST_COUNT),2)  REQUEST_COUNT,
+			    ROUND(SUM(SHIPPING_COUNT),2)  SHIPPING_COUNT,
+			    ROUND(SUM(DELIVERY_COUNT),2)  DELIVERY_COUNT,
+			    ROUND(SUM(RECEIVE_COUNT),2)   RECEIVE_COUNT,
+			    ROUND(SUM(DIFFERENT_COUNT),2) DIFFERENT_COUNT
+			FROM
+			    (
+			        SELECT
+			            ROUND(SUM (REQUEST_COUNT),2)  REQUEST_COUNT,
+			            ROUND(SUM(SHIPPING_COUNT),2)  SHIPPING_COUNT,
+			            ROUND(SUM(DELIVERY_COUNT),2)  DELIVERY_COUNT,
+			            ROUND(SUM(RECEIVE_COUNT),2)   RECEIVE_COUNT,
+			            ROUND(SUM(DIFFERENT_COUNT),2) DIFFERENT_COUNT
+			        FROM
+			            :{Com_("D_T1_SHIPPING_HEADER")} h
+			        INNER JOIN
+			            :{Com_("D_T0_FORM_STATUS")} s
+			        ON
+			            h.FORM_ID = s.FORM_ID
+			        AND s.IS_CURRENT = 1
+			        INNER JOIN
+			            :{Com_("D_T1_SHIPPING_DETAIL")} d
+			        ON
+			            h.FORM_ID = d.FORM_ID
+			        INNER JOIN
+			            :{Com_("D_T2_BRANCH")} b
+			        ON
+			            h.PROVIDER_ID = b.BRANCH_ID
+			        LEFT JOIN
+			            :{Com_("D_T2_ITEM_CATEGORY")} c
+			        ON
+			            d.ITEM_CATEGORY = c.CATEGORY_ID
+			        WHERE
+			            1 = 1
+			        AND s.STATUS = '已审核' :{queryStr :: ''}
+			        GROUP BY
+			            h.provider,
+			            h.PROVIDER_ID,
+			            h.out_storage,
+			            h.OUT_STORAGE_ID,
+			            d.ITEM_ID,
+			            d.ITEM_NAME,
+			            d.ITEM_DIMENSION,
+			            d.ITEM_SPECIFICATION,
+			            d.ITEM_CATEGORY,
+			            c.CATEGORY_NAME,
+			            d.PACKAGING_FACTOR,
+			            d.PACKAGING_UNIT ) a};
+		
+		closeDefaultContext(myCtx);
+		
+		Map sumMap = processSumIter(sumIter);
+		sumIter.close();
+		
+		return sumMap;
+	}
+	
+	private Map processSumIter(SumIter sumIter) 
+			throws SQLException {
+		Map sumMap = new HashMap();
+		
+		while(sumIter.next()) {
+			sumMap.put("request_count", sumIter.request_count());
+			sumMap.put("shipping_count", sumIter.shipping_count());
+			sumMap.put("delivery_count", sumIter.delivery_count());
+			sumMap.put("receive_count", sumIter.receive_count());
+			sumMap.put("different_count", sumIter.different_count());
+		}
+			
+		return sumMap;
+	}
+	
+	private List<Map> processIter(HeaderIter headerIter) 
+			throws SQLException {
+		List<Map> headerLst = new ArrayList<Map>();
+		
+		while(headerIter.next()) {
+			Map header = new HashMap();
+			header.put("provider", headerIter.provider());
+			header.put("out_storage", headerIter.out_storage());
+//			header.put("in_storage", headerIter.in_storage());
+			header.put("item_id", headerIter.item_id());
+			header.put("item_name", headerIter.item_name());
+			header.put("item_dimension", headerIter.item_dimension());
+			
+			header.put("item_specification", headerIter.item_specification());
+			header.put("item_category", headerIter.item_category());
+			header.put("packaging_factor", headerIter.packaging_factor());
+			header.put("packaging_unit", headerIter.packaging_unit());
+			header.put("packaging_count", headerIter.packaging_count());
+			header.put("request_count", headerIter.request_count());
+			header.put("shipping_count", headerIter.shipping_count());
+			header.put("delivery_count", headerIter.delivery_count());
+			
+			header.put("different_count", headerIter.different_count());
+			header.put("category_name", headerIter.category_name());
+			header.put("receive_count", headerIter.receive_count());
+			
+			headerLst.add(header);
+		}
+		return headerLst;
+	}
+}

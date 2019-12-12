@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE struts PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN"
+    "http://struts.apache.org/dtds/struts-2.0.dtd">
+
+<struts>
+	<package name="businessquery_billCodeQuery" namespace="/businessquery/billCodeQuery" extends="trust-default">
+		<action name="mainView"  class="action.businessquery.BillCodeAction">
+			<result name="success">/jsp/businessquery/billCodeQuery/main.jsp</result>
+			<result name="mobile">/mobile/module/businessquery/billcode/main.jsp</result>
+		</action>
+		
+		<action name="listBill"  method="listBill" class="action.businessquery.BillCodeAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="bq_billcode_export" namespace="/bq/billcode/export" extends="trust-default">
+		<action name="doQuery" method="doQuery" class="action.businessquery.export.BillCodeExportAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+</struts>
+

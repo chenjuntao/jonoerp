@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE struts PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN"
+    "http://struts.apache.org/dtds/struts-2.0.dtd">
+
+<struts>
+	<package name="cf_pd_summary" namespace="/centralfactory/productionDemand/summary" extends="trust-default">
+		<action name="mainView" class="action.centralfactory.productionDemand.summary.SummaryAction">
+			<result name="success">/jsp/centralfactory/productionDemand/summary/main.jsp</result>
+		</action>
+		
+		<action name="scanView" method="scanView" class="action.centralfactory.productionDemand.summary.SummaryAction">
+			<result name="success">/jsp/centralfactory/productionDemand/summary/scan.jsp</result>
+		</action>
+		
+		<action name="checkView" method="checkView" class="action.centralfactory.productionDemand.summary.SummaryAction">
+			<result name="success">/jsp/centralfactory/productionDemand/summary/check.jsp</result>
+		</action>
+		
+		<action name="estimateView" method="estimateView" class="action.centralfactory.productionDemand.summary.SummaryAction">
+			<result name="success">/jsp/centralfactory/productionDemand/summary/estimate.jsp</result>
+		</action>
+		
+		<action name="queryDetail" method="queryDetail" class="action.centralfactory.productionDemand.summary.SummaryAction">
+			<result type="json" />
+		</action>
+		
+		<action name="queryEstimateSummary" method="queryEstimateSummary" class="action.centralfactory.productionDemand.summary.SummaryAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doQuery" method="doQuery" class="action.centralfactory.productionDemand.summary.SummaryAction">
+			<result type="json" />
+		</action>
+		
+		<action name="queryUnOrder" method="queryUnOrder" class="action.centralfactory.productionDemand.summary.SummaryAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doCommit" method="doCommit" class="action.centralfactory.productionDemand.summary.SummaryAction">
+			<interceptor-ref name="defaultStack" />
+			<interceptor-ref name="token" />
+			<result type="json" />
+		</action>
+		
+		<action name="returnSummaryCount" method="returnSummaryCount" class="action.centralfactory.productionDemand.summary.SummaryAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="cf_pd_manual" namespace="/centralfactory/productionDemand/manual" extends="trust-default">
+		<action name="mainView" method="estimateView" class="action.centralfactory.productionDemand.summary.SummaryAction">
+			<result name="success">/jsp/centralfactory/productionDemand/manual/main.jsp</result>
+		</action>
+	</package>
+</struts>
+

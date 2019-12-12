@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE struts PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN"
+    "http://struts.apache.org/dtds/struts-2.0.dtd">
+
+<struts>
+	<package name="restaurant_dailysettlement" namespace="/restaurant/dailysettlement" extends="trust-default">
+		<action name="mainView" class="action.restaurant.DailySettlementAction">
+			<result name="success">/jsp/restaurant/dailysettlement/main.jsp</result>
+		</action>
+		
+		<action name="lcMainView" class="action.restaurant.DailySettlementAction">
+			<result name="success">/jsp/lc/dailysettlement/main.jsp</result>
+		</action>
+		
+		<action name="cfMainView" class="action.restaurant.DailySettlementAction">
+			<result name="success">/jsp/centralfactory/dailysettlement/main.jsp</result>
+		</action>
+		
+		<action name="checkBill" method="checkBill" class="action.restaurant.DailySettlementAction">
+			<result type="json" />
+		</action>
+		
+		<action name="settleView" method="settleView" class="action.restaurant.DailySettlementAction">
+			<result name="success">/jsp/restaurant/dailysettlement/settle.jsp</result>
+		</action>
+		
+		<action name="lcSettleView" method="settleView" class="action.restaurant.DailySettlementAction">
+			<result name="success">/jsp/lc/dailysettlement/settle.jsp</result>
+		</action>
+		
+		<action name="settleRestaurant" method="settleRestaurant" class="action.restaurant.DailySettlementAction">
+			<interceptor-ref name="defaultStack" />
+			<interceptor-ref name="token" />
+			<result type="json" />
+		</action>
+		
+		<action name="settleStorage" method="settleStorage" class="action.restaurant.DailySettlementAction">
+			<result type="json" />
+		</action>
+		
+		<action name="settleFoodAmtTTCNY" method="settleFoodAmtTTCNY" class="action.restaurant.DailySettlementAction">
+			<result type="json" />
+		</action>
+		
+		<action name="settleRawAmtTTCNY" method="settleRawAmtTTCNY" class="action.restaurant.DailySettlementAction">
+			<result type="json" />
+		</action>
+		
+		<action name="saveSettleRecord" method="saveSettleRecord" class="action.restaurant.DailySettlementAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="restaurant_dailyManage" namespace="/restaurant/dailyManage" extends="trust-default">
+		<action name="settleView" method="setDaliyView" class="action.restaurant.DailySettlementAction">
+			<result name="success">/jsp/restaurant/dailyManage/settle.jsp</result>
+		</action>
+		
+		<action name="queryDate" method="queryDate" class="action.restaurant.DailySettlementAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doSaveDaily" method="doSaveDaily" class="action.restaurant.DailySettlementAction">
+			<interceptor-ref name="defaultStack" />
+			<interceptor-ref name="token" />
+			<result type="json" />
+		</action>
+	</package>
+</struts>
+

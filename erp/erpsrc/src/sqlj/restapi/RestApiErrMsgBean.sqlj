@@ -1,0 +1,113 @@
+/**
+ * Copyright (c) 2013
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on 2016年1月25日 by cjt
+ * Last edited on 2016年1月25日 by cjt
+ */
+
+package logic.restapi;
+
+import java.sql.SQLException;
+
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.HashMap;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import sqlj.runtime.ref.DefaultContext;
+
+import com.tanry.framework.acl.NoPrivilegeException;
+
+/**
+ * 传递数据出现错误的具体出错信息表
+ */
+public class RestApiErrMsgBean extends ConnectionPool {
+	private String comId = "com";
+	public static Logger log = Logger.getLogger("RestApiErrMsgBean");
+	
+	#sql public static iterator ErrMsgIter(
+			String LOG_ID, 
+			String ERR_ID, 
+			String MSG_ID, 
+			String CODE,	
+			String MESSAGE
+		);
+	
+	public int saveEntity(Map map) throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getComContext(comId);
+
+		String logId = map.get("logId").toString();
+		String errId = map.get("errId").toString();
+		String msgId = map.get("msgId").toString();
+		String code = map.get("code").toString();
+		String message = map.get("message").toString();
+		
+		#sql [myCtx] {
+			INSERT INTO :{Com_("D_T_RESTAPI_ERR_MSG")}
+				(LOG_ID, ERR_ID, MSG_ID, CODE, MESSAGE) 
+			VALUES 
+				(:logId, :errId, :msgId, :code, :message)
+			};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public int saveEntity(List<Map> maps) throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getComContext(comId);
+		for(int i=0;i<maps.size();i++){
+			Map map = maps.get(i);
+			String logId = map.get("logId").toString();
+			String errId = map.get("errId").toString();
+			String msgId = map.get("msgId").toString();
+			String code = map.get("code").toString();
+			String message = map.get("message").toString();
+			
+			#sql [myCtx] {
+				INSERT INTO :{Com_("D_T_RESTAPI_ERR_MSG")}
+					(LOG_ID, ERR_ID, MSG_ID, CODE, MESSAGE) 
+				VALUES 
+					(:logId, :errId, :msgId, :code, :message)
+			};
+		}
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public List<Map> listErrMsg(String logId, String errId) throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getComContext(comId);
+		ErrMsgIter errMsgIter = null;
+		List<Map> errMsgLst = new ArrayList<Map>();
+		
+		#sql [myCtx] errMsgIter = {
+			SELECT * FROM :{Com_("D_T_RESTAPI_ERR_MSG")} 
+			WHERE LOG_ID = :logId
+			AND ERR_ID = :errId
+			ORDER BY ERR_ID
+		};
+
+		while(errMsgIter.next()){
+			Map errMsg = new HashMap();
+			errMsg.put("logId", errMsgIter.LOG_ID());
+			errMsg.put("errId", errMsgIter.ERR_ID());
+			errMsg.put("msgId", errMsgIter.MSG_ID());
+			errMsg.put("code", errMsgIter.CODE());
+			errMsg.put("message", errMsgIter.MESSAGE());
+			errMsgLst.add(errMsg);
+		}
+		errMsgIter.close();
+		
+		closeDefaultContext(myCtx);
+		return errMsgLst;
+	}
+}

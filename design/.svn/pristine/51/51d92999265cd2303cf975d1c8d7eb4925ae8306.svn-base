@@ -1,0 +1,35 @@
+/* by cjt,2014.7.11 */
+
+--按天存储门店营业信息
+drop table d_t_shop_day cascade constraints;
+create table d_t_shop_day(
+shop_C varchar2(12) not null, 			/* 门店编号 */
+shop_N varchar2(60) not null, 			/* 门店名称 */
+business_date date not null,			/* 营业日期 */
+food_amt number(9,2),					/* 消费金额 */
+bill_num number(6),						/* 单数 */
+amt_per_bill number(5,2),				/* 单均消费金额 */
+guest_num number(6),					/* 人数 */
+amt_per_guest number(5,2),				/* 人均消费 */
+table_num number(4),					/* 台位数 */
+amt_per_table number(6,2),				/* 平均每台位消费额 */
+guest_per_table number(4,2),			/* 台位周转率 */
+dis_amt number(9,2),					/* 总折扣额 */
+round_amt number(7,2),					/* 舍尾金额 */
+present_amt number(9,2),				/* 赠送金额 */
+service_amt number(9,2),				/* 服务费金额 */
+ought_amt number(9,2),					/* 应付款金额 */
+pay_amt number(9,2),					/* 付款金额 */
+min_pay number(8,2)						/* 补最低消费金额 */
+);
+
+--按天存储门店付款方式
+drop table d_t_shop_day_pay cascade constraints;
+create table d_t_shop_day_pay(
+shop_C varchar2(12) not null, 			/* 门店编号 */
+shop_N varchar2(60) not null, 			/* 门店名称 */
+business_date date not null,			/* 营业日期 */
+pay_C varchar2(12) not null,			/* 付款方式编号 */
+pay_N varchar2(36) not null,			/* 付款方式 */
+pay_amt number(9,2) not null			/* 付款金额 */
+);

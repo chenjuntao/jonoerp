@@ -1,0 +1,472 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on Tue Mar 03 17:07:55 CST 2015 by lyz
+ * Last edited on Tue Mar 03 17:07:55 CST 2015 by lyz
+ * 
+ * comment: 价格组与门店的对应关系
+ */
+package logic.store;
+
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import pojo.store.PgroupBranch;
+import sqlj.runtime.ref.DefaultContext;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.TextUtil;
+import com.tanry.framework.acl.NoPrivilegeException;
+
+public class PgroupBranchBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(PgroupBranchBean.class);
+	
+	#sql private iterator RelationIter(String price_group_id, String branch_id);
+	public int saveEntity(PgroupBranch relation)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		return saveEntityImp(relation, myCtx);
+	}
+	
+	public int saveEntity(PgroupBranch relation, String comId)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getComContext(comId);
+		return saveEntityImp(relation, myCtx);
+	}
+	
+	private int saveEntityImp(PgroupBranch relation, DefaultContext myCtx)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		
+		String priceGroupId = relation.getPriceGroupId();
+		String branchId = relation.getBranchId();
+		
+		#sql [myCtx] {
+			MERGE INTO :{Com_("D_T2_PRICE_GROUP_BRANCH")} USING dual 
+			ON (PRICE_GROUP_ID=:priceGroupId AND BRANCH_ID=:branchId)
+			WHEN NOT MATCHED THEN INSERT (PRICE_GROUP_ID, BRANCH_ID) 
+			    VALUES (:priceGroupId, :branchId)
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public int updateEntity(PgroupBranch relation)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		String priceGroupId = relation.getPriceGroupId();
+		String branchId = relation.getBranchId();
+
+		#sql [myCtx] {
+			UPDATE
+			:{Com_("D_T2_PRICE_GROUP_BRANCH")}
+			SET
+				PRICE_GROUP_ID = :priceGroupId,
+				BRANCH_ID = :branchId
+			WHERE 
+				FORM_ID = :branchId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+
+	public int deleteEntity(String branchId)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		#sql [myCtx] {
+			DELETE
+			FROM
+			:{Com_("D_T2_PRICE_GROUP_BRANCH")}
+			WHERE
+				BRANCH_ID = :branchId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	public int deleteAll(String priceGroup,String defaultId)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		#sql [myCtx] {
+			UPDATE
+			:{Com_("D_T2_PRICE_GROUP_BRANCH")} A
+			SET 
+				A.PRICE_GROUP_ID = :defaultId
+			WHERE 
+				A.PRICE_GROUP_ID = :priceGroup
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+
+	/**
+	 * 删除除此之外的其它记录
+	 */
+	public int deleteExcept(String priceGroupId, String branchIds) 
+			throws NoPrivilegeException, SQLException, NoConnection {
+		String query = " BRANCH_ID NOT IN ('" + branchIds.replaceAll(",", "','") + "') ";
+		
+		DefaultContext myCtx = getDefaultContext();
+		#sql [myCtx] {
+			DELETE
+			FROM
+			:{Com_("D_T2_PRICE_GROUP_BRANCH")}
+			WHERE
+				PRICE_GROUP_ID = :priceGroupId
+			AND	:{query :: 1=1}
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public int updateExcept(String priceGroupId, String branchIds, String defaultId) 
+			throws NoPrivilegeException, SQLException, NoConnection {
+		String query = " BRANCH_ID NOT IN ('" + branchIds.replaceAll(",", "','") + "') ";
+		
+		DefaultContext myCtx = getDefaultContext();
+		#sql [myCtx] {
+			UPDATE
+			:{Com_("D_T2_PRICE_GROUP_BRANCH")} A
+			SET 
+				A.PRICE_GROUP_ID = :defaultId
+			WHERE 
+				:{query :: 1=1}
+			AND 
+				A.PRICE_GROUP_ID = :priceGroupId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public int deletePreAll(String branchIds,String pGId) 
+			throws NoPrivilegeException, SQLException, NoConnection {
+		String query = " BRANCH_ID IN ('" + branchIds.replaceAll(",", "','") + "') ";
+		
+		DefaultContext myCtx = getDefaultContext();
+		#sql [myCtx] {
+			DELETE
+			FROM
+			:{Com_("D_T2_PRICE_GROUP_BRANCH")}
+			WHERE
+				:{query :: 1=1}
+			AND
+				PRICE_GROUP_ID = :pGId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+
+	public boolean exist(String priceGroupId, String branchId) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		int total = 0;
+		#sql [myCtx] {
+			SELECT
+				COUNT(*) into :total
+			FROM
+			:{Com_("D_T2_PRICE_GROUP_BRANCH")} b
+			WHERE
+				b.PRICE_GROUP_ID = :priceGroupId
+			AND b.BRANCH_ID = :branchId
+		};
+		closeDefaultContext(myCtx);
+		
+		if (total > 0) {
+			return true;
+		}
+		return false;
+	}
+
+	#sql private iterator NodeIter(String id, String name, String parent, String type, String checked);
+	
+	public List<Map> queryTree(String priceGroupId, String brandId) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		NodeIter nodeIter = null;
+		#sql [myCtx] nodeIter = {
+			SELECT
+			    r.REGION_ID   AS id ,
+			    r.REGION_NAME AS name,
+			    'root'        AS parent,
+			    'region'      AS type,
+			    ''               checked
+			FROM
+			:{Com_("D_T2_DELIVERY_REGION")} r
+			UNION ALL
+			SELECT
+			    b.BRANCH_ID   AS id ,
+			    b.BRANCH_NAME AS name,
+			    rb.REGION_ID  AS parent,
+			    'branch'      AS type,
+			    CASE
+			        WHEN pb.BRANCH_ID IS NULL
+			        THEN ''
+			        ELSE 'checked'
+			    END AS checked
+			FROM
+			:{Com_("D_T2_DELIVERY_REGION_BRANCH")} rb
+			LEFT JOIN
+			:{Com_("D_T2_BRANCH")} b
+			ON
+			    b.BRANCH_ID = rb.BRANCH_ID
+			INNER JOIN --筛选某品牌下相关的门店
+			:{Com_("D_T2_BRAND_BRANCH")} bb
+			ON
+			    b.BRANCH_ID = bb.BRANCH_ID
+			AND bb.BRAND_ID = :brandId
+			LEFT JOIN
+			:{Com_("D_T2_PRICE_GROUP_BRANCH")} pb
+			ON
+			    pb.BRANCH_ID = b.BRANCH_ID
+			WHERE
+			    pb.PRICE_GROUP_ID = :priceGroupId
+			OR  pb.PRICE_GROUP_ID IS NULL --排除属于其它价格组的门店
+		};
+		List<Map> nodeLst = new ArrayList<Map>();
+		while(nodeIter.next()) {
+			Map<String, String> node = new HashMap<String, String>();
+			node.put("id", nodeIter.id());
+			node.put("name", nodeIter.name());
+			node.put("parent", nodeIter.parent());
+			node.put("type", nodeIter.type());
+			node.put("checked", nodeIter.checked());
+			nodeLst.add(node);
+		}
+		nodeIter.close();
+		closeDefaultContext(myCtx);
+		return nodeLst;
+	}
+	
+	#sql private iterator FNodeIter(String id, String name, String type, String parent, String checked);
+	
+	public List<Map> queryAllFranchisee(String PgType,String branchType) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		String query = " A.BRANCH_TYPE IN ('" + branchType.replaceAll(",", "','") + "') ";
+		
+		FNodeIter nodeIter = null;
+		String group = "and b.PRICE_GROUP_ID like 'JOIN%'";
+		if (branchType.equals("OUTERORDER")) group = "and b.PRICE_GROUP_ID like 'RETAIL%'";
+		if (branchType.equals("RESTAURANT")) group = "and b.PRICE_GROUP_ID like 'BENCHMARK%'";
+		if (branchType.equals("CENTRALFACTORY,LOGISTICSCENTER,RESTAURANT")) group = "and b.PRICE_GROUP_ID like 'BENCHMARK%'";
+		if (PgType.indexOf("SALE")!=-1) group = "and b.PRICE_GROUP_ID like 'SALE%'";
+		#sql [myCtx] nodeIter = {
+			select 
+				A.BRANCH_ID as id,
+				A.BRANCH_NAME as name ,
+				A.BRANCH_TYPE as type ,
+				'root' as parent,
+				DECODE(B.PRICE_GROUP_ID,:PgType,'Y','N') as checked
+			from 
+			:{Com_("D_T2_BRANCH")} A 
+			left join 
+			:{Com_("D_T2_PRICE_GROUP_BRANCH")} B 
+			on
+				A.BRANCH_ID = B.BRANCH_ID  :{group :: }
+			where 
+				:{query :: 1=1}
+		};
+		List<Map> nodeLst = new ArrayList<Map>();
+		while(nodeIter.next()) {
+			Map<String, String> node = new HashMap<String, String>();
+			node.put("id", nodeIter.id());
+			node.put("name", nodeIter.name());
+			node.put("type", nodeIter.type());
+			node.put("parent", nodeIter.parent());
+			node.put("checked",nodeIter.checked());
+			nodeLst.add(node);
+		}
+		nodeIter.close();
+		closeDefaultContext(myCtx);
+		return nodeLst;
+	}
+	public List<Map> queryFranchisee(String PgID,String BranchType,String PgType) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		String tmp = PgType + "%";
+		FNodeIter nodeIter = null;
+		#sql [myCtx] nodeIter = {
+			WITH
+		    a AS
+		    (
+		        SELECT
+		            b.BRANCH_ID
+		        FROM
+		        	:{Com_("D_T2_BRANCH")} b
+		        WHERE
+		            b.BRANCH_TYPE = :BranchType
+		    )
+		    ,
+		    b AS
+		    (
+		        SELECT
+		            b.BRANCH_ID
+		        FROM
+		           :{Com_("D_T2_PRICE_GROUP")} A
+		        LEFT JOIN
+		           :{Com_("D_T2_PRICE_GROUP_BRANCH")} B
+		        ON
+		            A.PRICE_GROUP_ID = B.PRICE_GROUP_ID
+		        WHERE
+		            A.PRICE_GROUP_ID LIKE :tmp
+		        AND a.PRICE_GROUP_ID != :PgID
+		        AND b.BRANCH_ID IS NOT NULL
+		    )
+		    ,
+		    c AS
+		    (
+		        SELECT
+		            *
+		        FROM
+		            a
+		        MINUS
+		        SELECT
+		            *
+		        FROM
+		            b
+		    )
+		    ,
+		    d AS
+		    (
+		        SELECT
+		            b.BRANCH_ID
+		        FROM
+		           :{Com_("D_T2_PRICE_GROUP")} A
+		        LEFT JOIN
+		           :{Com_("D_T2_PRICE_GROUP_BRANCH")} B
+		        ON
+		            A.PRICE_GROUP_ID = B.PRICE_GROUP_ID
+		        WHERE
+		            a.PRICE_GROUP_ID = :PgID
+		    )
+			,
+			e as
+			(
+				SELECT
+				    c.branch_id,
+				    DECODE(d.branch_id,NULL,'N','Y') flag
+				FROM
+				    c
+				LEFT JOIN
+				    d
+				ON
+				    c.branch_id = d.branch_id
+			)
+			,
+			f as
+			(
+				select S.BRANCH_ID,S.BRANCH_NAME,S.BRANCH_TYPE,E.FLAG from:{Com_("D_T2_BRANCH")} S 
+				LEFT JOIN E ON E.BRANCH_ID = S.BRANCH_ID 
+			)
+			select f.branch_id as id,
+			f.branch_name as name,
+			f.branch_type as type,
+			'root' as parent,
+			f.flag as checked from f where f.flag = 'Y' or f.flag = 'N' 
+		};
+		List<Map> nodeLst = new ArrayList<Map>();
+		while(nodeIter.next()) {
+			Map<String, String> node = new HashMap<String, String>();
+			node.put("id", nodeIter.id());
+			node.put("name", nodeIter.name());
+			node.put("type", nodeIter.type());
+			node.put("parent", nodeIter.parent());
+			node.put("checked",nodeIter.checked());
+			nodeLst.add(node);
+		}
+		nodeIter.close();
+		closeDefaultContext(myCtx);
+		return nodeLst;
+	}
+	
+	public List<PgroupBranch> query() 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		RelationIter relationIter = null;
+		#sql [myCtx] relationIter = {
+			SELECT
+			    *
+			FROM
+			:{Com_("D_T2_PRICE_GROUP_BRANCH")} h where h.PRICE_GROUP_ID != 'SALE' 
+		};
+		List<PgroupBranch> relationLst = processIter(relationIter);
+		relationIter.close();
+		closeDefaultContext(myCtx);
+		return relationLst;
+	}
+	
+	public PgroupBranch queryBenchmark(String branchId) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		RelationIter relationIter = null;
+		#sql [myCtx] relationIter = {
+			SELECT
+			    h.*
+			FROM
+			:{Com_("D_T2_PRICE_GROUP_BRANCH")} h 
+			  where 
+			  h.BRANCH_ID = :branchId  and  h.PRICE_GROUP_ID like 'BENCHMARK%' 
+		};
+		List<PgroupBranch> relationLst = processIter(relationIter);
+		relationIter.close();
+		closeDefaultContext(myCtx);
+		if (relationLst !=null && !relationLst.isEmpty()) {
+			return relationLst.get(0);
+		}
+		return null;
+	}
+	
+	public PgroupBranch querySale(String branchId) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		RelationIter relationIter = null;
+		#sql [myCtx] relationIter = {
+			SELECT
+			    h.*
+			FROM
+			:{Com_("D_T2_PRICE_GROUP_BRANCH")} h 
+			  where 
+			  h.BRANCH_ID = :branchId  and  h.PRICE_GROUP_ID like 'SALE%' 
+		};
+		List<PgroupBranch> relationLst = processIter(relationIter);
+		relationIter.close();
+		closeDefaultContext(myCtx);
+		if (relationLst !=null && !relationLst.isEmpty()) {
+			return relationLst.get(0);
+		}
+		return null;
+	}
+	
+	private List<PgroupBranch> processIter(RelationIter relationIter) 
+			throws SQLException {
+		List<PgroupBranch> relationLst = new ArrayList<PgroupBranch>();
+		while(relationIter.next()) {
+			PgroupBranch relation = new PgroupBranch();
+			relation.setPriceGroupId(relationIter.price_group_id());
+			relation.setBranchId(relationIter.branch_id());
+			relationLst.add(relation);
+		}
+		return relationLst;
+	}
+}

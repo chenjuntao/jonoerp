@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE struts PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN"
+    "http://struts.apache.org/dtds/struts-2.0.dtd">
+
+<struts>
+	<package name="reportmanage_storage_restaurant" namespace="/reportmanage/restaurant/storage" extends="trust-default">
+		<action name="mainView" class="action.reportmanage.ReportManageAction">
+			<result name="success">/jsp/restaurant/reportmanage/storage/main.jsp</result>
+		</action>
+	</package>
+	
+	<!-- 	盘点汇总 -->
+	<package name="reportmanage_storage_restaurant_collect" namespace="/reportmanage/storage/restaurant/collect" extends="trust-default">
+		<action name="mainView" class="action.reportmanage.ReportManageAction">
+			<result name="success">/jsp/restaurant/reportmanage/storage/collect/main.jsp</result>
+		</action>
+	</package>
+
+<!-- 	盘点明细  -->	
+	<package name="reportmanage_storage_restaurant_detail" namespace="/reportmanage/storage/restaurant/detail" extends="trust-default">
+		<action name="mainView" class="action.reportmanage.ReportManageAction">
+			<result name="success">/jsp/restaurant/reportmanage/storage/detail/main.jsp</result>
+		</action>
+	</package>
+</struts>
+

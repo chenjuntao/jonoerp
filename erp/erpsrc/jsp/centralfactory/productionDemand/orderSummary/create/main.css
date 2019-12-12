@@ -1,0 +1,43 @@
+.dataGrid {
+	width: 100%;
+	height: 160px; /* override default height: 30em; in dgrid.css */
+}
+
+.input-provider {
+	width: 160px !important;
+}
+
+th[role="columnheader"] {
+	text-align: center;
+}
+
+.field-rownumber, .field-formId, .field-itemId, .field-formTime,.field-itemCount,
+	.field-formMaker, .field-payAmt, .field-itemUnitPrice, .field-allPayAmt,.field-itemDimension
+	{
+	text-align: center !important;
+}
+
+/* for observable warn,sort consideration */
+ .field-itemCount , .field-itemUnitPrice , .field-payAmt {
+	width: 60px !important;
+}
+
+.field-itemDimension,.field-rownumber{
+	width: 50px ;
+}
+
+.field-none{
+	width: 300px ;
+}
+
+.field-allPayAmt {
+	width: 80px ;
+}
+
+.field-itemId {
+	width: 80px ;
+}
+
+.field-formId ,.field-itemName,.field-itemCategory,.field-itemSpecification {
+	width: 150px ;
+}

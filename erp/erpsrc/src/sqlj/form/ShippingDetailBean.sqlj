@@ -1,0 +1,500 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on Sep 12, 2014 by liyzh
+ * Last edited on Sep 12, 2014 by liyzh
+ * 
+ * 说明：  餐厅配送单、物流中心出货单、中央工厂出货单明细
+ */
+package logic.form;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import java.util.HashMap;
+import java.util.Map;
+
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import pojo.form.ShippingDetail;
+import sqlj.runtime.ref.DefaultContext;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.TextUtil;
+import com.tanry.framework.acl.NoPrivilegeException;
+
+public class ShippingDetailBean extends ConnectionPool {
+	
+	public static Logger log = Logger.getLogger(ShippingDetailBean.class);
+
+	#sql private iterator IdIter(
+			String category_id
+			);
+	
+	#sql private iterator DetailIter(String form_id,
+			String item_id,
+			String item_name,
+			String item_dimension,
+			String item_specification,
+			String item_category,
+			Double packaging_factor,
+			String packaging_unit, Double packaging_count,
+			Double request_count,
+			Double shipping_count,
+			Double delivery_count,
+			Double receive_count,
+			Double different_count,
+			String different_reason,
+			Double item_unit_price,
+			Double pay_amt,
+			Double received_count,
+			Double sum_item_count,
+			Date expired_time);
+
+	public List<ShippingDetail> query(String formId)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		DetailIter detailIter = null;
+		#sql [myCtx] detailIter = {
+			SELECT
+			    d.*,
+			    0 SUM_ITEM_COUNT,
+			    0 RECEIVED_COUNT
+			FROM
+			:{Com_("D_T1_SHIPPING_DETAIL")} d
+			WHERE
+			    d.FORM_ID = :formId
+			ORDER BY
+				d.ITEM_ID
+		};
+		List<ShippingDetail> detailLst = processIter(detailIter);
+		detailIter.close();
+		closeDefaultContext(myCtx);
+		return detailLst;
+	}
+	
+	public List<ShippingDetail> queryUnOrder(String formId)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		DetailIter detailIter = null;
+		#sql [myCtx] detailIter = {
+				WITH
+			    DELIVERY AS --已出货数
+			    (
+			        SELECT DISTINCT
+			            sh.FORM_REF_ID FORM_ID,
+			            sd.ITEM_ID,
+			            NVL(SUM(sd.DELIVERY_COUNT),0) DELIVERY_COUNT
+		            FROM
+		            :{Com_("D_T1_SHIPPING_HEADER")} h
+			        INNER JOIN
+			        :{Com_("D_T1_SHIPPING_HEADER")} sh
+			        ON
+			        h.FORM_REF_ID = sh.FORM_REF_ID
+			        INNER JOIN
+			        :{Com_("D_T1_SHIPPING_DETAIL")} sd
+			        ON
+			            sd.FORM_ID = sh.FORM_ID
+			        AND sh.PROVIDER_ID='F00'
+    				WHERE
+    	            h.FORM_ID= :formId
+    	            AND sh.AUDIT_TIME IS NOT NULL
+			        GROUP BY
+			            (sh.FORM_REF_ID, sd.ITEM_ID)
+			    )
+			    ,
+			    RECEIVE AS --已入库数
+			    (
+			        SELECT DISTINCT
+			            d.FORM_ID,
+			            d.ITEM_ID,
+			            NVL(SUM(id.RECEIVE_COUNT),0) RECEIVE_COUNT
+			            FROM
+			            :{Com_("D_T1_SHIPPING_HEADER")} h
+			        INNER JOIN
+			            :{Com_("D_T1_PURCHASING_DETAIL")} d
+			        ON
+			            d.FORM_ID = h.FORM_REF_ID
+			        INNER JOIN
+			        :{Com_("D_T1_COLLECT_REF_FORM")} f
+			        ON
+			            f.REF_FORM_ID=d.FORM_ID
+			        AND d.ITEM_ID = f.ITEM_ID
+			        INNER JOIN
+			        :{Com_("D_T1_ARRENGMENT_DETAIL")} ad
+			        ON
+			            f.COLLECT_FORM_ID=ad.FORM_ID
+			        AND ad.ITEM_ID =f.ITEM_ID
+			        INNER JOIN
+			        :{Com_("D_T1_INPUT_HEADER")} ih
+			        ON
+			            ih.FORM_REF_ID=ad.WORK_ORDER_ID
+			        INNER JOIN
+			        :{Com_("D_T1_INPUT_DETAIL")} id
+			        ON
+			            id.FORM_ID = ih.FORM_ID
+    				WHERE
+    			    h.FORM_ID = :formId
+		    		AND ih.AUDIT_TIME IS NOT NULL
+			        GROUP BY
+			            ( d.FORM_ID, d.ITEM_ID)
+			    )
+			SELECT
+			    d.*,
+			    NVL(de.DELIVERY_COUNT,0) RECEIVED_COUNT,
+			    NVL(r.RECEIVE_COUNT,0)   SUM_ITEM_COUNT
+			FROM
+			:{Com_("D_T1_SHIPPING_DETAIL")} d
+			INNER JOIN
+			    RECEIVE r
+			ON
+			    d.ITEM_ID = r.ITEM_ID
+			LEFT JOIN
+			    DELIVERY de
+			ON
+			    r.ITEM_ID =de.ITEM_ID
+			WHERE
+			    d.FORM_ID = :formId
+			ORDER BY
+				d.ITEM_ID
+		};
+		List<ShippingDetail> detailLst = processIter(detailIter);
+		detailIter.close();
+		closeDefaultContext(myCtx);
+		return detailLst;
+	}
+
+
+	private List<ShippingDetail> processIter(DetailIter detailIter) 
+			throws SQLException {
+		List<ShippingDetail> detailLst = new ArrayList<ShippingDetail>();
+		while(detailIter.next()) {
+			ShippingDetail detail = new ShippingDetail();
+			detail.setFormId(detailIter.form_id());
+			detail.setItemId(detailIter.item_id());
+			detail.setItemName(detailIter.item_name());
+			detail.setItemDimension(detailIter.item_dimension());
+			detail.setItemSpecification(detailIter.item_specification());
+			detail.setItemCategory(detailIter.item_category());
+			detail.setPackagingFactor(detailIter.packaging_factor());
+			detail.setPackagingUnit(detailIter.packaging_unit());
+			detail.setPackagingCount(detailIter.packaging_count());
+			detail.setRequestCount(detailIter.request_count());
+			detail.setShippingCount(detailIter.shipping_count());
+			detail.setDeliveryCount(detailIter.delivery_count());
+			detail.setReceiveCount(detailIter.receive_count());
+			detail.setDifferentCount(detailIter.different_count());
+			detail.setDifferentReason(detailIter.different_reason());
+			detail.setItemUnitPrice(detailIter.item_unit_price());
+			detail.setPayAmt(detailIter.pay_amt());
+			detail.setExpiredTime(SqlDateUtil.getUtilDate(detailIter.expired_time()));
+			detail.setSumItemCount(detailIter.sum_item_count());
+			detail.setReceivedCount(detailIter.received_count());
+			detailLst.add(detail);
+		}
+		return detailLst;
+	}
+	
+	/**
+	 * 保存明细
+	 */
+	public int saveEntity(ShippingDetail detail)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		String formId = detail.getFormId();
+		String itemId = detail.getItemId();
+		String itemName = detail.getItemName();
+		String itemDimension = detail.getItemDimension();
+		String itemSpecification = detail.getItemSpecification();
+		String itemCategory = detail.getItemCategory();
+		Double packagingFactor = detail.getPackagingFactor();
+		String packagingUnit = detail.getPackagingUnit();
+		Double packagingCount = detail.getPackagingCount();
+		Double requestCount = detail.getRequestCount();
+		Double shippingCount = detail.getShippingCount();
+		Double deliveryCount = detail.getDeliveryCount();
+		Double receiveCount = detail.getReceiveCount();
+		Double differentCount = detail.getDifferentCount();
+		String differentReason = detail.getDifferentReason();
+		Double itemUnitPrice = detail.getItemUnitPrice();
+		Double payAmt = detail.getPayAmt();
+		Date expiredTime = SqlDateUtil.getSqlDate(detail.getExpiredTime());
+		IdIter id = null;
+		
+		#sql [myCtx] id = {
+			SELECT 
+				H.CATEGORY_ID  category_id
+			FROM 
+				:{Com_("D_T2_ITEM_CATEGORY")} H
+			WHERE 
+				H.CATEGORY_NAME = :itemCategory
+		};
+		
+		while(id.next()) {
+			itemCategory = id.category_id();
+		}
+	
+		
+		#sql [myCtx] {
+			INSERT INTO :{Com_("D_T1_SHIPPING_DETAIL")} 
+				(FORM_ID, ITEM_ID, ITEM_NAME, ITEM_DIMENSION, ITEM_SPECIFICATION, ITEM_CATEGORY, 
+					PACKAGING_FACTOR, PACKAGING_UNIT, PACKAGING_COUNT, REQUEST_COUNT, SHIPPING_COUNT, DELIVERY_COUNT, 
+					RECEIVE_COUNT, DIFFERENT_COUNT, DIFFERENT_REASON, ITEM_UNIT_PRICE, PAY_AMT, EXPIRED_TIME) 
+			VALUES (:formId, 
+					:itemId, 
+					:itemName, 
+					:itemDimension, 
+					:itemSpecification, 
+					:itemCategory, 
+					:packagingFactor, 
+					:packagingUnit, :packagingCount, 
+					:requestCount, 
+					:shippingCount, 
+					:deliveryCount, 
+					:receiveCount, 
+					:differentCount, 
+					:differentReason, 
+					:itemUnitPrice, 
+					:payAmt, 
+					:expiredTime)
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+
+	public int updateEntity(ShippingDetail detail)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		String formId = detail.getFormId();
+		String itemId = detail.getItemId();
+		String itemName = detail.getItemName();
+		String itemDimension = detail.getItemDimension();
+		String itemSpecification = detail.getItemSpecification();
+		String itemCategory = detail.getItemCategory();
+		Double packagingFactor = detail.getPackagingFactor();
+		String packagingUnit = detail.getPackagingUnit();
+		Double requestCount = detail.getRequestCount();
+		Double shippingCount = detail.getShippingCount();
+		Double deliveryCount = detail.getDeliveryCount();
+		Double receiveCount = detail.getReceiveCount();
+		Double differentCount = detail.getDifferentCount();
+		String differentReason = detail.getDifferentReason();
+		Double itemUnitPrice = detail.getItemUnitPrice();
+		Double payAmt = detail.getPayAmt();
+	
+		#sql [myCtx] {
+			UPDATE
+			:{Com_("D_T1_SHIPPING_DETAIL")}
+			SET
+				DELIVERY_COUNT = :deliveryCount,
+				RECEIVE_COUNT = :receiveCount,
+				DIFFERENT_COUNT = :differentCount,
+				DIFFERENT_REASON = :differentReason,
+			    PAY_AMT = :payAmt
+			WHERE
+				FORM_ID = :formId
+			and ITEM_ID = :itemId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public int updateShippingCount(ShippingDetail detail)
+			throws NoPrivilegeException, SQLException, NoConnection {
+			DefaultContext myCtx = getDefaultContext();
+			String formId = detail.getFormId();
+			String itemId = detail.getItemId();
+			String itemName = detail.getItemName();
+			String itemDimension = detail.getItemDimension();
+			String itemSpecification = detail.getItemSpecification();
+			String itemCategory = detail.getItemCategory();
+			Double packagingFactor = detail.getPackagingFactor();
+			String packagingUnit = detail.getPackagingUnit();
+			Double requestCount = detail.getRequestCount();
+			Double shippingCount = detail.getShippingCount();
+			Double deliveryCount = detail.getDeliveryCount();
+			Double receiveCount = detail.getReceiveCount();
+			Double differentCount = detail.getDifferentCount();
+			String differentReason = detail.getDifferentReason();
+			Double itemUnitPrice = detail.getItemUnitPrice();
+			Double payAmt = detail.getPayAmt();
+			//Date expiredTime = detail.getExpiredTime();
+		
+			#sql [myCtx] {
+				UPDATE
+				:{Com_("D_T1_SHIPPING_DETAIL")}
+				SET
+					SHIPPING_COUNT = :shippingCount,
+					    	PAY_AMT = :payAmt
+				WHERE
+					FORM_ID = :formId
+				and ITEM_ID = :itemId
+			};
+			closeDefaultContext(myCtx);
+			
+			return 1;
+		}
+
+	public int updatePrice(String formIds)
+			throws NoPrivilegeException, SQLException, NoConnection {
+			DefaultContext myCtx = getDefaultContext();
+			String query = " h.FORM_ID IN ('" + formIds.replaceAll(",", "','") + "') ";		
+			#sql [myCtx] {
+			UPDATE
+			:{Com_("D_T1_SHIPPING_DETAIL")} d1
+			SET
+			    (
+			        d1.ITEM_UNIT_PRICE,
+			        d1.PAY_AMT
+			    )
+			    =
+			    (
+			        SELECT
+			            NVL(p.ITEM_PRICE,0)   ITEM_PRICE,
+			            NVL(p.ITEM_PRICE,0) * NVL(d.SHIPPING_COUNT,d.DELIVERY_COUNT)
+			        FROM
+			        :{Com_("D_T1_SHIPPING_HEADER")} h
+			        INNER JOIN
+			        :{Com_("D_T1_SHIPPING_DETAIL")} d
+			        ON
+			            d.FORM_ID=h.FORM_ID
+			        INNER JOIN
+			        :{Com_("D_T2_PRICE_GROUP_BRANCH")} pg
+			        ON
+			            pg.BRANCH_ID =h.REQUESTER_ID AND pg.PRICE_GROUP_ID NOT LIKE 'SALE%'
+			        INNER JOIN
+			        :{Com_("D_T2_ITEM_PRICE")} p
+			        ON
+			            p.PRICE_TYPE=pg.PRICE_GROUP_ID
+			        AND p.ITEM_ID=d.ITEM_ID
+			        WHERE
+			        	:{query :: 1=1}
+			        AND d1.FORM_ID = d.FORM_ID
+			        AND d1.ITEM_ID = d.ITEM_ID)
+			WHERE
+			    EXISTS
+			    (
+			        SELECT
+			            1
+		            FROM
+			        :{Com_("D_T1_SHIPPING_HEADER")} h
+			        INNER JOIN
+			        :{Com_("D_T1_SHIPPING_DETAIL")} d
+			        ON
+			            d.FORM_ID=h.FORM_ID
+			        INNER JOIN
+			        :{Com_("D_T2_PRICE_GROUP_BRANCH")} pg
+			        ON
+			            pg.BRANCH_ID =h.REQUESTER_ID AND pg.PRICE_GROUP_ID NOT LIKE 'SALE%'
+			        INNER JOIN
+			        :{Com_("D_T2_ITEM_PRICE")} p
+			        ON
+			            p.PRICE_TYPE=pg.PRICE_GROUP_ID
+			        AND p.ITEM_ID=d.ITEM_ID
+			        WHERE
+			        	:{query :: 1=1}
+			        AND d1.FORM_ID = d.FORM_ID
+			        AND d1.ITEM_ID = d.ITEM_ID)
+			};
+			closeDefaultContext(myCtx);
+			
+			return 1;
+		}
+		
+	/**
+	 * 捡货单审核后更新配送单的包装数量和实发数（实发数=包装数量*包装因子）
+	 */
+	public int updatePackageCount(String formId, String itemId, Double packagingCount, Double deliveryCount)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		#sql [myCtx] {
+			UPDATE
+			:{Com_("D_T1_SHIPPING_DETAIL")}
+			SET
+				PACKAGING_COUNT = :packagingCount,
+				DELIVERY_COUNT = :deliveryCount
+			WHERE
+				FORM_ID = :formId
+			and ITEM_ID = :itemId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+
+	#sql private iterator StorageIter(
+		 	String item_id,
+	 	 	Double item_count
+		);
+	
+	/**
+	 * query items storage
+	 */
+	public Map<String,Double> queryStorage(String formId,String storageId)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		StorageIter storageIter = null;
+		#sql [myCtx] storageIter = {
+			WITH
+			    items AS
+			    (
+			        SELECT DISTINCT
+			            ITEM_ID
+			        FROM
+			        	:{Com_("D_T1_SHIPPING_HEADER")} h
+			        INNER JOIN
+			            :{Com_("D_T1_SHIPPING_DETAIL")} d
+			        ON
+			            h.FORM_ID = d.FORM_ID
+			        WHERE
+			            d.FORM_ID = :formId
+			            )
+			SELECT
+			    i.ITEM_ID,
+			    NVL(s.ITEM_COUNT,0)ITEM_COUNT
+			FROM
+			    items i
+			LEFT JOIN
+			 :{Com_("D_T2_STORAGE")} s
+			ON
+			    i.ITEM_ID = s.ITEM_ID
+			AND s.STORAGE_ID = :storageId};
+		
+		Map<String,Double> resultMap = new HashMap<String,Double>();
+		while(storageIter.next()) {
+			resultMap.put(storageIter.item_id(),storageIter.item_count());
+		}
+		
+		storageIter.close();
+		closeDefaultContext(myCtx);
+		return resultMap;
+	}
+	
+	public int deleteByForm(String formId)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		#sql [myCtx] {
+			DELETE
+			FROM
+			:{Com_("D_T1_SHIPPING_DETAIL")}
+			WHERE
+				FORM_ID = :formId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+}

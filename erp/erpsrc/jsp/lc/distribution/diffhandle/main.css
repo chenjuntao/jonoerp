@@ -1,0 +1,65 @@
+#dataGrid {
+	position: absolute;
+	right: 0;
+	top: 120px;
+	bottom: 0;
+	width: 100%;
+	height: auto; /* override default height: 30em; in dgrid.css */
+}
+
+th[role="columnheader"] {
+	text-align: center;
+}
+
+.dgrid-cell {
+	/* 	width: 80px; make all the columns 80px wide */
+	vertical-align: middle;
+	width: 90px;
+}
+
+.dgrid-column-set-0 {
+	width: 280px;
+}
+
+.field-rownumber, .field-formId, .field-formType, .field-formTime,
+	.field-formMaker, .field-receiveTime, .field-inputTime, .field-scan,
+	.field-operate, .field-onStatus {
+	text-align: center;
+}
+
+.field-rownumber {
+	width: 40px;
+}
+
+.field-formId {
+	width: 140px;
+}
+
+.field-formType {
+	width: 90px;
+}
+
+.field-requester {
+	width: 130px;
+}
+
+.field-requestAddress {
+	width: 250px;
+}
+
+.field-formMaker {
+	width: 120px;
+}
+
+.field-allPayAmt {
+	width: 80px;
+	text-align: right;
+}
+
+.field-maxPayItem {
+	width: 160px;
+}
+
+.field-operate {
+	width: 80px;
+}

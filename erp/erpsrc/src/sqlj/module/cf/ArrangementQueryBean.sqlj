@@ -1,0 +1,208 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on Apr 23, 2015 by liyzh
+ * Last edited on Apr 23, 2015 by liyzh
+ * 
+ * 说明： 中央工厂生产计划/排程单表头查询
+ */
+package logic.module.cf;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import pojo.form.ArrangmentHeader;
+import sqlj.runtime.ref.DefaultContext;
+
+import com.tanry.framework.acl.NoPrivilegeException;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.TextUtil;
+import com.tanry.framework.util.constant.BranchCode;
+
+public class ArrangementQueryBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(ArrangementQueryBean.class);
+	
+	#sql private iterator HeaderIter(String form_id, String ref_ids, String form_maker_id, 
+			String form_maker, Date form_time, Date form_time_actual, String auditor_id, String auditor, 
+			Date audit_time, String form_note, 
+			String form_status, String purchase_status,String workShop);
+
+	public int count(java.util.Date startDate, java.util.Date endDate) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		Date sDate = SqlDateUtil.getSqlDate(startDate);
+		Date eDate = SqlDateUtil.getSqlDate(endDate);
+		
+		DefaultContext myCtx = getDefaultContext();
+		int total = 0;
+		#sql [myCtx] {
+			SELECT
+			    count(*) into :total
+			FROM
+			:{Com_("D_T1_ARRENGMENT_HEADER")} h
+			WHERE
+				(h.FORM_TIME >= :sDate or :sDate is null)
+			AND (h.FORM_TIME <= :eDate or :eDate is null)
+		};
+		closeDefaultContext(myCtx);
+		return total;
+	}
+	
+	public List<ArrangmentHeader> query(java.util.Date startDate, java.util.Date endDate) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		Date sDate = SqlDateUtil.getSqlDate(startDate);
+		Date eDate = SqlDateUtil.getSqlDate(endDate);
+		
+		DefaultContext myCtx = getDefaultContext();
+		HeaderIter headerIter = null;
+		#sql [myCtx] headerIter = {
+			SELECT
+				'' workShop,
+			    h.*, s.STATUS AS FORM_STATUS,
+			    a.ref_ids
+			FROM
+			    (
+			        SELECT
+			            form_id,
+			            LISTAGG(REF_FORM_ID, ',') WITHIN GROUP (ORDER BY REF_FORM_ID) AS ref_ids
+			        FROM
+			            (
+			                SELECT
+			                    h.FORM_ID,
+			                    r.REF_FORM_ID
+			                FROM
+			                :{Com_("D_T1_ARRENGMENT_HEADER")} h
+			                LEFT JOIN
+			                :{Com_("D_T1_COLLECT_REF_FORM")} r
+			                ON
+			                    r.COLLECT_FORM_ID = h.FORM_ID
+	                		WHERE 
+	            				(h.FORM_TIME >= :sDate or :sDate is null)
+	            			AND (h.FORM_TIME <= :eDate or :eDate is null)
+			                GROUP BY
+			                    h.FORM_ID,
+			                    r.REF_FORM_ID)
+			        GROUP BY
+			            form_id) a
+			INNER JOIN
+			:{Com_("D_T1_ARRENGMENT_HEADER")} h
+			ON
+			    h.form_id = a.form_id
+        	LEFT JOIN
+        	:{Com_("D_T0_FORM_STATUS")} s
+			ON
+			    s.FORM_ID = h.FORM_ID
+			AND s.IS_CURRENT = 1
+		};
+		List<ArrangmentHeader> headerLst = processIter(headerIter);
+		headerIter.close();
+		closeDefaultContext(myCtx);
+		return headerLst;
+	}
+	
+	public List<ArrangmentHeader> query(java.util.Date startDate, java.util.Date endDate, int startRow, int endRow)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		Date sDate = SqlDateUtil.getSqlDate(startDate);
+		Date eDate = SqlDateUtil.getSqlDate(endDate);
+		
+		DefaultContext myCtx = getDefaultContext();
+		HeaderIter headerIter = null;
+		#sql [myCtx] headerIter = {
+				SELECT
+			    *
+		    FROM
+		        (
+		            SELECT
+		                t.*,
+		                ROWNUM rowNumber
+		            FROM
+		                (
+		            			SELECT DISTINCT
+		                        d.WORKSHOP,
+		        			    h.*, s.STATUS AS FORM_STATUS,
+		        			    a.ref_ids
+		        			FROM
+		        			    (
+		        			        SELECT
+		        			            form_id,
+		        			            LISTAGG(REF_FORM_ID, ',') WITHIN GROUP (ORDER BY REF_FORM_ID) AS ref_ids
+		        			        FROM
+		        			            (
+		        			                SELECT
+		        			                    h.FORM_ID,
+		        			                    r.REF_FORM_ID
+		        			                FROM
+		        			                :{Com_("D_T1_ARRENGMENT_HEADER")} h
+		        			                LEFT JOIN
+		        			                :{Com_("D_T1_COLLECT_REF_FORM")} r
+		        			                ON
+		        			                    r.COLLECT_FORM_ID = h.FORM_ID
+		        	                		WHERE 
+		        	            				(h.FORM_TIME >= :sDate or :sDate is null)
+		        	            			AND (h.FORM_TIME <= :eDate or :eDate is null)
+		        			                GROUP BY
+		        			                    h.FORM_ID,
+		        			                    r.REF_FORM_ID)
+		        			        GROUP BY
+		        			            form_id) a
+		        			INNER JOIN
+		        			:{Com_("D_T1_ARRENGMENT_HEADER")} h
+		        			ON
+		        			    h.form_id = a.form_id
+    			    		 INNER JOIN
+    			    		 :{Com_("D_T1_ARRENGMENT_DETAIL")} d
+    		                ON
+    		                    h.FORM_ID=d.FORM_ID
+		                	LEFT JOIN
+		                	:{Com_("D_T0_FORM_STATUS")} s
+		        			ON
+		        			    s.FORM_ID = h.FORM_ID
+		        			AND s.IS_CURRENT = 1
+		        		) t
+		            WHERE
+		                ROWNUM < :endRow)
+		    WHERE
+		        rowNumber >= :startRow
+		};
+		List<ArrangmentHeader> headerLst = processIter(headerIter);
+		headerIter.close();
+		closeDefaultContext(myCtx);
+		return headerLst;
+	}
+	
+	private List<ArrangmentHeader> processIter(HeaderIter headerIter) 
+			throws SQLException {
+		List<ArrangmentHeader> headerLst = new ArrayList<ArrangmentHeader>();
+		while(headerIter.next()) {
+			ArrangmentHeader header = new ArrangmentHeader();
+			header.setWorkShop(headerIter.workShop());
+			header.setFormId(headerIter.form_id());
+			header.setFormRefId(headerIter.ref_ids());
+			header.setFormMakerId(headerIter.form_maker_id());
+			header.setFormMaker(headerIter.form_maker());
+			header.setFormTime(SqlDateUtil.getUtilDate(headerIter.form_time()));
+			header.setFormTimeActual(SqlDateUtil.getUtilDate(headerIter.form_time_actual()));
+			header.setAuditorId(headerIter.auditor_id());
+			header.setAuditor(headerIter.auditor());
+			header.setAuditTime(SqlDateUtil.getUtilDate(headerIter.audit_time()));
+			header.setFormNote(headerIter.form_note());
+			header.setFormStatus(headerIter.form_status());
+			header.setPurchaseStatus(headerIter.purchase_status());
+			headerLst.add(header);
+		}
+		return headerLst;
+	}
+}

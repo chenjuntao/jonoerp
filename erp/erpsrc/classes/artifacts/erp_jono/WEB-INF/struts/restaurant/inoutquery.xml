@@ -1,0 +1,206 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE struts PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN"
+    "http://struts.apache.org/dtds/struts-2.0.dtd">
+
+<struts>
+	<package name="restaurant_inoutquery_inventory_detail"	namespace="/restaurant/inoutquery/inventory/detail" extends="trust-default">
+		<action name="mainView"	class="action.restaurant.inventory.InventoryManageAction">
+			<result name="success">/jsp/restaurant/inoutquery/inventory/detail/main.jsp	</result>
+			<result name="mobile">/mobile/module/restaurant/detail/main.jsp</result>
+		</action>
+
+		<action name="tologisticsCenter" class="action.restaurant.inventory.InventoryManageAction">
+			<result name="success">/jsp/restaurant/inoutquery/inventory/detail/logisticsCenter.jsp</result>
+			<result name="mobile">/mobile/module/lc/restaurant/detail/logisticsCenter.jsp</result>
+		</action>
+
+		<action name="doQuery" method="doQuery"	class="action.restaurant.inventory.InventoryManageAction">
+			<result type="json" />
+		</action>
+	</package>
+
+	<package name="restaurant_inoutquery_inventory_summary"	namespace="/restaurant/inoutquery/inventory/summary" extends="trust-default">
+		<action name="mainView"	class="action.restaurant.inventory.InventoryManageAction">
+			<result name="success">/jsp/restaurant/inoutquery/inventory/summary/main.jsp</result>
+			<result name="mobile">/mobile/module/lc/restaurant/summary/main.jsp</result>
+		</action>
+
+		<action name="doSummaryQuery" method="doSummaryQuery" class="action.restaurant.inventory.InventoryManageAction">
+			<result type="json" />
+		</action>
+	</package>
+
+	<package name="restaurant_inoutquery_checkstorage" namespace="/restaurant/inoutquery/checkstorage"	extends="trust-default">
+		<action name="mainView" class="action.restaurant.checkstorage.BillManageAction">
+			<result name="success">/jsp/restaurant/inoutquery/checkstorage/main.jsp</result>
+			<result name="mobile">/mobile/module/restaurant/checkstorage/main.jsp</result>
+		</action>
+
+		<action name="scanView" method="scanView" class="action.restaurant.checkstorage.BillManageAction">
+			<result name="success">/jsp/restaurant/inoutquery/checkstorage/scan.jsp</result>
+		</action>
+	</package>
+
+	<package name="restaurant_inoutquery_shipping" namespace="/restaurant/inoutquery/shipping"	extends="trust-default">
+		<action name="mainView" class="action.restaurant.shipping.ShippingManageAction">
+			<result name="success">/jsp/restaurant/inoutquery/shipping/main.jsp	</result>
+			<result name="mobile">/mobile/module/restaurant/shipping/main.jsp </result>
+		</action>
+		
+		<action name="restMainView" class="action.restaurant.shipping.ShippingManageAction">
+			<result name="success">/jsp/restaurant/inoutquery/shipping/restMain.jsp	</result>
+		</action>
+
+		<action name="doQuery" method="doQuery"	class="action.restaurant.shipping.ShippingManageAction">
+			<result type="json" />
+		</action>
+
+		<action name="doReturn" method="doReturn" class="action.restaurant.shipping.ShippingManageAction">
+			<result type="json" />
+		</action>
+
+		<action name="scanView" method="scanView" class="action.restaurant.shipping.ShippingManageAction">
+			<result name="success">/jsp/restaurant/inoutquery/shipping/scan.jsp</result>
+		</action>
+
+		<action name="editView" method="scanView" class="action.restaurant.shipping.ShippingManageAction">
+			<result name="success">/jsp/restaurant/inoutquery/shipping/edit.jsp</result>
+		</action>
+
+		<action name="queryDetail" method="queryDetail"	class="action.restaurant.shipping.ShippingManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="queryUnOrder" method="queryUnOrder" class="action.restaurant.shipping.ShippingManageAction">
+			<result type="json" />
+		</action>
+
+		<action name="preview" method="preview" class="action.restaurant.shipping.ShippingManageAction">
+			<result type="json" />
+		</action>
+	</package>
+
+	<package name="restaurant_inoutquery_querycurrentstorage" namespace="/restaurant/inoutquery/querycurrentstorage" extends="trust-default">
+		<action name="mainView"	class="action.restaurant.putinstorage.QueryCurrentStorageAction">
+			<result name="success">/jsp/restaurant/inoutquery/querycurrentstorage/queryCurrentStorage.jsp
+			</result>
+		</action>
+	</package>
+
+	<package name="restaurant_inoutquery_goodsbill" namespace="/restaurant/inoutquery/goodsbill" extends="trust-default">
+		<action name="mainView" class="action.restaurant.goodsbill.BillManageAction">
+			<result name="success">/jsp/restaurant/inoutquery/goodsbill/main.jsp</result>
+			<result name="mobile">/mobile/module/restaurant/goodsbill/main.jsp</result>
+		</action>
+	</package>
+
+	<package name="restaurant_inoutquery_putinstorage" namespace="/restaurant/inoutquery/putinstorage"	extends="trust-default">
+		<action name="mainView" class="action.restaurant.putinstorage.BillManageAction">
+			<result name="success">/jsp/restaurant/inoutquery/putinstorage/main.jsp	</result>
+			<result name="mobile">/mobile/module/restaurant/putinstorage/main.jsp</result>
+		</action>
+	</package>
+
+	<package name="restaurant_inoutquery_dreject" namespace="/restaurant/inoutquery/dreject" extends="trust-default">
+		<action name="mainView" class="action.restaurant.dreject.BillManageAction">
+			<result name="success">/jsp/restaurant/inoutquery/dreject/main.jsp</result>
+			<result name="mobile">/mobile/module/lc/dreject/main.jsp</result>
+		</action>
+	</package>
+
+	<package name="restaurant_inoutquery_preject" namespace="/restaurant/inoutquery/preject" extends="trust-default">
+		<action name="mainView" class="action.restaurant.preject.BillManageAction">
+			<result name="success">/jsp/restaurant/inoutquery/preject/main.jsp</result>
+			<result name="mobile">/mobile/module/lc/preject/main.jsp</result>
+		</action>
+	</package>
+
+	<package name="restaurant_inoutquery_reportdamage_queryloss" namespace="/restaurant/inoutquery/reportdamage/queryloss" extends="trust-default">
+		<action name="mainView" class="action.restaurant.reportdamage.ManageLossAction">
+			<result name="success">/jsp/restaurant/inoutquery/reportdamage/queryloss/listLossBill.jsp</result>
+			<result name="mobile">/mobile/module/restaurant/reportdamage/queryloss/main.jsp</result>
+		</action>
+	</package>
+
+	<package name="restaurant_inoutquery_reportdamage_querydishloss" namespace="/restaurant/inoutquery/reportdamage/querydishloss" extends="trust-default">
+		<action name="mainView" class="action.restaurant.reportdamage.ManageLossAction">
+			<result name="success">/jsp/restaurant/inoutquery/reportdamage/querydishloss/listDishLossBill.jsp</result>
+			<result name="mobile">/mobile/module/restaurant/reportdamage/querydishloss/main.jsp</result>
+		</action>
+	</package>
+
+	<package name="restaurant_inoutquery_allocateitem" namespace="/restaurant/inoutquery/allocateitem"	extends="trust-default">
+		<action name="mainView" class="action.restaurant.allocateitem.QueryBillAction">
+			<result name="success">/jsp/restaurant/inoutquery/allocateitem/main.jsp</result>
+			<result name="mobile">/mobile/module/restaurant/allocateitem/main.jsp</result>
+		</action>
+	</package>
+
+	<package name="bq_inoutquery_allocateitem_export" namespace="/bq/inoutquery/allocateitem/export" extends="trust-default">
+		<action name="export" method="export" class="action.restaurant.export.AllocateItemExportAction">
+			<result type="json" />
+		</action>
+	</package>
+
+	<package name="bq_inoutquery_goodsbill_export" namespace="/bq/inoutquery/goodsbill/export"	extends="trust-default">
+		<action name="export" method="export" class="action.restaurant.export.GoodsBillExportAction">
+			<result type="json" />
+		</action>
+	</package>
+
+	<package name="bq_inoutquery_putinstorage_export" namespace="/bq/inoutquery/putinstorage/export" extends="trust-default">
+		<action name="export" method="export" class="action.restaurant.export.PutinstorageExportAction">
+			<result type="json" />
+		</action>
+	</package>
+
+	<package name="bq_inoutquery_dreject_export" namespace="/bq/inoutquery/dreject/export" extends="trust-default">
+		<action name="export" method="export" class="action.restaurant.export.DrejectExportAction">
+			<result type="json" />
+		</action>
+	</package>
+
+	<package name="bq_inoutquery_reportdamage_export" namespace="/bq/inoutquery/reportdamage/export" extends="trust-default">
+		<action name="export" method="export" 	class="action.restaurant.export.ReportdamageExportAction">
+			<result type="json" />
+		</action>
+	</package>
+
+	<package name="bq_inoutquery_preject_export" namespace="/bq/inoutquery/preject/export"	extends="trust-default">
+		<action name="export" method="export"	class="action.restaurant.export.PrejectExportAction">
+			<result type="json" />
+		</action>
+	</package>
+
+	<package name="bq_inoutquery_shipping_export" namespace="/bq/inoutquery/shipping/export" extends="trust-default">
+		<action name="export" method="export" 	class="action.restaurant.export.ShippingExportAction">
+			<result type="json" />
+		</action>
+	</package>
+
+	<package name="bq_inoutquery_querycurrentstorage_export" namespace="/bq/inoutquery/querycurrentstorage/export" extends="trust-default">
+		<action name="export" method="export"	class="action.restaurant.export.CurrentStorageExportAction">
+			<result type="json" />
+		</action>
+	</package>
+
+	<package name="bq_inoutquery_checkstorage_export" namespace="/bq/inoutquery/checkstorage/export" extends="trust-default">
+		<action name="export" method="export" class="action.restaurant.export.CheckstorageExportAction">
+			<result type="json" />
+		</action>
+	</package>
+
+	<package name="bq_inoutquery_inventory_detail" namespace="/bq/inoutquery/inventory/detail"	extends="trust-default">
+		<action name="detailExport" method="detailExport" class="action.restaurant.export.StorageInOutExportAction">
+			<result type="json" />
+		</action>
+	</package>
+
+	<package name="bq_inoutquery_inventory_summary" namespace="/bq/inoutquery/inventory/summary" extends="trust-default">
+		<action name="summaryExport" method="summaryExport"	class="action.restaurant.export.StorageInOutExportAction">
+			<result type="json" />
+		</action>
+	</package>
+</struts>
+

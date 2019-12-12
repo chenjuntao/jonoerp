@@ -1,0 +1,28 @@
+#dataGrid {
+	position: absolute;
+	right: 0;
+	top: 120px;
+	bottom: 0;
+	width: 100%;
+	height: auto; /* override default height: 30em; in dgrid.css */
+}
+
+.dgrid-cell {
+	width: 80px;
+}
+
+.dgrid-column-set-0 {
+	width: 300px;
+}
+
+.field-formId, .field-templateId,.field-buyerName,.field-templateName {
+	width: 120px;
+}
+
+.field-maxPayItem,.field-formTimeActual  {
+	width: 160px;
+}
+
+.field-scan ,.field-deliveryType{
+	width: 60px;
+}

@@ -1,0 +1,13 @@
+<root>
+	<job id="transformProduct">
+		<description>
+			将当天生效的出品信息插入到中间表中
+		</description>
+		<procName>transformProduct</procName>
+		<time>
+			<text>每天凌晨零点15分</text>
+			<value>0 15 0 * * ?</value>
+<!-- 			<value>0/20 * * * * ?</value> -->
+		</time>
+	</job>
+</root>

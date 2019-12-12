@@ -1,0 +1,26 @@
+#userTree {
+	position: absolute;
+	top: 0px;
+	bottom: 0px;
+	left: 0px;
+	width: 40%;
+	height: auto;
+}
+
+#ifrMenu {
+	position: absolute; right : 0px;
+	width: 60%;
+	height: 100%;
+	overflow: auto;
+	right: 0px;
+	border-left: 1px solid blue;
+}
+
+#menuTree {
+	position: absolute;
+	top: 42px;
+	bottom: 30px;
+	right: 0px;
+	width: 100%;
+	height: auto;
+}

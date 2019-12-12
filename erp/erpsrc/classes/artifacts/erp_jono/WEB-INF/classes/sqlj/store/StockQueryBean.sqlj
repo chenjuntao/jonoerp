@@ -1,0 +1,429 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on Nov 25, 2014 by liyzh
+ * Last edited on Nov 25, 2014 by liyzh
+ * 
+ * 说明： 查询库存
+ */
+package logic.store;
+
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import pojo.store.ItemMeta;
+import sqlj.runtime.ref.DefaultContext;
+import com.tanry.framework.util.TextUtil;
+
+import com.hp.hpl.sparta.Text;
+import com.tanry.framework.acl.NoPrivilegeException;
+
+public class StockQueryBean extends ConnectionPool {
+	
+	public static Logger log = Logger.getLogger(StockQueryBean.class);
+
+	#sql public static iterator ItemIter(String item_id, 
+			String item_name, 
+			String item_type, 
+			String category_id, 
+			String item_dimension, 
+			String query_code,
+			String item_specification, Double item_count, String supplier_name);
+	
+	#sql public static iterator MrpItemIter(
+			String item_id, 
+			String item_name, 
+			String category_id, 
+			String item_dimension, 
+			String query_code,
+			String item_specification,
+			Double allocation ,
+			Double on_the_way
+		);
+	
+	/**
+	 * 根据材料ID和门店ID获取相应的库存量
+	 */
+	public int count(String cateIds, String branchId, String storageId, String itemName,String types)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		String query = " 1=1";
+		if(!TextUtil.isEmpty(cateIds)){
+			query = " c.CATEGORY_ID IN ('" + cateIds.replaceAll(",", "','") + "') ";
+		}
+		
+		String q1 = null;
+		if (types.equals("nonegtive")) q1 = " s.ITEM_COUNT >= 0 ";
+		if (types.equals("negtive")) q1 = " s.ITEM_COUNT < 0 ";
+		if (types.equals("all")) q1 = " 1 = 1 ";
+		itemName = "%" + itemName + "%";
+		
+		DefaultContext myCtx = getDefaultContext();
+		int total = 0;
+		#sql [myCtx] {
+			SELECT
+			    count(*) into :total
+			FROM
+			:{Com_("D_T2_ITEM_META")} m
+			INNER JOIN
+			:{Com_("D_T2_ITEM_CATEGORY")} c
+			ON
+			    c.CATEGORY_ID = m.CATEGORY_ID
+			LEFT JOIN
+			:{Com_("D_T2_STORAGE")} s
+			ON
+			    s.ITEM_ID = m.ITEM_ID
+			AND s.STORAGE_ID = :storageId
+			LEFT JOIN
+			:{Com_("D_T2_SUPPLIER_BRANCH_ITEM")} sb
+			ON
+			    sb.ITEM_ID = m.ITEM_ID
+			AND sb.BRANCH_ID = :branchId
+			AND sb.PRIORITY = 0
+			LEFT JOIN
+			:{Com_("D_T2_BRANCH")} b
+			ON
+			    sb.SUPPLIER_ID = b.BRANCH_ID
+			WHERE
+			    :{query :: 1=1}
+			AND  m.ITEM_TYPE in ('RAW','SEMIS')
+            AND (
+                    m.ITEM_ID LIKE :itemName
+                OR  m.ITEM_NAME LIKE :itemName)
+            AND
+            	:{q1}
+			ORDER BY
+			    m.ITEM_ID
+		};
+		closeDefaultContext(myCtx);
+		return total;
+	}
+	
+	/**
+	 * 根据材料ID和门店ID获取相应的库存量
+	 */
+	public List<ItemMeta> queryStock(String cateIds, String branchId, String storageId, String itemName,String types, int startIndex, int endIndex)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		String query = " 1=1";
+		if(!TextUtil.isEmpty(cateIds)){
+			query = " c.CATEGORY_ID IN ('" + cateIds.replaceAll(",", "','") + "') ";
+		}
+		itemName = "%" + itemName + "%";
+		String q1 = "";
+		if (types.equals("nonegtive")) q1 = " s.ITEM_COUNT >= 0 ";
+		if (types.equals("negtive")) q1 = " s.ITEM_COUNT < 0 ";
+		if (types.equals("all")) q1 = " 1 = 1 ";
+		
+		DefaultContext myCtx = getDefaultContext();
+		ItemIter itemIter = null;
+		#sql [myCtx] itemIter = {
+			SELECT * FROM ( SELECT t.*, ROWNUM rowNumber FROM (
+				SELECT
+				    m.*,
+				    round(s.ITEM_COUNT,2) ITEM_COUNT,
+				    b.BRANCH_NAME AS supplier_name
+				FROM
+				:{Com_("D_T2_ITEM_META")} m
+				INNER JOIN
+				:{Com_("D_T2_ITEM_CATEGORY")} c
+				ON
+				    c.CATEGORY_ID = m.CATEGORY_ID
+				LEFT JOIN
+				:{Com_("D_T2_STORAGE")} s
+				ON
+				    s.ITEM_ID = m.ITEM_ID
+				AND s.STORAGE_ID = :storageId
+				LEFT JOIN
+				:{Com_("D_T2_SUPPLIER_BRANCH_ITEM")} sb
+				ON
+				    sb.ITEM_ID = m.ITEM_ID
+				AND sb.BRANCH_ID = :branchId
+				AND sb.PRIORITY = 0
+				LEFT JOIN
+				:{Com_("D_T2_BRANCH")} b
+				ON
+				    sb.SUPPLIER_ID = b.BRANCH_ID
+				WHERE
+				    :{query :: 1=1}
+				AND  m.ITEM_TYPE in ('RAW','SEMIS')
+	            AND (
+	                    m.ITEM_ID LIKE :itemName
+	                OR  m.ITEM_NAME LIKE :itemName)
+	            AND
+	            	:{q1}
+				ORDER BY
+				    m.ITEM_ID
+			) t WHERE ROWNUM < :endIndex) WHERE rowNumber >= :startIndex
+		};
+		List<ItemMeta> itemLst = processIter(itemIter);
+		itemIter.close();
+		
+		closeDefaultContext(myCtx);
+		return itemLst;
+	}
+
+	
+	public List<ItemMeta> queryLcMrp(String cateIds, String branchId, String itemName)
+			throws NoPrivilegeException, SQLException, NoConnection {
+			String query = " 1=1";
+			if(!TextUtil.isEmpty(cateIds)){
+				 query = " m.CATEGORY_ID IN ('" + cateIds.replaceAll(",", "','") + "') ";
+			}
+			itemName = "%" + itemName + "%";
+			
+			DefaultContext myCtx = getDefaultContext();
+			MrpItemIter itemIter = null;
+			#sql [myCtx] itemIter = {
+				SELECT
+				    m.ITEM_ID,
+				    m.ITEM_NAME,
+				    m.QUERY_CODE,
+				    m.CATEGORY_ID,
+				    m.ITEM_DIMENSION,
+				    m.ITEM_SPECIFICATION,
+				    v1.ITEM_COUNT allocation,
+				    v2.ITEM_COUNT on_the_way
+				FROM
+					:{Com_("D_T2_ITEM_META")} m
+				LEFT JOIN
+					:{Com_("d_v_mrp_a_lc")} v1
+				ON
+				    m.item_id = v1.item_id
+				LEFT JOIN
+					:{Com_("d_v_mrp_o_lc")} v2
+				ON
+				    m.item_id = v2.item_id
+				WHERE
+				    :{query :: 1=1}
+				AND (
+				        m.ITEM_ID LIKE :itemName
+				    OR  m.ITEM_NAME LIKE :itemName)
+				AND (
+				        v1.ITEM_COUNT IS NOT NULL
+				    OR  v2.item_count IS NOT NULL)
+				ORDER BY
+				    m.ITEM_ID};
+			List<ItemMeta> itemLst = processMrpIter(itemIter);
+			itemIter.close();
+			
+			closeDefaultContext(myCtx);
+			return itemLst;
+		}
+	
+	public List<ItemMeta> queryCfMrp(String cateIds, String branchId, String itemName)
+			throws NoPrivilegeException, SQLException, NoConnection {
+		String query = " 1=1";
+		if(!TextUtil.isEmpty(cateIds)){
+			 query = " m.CATEGORY_ID IN ('" + cateIds.replaceAll(",", "','") + "') ";
+		}
+			itemName = "%" + itemName + "%";
+			
+			DefaultContext myCtx = getDefaultContext();
+			MrpItemIter itemIter = null;
+			#sql [myCtx] itemIter = {
+				WITH
+				    temp_o AS
+				    (
+				        SELECT
+				            d.FORM_ID,
+				            d.ITEM_ID,
+				            d.ITEM_COUNT,
+				            id.FORM_ID ref_form_id,
+				            id.RECEIVE_COUNT
+				        FROM
+				        :{Com_("D_T1_PURCHASING_HEADER")} h
+				        INNER JOIN
+				        :{Com_("D_T0_FORM_STATUS")} s
+				        ON
+				            h.FORM_ID = s.FORM_ID
+				        AND s.STATUS IN ('已审核',
+				                         '已入库')
+				        AND s.IS_CURRENT = 1
+				        INNER JOIN
+				        :{Com_("D_T1_PURCHASING_DETAIL")} d
+				        ON
+				            h.FORM_ID = d.FORM_ID
+				        AND h.REQUESTER_ID = :branchId
+				        LEFT JOIN
+				        :{Com_("D_T1_INPUT_HEADER")} ih
+				        ON
+				            d.FORM_ID = ih.FORM_REF_ID
+				        AND ih.AUDIT_TIME IS NOT NULL
+				        LEFT JOIN
+				        :{Com_("D_T1_INPUT_DETAIL")} id
+				        ON
+				            ih.FORM_ID = id.FORM_ID
+				        AND d.ITEM_ID = id.ITEM_ID
+				    )
+				    ,
+				    temp2_o AS
+				    (
+				        SELECT
+				            t.FORM_ID,
+				            t.ITEM_ID,
+				            DECODE(SIGN(t.ITEM_COUNT - SUM(NVL(t.RECEIVE_COUNT,0))),-1,0,t.ITEM_COUNT - SUM(NVL(t.RECEIVE_COUNT,0)))       ontheway ,
+				            listagg('('||t.ref_form_id ||','||t.RECEIVE_COUNT ||')',',') within GROUP (ORDER BY
+				            t.ITEM_COUNT) infos
+				        FROM
+				            temp_o t
+				        GROUP BY
+				            t.FORM_ID,
+				            t.ITEM_ID,
+				            t.ITEM_COUNT
+				    )
+				    ,
+				    temp3_o AS
+				    (
+				        SELECT
+				            t.item_id,
+				            SUM(NVL(t.ontheway,0)) ontheway
+				        FROM
+				            temp2_o t
+				        GROUP BY
+				            t.item_id
+				    )
+				    ,
+				    temp_a AS
+				    (
+				        SELECT
+				            i.FORM_ID,
+				            i.ITEM_ID,
+				            i.ITEM_COUNT,
+				            rd.FORM_ID ref_form_id,
+				            rd.RECEIVE_COUNT
+				        FROM
+				        :{Com_("D_T1_WORK_ORDER_HEADER")} h
+				        INNER JOIN
+				        :{Com_("D_T0_FORM_STATUS")} s
+				        ON
+				            h.FORM_ID = s.FORM_ID
+				        AND s.IS_CURRENT = 1
+				        AND s.STATUS = '已审核'
+				        INNER JOIN
+				        :{Com_("D_T1_WORKORDER_ITEM")} i
+				        ON
+				            h.FORM_ID = i.FORM_ID
+				        LEFT JOIN
+				        :{Com_("D_T1_REQUISITION_HEADER")} rh
+				        ON
+				            i.FORM_ID = rh.FORM_REF_ID
+				        AND rh.AUDIT_TIME IS NOT NULL
+				        LEFT JOIN
+				        :{Com_("D_T1_REQUISITION_DETAIL")} rd
+				        ON
+				            rh.FORM_ID = rd.FORM_ID
+				        AND i.ITEM_ID = rd.ITEM_ID
+		        		WHERE
+			        	    (
+			        	        h.BATCH_FLAG='Y'
+			        	    AND rh.AUDIT_TIME IS NULL)
+			        	OR  (
+			        	        h.BATCH_FLAG!='Y' )
+				    )
+				    ,
+				    temp2_a AS
+				    (
+				        SELECT
+				            t.FORM_ID,
+				            t.ITEM_ID,
+				            decode(sign(t.ITEM_COUNT - SUM(NVL(t.RECEIVE_COUNT,0))),-1,0,t.ITEM_COUNT - SUM(NVL(t.RECEIVE_COUNT,0))) Allocation ,
+				            listagg('('||t.ref_form_id ||','||t.RECEIVE_COUNT ||')',',') within GROUP (ORDER BY
+				            t.ITEM_COUNT) infos
+				        FROM
+				            temp_a t
+				        GROUP BY
+				            t.FORM_ID,
+				            t.ITEM_ID,
+				            t.ITEM_COUNT
+				    )
+				    ,
+				    temp3_a AS
+				    (
+				        SELECT
+				            t.item_id,
+				            SUM(NVL(t.Allocation,0)) Allocation
+				        FROM
+				            temp2_a t
+				        GROUP BY
+				            t.item_id
+				    )
+				SELECT
+				    m.ITEM_ID,
+				    m.ITEM_NAME,
+				    m.query_code,
+				    m.ITEM_DIMENSION,
+				    m.CATEGORY_ID,
+				    m.item_specification,
+				    NVL(o.ontheway,0)   on_the_way,
+				    NVL(a.allocation,0) allocation
+				FROM
+				:{Com_("D_T2_ITEM_META")} m
+				LEFT JOIN
+				    temp3_o o
+				ON
+				    m.ITEM_ID = o.item_id
+				LEFT JOIN
+				    temp3_a a
+				ON
+				    m.ITEM_ID = a.item_id
+				WHERE
+					:{query :: 1=1}
+                AND (
+                        m.ITEM_ID LIKE :itemName
+                    OR  m.ITEM_NAME LIKE :itemName)
+				AND (
+				        o.ontheway IS NOT NULL
+				    OR  a.allocation IS NOT NULL)
+				ORDER BY
+				    m.ITEM_ID};
+			List<ItemMeta> itemLst = processMrpIter(itemIter);
+			itemIter.close();
+			
+			closeDefaultContext(myCtx);
+			return itemLst;
+		}
+	private List<ItemMeta> processIter(ItemIter itemIter) 
+			throws SQLException {
+		List<ItemMeta> itemLst = new ArrayList<ItemMeta>();
+		while(itemIter.next()) {
+			ItemMeta item = new ItemMeta();
+			item.setItemId(itemIter.item_id());
+			item.setItemName(itemIter.item_name());
+			item.setQueryCode(itemIter.query_code());
+			item.setCategoryId(itemIter.category_id());
+			item.setItemDimension(itemIter.item_dimension());
+			item.setItemSpecification(itemIter.item_specification());
+			item.setItemCount(itemIter.item_count());
+			item.setSupplierName(itemIter.supplier_name());
+			itemLst.add(item);
+		}
+		return itemLst;
+	}
+	
+	private List<ItemMeta> processMrpIter(MrpItemIter itemIter) 
+			throws SQLException {
+		List<ItemMeta> itemLst = new ArrayList<ItemMeta>();
+		while(itemIter.next()) {
+			ItemMeta item = new ItemMeta();
+			item.setItemId(itemIter.item_id());
+			item.setItemName(itemIter.item_name());
+			item.setCategoryId(itemIter.category_id());
+			item.setQueryCode(itemIter.query_code());
+			item.setItemDimension(itemIter.item_dimension());
+			item.setItemSpecification(itemIter.item_specification());
+			item.setAllocation(itemIter.allocation());
+			item.setOnTheWay(itemIter.on_the_way());
+			itemLst.add(item);
+		}
+		return itemLst;
+	}
+}

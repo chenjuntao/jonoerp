@@ -1,0 +1,166 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on Aug 29, 2014 by liyzh
+ * Last edited on Aug 29, 2014 by liyzh
+ * 
+ * 说明： 餐厅要货、外部订货商订货需求模板详细信息
+ */
+package logic.form;
+
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import pojo.form.TemplateItem;
+import sqlj.runtime.ref.DefaultContext;
+import com.tanry.framework.acl.NoPrivilegeException;
+
+public class TemplateItemBean extends ConnectionPool {	
+	
+	public static Logger log = Logger.getLogger(TemplateItemBean.class);
+	
+	#sql private iterator ItemIter(String template_id,
+			String item_id,
+			Integer item_order,
+			String item_name,
+			String item_category,
+			String item_dimension,
+			String item_specification,
+			String shelf_name);
+	
+	public List<TemplateItem> query(String templateId)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		ItemIter itemIter = null;
+		#sql [myCtx] itemIter = {
+			SELECT
+			    i.TEMPLATE_ID,
+			    i.ITEM_ORDER,
+			    m.item_id,
+			    m.item_name,
+			    m.CATEGORY_ID AS item_category,
+			    m.item_dimension,
+			    m.item_specification,
+			    s.SHELF_NAME
+			FROM
+				:{Com_("D_T2_ITEM_META")} m 
+			LEFT JOIN
+				:{Com_("D_T1_TEMPLATE_ITEM")} i
+			ON
+			    m.ITEM_ID = i.ITEM_ID
+			LEFT JOIN
+				:{Com_("D_T2_SHELF_ITEM")}   si  
+			ON
+			    i.ITEM_ID = si.ITEM_ID
+			AND si.PRIORITY = 0
+			LEFT JOIN
+			   :{Com_("D_T2_SHELF")} s
+			ON
+			    si.SHELF_ID = s.SHELF_ID
+			WHERE
+			    i.TEMPLATE_ID = :templateId
+			ORDER BY
+			    i.ITEM_ORDER};
+		List<TemplateItem> itemLst = processIter(itemIter);
+		itemIter.close();
+		closeDefaultContext(myCtx);
+		return itemLst;
+	}
+	
+	private List<TemplateItem> processIter(ItemIter itemIter) 
+			throws SQLException {
+		List<TemplateItem> itemLst = new ArrayList<TemplateItem>();
+		while(itemIter.next()) {
+			TemplateItem item = new TemplateItem();
+			item.setTemplateId(itemIter.template_id());
+			item.setItemId(itemIter.item_id());
+			item.setItemOrder(itemIter.item_order());
+			item.setItemName(itemIter.item_name());
+			item.setItemCategory(itemIter.item_category());
+			item.setItemDimension(itemIter.item_dimension());
+			item.setItemSpecification(itemIter.item_specification());
+			item.setShelfName(itemIter.shelf_name());
+			itemLst.add(item);
+		}
+		return itemLst;
+	}		
+	
+	/**
+	 * 保存
+	 */
+	public int saveEntity(TemplateItem item)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		String templateId = item.getTemplateId();
+		String itemId = item.getItemId();
+		Integer itemOrder = item.getItemOrder();
+
+		#sql [myCtx] {
+			INSERT INTO :{Com_("D_T1_TEMPLATE_ITEM")} 
+				(TEMPLATE_ID, ITEM_ID, ITEM_ORDER) VALUES (:templateId, 
+						:itemId, :itemOrder)
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public int deleteItem(String templateId)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		#sql [myCtx] {
+			DELETE
+			FROM
+			:{Com_("D_T1_TEMPLATE_ITEM")}
+			WHERE
+				TEMPLATE_ID = :templateId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public int deleteByItemId(String itemId)
+			throws NoPrivilegeException, SQLException, NoConnection {
+			DefaultContext myCtx = getDefaultContext();
+
+			#sql [myCtx] {
+				DELETE
+				FROM
+					:{Com_("D_T1_TEMPLATE_ITEM")}
+				WHERE
+					ITEM_ID = :itemId
+			};
+			closeDefaultContext(myCtx);
+			
+			return 1;
+		}
+	
+	public int deleteEntity(String templateId, String itemId)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		#sql [myCtx] {
+			DELETE
+			FROM
+			:{Com_("D_T1_TEMPLATE_ITEM")}
+			WHERE
+				TEMPLATE_ID = :templateId
+			and ITEM_ID = :itemId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+}

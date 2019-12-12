@@ -1,0 +1,164 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on Sep 1, 2015 by liyzh
+ * Last edited on Sep 1, 2015 by liyzh
+ * 
+ * 说明： 餐厅物料信息查询
+ */
+package logic.module.restaurant;
+
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import sqlj.runtime.ref.DefaultContext;
+
+import com.tanry.framework.acl.NoPrivilegeException;
+
+public class ItemQueryBean extends ConnectionPool {
+	
+	public static Logger log = Logger.getLogger(ItemQueryBean.class);
+
+	#sql public static iterator ItemIter(
+		    String itemId, 
+			String itemName, 
+			String itemNameEng, 
+			String itemType, 
+			String categoryId, 
+			String categoryName, 
+			String itemDimension, 
+			String queryCode,
+			String itemSpecification,
+			String itemPic, 
+			String boxType,
+			Double itemUnitPrice);
+
+	/**
+	 * 餐厅物料信息查询
+	 */
+	public List<Map> query(String categoryId, String priceType) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		List<Map> headerLst = new ArrayList<Map>();
+		DefaultContext myCtx = getDefaultContext();
+		ItemIter itemIter = null;
+		#sql [myCtx] itemIter = {
+			SELECT
+			    m.ITEM_ID itemId,
+			    m.ITEM_NAME itemName,
+			    m.ITEM_NAME_ENG itemNameEng,
+			    m.ITEM_TYPE itemType,
+			    m.CATEGORY_ID categoryId,
+			    NVL(c.CATEGORY_NAME,'') categoryName,
+			    m.ITEM_DIMENSION itemDimension,
+			    m.QUERY_CODE queryCode,
+			    m.ITEM_SPECIFICATION itemSpecification,
+			    m.ITEM_PIC itemPic,
+			    m.BOX_TYPE boxType,
+			    nvl(p.item_price,0) itemUnitPrice
+			FROM
+			:{Com_("D_T2_ITEM_META")} m
+			LEFT JOIN
+			:{Com_("D_T2_ITEM_PRICE")} p
+			ON
+			    m.item_id = p.item_id
+			    AND p.PRICE_TYPE = :priceType
+			    AND p.IS_CURRENT = 1
+			LEFT JOIN
+			:{Com_("D_T2_ITEM_CATEGORY")} c
+			ON
+				trim(m.CATEGORY_ID) = c.CATEGORY_ID
+			WHERE
+	            trim(m.CATEGORY_ID) = :categoryId
+		};
+		headerLst = processIter(itemIter);
+		itemIter.close();
+		closeDefaultContext(myCtx);
+		return headerLst;
+	}
+	
+	
+	/**
+	 * 根据物料id餐厅物料信息查询
+	 */
+	public List<Map> queryByName(String itemName, String priceType) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		List<Map> headerLst = new ArrayList<Map>();
+		DefaultContext myCtx = getDefaultContext();
+		ItemIter itemIter = null;
+		itemName = "%" + itemName + "%";
+		#sql [myCtx] itemIter = {
+			SELECT
+			    m.ITEM_ID itemId,
+			    m.ITEM_NAME itemName,
+			    m.ITEM_NAME_ENG itemNameEng,
+			    m.ITEM_TYPE itemType,
+			    m.CATEGORY_ID categoryId,
+			    NVL(c.CATEGORY_NAME,'') categoryName,
+			    m.ITEM_DIMENSION itemDimension,
+			    m.QUERY_CODE queryCode,
+			    m.ITEM_SPECIFICATION itemSpecification,
+			    m.ITEM_PIC itemPic,
+			    m.BOX_TYPE boxType,
+			    nvl(p.item_price,0) itemUnitPrice
+			FROM
+			:{Com_("D_T2_ITEM_META")} m
+			LEFT JOIN
+			:{Com_("D_T2_ITEM_PRICE")} p
+			ON
+			    m.item_id = p.item_id
+			    AND p.PRICE_TYPE = :priceType
+			    AND p.IS_CURRENT = 1
+			LEFT JOIN
+			:{Com_("D_T2_ITEM_CATEGORY")} c
+			ON
+				trim(m.CATEGORY_ID) = c.CATEGORY_ID
+			WHERE
+			    1=1
+			AND (
+			        m.ITEM_ID LIKE :itemName
+			    OR  m.ITEM_NAME LIKE :itemName)
+			AND m.ITEM_TYPE IN ('RAW',
+			                    'SEMIS')
+		};
+		headerLst = processIter(itemIter);
+		itemIter.close();
+		closeDefaultContext(myCtx);
+		return headerLst;
+	}
+
+	private List<Map> processIter(ItemIter itemIter) 
+			throws SQLException {
+		List<Map> itemLst = new ArrayList<Map>();
+		
+		while(itemIter.next()) {
+			Map item = new HashMap();
+			item.put("itemId", itemIter.itemId());
+			item.put("itemName", itemIter.itemName());
+			item.put("itemNameEng", itemIter.itemNameEng());
+			item.put("itemType", itemIter.itemType());
+			item.put("categoryId", itemIter.categoryId());
+			item.put("categoryName", itemIter.categoryName());
+			item.put("itemDimension", itemIter.itemDimension());
+			item.put("queryCode", itemIter.queryCode());
+			item.put("itemSpecification", itemIter.itemSpecification());
+			item.put("itemPic", itemIter.itemPic());
+			item.put("boxType", itemIter.boxType());
+			item.put("itemUnitPrice", itemIter.itemUnitPrice());
+			
+			itemLst.add(item);
+		}
+		return itemLst;
+	}
+}

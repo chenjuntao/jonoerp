@@ -1,0 +1,46 @@
+.grid {
+	height:100%
+}
+
+#gpJson {
+	position: fixed;
+	left: 0px;
+	top: 0px;
+	width: 100%;
+	height: 50%; 
+}
+
+#gpMsg {
+    position: fixed;
+	left: 0px;
+	bottom: 0px;
+	width: 100%;
+	height: 50%; 
+}
+
+.dgrid-cell {
+	width: 22px;
+}
+
+.field-logId {
+	width: 50px;
+}
+
+.field-errId {
+	width: 20px;
+}
+
+.field-jsonStr {
+	width: 200px;
+}
+
+.field-msgId {
+	width: 50px;
+}
+
+.field-message {
+	width: 200px;
+}
+
+
+

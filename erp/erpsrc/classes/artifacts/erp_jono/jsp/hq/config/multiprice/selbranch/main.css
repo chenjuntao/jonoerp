@@ -1,0 +1,9 @@
+#categoryTree {
+	position: absolute;
+	left: 0;
+	right: 0;
+	top: 0;
+	bottom: 30px;
+	width: 20%;
+	height: auto; /* override default height: 30em; in dgrid.css */
+}

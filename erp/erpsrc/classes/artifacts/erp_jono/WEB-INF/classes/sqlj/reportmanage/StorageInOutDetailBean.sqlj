@@ -1,0 +1,333 @@
+package logic.reportmanage;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import java.util.Map;
+import java.util.HashMap;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import sqlj.runtime.ref.DefaultContext;
+
+import com.tanry.business.form.FormConstant;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.TextUtil;
+import com.tanry.framework.acl.NoPrivilegeException;
+
+public class StorageInOutDetailBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(StorageInOutDetailBean.class);
+	
+	#sql private iterator HeaderIter(
+			String branch_id,
+			String branch_name,
+			String storage_id,
+			String storage_name, 
+			String item_dimension,
+			Date business_date, 
+			Date operation_time, 
+			String item_id,
+			String item_name, 
+			Double item_unit_price,
+			Double orgi_count,
+			Double item_count_in,
+			Double itemCountInMoney,
+			Double item_count_out, 
+			Double itemCountOutMoney, 
+			Double result_count, 
+			Double resultCountMoney, 
+			Double orgiCountMoney, 
+			String form_id,
+			String reason,
+			String reason_text
+		);
+	
+	#sql private iterator SumIter(
+			Double item_count_in,
+			Double itemCountInMoney,
+			Double itemCountOutMoney,
+			Double item_count_out);
+	
+	public Map getColmunType(){
+		Map map  = new HashMap();
+		map.put("branch_id", "String");
+		map.put("branch_name", "String");
+		map.put("storage_id", "String");
+		map.put("storage_name", "String");
+		map.put("business_date", "Date");
+		map.put("operation_time", "Date");
+		map.put("item_id", "String");
+		map.put("item_name", "String");
+		map.put("item_unit_price", "Number");
+		map.put("orgi_count", "Number");
+		map.put("item_count_in", "Number");
+		map.put("item_count_out", "Number");
+		map.put("result_count", "Number");
+		map.put("form_id", "String");
+		map.put("reason", "String");
+		map.put("reason_text", "String");
+		
+		return map;
+	}
+	
+	public Map getColmunPrefix(){
+		Map map  = new HashMap();
+		map.put("branch_id", "io");
+		map.put("branch_name", "b");
+		map.put("storage_id", "io");
+		map.put("storage_name", "bs");
+		map.put("business_date", "io");
+		map.put("operation_time", "io");
+		map.put("item_id", "io");
+		map.put("item_name", "m");
+		map.put("item_unit_price", "io");
+		map.put("orgi_count", "io");
+		map.put("item_count_in", "io");
+		map.put("item_count_out", "io");
+		map.put("result_count", "io");
+		map.put("form_id", "io");
+		map.put("reason", "io");
+		map.put("reason_text", "io");
+		return map;
+	}
+	
+	public Integer count(String queryStr)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		
+		DefaultContext myCtx = getDefaultContext();
+		Integer total = null;
+		#sql [myCtx] {
+		SELECT
+		    COUNT(*) into: total
+		FROM
+		:{Com_("D_T0_STORAGE_IN_OUT")} io
+		LEFT JOIN
+		:{Com_("D_T2_BRANCH_STORAGE")} bs
+		ON
+		    io.STORAGE_ID = bs.STORAGE_ID
+		LEFT JOIN
+		:{Com_("D_T2_BRANCH")} b
+		ON
+		    io.BRANCH_ID = b.BRANCH_ID
+		LEFT JOIN
+		:{Com_("D_T2_ITEM_META")} m
+		ON
+		    io.ITEM_ID = m.ITEM_ID
+		WHERE
+		    1=1    :{queryStr :: ''}
+		};
+		closeDefaultContext(myCtx);
+		
+		total = total == null?0:total;
+		return total;
+	}
+	
+	
+	public List<Map> query(int startRow, int endRow,String queryStr,String sortStr)  
+			throws NoPrivilegeException,SQLException,NoConnection {
+		
+		DefaultContext myCtx = getDefaultContext();
+		HeaderIter headerIter = null;
+		#sql [myCtx] headerIter = {
+			SELECT
+			    *
+			    FROM
+			        (
+			            SELECT
+			                t.*,
+			                ROWNUM rowNumber
+			            FROM 
+			                (
+		                		SELECT
+		                			io.BRANCH_ID,
+		                		    io.STORAGE_ID,
+		                		    io.BUSINESS_DATE,
+		                		    io.OPERATION_TIME,
+		                		    io.ITEM_ID,
+		                		    io.ITEM_UNIT_PRICE,
+		                		    nvl(round(io.ORGI_COUNT,4),0) ORGI_COUNT,
+                		    		nvl(round(io.ORGI_COUNT * p.ITEM_PRICE,4),0) orgiCountMoney,
+        		    				nvl(round(io.ITEM_COUNT_IN,4),0) ITEM_COUNT_IN,
+		    						nvl(round(io.ITEM_COUNT_OUT,4),0) ITEM_COUNT_OUT,
+    								nvl(round(io.RESULT_COUNT,4),0) RESULT_COUNT,
+		                		    nvl(round(io.RESULT_COUNT * io.ITEM_UNIT_PRICE,4),0) resultCountMoney,
+		                		    io.FORM_ID,
+		                		    io.REASON,
+		                		    CASE
+			                        WHEN io.REASON = 'YLBS'
+			                        THEN '原料报损'
+			                        WHEN io.REASON = 'CGTH'
+			                        THEN '采购退货'
+			                        WHEN io.REASON = 'PSTH'
+			                        THEN '配送退货'
+			                        WHEN io.REASON = 'PSFSH'
+			                        THEN '配送反审核'
+			                        WHEN io.REASON = 'PSRK'
+			                        THEN '配送入库'
+			                        WHEN io.REASON = 'CGRK'
+			                        THEN '采购入库'
+			                        WHEN io.REASON = 'PSCK'
+			                        THEN '配送出库'
+			                        WHEN io.REASON = 'JSRK'
+			                        THEN '拒收入库'
+			                        WHEN io.REASON = 'PD'
+			                        THEN '盘点'
+			                        WHEN io.REASON = 'CPBS'
+			                        THEN '出品报损'
+			                        WHEN io.REASON = 'SCLL'
+			                        THEN '生产领料'
+			                        WHEN io.REASON = 'SCCL'
+			                        THEN '生产超领'
+			                        WHEN io.REASON = 'SCTL'
+			                        THEN '生产退料'
+			                        WHEN io.REASON = 'FGLL'
+			                        THEN '非工单领料'
+			                        WHEN io.REASON = 'DB'
+			                        THEN '调拨'
+			                        WHEN io.REASON = 'LLKU'
+			                        THEN '销售扣仓'
+			                        WHEN io.REASON = 'CPRK'
+			                        THEN '产品入库'
+			                        WHEN io.REASON = 'CPCK'
+			                        THEN '产品出库'
+			                        WHEN io.REASON = 'YKCK'
+			                        THEN '越库出库'
+			                        WHEN io.REASON = 'SSRK'
+			                        THEN '自产入库'
+			                        WHEN io.REASON = 'SSHL'
+			                        THEN '自产耗料'
+			                        END REASON_TEXT,
+			                	    b.BRANCH_NAME ,
+			                	    STORAGE_NAME,
+			                	    m.ITEM_NAME,
+			                	    m.item_dimension,
+			                	    nvl(round(item_count_in*item_unit_price,4),0) itemCountInMoney,
+			                	    nvl(round(item_count_out*item_unit_price,4),0) itemCountOutMoney
+			                	FROM
+			                	:{Com_("D_T0_STORAGE_IN_OUT")} io
+			                	LEFT JOIN
+			                	:{Com_("D_T2_BRANCH_STORAGE")} bs
+			                	ON
+			                	    io.STORAGE_ID = bs.STORAGE_ID
+			                	LEFT JOIN
+			                	:{Com_("D_T2_BRANCH")} b
+			                	ON
+			                	    io.BRANCH_ID = b.BRANCH_ID
+			                	LEFT JOIN
+			                	:{Com_("D_T2_ITEM_META")} m
+			                	ON
+			                	    io.ITEM_ID = m.ITEM_ID
+                	    		LEFT JOIN
+                	    		:{Com_("D_T2_ITEM_PRICE")} p
+	                	    	ON
+	                	    	    m.ITEM_ID = p.item_id
+	                	    	AND p.PRICE_TYPE = 'BENCHMARK'
+	                	    	AND p.IS_CURRENT = 1
+			                	WHERE
+			                    	1 = 1   :{queryStr :: ''} 
+		                		ORDER BY
+				                    io.OPERATION_TIME,MY_TIMESTAMP
+			            		) t
+			            WHERE
+			                ROWNUM < :endRow)
+			    WHERE
+			        rowNumber >= :startRow};
+		List<Map> headerLst = processIter(headerIter);
+		headerIter.close();
+		closeDefaultContext(myCtx);
+		return headerLst;
+	}
+	
+	private Map processSumIter(SumIter sumIter) 
+			throws SQLException {
+		Map sumMap = new HashMap();
+		
+		while(sumIter.next()) {
+			sumMap.put("item_count_in", sumIter.item_count_in());
+			sumMap.put("item_count_out", sumIter.item_count_out());
+			sumMap.put("itemCountInMoney", sumIter.itemCountInMoney());
+			sumMap.put("itemCountOutMoney", sumIter.itemCountOutMoney());
+		}
+			
+		return sumMap;
+	}
+	
+	public Map sum( String queryStr) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		
+		DefaultContext myCtx = getDefaultContext();
+		
+		SumIter sumIter = null;
+		
+		#sql [myCtx] sumIter = {
+        		SELECT
+        		   round(SUM(nvl(io.item_count_in,0)),4) item_count_in,
+        		   round(SUM(nvl(io.item_count_in*item_unit_price,0)),4) itemCountInMoney,
+        		   round(SUM(nvl(io.item_count_out*item_unit_price,0)),4) itemCountOutMoney,
+        		   round(SUM(nvl(io.item_count_out,0)),4)     item_count_out
+            	FROM
+            	:{Com_("D_T0_STORAGE_IN_OUT")} io
+            	LEFT JOIN
+            	:{Com_("D_T2_BRANCH_STORAGE")} bs
+            	ON
+            	    io.STORAGE_ID = bs.STORAGE_ID
+            	LEFT JOIN
+            	:{Com_("D_T2_BRANCH")} b
+            	ON
+            	    io.BRANCH_ID = b.BRANCH_ID
+            	LEFT JOIN
+            	:{Com_("D_T2_ITEM_META")} m
+            	ON
+            	    io.ITEM_ID = m.ITEM_ID
+            	WHERE
+                	1 = 1
+                    :{queryStr :: ''} 
+		};
+		
+		closeDefaultContext(myCtx);
+		
+		Map sumMap = processSumIter(sumIter);
+		sumIter.close();
+		
+		return sumMap;
+	}
+
+	private List<Map> processIter(HeaderIter headerIter) 
+			throws SQLException {
+		List<Map> headerLst = new ArrayList<Map>();
+		
+		while(headerIter.next()) {
+			Map header = new HashMap();
+			
+			header.put("branch_id", headerIter.branch_id());
+			header.put("branch_name", headerIter.branch_name());
+			header.put("storage_id", headerIter.storage_id());
+			header.put("storage_name", headerIter.storage_name());
+			header.put("business_date", headerIter.business_date());
+			header.put("operation_time", headerIter.operation_time());
+			header.put("item_id", headerIter.item_id());
+			header.put("item_name", headerIter.item_name());
+			header.put("item_unit_price", headerIter.item_unit_price());
+			header.put("orgi_count", headerIter.orgi_count());
+			header.put("item_count_in", headerIter.item_count_in());
+			header.put("item_count_out", headerIter.item_count_out());
+			header.put("result_count", headerIter.result_count());
+			header.put("resultCountMoney", headerIter.resultCountMoney());
+			header.put("form_id", headerIter.form_id());
+			header.put("reason", headerIter.reason());
+			header.put("reason_text", headerIter.reason_text());
+			header.put("itemCountInMoney", headerIter.itemCountInMoney());
+			header.put("itemCountOutMoney", headerIter.itemCountOutMoney());
+			header.put("orgiCountMoney", headerIter.orgiCountMoney()); 
+			header.put("item_dimension", headerIter.item_dimension());
+			headerLst.add(header);
+		}
+		return headerLst;
+	}
+}

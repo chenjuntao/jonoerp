@@ -1,0 +1,397 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on Aug 27, 2014 by liyzh
+ * Last edited on Aug 27, 2014 by liyzh
+ * 
+ * 说明： 原材料/半成品/成品价格表
+ */
+package logic.store;
+
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import pojo.store.ItemPrice;
+import sqlj.runtime.ref.DefaultContext;
+
+import com.tanry.framework.acl.NoPrivilegeException;
+import com.tanry.framework.util.TextUtil;
+import com.tanry.framework.util.constant.ItemType;
+
+public class ItemPriceBean extends ConnectionPool {
+	
+	public static Logger log = Logger.getLogger("ItemPriceBean");
+	
+	/**
+	 *  companyId由调用者通过参数指定,by cjt
+	 */
+	public int saveEntity(ItemPrice price, String comId) throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getComContext(comId);
+		return saveEntityImp(price, myCtx);
+	}
+	
+	/**
+	 *  companyId默认通过session访问,by cjt
+	 */
+	public int saveEntity(ItemPrice price) throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		return saveEntityImp(price, myCtx);
+	}
+	
+	private int saveEntityImp(ItemPrice price, DefaultContext myCtx) throws NoPrivilegeException, SQLException, NoConnection {
+		int result = 0;//如果是插入，则返回1；如果是更新，如果返回2；失败则返回0
+		
+		String itemId = price.getItemId();
+		Double itemPrice = price.getItemPrice();
+		String priceType = price.getPriceType();
+		String supplierId = price.getSupplierId();
+		String effectiveFormId = price.getEffectiveFormId();
+		Integer isCurrent = price.getIsCurrent();
+		
+		if (supplierId == null) {
+			supplierId = "NULL";
+		}
+		
+		if (effectiveFormId == null) {
+			effectiveFormId = "NULL";
+		}
+		
+		if (isCurrent == null) {
+			isCurrent = 1;
+		}
+		
+		boolean isExist = exist(itemId, priceType, supplierId);
+
+		try{
+			if (!isExist) {
+				#sql [myCtx] {
+					INSERT INTO :{Com_("D_T2_ITEM_PRICE")} 
+						(ITEM_ID, ITEM_PRICE, PRICE_TYPE, SUPPLIER_ID, EFFITIVE_FORM_ID, IS_CURRENT) 
+					VALUES (:itemId, :itemPrice, :priceType, :supplierId, :effectiveFormId, :isCurrent)
+				};
+				result = 1;
+			} else {
+				#sql [myCtx] {
+					UPDATE
+					:{Com_("D_T2_ITEM_PRICE")}
+					SET
+						ITEM_PRICE = :itemPrice,
+					    EFFITIVE_FORM_ID = :effectiveFormId,
+					    IS_CURRENT = :isCurrent
+					    WHERE 
+						ITEM_ID = :itemId 
+					AND PRICE_TYPE = :priceType
+				    AND NVL(SUPPLIER_ID, 'NULL') = :supplierId
+				};
+				result = 2;
+			}
+		}
+		catch(Exception ex){
+			log.error(ex.getMessage());
+		} finally{
+			closeDefaultContext(myCtx);
+		}
+		
+		return result;
+	}
+	
+	#sql private iterator NumIter(int num);
+	public int checkEnabled(String formId)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		NumIter detailIter = null;
+		#sql [myCtx] detailIter = {
+			SELECT
+			    count(*) num
+			FROM
+				:{Com_("D_T1_PRICE_ADJUST_DETAIL")} d
+			LEFT JOIN 
+				:{Com_("D_T2_ITEM_META")} M
+			ON
+				M.ITEM_ID = D.ITEM_ID
+			WHERE
+			    d.FORM_ID = :formId
+			AND
+				M.enabled != 1
+		};
+		int count = 0;
+		while (detailIter.next()){
+			count = detailIter.num();
+		}
+		detailIter.close();
+		closeDefaultContext(myCtx);
+		return count;
+	}
+	
+	public int deleteEntity(String itemId)
+			throws NoPrivilegeException, SQLException, NoConnection {
+			DefaultContext myCtx = getDefaultContext();
+
+			#sql [myCtx] {
+				DELETE
+				FROM
+				:{Com_("D_T2_ITEM_PRICE")}
+				WHERE
+					ITEM_ID = :itemId
+			};
+			closeDefaultContext(myCtx);
+			
+			return 1;
+		}
+	
+	//根据价格组删除物料
+	public int deletePriceGroup(String priceGroupId)
+			throws NoPrivilegeException, SQLException, NoConnection {
+			DefaultContext myCtx = getDefaultContext();
+
+			#sql [myCtx] {
+				DELETE
+				FROM
+				:{Com_("D_T2_ITEM_PRICE")}
+				WHERE
+				PRICE_TYPE = :priceGroupId
+			};
+			closeDefaultContext(myCtx);
+			
+			return 1;
+		}
+	
+	/**
+	 * 根据出品ID和价格类别获取相应的价格
+	 */
+	public boolean exist(String itemId, String priceType, String supplierId)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		Integer total = 0;
+		DefaultContext myCtx = null;
+		if (TextUtil.isEmpty(itemId) || TextUtil.isEmpty(supplierId) || TextUtil.isEmpty(priceType)){
+			return false;
+		}
+		try{
+			myCtx = getDefaultContext();
+			
+			#sql [myCtx] {
+				SELECT
+					count(*) into :total 
+				FROM
+				:{Com_("D_T2_ITEM_PRICE")} 
+				WHERE
+					ITEM_ID = :itemId 
+				AND PRICE_TYPE = :priceType
+			    AND NVL(SUPPLIER_ID, 'NULL') = :supplierId
+			};
+		}
+		catch(Exception ex){
+			//log.error(ex.getMessage());
+		} finally{
+			if(myCtx!=null){
+				closeDefaultContext(myCtx);
+			}
+		}
+
+		if (total > 0) {
+			return true;
+		}
+		return false;
+	}
+	
+	/**
+	 * 根据出品ID和价格类别获取相应的价格
+	 */
+	public Double getItemPrice(String itemId, String priceType)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		Double price = null;
+		DefaultContext myCtx = null;
+		if (TextUtil.isEmpty(itemId) || TextUtil.isEmpty(priceType)){
+			return null;
+		}
+		try {
+			myCtx = getDefaultContext();
+			
+			#sql [myCtx] {
+				SELECT 
+					ITEM_PRICE into :price 
+				FROM
+				:{Com_("D_T2_ITEM_PRICE")} 
+				WHERE
+					ITEM_ID = :itemId 
+				AND PRICE_TYPE = :priceType
+			};
+		} catch (SQLException e) {
+			/*price = 0.0;
+			log.error("itemId ： " + itemId + ", priceType : " + priceType);
+			log.error("Error running the query: " + e);
+			String sqlState = e.getSQLState();
+			log.error("SQL state = " + sqlState);
+			e.printStackTrace();*/
+		}finally{
+			if(myCtx!=null){
+				closeDefaultContext(myCtx);
+			}
+		}
+		
+		return price;
+	}
+	
+	#sql private iterator PriceIter(String item_id, Double item_price);
+	
+	/**
+	 * 调用eg: 初始化价格组的明细数据
+	 */
+	public List<ItemPrice> query(String priceType) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		PriceIter priceIter = null;
+		
+		#sql [myCtx] priceIter = {
+			SELECT
+			    *
+			FROM
+			:{Com_("D_T2_ITEM_PRICE")} p
+			WHERE
+				PRICE_TYPE = :priceType
+		};
+		List<ItemPrice> priceLst = new ArrayList<ItemPrice>();
+		while(priceIter.next()) {
+			ItemPrice price = new ItemPrice();
+			price.setItemId(priceIter.item_id());
+			price.setItemPrice(priceIter.item_price());
+			priceLst.add(price);
+		}
+		priceIter.close();
+		closeDefaultContext(myCtx);
+		return priceLst;
+	}
+
+	#sql private iterator ItemIter(String item_id, String item_name, String query_code, String category_id, String item_dimension, 
+			String item_specification,Double item_price,Double cost_price);
+	
+	/**
+	 * 调用eg: 设置供应商的供货价
+	 * 查询供应商所有可能关联的原料信息（调价记录后，供应商资格设置后），同时去重，价格为空时设置为零
+	 */
+	public List<Map> queryBySupplier(String supplierId) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		ItemIter itemIter = null;
+		#sql [myCtx] itemIter = {
+			SELECT
+			    m.ITEM_ID,
+			    m.ITEM_NAME,
+			    m.QUERY_CODE,
+			    m.CATEGORY_ID,
+			    m.ITEM_DIMENSION,
+			    m.ITEM_SPECIFICATION,
+			    i.ITEM_PRICE,
+			    p2.ITEM_PRICE cost_price
+			FROM
+			    (
+			        SELECT
+			            ITEM_ID,
+			            SUM(ITEM_PRICE) AS ITEM_PRICE
+			        FROM
+			            (
+			                SELECT
+			                    sbi.ITEM_ID,
+			                    0 AS ITEM_PRICE
+			                FROM
+			                    :{Com_("D_T2_SUPPLIER_BRANCH_ITEM")} sbi
+			                WHERE
+			                    sbi.SUPPLIER_ID = :supplierId
+			                GROUP BY
+			                    sbi.ITEM_ID
+			                UNION ALL
+			                SELECT
+			                    p.ITEM_ID,
+			                    p.ITEM_PRICE
+			                FROM
+			                    :{Com_("D_T2_ITEM_PRICE")} p
+			                WHERE
+			                    p.PRICE_TYPE = 'SUPPLIER'
+			                AND p.SUPPLIER_ID = :supplierId )
+			        GROUP BY
+			            ITEM_ID) i
+			INNER JOIN
+			    :{Com_("D_T2_ITEM_META")} m
+			ON
+			    m.ITEM_ID = i.ITEM_ID
+			LEFT JOIN
+			    :{Com_("D_T2_ITEM_PRICE")} p2
+			ON
+			    i.item_id = p2.item_id
+			AND p2.PRICE_TYPE = 'PURCHASE'
+			AND p2.IS_CURRENT = 1
+			ORDER BY
+			    m.ITEM_ID};
+		List<Map> itemLst = new ArrayList<Map>();
+		while(itemIter.next()) {
+			Map<String, Object> item = new HashMap<String, Object>();
+			item.put("itemId", itemIter.item_id());
+			item.put("itemName", itemIter.item_name());
+			item.put("queryCode", itemIter.query_code());
+			item.put("categoryId", itemIter.category_id());
+			item.put("itemDimension", itemIter.item_dimension());
+			item.put("itemSpecification", itemIter.item_specification());
+			item.put("itemPrice", itemIter.item_price());
+			item.put("costPrice", itemIter.cost_price());
+			itemLst.add(item);
+		}
+		itemIter.close();
+		closeDefaultContext(myCtx);
+		return itemLst;
+	}
+	
+	//出品售卖价推送到前台（只对售卖价有效），by cjt
+	public void PushSalePrice(String itemId, String priceType, Double price)
+	throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		if(existTableCTFOODPRICE(myCtx)){
+			//先删除旧的售卖价信息
+			#sql [myCtx] {
+				DELETE
+				FROM
+					:{Com_("C_T_FOOD_PRICE")}
+				WHERE
+					ITEM_ID = :itemId
+			};
+			//再添加新的售卖价信息
+			//属于该售卖价分组的每个门店都插入一条数据
+			#sql [myCtx] {
+				INSERT INTO :{Com_("C_T_FOOD_PRICE")}
+					(BRANCH_ID ,ITEM_ID, ITEM_PRICE) 
+				(
+					SELECT BRANCH_ID, :itemId, :price
+					FROM :{Com_("D_T2_PRICE_GROUP_BRANCH")}
+					WHERE PRICE_GROUP_ID = :priceType
+				)
+			};
+
+			closeDefaultContext(myCtx);
+		}
+	}
+	
+	//判断是否存在用于推送出品价格的表
+	public boolean existTableCTFOODPRICE (DefaultContext myCtx)
+			throws NoPrivilegeException, SQLException, NoConnection {
+		int count = 0;
+		String dbName = this.getCompanyId().toUpperCase();
+		#sql [myCtx]{
+			select count(*) into :count
+			from dba_tables 
+			where owner = :dbName
+			and TABLE_NAME = 'C_T_FOOD_PRICE'
+		};
+		return count > 0;
+	}
+}

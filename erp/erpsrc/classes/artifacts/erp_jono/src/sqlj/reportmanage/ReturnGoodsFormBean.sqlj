@@ -1,0 +1,229 @@
+package logic.reportmanage;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import sqlj.runtime.ref.DefaultContext;
+import com.tanry.business.form.FormConstant;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.TextUtil;
+import com.tanry.framework.util.constant.BillStatus;
+import com.tanry.framework.acl.NoPrivilegeException;
+
+//餐厅采购退货 物流中心采购
+public class ReturnGoodsFormBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(ReturnGoodsFormBean.class);
+	
+	#sql private iterator HeaderIter(
+			String form_id, 
+			String form_ref_id, 
+			String input_department, 
+			String storage, 
+			String returner,
+			Date input_time,
+			Date return_time,
+			String form_note,
+			Double all_pay_amt,
+			String max_pay_item,
+			String status
+		);
+	
+	#sql private iterator SumIter(
+			Double all_pay_amt);
+	
+	public Map getColmunType(){
+		Map map  = new HashMap();
+		map.put("form_id", "String");
+		map.put("form_ref_id", "String");
+		map.put("input_department", "String");
+		map.put("storage", "String");
+		map.put("returner", "String");
+		map.put("input_time", "Date"); 
+		map.put("return_time", "Date"); 
+		map.put("form_note", "String"); 
+		map.put("all_pay_amt", "Number");
+		map.put("max_pay_item", "String");
+		map.put("status", "String");
+		
+		return map;
+	}
+	
+	public Map getColmunPrefix(){
+		Map map  = new HashMap();
+		map.put("form_id", "h");
+		map.put("form_ref_id", "h");
+		map.put("input_department", "i");
+		map.put("storage", "i");
+		map.put("returner", "h");
+		map.put("input_time", "i"); 
+		map.put("return_time", "h"); 
+		map.put("form_note", "h"); 
+		map.put("all_pay_amt", "h");
+		map.put("max_pay_item", "h");
+		map.put("status", "s");
+		return map;
+	}
+	
+	public int count(String queryStr, String sortStr)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		
+		DefaultContext myCtx = getDefaultContext();
+		int total = 0;
+		#sql [myCtx] {
+		SELECT
+			count(*) into :total
+    	FROM
+    	:{Com_("D_T1_RETURN_GOODS_HEADER")} h
+    	JOIN
+    	:{Com_("D_T1_INPUT_HEADER")} i
+    	ON
+    	    h.FORM_REF_ID= i.FORM_ID
+    	LEFT JOIN
+    	:{Com_("D_T2_BRANCH")} b
+    	ON
+    	    i.INPUT_DEPARTMENT_ID = b.BRANCH_ID
+    	JOIN
+    	:{Com_("D_T0_FORM_STATUS")} s
+    	ON
+    	    h.FORM_ID = s.FORM_ID
+    	AND s.IS_CURRENT = 1
+    	WHERE
+    	 	1 = 1  :{queryStr :: ''}};
+		closeDefaultContext(myCtx);
+		return total;
+	}
+	
+	
+	public List<Map> query(int startRow, int endRow,String queryStr,  String sortStr)  
+			throws NoPrivilegeException,SQLException,NoConnection {
+		
+		DefaultContext myCtx = getDefaultContext();
+		HeaderIter headerIter = null;
+		#sql [myCtx] headerIter = {
+		SELECT
+			    *
+			    FROM
+			        (
+			            SELECT
+			                t.*,
+			                ROWNUM rowNumber
+			            FROM
+			                (SELECT
+			                	    h.FORM_ID,
+			                	    h.FORM_REF_ID,
+			                	    i.INPUT_DEPARTMENT,
+			                	    i.STORAGE,
+			                	    i.INPUT_TIME,
+			                	    h.RETURNER,
+			                	    h.RETURN_TIME,
+			                	    h.FORM_NOTE,
+			                	    nvl(h.ALL_PAY_AMT,0) ALL_PAY_AMT,
+			                	    h.MAX_PAY_ITEM,
+			                	    s.STATUS
+			                	FROM
+			                	:{Com_("D_T1_RETURN_GOODS_HEADER")} h
+			                	JOIN
+			                	:{Com_("D_T1_INPUT_HEADER")} i
+			                	ON
+			                	    h.FORM_REF_ID= i.FORM_ID
+			                	LEFT JOIN
+			                	:{Com_("D_T2_BRANCH")} b
+			                	ON
+			                	    i.INPUT_DEPARTMENT_ID = b.BRANCH_ID
+			                	JOIN
+			                	:{Com_("D_T0_FORM_STATUS")} s
+			                	ON
+			                	    h.FORM_ID = s.FORM_ID
+			                	AND s.IS_CURRENT = 1
+			                	WHERE
+			                	 	1 = 1  :{queryStr :: ''} :{sortStr :: ''}) t
+			            WHERE
+			                ROWNUM < :endRow)
+			    WHERE
+			        rowNumber >= :startRow};
+		List<Map> headerLst = processIter(headerIter);
+		headerIter.close();
+		closeDefaultContext(myCtx);
+		return headerLst;
+	}
+	
+	public Map sum( String queryStr, String sortStr) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		
+		DefaultContext myCtx = getDefaultContext();
+		
+		SumIter sumIter = null;
+		
+		#sql [myCtx] sumIter = {
+			SELECT
+				sum(h.all_pay_amt) all_pay_amt
+        	FROM
+        	:{Com_("D_T1_RETURN_GOODS_HEADER")} h
+        	JOIN
+        	:{Com_("D_T1_INPUT_HEADER")} i
+        	ON
+        	    h.FORM_REF_ID= i.FORM_ID
+        	LEFT JOIN
+        	:{Com_("D_T2_BRANCH")} b
+        	ON
+        	    i.INPUT_DEPARTMENT_ID = b.BRANCH_ID
+        	JOIN
+        	:{Com_("D_T0_FORM_STATUS")} s
+        	ON
+        	    h.FORM_ID = s.FORM_ID
+        	AND s.IS_CURRENT = 1
+        	WHERE
+        	 	1 = 1  :{queryStr :: ''} };
+		
+		closeDefaultContext(myCtx);
+		
+		Map sumMap = processSumIter(sumIter);
+		sumIter.close();
+		
+		return sumMap;
+	}
+	
+	private Map processSumIter(SumIter sumIter) 
+			throws SQLException {
+		Map sumMap = new HashMap();
+		
+		while(sumIter.next()) {
+			sumMap.put("all_pay_amt", sumIter.all_pay_amt());
+		}
+			
+		return sumMap;
+	}
+	
+	private List<Map> processIter(HeaderIter headerIter) 
+			throws SQLException {
+		List<Map> headerLst = new ArrayList<Map>();
+		
+		while(headerIter.next()) {
+			Map header = new HashMap();
+			header.put("form_id", headerIter.form_id());
+			header.put("form_ref_id", headerIter.form_ref_id());
+			header.put("input_department", headerIter.input_department());
+			header.put("storage", headerIter.storage());
+			header.put("returner", headerIter.returner());
+			header.put("input_time", headerIter.input_time());
+			header.put("return_time", headerIter.return_time());
+			header.put("form_note", headerIter.form_note());
+			header.put("all_pay_amt", headerIter.all_pay_amt());
+			header.put("max_pay_item", headerIter.max_pay_item());
+			header.put("status", headerIter.status());
+			
+			headerLst.add(header);
+		}
+		return headerLst;
+	}
+}

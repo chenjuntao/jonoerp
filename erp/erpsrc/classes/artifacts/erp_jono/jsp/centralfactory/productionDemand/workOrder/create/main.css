@@ -1,0 +1,79 @@
+.dataGrid {
+	width: 100%;
+	height: 168px; /* override default height: 30em; in dgrid.css */
+}
+
+.input-provider {
+	width: 160px !important;
+}
+
+
+.field-itemName,.field-itemCategory {
+	width: 150px ;
+}
+
+th[role="columnheader"] {
+	text-align: center;
+}
+
+.dgrid-cell {
+	/* 	width: 80px; make all the columns 80px wide */
+	vertical-align: middle;
+	width: 90px;
+}
+
+.field-rownumber,.field-formId,.field-formTime,.field-formMaker,.field-itemId,.field-formStatus,.field-operate,
+.field-itemDimension,.field-itemCount,.field-receiveTime,.field-productionStep{
+	text-align: center !important;
+}
+
+.field-rownumber,.field-itemDimension,.field-step,.field-productionCount ,.field-productionStep{
+	width: 40px;
+}
+
+.field-formId,.field-formNote {
+	width: 120px;
+}
+
+.dgrid-column-set-0{
+	width: 250px;
+}
+
+.field-none{
+	width: 150px;
+}
+
+.field-none{
+	width: 180px;
+}
+
+.field-formStatus,.field-operate,.field-itemId{
+	width: 80px;
+}
+
+.field-itemCount,.field-productionMan{
+	width: 60px;
+}
+
+.field-workOrderId {
+	width: 180px;
+}
+
+.field-maxPayItem,.field-formRefId{
+	width: 150px;
+}
+
+.field-allPayAmt {
+	width: 80px;
+	text-align: right;
+}
+
+.field-productionTime,.field-productionName{
+	width: 80px;
+}
+
+
+
+
+
+

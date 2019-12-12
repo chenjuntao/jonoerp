@@ -1,0 +1,165 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on Mon Dec 28 16:12:43 CST 2015 by pw
+ * Last edited on Mon Dec 28 16:12:43 CST 2015 by pw
+ * 
+ * comment: 打印次数表
+ */
+package logic.store;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import pojo.store.PrintTimes;
+import sqlj.runtime.ref.DefaultContext;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.TextUtil;
+import com.tanry.framework.acl.NoPrivilegeException;
+
+public class PrintTimesBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(PrintTimesBean.class);
+	
+	#sql private iterator HeaderIter(String form_id, Integer times);
+	
+	public int saveEntity(PrintTimes header)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		String formId = header.getFormId();
+		Integer times = header.getTimes();
+
+		#sql [myCtx] {
+			INSERT INTO :{Com_("D_T0_PRINT_TIMES")} 
+				(FORM_ID, TIMES) 
+			VALUES (:formId, :times)
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	private int saveEntity(PrintTimes header,DefaultContext myCtx)
+			throws NoPrivilegeException, SQLException, NoConnection {
+			String formId = header.getFormId();
+			Integer times = header.getTimes();
+
+			#sql [myCtx] {
+				INSERT INTO :{Com_("D_T0_PRINT_TIMES")} 
+					(FORM_ID, TIMES) 
+				VALUES (:formId, :times)
+			};
+			
+			return 1;
+		}
+	
+	public int updateEntity(PrintTimes header)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		String formId = header.getFormId();
+		Integer times = queryTimesByFormId(formId,myCtx)+1;
+		header.setTimes(times);
+		
+		deleteEntity(formId,myCtx);
+		saveEntity(header,myCtx);
+		
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+
+	public int deleteEntity(String formId)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		#sql [myCtx] {
+			DELETE
+			FROM
+			:{Com_("D_T0_PRINT_TIMES")}
+			WHERE
+				FORM_ID = :formId
+		};
+		
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	private int deleteEntity(String formId,DefaultContext myCtx)
+			throws NoPrivilegeException, SQLException, NoConnection {
+			#sql [myCtx] {
+				DELETE
+				FROM
+				:{Com_("D_T0_PRINT_TIMES")}
+				WHERE
+					FORM_ID = :formId
+			};
+			
+			return 1;
+		}
+	
+	public Integer queryTimesByFormId(String formId) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		Integer times = null;
+		
+		#sql [myCtx] {
+			SELECT
+			    h.TIMES into :times
+			FROM
+			:{Com_("D_T0_PRINT_TIMES")} h
+			WHERE
+				h.form_id = :formId
+		};
+		
+		closeDefaultContext(myCtx);
+		
+		times = times == null?0:times;
+		return times;
+	}
+	
+	private Integer queryTimesByFormId(String formId,DefaultContext myCtx) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		Integer times = null;
+		
+		try {
+			#sql [myCtx] {
+				SELECT
+				    h.TIMES into :times
+				FROM
+				:{Com_("D_T0_PRINT_TIMES")} h
+				WHERE
+					h.form_id = :formId
+			};
+		} catch (Exception e) {
+		}
+		
+		times = times == null?0:times;
+		return times;
+	}
+	
+	private List<PrintTimes> processIter(HeaderIter headerIter) 
+			throws SQLException {
+		List<PrintTimes> headerLst = new ArrayList<PrintTimes>();
+		while(headerIter.next()) {
+			PrintTimes header = new PrintTimes();
+			header.setFormId(headerIter.form_id());
+			header.setTimes(headerIter.times());
+			headerLst.add(header);
+		}
+		return headerLst;
+	}
+}

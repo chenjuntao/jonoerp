@@ -1,0 +1,17 @@
+
+-----------------------------------------------------------------
+--以下为与月结有关的表
+-----------------------------------------------------------------
+--存储财务对账时每月的月结记录
+drop table D_T3_MONTHLY_SETTLE_RECORD cascade constraints;
+create table D_T3_MONTHLY_SETTLE_RECORD
+(
+   BRANCH_ID            VARCHAR2(32),  --部门编号（账务对账月结时与部门无关）
+   BRANCH_NAME          VARCHAR2(32),  --部门名称
+   MONTH_DATE        	DATE,          --月结所在的月份（存储当月的关账日期）
+   OPERATOR_ID          VARCHAR2(32),  --月结人员编码
+   OPERATOR_NAME        VARCHAR2(32),  --月结人员名字
+   OPERATING_TIME       DATE,          --实际操作时间
+   SETTLE_STATUS        VARCHAR2(64),  --月结状态（系统记录的信息）
+   SETTLE_NOTE          VARCHAR2(200)  --月结备注信息（人工补充的信息）
+);

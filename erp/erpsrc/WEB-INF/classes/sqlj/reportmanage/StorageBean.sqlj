@@ -1,0 +1,228 @@
+package logic.reportmanage;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import java.util.Map;
+import java.util.HashMap;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import sqlj.runtime.ref.DefaultContext;
+
+import com.tanry.business.form.FormConstant;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.TextUtil;
+import com.tanry.framework.acl.NoPrivilegeException;
+
+public class StorageBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(StorageBean.class);
+	
+    #sql private iterator HeaderIter(
+    		String branchId, 
+    		String branchName, 
+    		String storage_id, 
+    		String storage_name, 
+    		String item_id, 
+    		String item_name, 
+    		String category_id, 
+    		String category_name, 
+    		Double item_count,
+    		String shelf_id, 
+    		Date last_in_time, 
+            Date expired_time);
+	
+	public Map getColmunType(){
+		Map map  = new HashMap();
+		map.put("branchId", "String");
+		map.put("branchName", "String");
+		map.put("storage_id", "String");
+		map.put("storage_name", "String");
+		map.put("item_id", "String");
+		map.put("item_name", "String");
+		map.put("category_id", "String");
+		map.put("category_name", "String");
+		map.put("item_count", "Number");
+		map.put("shelf_id", "String");
+		map.put("last_in_time", "Date");
+		map.put("expired_time", "Date");
+		
+		return map;
+	}
+	
+	public Map getColmunPrefix(){
+		Map map  = new HashMap();
+		map.put("branchId", "b");
+		map.put("branchName", "b");
+		map.put("storage_id", "s");
+		map.put("storage_name", "bs");
+		map.put("item_id", "s");
+		map.put("item_name", "m");
+		map.put("category_id", "c");
+		map.put("category_name", "c");
+		map.put("item_count", "s");
+		map.put("shelf_id", "s");
+		map.put("last_in_time", "s");
+		map.put("expired_time", "s");
+		
+		return map;
+	}
+	
+	
+	public int count(String queryStr)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		
+		DefaultContext myCtx = getDefaultContext();
+		int total = 0;
+		#sql [myCtx] {
+		SELECT
+		    COUNT(*)
+		INTO
+		    :total
+	    FROM
+	    :{Com_("D_T2_STORAGE")} s
+    	LEFT JOIN
+    	:{Com_("D_T2_BRANCH_STORAGE")} bs
+    	ON
+    	    s.STORAGE_ID = bs.STORAGE_ID
+    	LEFT JOIN
+    	:{Com_("D_T2_BRANCH")} b
+    	ON
+    	    b.BRANCH_ID = bs.BRANCH_ID
+    	LEFT JOIN
+    	:{Com_("D_T2_ITEM_META")} m
+    	ON
+    	    s.ITEM_ID = m.ITEM_ID
+    	LEFT JOIN
+    	:{Com_("D_T2_ITEM_CATEGORY")} c
+    	ON
+    	    m.CATEGORY_ID = c.CATEGORY_ID
+		WHERE
+		    1 = 1 :{queryStr :: ''}};
+		closeDefaultContext(myCtx);
+		return total;
+	}
+	
+	
+	public List<Map> query(int startRow, int endRow,String queryStr)  
+			throws NoPrivilegeException,SQLException,NoConnection {
+		
+		DefaultContext myCtx = getDefaultContext();
+		HeaderIter headerIter = null;
+		#sql [myCtx] headerIter = {
+			SELECT
+			    *
+			    FROM
+			        (
+			            SELECT
+			                t.*,
+			                ROWNUM rowNumber
+			            FROM 
+			                (SELECT
+			                	    b.BRANCH_ID,
+			                	    b.BRANCH_NAME,
+			                	    bs.STORAGE_NAME,
+			                	    m.ITEM_NAME,
+			                	    c.CATEGORY_ID,
+			                	    c.CATEGORY_NAME,
+			                	    s. *
+			                	FROM
+			                	:{Com_("D_T2_STORAGE")} s
+			                	LEFT JOIN
+			                	:{Com_("D_T2_BRANCH_STORAGE")} bs
+			                	ON
+			                	    s.STORAGE_ID = bs.STORAGE_ID
+			                	LEFT JOIN
+			                	:{Com_("D_T2_BRANCH")} b
+			                	ON
+			                	    b.BRANCH_ID = bs.BRANCH_ID
+			                	LEFT JOIN
+			                	:{Com_("D_T2_ITEM_META")} m
+			                	ON
+			                	    s.ITEM_ID = m.ITEM_ID
+			                	LEFT JOIN
+			                	:{Com_("D_T2_ITEM_CATEGORY")} c
+			                	ON
+			                	    m.CATEGORY_ID = c.CATEGORY_ID
+			                	WHERE
+			                	    1 = 1 :{queryStr :: ''}) t
+			            WHERE
+			                ROWNUM < :endRow)
+			    WHERE
+			        rowNumber >= :startRow};
+		List<Map> headerLst = processIter(headerIter);
+		headerIter.close();
+		closeDefaultContext(myCtx);
+		return headerLst;
+	}
+	
+	public Map sum( String queryStr) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		
+		Double item_count = 0.0;
+		DefaultContext myCtx = getDefaultContext();
+		
+		#sql [myCtx] {
+		SELECT
+		    SUM(item_count)
+		INTO
+		    :item_count
+	    FROM
+	    :{Com_("D_T2_STORAGE")} s
+    	LEFT JOIN
+    	:{Com_("D_T2_BRANCH_STORAGE")} bs
+    	ON
+    	    s.STORAGE_ID = bs.STORAGE_ID
+    	LEFT JOIN
+    	:{Com_("D_T2_BRANCH")} b
+    	ON
+    	    b.BRANCH_ID = bs.BRANCH_ID
+    	LEFT JOIN
+    	:{Com_("D_T2_ITEM_META")} m
+    	ON
+    	    s.ITEM_ID = m.ITEM_ID
+    	LEFT JOIN
+    	:{Com_("D_T2_ITEM_CATEGORY")} c
+    	ON
+    	    m.CATEGORY_ID = c.CATEGORY_ID
+		WHERE
+		    1 = 1 :{queryStr :: ''}};
+		
+		closeDefaultContext(myCtx);
+		
+		Map sumMap = new HashMap();
+		sumMap.put("item_count", item_count);
+		
+		return sumMap;
+	}
+
+	private List<Map> processIter(HeaderIter headerIter) 
+			throws SQLException {
+		List<Map> headerLst = new ArrayList<Map>();
+		
+		while(headerIter.next()) {
+			Map header = new HashMap();
+			header.put("branchId", headerIter.branchId());
+			header.put("branchName", headerIter.branchName());
+			header.put("storage_id", headerIter.storage_id());
+			header.put("storage_name", headerIter.storage_name());
+			header.put("item_id", headerIter.item_id());
+			header.put("item_name", headerIter.item_name());
+			header.put("category_id", headerIter.category_id());
+			header.put("category_name", headerIter.category_name());
+			header.put("item_count", headerIter.item_count());
+			header.put("shelf_id", headerIter.shelf_id());
+			header.put("last_in_time", headerIter.last_in_time());
+			header.put("expired_time", headerIter.expired_time());
+			
+			headerLst.add(header);
+		}
+		return headerLst;
+	}
+}

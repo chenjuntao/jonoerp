@@ -1,0 +1,118 @@
+//===============================================
+//
+// Copyright (c) 2014
+// Tanry Electronic Technology Co., Ltd.
+// ChangSha, China
+//
+// All Rights Reserved.
+//
+// First created on 2014.6.18 by cjt
+// Last edited on 2014.7.7 by pw
+//
+// Comments:read shop business info list.
+// 说明：查询各个台位的营业信息列表。
+//
+//===============================================
+
+package logic.businessquery;
+
+import sqlj.runtime.*;
+import sqlj.runtime.ref.*;
+import java.sql.*;
+import oracle.sql.*;
+import oracle.sqlj.runtime.*;
+import oracle.jdbc.driver.*;
+import java.util.*;
+import java.text.SimpleDateFormat;
+import java.text.ParseException;
+import logic.pool.ConnectionPool;
+import logic.*;
+import com.tanry.framework.acl.*;
+import pojo.businessquery.TableBill;
+
+public class TableBean extends ConnectionPool
+{
+	private String strDateFormat = "yyyy-MM-dd";//设置日期格式
+	
+	#sql  public static iterator TableIterator(	String cTable_N, 
+												float foodAmt,
+												int billNum,
+												int guestNum);
+
+	#sql  public static iterator ShopNameIterator(String shopName);
+	
+	public TableBean()
+	{
+	}
+	
+	//根据门店编号获取门店名称
+	public String getShopName(String shopC) throws NoPrivilegeException,SQLException,NoConnection{
+		DefaultContext myCtx = getDefaultContext();
+		ShopNameIterator shopNameIterator = null;
+		
+		String shopName = "";
+		
+		if (myCtx != null)		{
+			#sql [myCtx] shopNameIterator = {SELECT cBranch_N shopName 
+											from :{Com_("d_t_food_bill")} 
+											WHERE cBranch_C = :shopC 
+											and ROWNUM = 1};
+			
+			
+			while(shopNameIterator.next())			{
+				shopName = shopNameIterator.shopName();
+			}
+			shopNameIterator.close();
+		}
+		else
+        {
+            throw new NoConnection();
+        }
+		closeDefaultContext(myCtx);
+		return shopName;
+	}
+	
+	public List<TableBill> listTable(String startTime, String endTime, String shopC)
+		throws NoPrivilegeException,SQLException,NoConnection
+	{
+		List<TableBill> tables = new ArrayList<TableBill>();
+		DefaultContext myCtx = getDefaultContext();
+		TableIterator tableIterator = null;
+		if (myCtx != null)
+		{
+			#sql [myCtx] tableIterator = {SELECT DISTINCT
+				    cTable_N,
+				    SUM(nFoodAmt)    foodAmt,
+				    COUNT(cBranch_C) billNum,
+				    SUM(iGuestNum)   guestNum
+				FROM
+				    :{Com_("d_t_food_bill")}
+				WHERE
+				    DBUSINESS >= to_date(:startTime, :strDateFormat)
+				AND DBUSINESS <= to_date(:endTime, :strDateFormat)
+				AND cBranch_C = :shopC 
+				GROUP BY
+					cTable_N
+				ORDER BY
+					cTable_N};
+			
+			while(tableIterator.next())
+			{
+				TableBill table = new TableBill();
+				table.table = tableIterator.cTable_N();
+				table.foodAmt = tableIterator.foodAmt();
+				table.billNum = tableIterator.billNum();
+				table.guestNum = tableIterator.guestNum();
+				
+				tables.add(table);
+			}
+			tableIterator.close();
+		}
+		else
+        {
+            throw new NoConnection();
+        }
+		closeDefaultContext(myCtx);
+		return tables;
+	}
+}

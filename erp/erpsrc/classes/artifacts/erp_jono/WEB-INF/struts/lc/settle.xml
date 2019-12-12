@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE struts PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN"
+    "http://struts.apache.org/dtds/struts-2.0.dtd">
+
+<struts>
+	<package name="lc_monthly_settle" namespace="/lc/settle/month" extends="trust-default">
+		<action name="mainView" class="action.restaurant.DailySettlementAction">
+			<result name="success">/jsp/lc/settle/month/main.jsp</result>
+		</action>
+		
+		<action name="settleView" method="settleView" class="com.tanry.business.module.lc.settle.action.MonthlySettleAction">
+			<result name="success">/jsp/lc/settle/month/settle.jsp</result>
+		</action>
+		
+		<action name="checkBill" method="checkBill" class="action.restaurant.checkstorage.LockStorageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="queryBatch" method="queryBatch" class="action.restaurant.checkstorage.LockStorageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="checkFinish" method="checkFinish" class="action.restaurant.checkstorage.LockStorageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="saveLock" method="saveLock" class="action.restaurant.checkstorage.LockStorageAction">
+			<result type="json" />
+		</action>
+	</package>
+</struts>
+

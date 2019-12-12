@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE struts PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN"
+    "http://struts.apache.org/dtds/struts-2.0.dtd">
+
+<struts>
+   <package name="reportmanage_purchasing_restaurant_collect" namespace="/reportmanage/purchasing/restaurant/collect" extends="trust-default">
+		<action name="mainView" class="action.reportmanage.ReportManageAction">
+			<result name="success">/jsp/restaurant/reportmanage/purchasing/collect/main.jsp</result>
+		</action>
+	</package>
+	
+	<package name="reportmanage_purchasing_restaurant_detail" namespace="/reportmanage/purchasing/restaurant/detail" extends="trust-default">
+		<action name="mainView" class="action.reportmanage.ReportManageAction">
+			<result name="success">/jsp/restaurant/reportmanage/purchasing/detail/main.jsp</result>
+		</action>
+	</package>
+	
+	<package name="reportmanage_purchasing_lc_collect" namespace="/reportmanage/purchasing/lc/collect" extends="trust-default">
+		<action name="mainView" class="action.reportmanage.ReportManageAction">
+			<result name="success">/jsp/lc/reportmanage/purchasing/collect/main.jsp</result>
+			<result name="mobile">/mobile/module/lc/purchasing/collect/main.jsp</result>
+		</action>
+	</package>
+	
+	<package name="reportmanage_purchasing_lc_detail" namespace="/reportmanage/purchasing/lc/detail" extends="trust-default">
+		<action name="mainView" class="action.reportmanage.ReportManageAction">
+			<result name="success">/jsp/lc/reportmanage/purchasing/detail/main.jsp</result>
+			<result name="mobile">/mobile/module/lc/purchasing/detail/main.jsp</result>
+		</action>
+	</package>
+	
+	<package name="reportmanage_purchasing_cf_collect" namespace="/reportmanage/purchasing/cf/collect" extends="trust-default">
+		<action name="mainView" class="action.reportmanage.ReportManageAction">
+			<result name="success">/jsp/centralfactory/reportmanage/purchasing/collect/main.jsp</result>
+			<result name="mobile">/mobile/module/cf/purchasing/collect/main.jsp</result>
+		</action>
+	</package>
+	
+	<package name="reportmanage_purchasing_cf_detail" namespace="/reportmanage/purchasing/cf/detail" extends="trust-default">
+		<action name="mainView" class="action.reportmanage.ReportManageAction">
+			<result name="success">/jsp/centralfactory/reportmanage/purchasing/detail/main.jsp</result>
+			<result name="mobile">/mobile/module/cf/purchasing/detail/main.jsp</result>
+		</action>
+	</package>
+</struts>
+

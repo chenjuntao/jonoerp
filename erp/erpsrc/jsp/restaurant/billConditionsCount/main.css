@@ -1,0 +1,63 @@
+/*
+	Styles for autoheight;
+	note that dgrid.css is imported earlier for these styles to override
+*/
+.dgrid-autoheight {
+	height: auto;
+}
+.dgrid-autoheight .dgrid-scroller {
+	position: relative;
+	overflow-y: hidden;
+}
+.dgrid-autoheight .dgrid-header-scroll {
+	display: none;
+}
+.dgrid-autoheight .dgrid-header {
+	right: 0;
+}
+
+.summary-row {
+	font-weight: bold;
+}
+
+.dgrid {
+	width: 99%;
+}
+
+.dgrid-cell {
+	width: 70px;
+}
+
+.field-name, .dgrid-column-set-0 {
+	width: 155px;
+}
+
+#gridColumnSet {
+	height: 13em;
+}
+
+.field-rownumber,.field-unit{
+   width: 40px;
+}
+
+.field-price{
+   width: 70px;
+}
+
+.field-billC ,.field-shopN,.field-businessDate,.field-disWhy,.field-foodName,.field-presentWhy,.field-foodN{
+   width: 110px;
+}
+
+.field-returnWhy,.field-returnTime{
+   width: 120px;
+}
+
+.field-returnTime{
+   width: 140px;
+}
+
+.field-foodN{
+   width: 160px;
+}
+
+

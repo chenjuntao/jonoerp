@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"   
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">  
+
+<mapper namespace="mapper.businessquery.TableMapper"> 
+
+<resultMap id="TableResultMap" type="pojo.businessquery.TableBill">
+		<id property="table" column="tableN" />
+		<result property="foodAmt" column="foodAmt" />
+		<result property="billNum" column="billNum" />
+		<result property="guestNum" column="guestNum" />
+</resultMap> 
+
+<select id="getShopName" resultType="String">
+
+select
+	tt.shopName
+from
+(
+select
+	@rownum:=@rownum+1 x,
+	t.shopName
+from(
+	SELECT
+		cBranch_N shopName,
+		@rownum:=0
+	from 
+		${com}.d_t_food_bill
+	WHERE 
+		cBranch_C = #{shopC}
+) t
+)tt
+where
+tt.x = 1
+</select>
+
+<select id="listTable" resultMap="TableResultMap">
+	SELECT DISTINCT
+		cTable_N tableN,
+		SUM(nFoodAmt)    foodAmt,
+		COUNT(cBranch_C) billNum,
+		SUM(iGuestNum)   guestNum
+	FROM
+		${com}.d_t_food_bill
+	WHERE
+		DBUSINESS &gt;= #{startTime}
+	AND DBUSINESS &lt;= #{endTime}
+<if test="shopC!=null">
+	AND cBranch_C = #{shopC}
+</if>
+	GROUP BY
+		cTable_N
+	ORDER BY
+		cTable_N
+</select>
+</mapper>

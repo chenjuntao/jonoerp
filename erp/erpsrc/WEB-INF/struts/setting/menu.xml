@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE struts PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN"
+    "http://struts.apache.org/dtds/struts-2.0.dtd">
+
+<struts>
+	<package name="setting_menu" namespace="/setting/menu" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.setting.user.action.MenuManageAction">
+			<result name="success">/jsp/setting/menu/main.jsp</result>
+		</action>
+		
+		<action name="moveView" method="editView" class="com.tanry.business.module.setting.user.action.MenuManageAction">
+			<result name="success">/jsp/setting/menu/move.jsp</result>
+		</action>
+		
+		<action name="addView" method="editView" class="com.tanry.business.module.setting.user.action.MenuManageAction">
+			<result name="success">/jsp/setting/menu/add.jsp</result>
+		</action>
+		
+		<action name="checkMenuId" method="checkMenuId" class="com.tanry.business.module.setting.user.action.MenuManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="queryAllMenu" method="queryAllMenu" class="com.tanry.business.module.setting.user.action.MenuManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="saveMenu" method="saveMenu" class="com.tanry.business.module.setting.user.action.MenuManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="moveMenu" method="moveMenu" class="com.tanry.business.module.setting.user.action.MenuManageAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="setting_menu_query" namespace="/setting/menu/query" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.setting.user.action.MenuManageAction">
+			<result name="success">/jsp/setting/menu/query/main.jsp</result>
+		</action>
+		
+		<action name="doQuery" method="queryMenu" class="com.tanry.business.module.setting.user.action.MenuManageAction">
+			<result type="json" />
+		</action>
+	</package>
+</struts>
+

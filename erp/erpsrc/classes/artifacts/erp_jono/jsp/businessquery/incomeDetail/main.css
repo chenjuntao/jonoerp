@@ -1,0 +1,39 @@
+/*
+	Styles for autoheight;
+	note that dgrid.css is imported earlier for these styles to override
+*/
+.dgrid-autoheight {
+	height: auto;
+}
+.dgrid-autoheight .dgrid-scroller {
+	position: relative;
+	overflow-y: hidden;
+}
+.dgrid-autoheight .dgrid-header-scroll {
+	display: none;
+}
+.dgrid-autoheight .dgrid-header {
+	right: 0;
+}
+
+.dgrid {
+	width: 99%;
+}
+
+.dgrid-cell {
+	width: 80px;
+}
+
+.field-rownumber{
+   width: 40px;
+}
+.field-placehodler{
+   width: 400px;
+}
+
+
+.field-returnWhy,.field-presentWhy,.field-disWhy{
+   width: 200px;
+}
+
+

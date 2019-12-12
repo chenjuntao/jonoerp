@@ -1,0 +1,230 @@
+/**
+ *read food list
+ *2014.6.20
+ *by cjt
+ */
+
+package logic.businessquery;
+
+import sqlj.runtime.ref.*;
+import java.sql.*;
+import java.util.*;
+import logic.pool.ConnectionPool;
+import logic.*;
+import com.tanry.framework.acl.*;
+import pojo.businessquery.FoodBill;
+
+public class FoodBean extends ConnectionPool
+{
+	#sql  public static iterator FoodIterator(
+			String cFood_C, String cFood_N, 
+			String cLitCls_C,String cLitCls_N,
+			String sUnit, Double nPrc, Double nQty, 
+			Double nAmt, Double nDisAmt, 
+			String eSuitFlag,String cSuitBill,String cSuitName,
+			String eRetSendFlag, String sRetSendRemark, String cPresentBackMan);
+	
+	//将ASCII码为0（即null）的字符串转换为空字符串，前者在IE中显示会出现问题。
+	private String ConvertAsciii0ToSpace(String str)
+	{
+		if (str != null)
+		 {	
+			if (str.length() == 1) 
+			{
+				int asciiValue = str.charAt(0);
+				if (asciiValue == 0) 
+				{
+					return "";
+				}
+			}
+		}
+		return str;
+	}
+
+	public List<FoodBill> listFood(String billC)
+		throws NoPrivilegeException,SQLException,NoConnection
+	{
+		List<FoodBill> foodList = new ArrayList<FoodBill>();
+		DefaultContext myCtx = getDefaultContext();
+		FoodIterator foodIterator = null;
+		if (myCtx != null)
+		{
+			//遍历查找指定单据的所有出品信息
+			#sql [myCtx] foodIterator = {select cFood_C, cFood_N, cLitCls_C, cLitCls_N, sUnit, nPrc, nQty, nAmt, 
+										nDisAmt, eSuitFlag, cSuitBill, cSuitName, eRetSendFlag, sRetSendRemark, cPresentBackMan
+										from :{Com_("d_t_food_bills")} where cBill_C = :billC};
+			while(foodIterator.next())
+			{
+				FoodBill food = new FoodBill();	
+				food.foodC = foodIterator.cFood_C();
+				food.foodN = foodIterator.cFood_N();
+				food.litClsC = foodIterator.cLitCls_C();
+				food.litClsN = foodIterator.cLitCls_N();
+				food.unit = foodIterator.sUnit();
+				food.price = foodIterator.nPrc();
+				food.quantity = foodIterator.nQty();
+				food.amt = foodIterator.nAmt();
+				food.disAmt = foodIterator.nDisAmt();
+				food.suitFlag = foodIterator.eSuitFlag();
+				food.suitBill = foodIterator.cSuitBill();
+				food.suitName = foodIterator.cSuitName();
+				food.retSendFlag = foodIterator.eRetSendFlag();
+				food.retSendRemark = ConvertAsciii0ToSpace(foodIterator.sRetSendRemark());
+				food.presentBackMan = foodIterator.cPresentBackMan();
+				foodList.add(food);
+			}
+			foodIterator.close();
+		}
+		else
+        {
+            throw new NoConnection();
+        }
+		closeDefaultContext(myCtx);
+		return foodList;
+	}
+	
+	//出品点击率查询--------------------------------------------------------------
+	//by yxg
+	#sql public static iterator SumIter(
+			Double sum
+			);
+	
+	#sql public static iterator CtrIter(
+			String CLITCLS_N,
+			String CFOOD_C,
+			String CFOOD_N,
+			Double itemCount,
+			Double tableCount,
+			Double ctr,
+			Double gdp,
+			Double salePrice,
+			Double stockPrice,
+			Double benchPrice,
+			Double stockGdp,
+			Double benchGdp
+			);
+	
+	//出品点击率查询，by yxg
+	public List<Map> ctrQuery(String startDate,String endDate)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		CtrIter iter = null;
+		SumIter siter = null;
+		#sql [myCtx] siter = {
+			select
+				count(*) sum
+			from
+				:{Com_("D_T_FOOD_BILL")} b
+			where 
+				(b.DTBILLTIME >= to_date(:startDate,'yyyy-mm-dd') or :startDate is null)
+			and
+				(b.DTBILLTIME <= to_date(:endDate,'yyyy-mm-dd') or :endDate is null)
+		};
+		Double sum = 0.0;
+		while(siter.next()) {
+			sum = siter.sum();
+			break;
+		}
+		#sql [myCtx] iter = {
+				with 
+					sun as (
+						select 
+							trim(a.clitcls_c),
+							trim(a.CLITCLS_N) CLITCLS_N,
+							trim(a.CFOOD_C) CFOOD_C,
+							c.item_name cfood_n,
+							sum(trim(a.NQTY)) x 
+						from 
+							:{Com_("D_T_FOOD_BILLS")} A 
+						inner join 
+							:{Com_("d_t_food_bill")} b 
+						on 
+							trim(a.CBILL_C) = trim(b.CBILL_C)
+						inner join
+							:{Com_("D_T2_ITEM_META")} c
+						on
+							trim(a.cfood_c) = c.item_id
+						where 
+							(b.DTBILLTIME >= to_date(:startDate,'yyyy-mm-dd') or :startDate is null)
+						and
+							(b.DTBILLTIME <= to_date(:endDate,'yyyy-mm-dd') or :endDate is null)
+						and 
+							trim(a.clitcls_c) not in ('0501','3036','3033','4041')
+		                and
+		                	c.item_name not like '%测试%'
+		                and
+		                	a.NQTY != 0
+						group by rollup
+							((trim(a.clitcls_c),trim(a.CLITCLS_N)),(trim(a.CFOOD_C),c.item_name))
+						),
+					money as(
+							select 
+								t.THERAPY_ID,sum(round(t.ITEM_GROSS_COUNT*p.item_price,4)) stockPrice,sum(round(t.ITEM_GROSS_COUNT*p2.item_price,4)) benchPrice
+							from D_T2_ITEM_META m 
+							left join d_t2_therapy t
+							on m.ITEM_ID = t.THERAPY_ID
+							left join D_T2_ITEM_PRICE p
+							on t.ITEM_ID = p.ITEM_ID
+							and p.IS_CURRENT = 1
+							and p.PRICE_TYPE = 'BENCHMARK'
+							left join D_T2_ITEM_PRICE p2
+							on t.ITEM_ID = p2.ITEM_ID
+							and p2.IS_CURRENT = 1
+							and p2.PRICE_TYPE = 'PURCHASE'
+							where m.ITEM_TYPE = 'PRODUCT'
+							group by t.THERAPY_ID
+						)
+					select 
+						sun.CLITCLS_N CLITCLS_N,
+						sun.CFOOD_C CFOOD_C,
+						sun.CFOOD_N CFOOD_N,
+						sun.x itemCount,
+						case when cfood_c is not null then :sum end tableCount,
+						case when cfood_c is not null then round(x/:sum,4)*100 end ctr,
+                        case when cfood_c is null 
+                             then round(sun.x/(
+                                  select sum(case when cfood_c is not null then x else 0 end) from sun
+                                  ),4)*100
+                             end   gdp,
+                        p.item_price salePrice,
+                        money.stockPrice,
+                        decode(p.item_price,null,null,0,null,round((p.item_price-money.stockPrice)/p.item_price,4)) stockGdp,
+                        money.benchPrice,
+                        decode(p.item_price,null,null,0,null,round((p.item_price-money.benchPrice)/p.item_price,4)) benchGdp
+					from 
+						sun
+					left join
+						money
+					on sun.CFOOD_C = money.THERAPY_ID
+					left join
+						:{Com_("D_T2_ITEM_PRICE")} p
+					on sun.CFOOD_C = p.item_id
+					and p.price_type = 'SALE'
+					where
+						sun.x != 0
+					order by 
+						1,2
+		};
+		
+		List<Map> nodeLst = new ArrayList<Map>();
+		while(iter.next()) {
+			Map<String, Object> node = new HashMap<String, Object>();
+			node.put("CLITCLS_N", iter.CLITCLS_N());
+			node.put("CFOOD_C", iter.CFOOD_C());
+			node.put("CFOOD_N", iter.CFOOD_N());
+			node.put("itemCount", iter.itemCount());
+			node.put("tableCount", iter.tableCount());
+			node.put("ctr", iter.ctr());
+			node.put("gdp", iter.gdp());
+			node.put("stockPrice", iter.stockPrice());
+			node.put("benchPrice", iter.benchPrice());
+			node.put("stockGdp", iter.stockGdp());
+			node.put("benchGdp", iter.benchGdp());
+			node.put("salePrice", iter.salePrice());
+			nodeLst.add(node);
+		}
+		iter.close();
+		closeDefaultContext(myCtx);
+		return nodeLst;
+	}
+}

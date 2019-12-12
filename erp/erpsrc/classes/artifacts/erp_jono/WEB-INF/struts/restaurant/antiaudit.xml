@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE struts PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN"
+    "http://struts.apache.org/dtds/struts-2.0.dtd">
+
+<struts>
+	<package name="restaurant_antiaudit_create" namespace="/restaurant/antiaudit/create" extends="trust-default">
+		<action name="mainView" class="action.restaurant.antiaudit.CreateBillAction">
+			<result name="success">/jsp/restaurant/antiaudit/create/main.jsp</result>
+		</action>
+		
+		<action name="editView" method="editView" class="action.restaurant.antiaudit.CreateBillAction">
+			<result name="success">/jsp/restaurant/antiaudit/create/edit.jsp</result>
+		</action>
+		
+		<action name="checkView" method="checkView" class="action.restaurant.antiaudit.CreateBillAction">
+			<result name="success">/jsp/restaurant/antiaudit/create/check.jsp</result>
+		</action>
+		
+		<action name="doQuery" method="doQuery" class="action.restaurant.antiaudit.CreateBillAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doSave" method="doSave" class="action.restaurant.antiaudit.CreateBillAction">
+			<interceptor-ref name="defaultStack" />
+			<interceptor-ref name="token" />
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="restaurant_antiaudit_manage" namespace="/restaurant/antiaudit/manage" extends="trust-default">
+		<action name="mainView" class="action.restaurant.antiaudit.BillManageAction">
+			<result name="success">/jsp/restaurant/antiaudit/manage/main.jsp</result>
+		</action>
+		
+		<action name="editView" method="editView" class="action.restaurant.antiaudit.BillManageAction">
+			<result name="success">/jsp/restaurant/antiaudit/manage/edit.jsp</result>
+		</action>
+		
+		<action name="scanView" method="scanView" class="action.restaurant.antiaudit.BillManageAction">
+			<result name="success">/jsp/restaurant/antiaudit/manage/scan.jsp</result>
+		</action>
+		
+		<action name="doQuery" method="doQuery" class="action.restaurant.antiaudit.BillManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="queryDetail" method="queryDetail" class="action.restaurant.antiaudit.BillManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doSave" method="doSave" class="action.restaurant.antiaudit.BillManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doDelete" method="doDelete" class="action.restaurant.antiaudit.BillManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doRevert" method="doRevert" class="action.restaurant.antiaudit.BillManageAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="restaurant_antiaudit_audit" namespace="/restaurant/antiaudit/audit" extends="trust-default">
+		<action name="mainView" class="action.restaurant.antiaudit.BillManageAction">
+			<result name="success">/jsp/restaurant/antiaudit/audit/main.jsp</result>
+		</action>
+		
+		<action name="auditView" method="auditView" class="action.restaurant.antiaudit.BillManageAction">
+			<result name="success">/jsp/restaurant/antiaudit/audit/audit.jsp</result>
+		</action>
+		
+		<action name="doAudit" method="doAudit" class="action.restaurant.antiaudit.BillManageAction">
+			<interceptor-ref name="defaultStack" />
+			<interceptor-ref name="token" />
+			<result type="json" />
+		</action>
+		
+		<action name="doRepeal" method="doRepeal" class="action.restaurant.antiaudit.BillManageAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="restaurant_antiaudit_confirm" namespace="/restaurant/antiaudit/confirm" extends="trust-default">
+		<action name="mainView" class="action.restaurant.antiaudit.BillManageAction">
+			<result name="success">/jsp/restaurant/antiaudit/confirm/main.jsp</result>
+		</action>
+		
+		<action name="confirmView" method="confirmView" class="action.restaurant.antiaudit.BillManageAction">
+			<result name="success">/jsp/restaurant/antiaudit/confirm/confirm.jsp</result>
+		</action>
+		
+		<action name="doConfirm" method="doConfirm" class="action.restaurant.antiaudit.BillManageAction">
+			<result type="json" />
+		</action>
+	</package>
+</struts>
+

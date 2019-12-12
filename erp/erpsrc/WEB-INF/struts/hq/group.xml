@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE struts PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN"
+    "http://struts.apache.org/dtds/struts-2.0.dtd">
+
+<struts>
+	<package name="hq_group" namespace="/hq/group" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.hq.config.group.GroupManageAction">
+			<result name="success">/jsp/hq/config/group/main.jsp</result>
+		</action>
+		
+		<action name="editView" method="editView" class="com.tanry.business.module.hq.config.group.GroupManageAction">
+			<result name="success">/jsp/hq/config/group/edit.jsp</result>
+		</action>
+		
+		<action name="checkGroup" method="checkGroup" class="com.tanry.business.module.hq.config.group.GroupManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doQuery" method="doQuery" class="com.tanry.business.module.hq.config.group.GroupManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doSave" method="doSave" class="com.tanry.business.module.hq.config.group.GroupManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doEnable" method="doEnable" class="com.tanry.business.module.hq.config.group.GroupManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doDelete" method="doDelete" class="com.tanry.business.module.hq.config.group.GroupManageAction">
+			<result type="json" />
+		</action>
+	</package>
+	
+	<package name="hq_delivery_type" namespace="/hq/dtype" extends="trust-default">
+		<action name="mainView" class="com.tanry.business.module.hq.config.group.DeliveryTypeManageAction">
+			<result name="success">/jsp/hq/config/group/dtype/main.jsp</result>
+		</action>
+		
+		<action name="doQuery" method="doQuery" class="com.tanry.business.module.hq.config.group.DeliveryTypeManageAction">
+			<result type="json" />
+		</action>
+		
+		<action name="doSave" method="doSave" class="com.tanry.business.module.hq.config.group.DeliveryTypeManageAction">
+			<result type="json" />
+		</action>
+	</package>
+</struts>
+

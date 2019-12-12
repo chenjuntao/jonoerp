@@ -1,0 +1,206 @@
+ 
+package logic.businessquery;
+
+import sqlj.runtime.*;
+import sqlj.runtime.ref.*;
+import java.sql.*;
+import oracle.sql.*;
+import oracle.sqlj.runtime.*;
+import oracle.jdbc.driver.*;
+import java.util.*;
+import java.text.SimpleDateFormat;
+import java.text.ParseException;
+import logic.pool.ConnectionPool;
+import logic.*;
+import com.tanry.framework.acl.*;
+import pojo.businessquery.BillPayDetail;
+
+public class BillPayDetailBean extends ConnectionPool
+{
+	private String strDateFormat = "yyyy-MM-dd"; //设置日期格式
+	
+	#sql public static iterator BillPayDetailIterator(
+			String billC,
+			String payN,
+			String unit,
+			float payAmt,
+			String businessDate,
+			String table,
+			String period,
+			String shift,
+			String shopC,
+			String shopN,
+			String vipC,
+			String vipN
+		);
+	
+	
+	#sql public static iterator SumIterator(float payAmt);
+	
+	public BillPayDetailBean()
+	{
+
+	}
+	
+	public BillPayDetail sum(String startDate,String endDate,String shopC,String period, String shift,String table)
+			throws NoPrivilegeException,SQLException,NoConnection	{
+		
+		BillPayDetail billPayDetail = new BillPayDetail();
+		DefaultContext myCtx = getDefaultContext();
+		SumIterator sumIterator = null;
+		if (myCtx != null)
+		{
+			#sql [myCtx] sumIterator = {
+				SELECT
+			    CASE
+			        WHEN SUM(p.nPayAmt) IS NULL
+			        THEN 0
+			        ELSE SUM(p.nPayAmt)
+			    END payAmt
+				FROM
+				    :{Com_("d_t_food_bill")} b
+				LEFT JOIN
+				    :{Com_("d_t_bill_pay")} p
+				ON
+				    b.cBill_C = p.cBill_C
+				WHERE
+					DBUSINESS >=TO_Date( :startDate, 'yyyy-MM-dd')
+            	AND DBUSINESS <=TO_Date( :endDate, 'yyyy-MM-dd')
+            	AND b.cBranch_C LIKE :shopC
+            	AND b.cPeriod_N LIKE :period
+            	AND b.cShift_N LIKE :shift
+            	AND b.cTable_N LIKE :table
+            	AND p.cPay_N IS NOT NULL
+				ORDER BY
+				    b.cBill_C,
+				    p.nPayAmt};
+			
+			while(sumIterator.next()) {
+				billPayDetail.setPayAmt(sumIterator.payAmt());
+			}
+			sumIterator.close();
+		}
+		else
+		{
+			throw new NoConnection();
+		}
+		closeDefaultContext(myCtx);
+		return billPayDetail;
+	}
+	
+	
+	public int count(String startDate,String endDate,String shopC,String period,String shift,String table)
+			throws NoPrivilegeException,SQLException,NoConnection	{
+		DefaultContext myCtx = getDefaultContext();
+		
+		int counts = 0;
+		if (myCtx != null)
+		{
+			#sql [myCtx] {SELECT
+				    COUNT(*) into :counts
+				    FROM
+				        :{Com_("d_t_food_bill")} b
+				    LEFT JOIN
+				        :{Com_("d_t_bill_pay")} p
+				    ON
+				        b.cBill_C = p.cBill_C
+				    WHERE
+				    	DBUSINESS >=TO_Date( :startDate, 'yyyy-MM-dd')
+                	AND DBUSINESS <=TO_Date( :endDate, 'yyyy-MM-dd')
+                	AND b.cBranch_C LIKE :shopC
+                	AND b.cPeriod_N LIKE :period
+                	AND b.cShift_N LIKE :shift
+                	AND b.cTable_N LIKE :table
+                	AND p.cPay_N IS NOT NULL
+			  };
+			
+		}
+		else
+		{
+			throw new NoConnection();
+		}
+		closeDefaultContext(myCtx);
+		return counts;
+	}
+	
+	public List<BillPayDetail> billPay(String startDate,String endDate,String shopC,String period,
+																String shift,String table,int startRow,int endRow)
+			throws NoPrivilegeException,SQLException,NoConnection	{
+		
+		List<BillPayDetail> result = new ArrayList<BillPayDetail>();
+		DefaultContext myCtx = getDefaultContext();
+		BillPayDetailIterator billPayDetailIterator = null;
+		if (myCtx != null)
+		{
+			#sql [myCtx] billPayDetailIterator = {
+			SELECT
+				    *
+				    FROM
+				        (
+				            SELECT
+				                t.*,
+				                ROWNUM rowNumber
+				            FROM
+				                (SELECT
+				                	    b.CBill_C                        billC,
+				                	    cPay_N                           payN,
+				                	    sUnit                            unit,
+				                	    p.nPayAmt                        payAmt,
+				                	    TO_CHAR(dBusiness, 'yyyy-MM-dd') businessDate,
+				                	    b.cTable_N                       table,
+				                	    b.cPeriod_N                      period,
+				                	    b.cShift_N                       shift,
+				                	    cBranch_C                        shopC,
+				                	    cBranch_N                        shopN,
+				                	    p.cVIP_c                         vipC,
+				                	    p.cVIP_n                         vipN
+				                	FROM
+				                	    :{Com_("d_t_food_bill")} b
+				                	LEFT JOIN
+				                	    :{Com_("d_t_bill_pay")} p
+				                	ON
+				                	    b.cBill_C = p.cBill_C
+				                	WHERE
+				                	    DBUSINESS >=TO_Date( :startDate, 'yyyy-MM-dd')
+				                	AND DBUSINESS <=TO_Date( :endDate, 'yyyy-MM-dd')
+				                	AND b.cBranch_C LIKE :shopC
+				                	AND b.cPeriod_N LIKE :period
+				                	AND b.cShift_N LIKE :shift
+				                	AND b.cTable_N LIKE :table
+				                	AND p.cPay_N IS NOT NULL
+				                	ORDER BY
+				                	    b.cBill_C,
+				                	    p.nPayAmt) t
+				            WHERE
+				                ROWNUM <= :endRow)
+				    WHERE
+				        rowNumber >= :startRow};
+			
+			while(billPayDetailIterator.next()) {
+				BillPayDetail billPayDetail = new BillPayDetail();
+				billPayDetail.setBillC(billPayDetailIterator.billC());
+				billPayDetail.setPayN(billPayDetailIterator.payN());
+				billPayDetail.setUnit(billPayDetailIterator.unit());
+				billPayDetail.setPayAmt(billPayDetailIterator.payAmt());
+				billPayDetail.setBusinessDate(billPayDetailIterator.businessDate());
+				billPayDetail.setTable(billPayDetailIterator.table());
+				billPayDetail.setPeriod(billPayDetailIterator.period());
+				billPayDetail.setShift(billPayDetailIterator.shift());
+				billPayDetail.setShopC(billPayDetailIterator.shopC());
+				billPayDetail.setShopN(billPayDetailIterator.shopN());
+				billPayDetail.setVipC(billPayDetailIterator.vipC());
+				billPayDetail.setVipN(billPayDetailIterator.vipN());
+				
+				result.add(billPayDetail);
+			}
+			billPayDetailIterator.close();
+		}
+		else
+		{
+			throw new NoConnection();
+		}
+		closeDefaultContext(myCtx);
+		return result;
+	}
+	
+}

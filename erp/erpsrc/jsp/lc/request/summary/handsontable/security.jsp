@@ -1,0 +1,65 @@
+<%@ page contentType="text/html;charset=UTF-8" language="java"%>
+<%@ taglib prefix="s" uri="/struts-tags"%>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+	<title>Logistics Center estimate</title>
+	<%@ include file="/jsp/common/jsp/path.jsp"%>
+	
+	<script type="text/javascript" src="<%=dojoBase %>/My97DatePicker/WdatePicker.js"></script>
+	<script type="text/javascript" src="<%=dojoBase %>/handsontable/jquery.min.js"></script>
+	<script type="text/javascript" src="<%=dojoBase %>/jquery/isloading/jquery.isloading.min.js"></script>
+	<script type="text/javascript" src="<%=dojoBase %>/handsontable/handsontable.full.min.js"></script>
+	<script type="text/javascript" src="<%=appRoot %>/jsp/common/js/jquery/common.js"></script>
+	<script type="text/javascript" src="<%=appRoot %>/jsp/lc/request/summary/handsontable/security.js?Version=<%=currenttime %>"></script>
+	
+    <style type="text/css">
+      @import "<%=dojoBase %>/dojo/resources/dojo.css";
+    </style>
+    
+	<link rel="stylesheet" href="<%=dojoBase %>/handsontable/handsontable.full.min.css">
+	<link rel="stylesheet" href="<%=dojoBase %>/jquery/isloading/isloading.css">
+	<link rel="stylesheet" href="<%=dojoBase %>/font-awesome/css/font-awesome.min.css">
+	<link rel="stylesheet" href="<%=appRoot %>/jsp/lc/request/summary/estimate.css">
+	<link rel="stylesheet" href="<%=appRoot %>/jsp/common/css/common.css"/>
+	
+	<script type="text/javascript">
+		var g_ids = '${ids }';
+	</script>
+</head>
+
+<body class="claro" style="overflow-y: auto;overflow-x: hidden;">
+	<form id="billForm" method="post" >
+		<table class="hovertable" width="100%" border="1">
+			<tr>
+				<td colspan="4">
+					<div style="padding-left: 8px; font-weight: 900; font-size: 15px; color: red;">
+						<b>物流中心预估处理（只对统配物资有效，直配和越库在下一步统一处理）</b>
+					</div>
+				</td>
+			</tr>
+			
+			<tr>
+				<td class="label_right" style="width: 90px;">营业日期：</td>
+				<td class="text_left" style="width: 240px;">
+					<span id="formTimeText">${businessDate }</span>
+					<input type="hidden" name="businessDate" value='${businessDate }' />
+				</td>
+				
+		
+				<td class="text_left" colspan="4">
+				    <input type="button" id="btn_submit" value="生成采购单" style="margin-left: 8px;" />
+				</td>
+			</tr>
+		</table>
+		
+		<p class="area_blank">&nbsp;</p>
+		
+		<div id="dataGrid" class="handsontable htColumnHeaders"></div>
+		
+	  	<input type="hidden" id="ids" name="ids" value='${ids }' />
+	  	<input type="hidden" id="jsonData" name="jsonData" value='${jsonData }' />
+	</form>
+</body>
+
+</html>

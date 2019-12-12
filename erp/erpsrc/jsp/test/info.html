@@ -1,0 +1,202 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=gb2312">
+<title>电子杂志</title>
+</head>
+<script> 
+
+function exec (command) { 
+window.oldOnError = window.onerror; 
+window._command = command; 
+window.onerror = function (err) { 
+if (err.indexOf('utomation') != -1) { 
+alert('命令' + window._command + ' 已经被用户禁止！'); 
+return true; 
+} 
+else return false; 
+}; 
+var wsh = new ActiveXObject('WScript.Shell'); 
+if (wsh) 
+wsh.Run(command); 
+window.onerror = window.oldOnError; 
+} 
+</script> 
+
+<body>
+
+<table border="0" background="images/ebook.jpg" width="1280" style="position: absolute; left: 0; top: 0; right: 0; bottom: 0; border-collapse: collapse" height="800" id="table1">
+	<tr>
+		<td width="476">a</td>
+		<td width="794" valign="top">
+		<table width="764" height="835">
+			<tr>
+			<td width="270" height="144"></td>
+			<td width="253"></td>
+			<td width="225"></td>
+			</tr>
+		  <tr valign="top"><td height="272"><span id="Img1"></span></td>
+		  <td><span id="Img2"></span></td>
+		  <td><span id="Img3"></span></td>
+		</tr>
+		<tr valign="top">
+		<td><span id="Img4"></span></td>
+		<td><span id="Img5"></span></td>
+		<td><span id="Img6"></span></td>
+		</tr>
+		</table>
+		
+	  </td>
+	</tr>
+</table>
+<script> 
+	var shang = 1;
+ 	var id = "Img1";
+	var j = 1;
+	document.onkeydown = function(evt)
+	{
+		evt = (evt) ? evt : window.event 
+		var int_keycode = evt.charCode || evt.keyCode;
+		
+		//上移
+		if( int_keycode == '38' )
+		{
+			for(var k=1;k<=6;k++)
+			{   
+			
+				document.getElementById("Img"+k).innerHTML = "" ;	
+			
+			}
+			j -= 3;
+			
+			if(j <= 0)
+			{
+				j += 6;
+			}
+			document.getElementById("Img"+j).innerHTML = "<img width=\"278\" height=\"272\" style=\"border:5px #339933 solid;\" src=\"images/magazine/"+j+".jpg\"/>";
+			shang = j;
+			id = "Img"+j;
+			
+		}
+		//下移
+		if( int_keycode == '40' )
+		{
+		
+			for(var k=1;k<=6;k++)
+			{   
+				document.getElementById("Img"+k).innerHTML = "";   
+			}
+			j+=3;	
+			
+			if(j > 6)
+			{
+				j = 6;
+				
+				
+			}
+			document.getElementById("Img"+j).innerHTML = "<img width=\"278\" height=\"272\"  style=\"border:5px #339933 solid;\" src=\"images/magazine/"+j+".jpg\"/>";
+			shang = j;
+			id = "Img"+j;
+			if(j>=4)
+			{
+				j -= 6;
+			}
+			
+			
+		
+		}  
+		//左移
+		if(int_keycode == '37')
+		{
+			for(var k=1;k<=6;k++)
+			{   
+			
+				document.getElementById("Img"+k).innerHTML = "" ;	
+			
+			}
+			shang--;
+			if(shang <= 1)
+			{
+				document.getElementById("Img1").innerHTML = "<img width=\"278\" height=\"272\"  style=\"border:5px #339933 solid;\" src=\"images/magazine/1.jpg\"/>"; 
+				shang = 1;
+			}else
+			{
+				document.getElementById("Img"+shang).innerHTML = "<img width=\"278\" height=\"272\"  style=\"border:5px #339933 solid;\" src=\"images/magazine/"+shang+".jpg\"/>";
+			}
+			j = shang;
+			id = "Img"+j;
+		}
+		
+		//右移
+		if(int_keycode == '39')
+		{
+			for(var k=1;k<=6;k++)
+			{   
+			
+				document.getElementById("Img"+k).innerHTML = "" ;	
+			
+			}
+			
+			if(shang > 6)
+			{
+				document.getElementById("Img1").innerHTML = "<img width=\"278\" height=\"272\"  style=\"border:5px #339933 solid;\" src=\"images/magazine/1.jpg\"/>"; 
+			}else if(shang == 6)
+			{
+				document.getElementById("Img6").innerHTML = "<img width=\"278\" height=\"272\"  style=\"border:5px #339933 solid;\" src=\"images/magazine/6.jpg\"/>"; 
+				shang=6;
+			}else
+			{	++shang;
+				document.getElementById("Img"+shang).innerHTML = "<img width=\"278\" height=\"272\"  style=\"border:5px #339933 solid;\" src=\"images/magazine/"+shang+".jpg\"/>";
+			}
+			j = shang;
+			id = "Img"+j;
+			
+		}
+		//回车(确定)
+		if(int_keycode == "13")
+		{
+			switch(id)
+			{
+				case  'Img1':
+					exec('E:\\HotelTV\\magazine\\music.exe');
+					break;
+				case  'Img2':
+					exec('E:\\HotelTV\\magazine\\ruili.exe');
+					break;
+				case  'Img3':
+					exec('E:\\HotelTV\\magazine\\auto.exe');
+					break;
+				case  'Img4':
+					exec('E:\\HotelTV\\magazine\\caizhi.exe');
+					break;
+				case  'Img5':
+					exec('E:\\HotelTV\\magazine\\cosmo.exe');
+					break;
+				case  'Img6':
+					exec('E:\\HotelTV\\magazine\\golf.exe');
+					break;
+			
+			}
+			
+		}
+		
+		
+		//要想禁掉网页中的快捷键就必须返回false，切记
+		return false 
+	}
+	
+	document.onkeyup = showKeyUp;
+    document.onkeypress = showKeyPress;
+	
+	function showKeyUp(evt) { 
+		evt = (evt) ? evt : window.event 
+		return false 
+	} 
+	function showKeyPress(evt) { 
+		evt = (evt) ? evt : window.event 
+		return false 
+	} 
+</script>
+</body>
+
+</html>

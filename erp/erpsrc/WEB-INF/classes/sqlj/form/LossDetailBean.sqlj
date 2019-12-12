@@ -1,0 +1,492 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on Sep 17, 2014 by cjt
+ * Last edited on Sep 17, 2014 by cjt
+ * 
+ * 说明： 餐厅报损单表明细
+ */
+package logic.form;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import pojo.form.LossDetail;
+import sqlj.runtime.ref.DefaultContext;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.acl.NoPrivilegeException;
+
+public class LossDetailBean extends ConnectionPool {
+	
+	public static Logger log = Logger.getLogger(LossDetailBean.class);
+
+	#sql private iterator DetailIter(
+		String rownumber,
+		String form_id,
+	 	String item_id,
+ 	 	String item_name,
+ 	 	String item_dimension,
+ 	 	String item_id2,
+ 	 	String item_name2,
+ 	 	String item_dimension2,
+ 	 	String item_specification,
+ 	 	String item_category,
+ 	 	Double item_count,
+ 	 	Double item_count2,
+ 	 	Double unit_price,
+ 	 	Double pay_amt,
+ 	 	Double storage_count,
+ 	 	Date expired_time,
+ 	 	String reason);
+	
+	#sql private iterator StorageIter(
+		 	String item_id,
+	 	 	Double item_count
+		);
+	
+	/**
+	 * query items storage
+	 */
+	public Map<String,Double> queryStorage(String formId,String storageId)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		StorageIter storageIter = null;
+		#sql [myCtx] storageIter = {
+			WITH
+			    items AS
+			    (
+			        SELECT DISTINCT
+			            ITEM_ID
+			        FROM
+			        	:{Com_("D_T1_LOSS_HEADER")} h
+			        INNER JOIN
+			            :{Com_("D_T1_LOSS_DETAIL")} d
+			        ON
+			            h.FORM_ID = d.FORM_ID
+			        WHERE
+			            d.FORM_ID = :formId
+			        AND (
+			                d.REASON= DECODE(h.LOSS_TYPE,'DISHLOSS','DISH2RAW')
+			            OR  h.LOSS_TYPE = 'RAWLOSS')
+			    )
+			SELECT
+			    i.ITEM_ID,
+			    NVL(s.ITEM_COUNT,0)ITEM_COUNT
+			FROM
+			    items i
+			LEFT JOIN
+			 :{Com_("D_T2_STORAGE")} s
+			ON
+			    i.ITEM_ID = s.ITEM_ID
+			AND s.STORAGE_ID = :storageId};
+		
+		Map<String,Double> resultMap = new HashMap<String,Double>();
+		while(storageIter.next()) {
+			resultMap.put(storageIter.item_id(),storageIter.item_count());
+		}
+		
+		storageIter.close();
+		closeDefaultContext(myCtx);
+		return resultMap;
+	}
+
+	public List<LossDetail> queryRawDetail(String formId)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		return queryRawDetail(formId,null);
+	}
+	
+	public List<LossDetail> queryDishDetail(String formId)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		return queryDishDetail(formId,null);
+	}
+	
+	public List<LossDetail> queryRawDetail (String formId,String hasSum)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		DetailIter detailIter = null;
+		#sql [myCtx] detailIter = {
+			WITH
+			    forms AS
+			    (
+			        SELECT
+			            d.FORM_ID,
+			            d.ITEM_ID,
+			            d.ITEM_NAME,
+			            d.ITEM_DIMENSION,
+			            d.ITEM_SPECIFICATION,
+			            d.ITEM_CATEGORY,
+			            SUM(d.ITEM_COUNT)ITEM_COUNT,
+			            d.UNIT_PRICE,
+			            SUM(d.PAY_AMT) PAY_AMT,
+			            d.STORAGE_COUNT,
+			            d.EXPIRED_TIME,
+			            d.REASON,
+			            d.ITEM_ID2,
+			            d.ITEM_NAME2,
+			            d.ITEM_DIMENSION2,
+			            d.ITEM_COUNT2
+			        FROM
+			            :{Com_("D_T1_LOSS_DETAIL")} d
+			        INNER JOIN
+			            :{Com_("D_T1_LOSS_HEADER")} h
+			        ON
+			            d.FORM_ID = h.FORM_ID
+			        WHERE
+			            d.FORM_ID = :formId
+			        AND (
+			                d.REASON= DECODE(h.LOSS_TYPE,'DISHLOSS','DISH2RAW')
+			            OR  h.LOSS_TYPE = 'RAWLOSS')
+			        GROUP BY
+			        	GROUPING SETS( ( d.FORM_ID, d.ITEM_ID,d.ITEM_ID2, d.ITEM_NAME2, d.ITEM_NAME,
+			                d.ITEM_DIMENSION, d.ITEM_SPECIFICATION, d.ITEM_CATEGORY, d.ITEM_COUNT, d.UNIT_PRICE,
+			                d.PAY_AMT, d.STORAGE_COUNT, d.EXPIRED_TIME, d.REASON, d.ITEM_DIMENSION2, d.ITEM_COUNT2)
+			                ,NULL)
+			    )
+			    ,
+			    temp AS
+			    (
+			        SELECT
+			            s.*
+			        FROM
+			            forms s
+			        ORDER BY
+			            ITEM_ID2,
+			            ITEM_ID
+			    )
+			SELECT
+			    DECODE(t.FORM_ID,NULL,'合计',TO_CHAR(rownum)) rownumber,
+			    t.FORM_ID,
+			    t.ITEM_ID,
+			    t.ITEM_NAME,
+			    t.ITEM_DIMENSION,
+			    t.ITEM_SPECIFICATION,
+			    t.ITEM_CATEGORY,
+			    t.ITEM_COUNT,
+			    t.UNIT_PRICE,
+			    t.PAY_AMT,
+			    t.STORAGE_COUNT,
+			    t.EXPIRED_TIME,
+			    t.REASON,
+			    t.ITEM_ID2,
+			    t.ITEM_NAME2,
+			    t.ITEM_DIMENSION2,
+			    t.ITEM_COUNT2
+			FROM
+			    temp t};
+		List<LossDetail> detailLst = processIter(detailIter,hasSum);
+		detailIter.close();
+		closeDefaultContext(myCtx);
+		return detailLst;
+	}
+	
+	#sql private iterator LossIter(
+			String rownumber,String item_Id,String item_Name,String item_dimension,Double item_count,Double unit_price,Double pay_amt,String reason);
+	public List<LossDetail> queryLossItem(String formId)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		LossIter detailIter = null;
+		#sql [myCtx] detailIter = {
+			SELECT 
+				DECODE(D.FORM_ID,NULL,'合计',D.FORM_ID) rownumber,
+				D.ITEM_ID item_Id,
+				D.ITEM_NAME item_Name,
+				D.ITEM_DIMENSION item_dimension,
+				D.ITEM_COUNT item_count,
+				D.UNIT_PRICE unit_price,
+				SUM(D.PAY_AMT) pay_amt,
+				D.REASON reason
+			FROM  
+			:{Com_("D_T1_LOSS_HEADER")} H INNER 
+		        JOIN  
+			:{Com_("D_T1_LOSS_DETAIL")} D
+			ON 
+				H.FORM_ID = D.FORM_ID    
+			WHERE 
+				H.FORM_ID = :formId
+				AND NVL(D.REASON,' ') !='DISH2RAW'
+			GROUP BY
+				GROUPING SETS ((D.FORM_ID,D.ITEM_ID,D.ITEM_NAME,D.ITEM_DIMENSION,D.ITEM_COUNT,D.UNIT_PRICE,D.PAY_AMT,D.REASON),NULL)
+			ORDER BY
+				D.ITEM_ID
+		};
+		List<LossDetail> detailLst = new ArrayList<LossDetail>();
+		int cnt = 0;
+		while(detailIter.next()) {
+			cnt++;
+			LossDetail detail = new LossDetail();
+			detail.setItem_id(detailIter.item_Id());
+			detail.setItem_name(detailIter.item_Name());
+			detail.setItem_dimension(detailIter.item_dimension());
+			detail.setItem_count(detailIter.item_count());
+			detail.setUnit_price(detailIter.unit_price());
+			detail.setPay_amt(detailIter.pay_amt());
+			detail.setRownumber(detailIter.rownumber());
+			detail.setReason(detailIter.reason());
+			if (!detail.getRownumber().equals("合计")) detail.setRownumber(String.valueOf(cnt));
+			detailLst.add(detail);
+		}
+		detailIter.close();
+		closeDefaultContext(myCtx);
+		return detailLst;
+	}
+	
+	public List<LossDetail> queryDishDetail(String formId,String hasSum)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		DetailIter detailIter = null;
+		#sql [myCtx] detailIter = {
+			WITH
+			    forms AS
+			    (
+			        SELECT
+			            d.FORM_ID,
+			            d.ITEM_ID,
+			            d.ITEM_NAME,
+			            d.ITEM_DIMENSION,
+			            d.ITEM_SPECIFICATION,
+			            d.ITEM_CATEGORY,
+			            SUM(d.ITEM_COUNT)ITEM_COUNT,
+			            d.UNIT_PRICE,
+			            SUM(d.PAY_AMT) PAY_AMT,
+			            d.STORAGE_COUNT,
+			            d.EXPIRED_TIME,
+			            d.REASON,
+			            d.ITEM_ID2,
+			            d.ITEM_NAME2,
+			            d.ITEM_DIMENSION2,
+			            d.ITEM_COUNT2
+			        FROM
+			            :{Com_("D_T1_LOSS_DETAIL")} d
+			        INNER JOIN
+			            :{Com_("D_T1_LOSS_HEADER")} h
+			        ON
+			            d.FORM_ID = h.FORM_ID
+			        WHERE
+			            d.FORM_ID = :formId
+			        AND (
+			                d.REASON= DECODE(h.LOSS_TYPE,'DISHLOSS','DISH2RAW')
+			            OR  h.LOSS_TYPE = 'RAWLOSS')
+			        GROUP BY
+			        	GROUPING SETS( ( d.FORM_ID, d.ITEM_ID,d.ITEM_ID2, d.ITEM_NAME2, d.ITEM_NAME,
+			                d.ITEM_DIMENSION, d.ITEM_SPECIFICATION, d.ITEM_CATEGORY, d.ITEM_COUNT, d.UNIT_PRICE,
+			                d.PAY_AMT, d.STORAGE_COUNT, d.EXPIRED_TIME, d.REASON, d.ITEM_DIMENSION2, d.ITEM_COUNT2)
+			                ,( d.FORM_ID, d.ITEM_ID2),NULL)
+			    )
+			    ,
+			    temp AS
+			    (
+			        SELECT
+			            s.*
+			        FROM
+			            forms s
+			        ORDER BY
+			            ITEM_ID2,
+			            ITEM_ID
+			    )
+			SELECT
+			    DECODE(t.FORM_ID,NULL,'合计',TO_CHAR(rownum)) rownumber,
+			    t.FORM_ID,
+			    DECODE(t.ITEM_ID2,NULL,NULL,DECODE(t.ITEM_ID,NULL,'小计',t.ITEM_ID2)) ITEM_ID2,
+			    t.ITEM_NAME,
+			    t.ITEM_DIMENSION,
+			    t.ITEM_SPECIFICATION,
+			    t.ITEM_CATEGORY,
+			    t.ITEM_COUNT,
+			    t.UNIT_PRICE,
+			    t.PAY_AMT,
+			    t.STORAGE_COUNT,
+			    t.EXPIRED_TIME,
+			    t.REASON,
+			    t.ITEM_ID,
+			    t.ITEM_NAME2,
+			    t.ITEM_DIMENSION2,
+			    t.ITEM_COUNT2
+			FROM
+			    temp t};
+		List<LossDetail> detailLst = processIter(detailIter,hasSum);
+		detailIter.close();
+		closeDefaultContext(myCtx);
+		return detailLst;
+	}
+	
+	public List<LossDetail> queryDish(String formId)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		DetailIter detailIter = null;
+		#sql [myCtx] detailIter = {
+			SELECT
+				ROWNUM rownumber,
+			    d.*
+			    FROM
+			        :{Com_("D_T1_LOSS_DETAIL")} d
+			    INNER JOIN
+			        :{Com_("D_T1_LOSS_HEADER")} h
+			    ON
+			        d.FORM_ID = h.FORM_ID
+			    WHERE
+			    	NVL(d.REASON,' ') != 'DISH2RAW'
+			    AND d.FORM_ID = :formId};
+		List<LossDetail> detailLst = processIter(detailIter,"Y");
+		detailIter.close();
+		closeDefaultContext(myCtx);
+		return detailLst;
+	}
+
+	private List<LossDetail> processIter(DetailIter detailIter,String hasSum) 
+			throws SQLException {
+		List<LossDetail> detailLst = new ArrayList<LossDetail>();
+		while(detailIter.next()) {
+			LossDetail detail = new LossDetail();
+			detail.setForm_id(detailIter.form_id());
+			detail.setItem_id(detailIter.item_id());
+			detail.setItem_name(detailIter.item_name());
+			detail.setItem_category(detailIter.item_category());
+			detail.setItem_dimension(detailIter.item_dimension());
+			detail.setItem_id2(detailIter.item_id2());
+			detail.setItem_name2(detailIter.item_name2());
+			detail.setItem_count2(detailIter.item_count2());
+			detail.setItem_dimension2(detailIter.item_dimension2());
+			detail.setItem_specification(detailIter.item_specification());
+			detail.setItem_count(detailIter.item_count());
+			detail.setUnit_price(detailIter.unit_price());
+			detail.setPay_amt(detailIter.pay_amt());
+			detail.setStorage_count(detailIter.storage_count());
+			detail.setExpired_time(SqlDateUtil.getUtilDate(detailIter.expired_time()));
+			detail.setReason(detailIter.reason());
+			detail.setRownumber(detailIter.rownumber());
+			detailLst.add(detail);
+		}
+		
+		if(hasSum == null){
+			if(detailLst.size()>0){
+				detailLst.remove(detailLst.size()-1);
+			}
+		}
+		return detailLst;
+	}
+	
+	/**
+	 * 保存明细
+	 */
+	public int saveEntity(LossDetail detail)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		String formId = detail.getForm_id();
+		String itemId = detail.getItem_id();
+		String itemName = detail.getItem_name();
+		String itemCategory = detail.getItem_category();
+		String itemDimension = detail.getItem_dimension();
+		String itemId2 = detail.getItem_id2();
+		String itemName2 = detail.getItem_name2();
+		Double itemCount2 = detail.getItem_count2();
+		String itemDimension2 = detail.getItem_dimension2();
+		String itemSpecification = detail.getItem_specification();
+		Double itemCount = detail.getItem_count();
+		Double unitPrice = detail.getUnit_price();
+ 	 	Double payAmt = detail.getPay_amt();
+ 	 	Double storageCount = detail.getStorage_count();
+ 	 	Date expiredTime = SqlDateUtil.getSqlDate(detail.getExpired_time());
+ 	 	String reason = detail.getReason();
+	
+		#sql [myCtx] {
+			INSERT INTO :{Com_("D_T1_LOSS_DETAIL")} 
+				(FORM_ID, ITEM_ID, ITEM_NAME, ITEM_CATEGORY, ITEM_DIMENSION,ITEM_ID2, ITEM_NAME2, ITEM_COUNT2, ITEM_DIMENSION2, ITEM_SPECIFICATION,
+						ITEM_COUNT, UNIT_PRICE, PAY_AMT, STORAGE_COUNT, EXPIRED_TIME, REASON) 
+						VALUES (:formId,
+								:itemId, 
+								:itemName, 
+								:itemCategory, 
+								:itemDimension, 
+								:itemId2, 
+								:itemName2, 
+								:itemCount2, 
+								:itemDimension2, 
+								:itemSpecification, 
+								:itemCount, 
+								:unitPrice, 
+								:payAmt, 
+								:storageCount, 
+								:expiredTime, 
+								:reason)
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+
+	public int updateEntity(LossDetail detail)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		String formId = detail.getForm_id();
+		String itemId = detail.getItem_id();
+		Double itemCount = detail.getItem_count();
+		Double itemCount2 = detail.getItem_count2();
+		Double payAmt = detail.getPay_amt();
+		String reason =detail.getReason();
+	
+		#sql [myCtx] {
+			UPDATE
+			:{Com_("D_T1_LOSS_DETAIL")}
+			SET
+			    ITEM_COUNT = :itemCount,
+	    		ITEM_COUNT2 = :itemCount2,
+			    PAY_AMT = :payAmt,
+			    REASON = :reason
+			WHERE
+				FORM_ID = :formId
+			and ITEM_ID = :itemId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+
+	public int deleteByForm(String formId)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		#sql [myCtx] {
+			DELETE
+			FROM
+			:{Com_("D_T1_LOSS_DETAIL")}
+			WHERE
+				FORM_ID = :formId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public int deleteDish2RawByForm(String formId)
+			throws NoPrivilegeException, SQLException, NoConnection {
+			DefaultContext myCtx = getDefaultContext();
+
+			#sql [myCtx] {
+				DELETE
+				FROM
+				:{Com_("D_T1_LOSS_DETAIL")}
+				WHERE
+					FORM_ID = :formId
+				AND
+					REASON = 'DISH2RAW'
+			};
+			closeDefaultContext(myCtx);
+			
+			return 1;
+		}
+}

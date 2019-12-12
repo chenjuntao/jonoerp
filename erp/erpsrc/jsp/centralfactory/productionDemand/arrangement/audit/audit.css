@@ -1,0 +1,86 @@
+th[role="columnheader"] {
+	text-align: center;
+}
+
+.dgrid-cell {
+	/* 	width: 80px; make all the columns 80px wide */
+	vertical-align: middle;
+	width: 90px;
+}
+
+#auditDataGrid {
+    position: absolute;
+    top: 152px;
+    bottom: 0px;
+    width: 100%;
+    height: auto;
+}
+
+#scanDataGrid {
+    position: absolute;
+    top: 122px;
+    bottom: 0px;
+    width: 100%;
+    height: auto;
+}
+
+.dgrid-column-set-0 {
+	width: 300px;
+}
+
+.field-rownumber,.field-itemDimension,.field-itemDimension2,.field-itemId,.field-productionCycle,.field-workOrderId,
+.field-produceTime,.field-completeTime
+	{
+	text-align: center;
+}
+
+.field-storageCount,.field-produceCount,.field-produceCount2,.field-grossCount {
+	text-align: right;
+}
+
+.field-rownumber,.field-itemDimension,.field-itemDimension2 {
+	width: 60px;
+}
+
+.field-formId,.field-formNote {
+	width: 180px;
+}
+
+
+.field-storageCount,.field-produceCount,.field-produceCount2{
+	width: 80px;
+}
+
+.field-workOrderId{
+	width: 150px;
+}
+
+.field-completeTime{
+	width: 120px;
+}
+
+.field-maxPayItem {
+	width: 150px;
+}
+
+.field-mainName,.field-grossCount {
+	width: 100px;
+}
+
+#commandTable {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+}
+
+.field-produceCount,.field-produceCount2,.field-productionCycle {
+	width: 70px;
+}
+
+.field-itemName {
+	width: 100px;
+}
+
+.field-allPayAmt {
+	width: 80px;
+}

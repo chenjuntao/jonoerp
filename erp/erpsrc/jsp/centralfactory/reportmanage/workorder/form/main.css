@@ -1,0 +1,114 @@
+#dataGrid {
+	position: absolute;
+	right: 0;
+	top: 35px;
+	bottom: 0;
+	width: 100%;
+	height: auto; /* override default height: 30em; in dgrid.css */
+}
+
+td[role="columnheader"] {
+	text-align: center !important; 
+}
+
+.gridxSortNode{
+    text-align: center !important; 
+}
+
+td[colid="rownumber"] {
+	text-align: center !important; 
+	min-width: 50px  !important; 
+	max-width: 50px  !important; 
+}
+
+td[colid="form_id"] {
+	text-align: center !important; 
+	min-width: 180px  !important; 
+}
+
+td[colid="order"] {
+	text-align: center !important; 
+	min-width: 80px  !important; 
+}
+
+td[colid="form_ref_id"] {
+	text-align: center !important; 
+	min-width: 150px  !important; 
+}
+
+td[colid="complete_time"] {
+	text-align: center !important; 
+	min-width: 80px  !important; 
+}
+
+td[colid="form_time"] {
+	text-align: center !important; 
+	min-width: 80px  !important; 
+}
+
+td[colid="form_time_actual"] {
+	text-align: center !important; 
+	min-width:160px  !important; 
+}
+
+td[colid="item_id"] {
+	text-align: center !important; 
+	min-width: 80px  !important; 
+}
+
+td[colid="item_name"] {
+	min-width: 100px  !important; 
+}
+
+td[colid="item_dimension"] {
+	text-align: center !important; 
+	min-width: 80px  !important; 
+}
+
+td[colid="item_count"] {
+	text-align: right !important; 
+	min-width: 100px  !important; 
+}
+
+td[colid="item_dimension2"] {
+	text-align: center !important; 
+	min-width: 80px  !important; 
+}
+
+td[colid="item_count2"] {
+	text-align: right !important; 
+	min-width: 100px  !important; 
+}
+
+td[colid="actual_count"] {
+	text-align: right !important; 
+	min-width: 100px  !important; 
+}
+
+td[colid="item_specification"] {
+	min-width: 80px  !important; 
+}
+
+td[colid="audit_time"] {
+	text-align: center !important; 
+	min-width: 80px  !important; 
+}
+
+td[colid="form_maker"] {
+	min-width: 80px  !important; 
+}
+
+td[colid="auditor"] {
+	min-width: 80px  !important; 
+}
+
+
+
+td[colid="form_note"] {
+	min-width: 120px  !important; 
+}
+
+td[colid="status"] {
+	min-width: 80px  !important; 
+}
+

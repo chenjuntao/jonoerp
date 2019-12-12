@@ -1,0 +1,60 @@
+#dataGrid {
+	position: absolute;
+	right: 0;
+	top: 62px;
+	bottom: 30px;
+	width: 100%;
+	height: auto; /* override default height: 30em; in dgrid.css */
+}
+
+#commandTable {
+	position: absolute;
+	bottom: 0;
+	width: 100%;
+}
+
+th[role="columnheader"] {
+	text-align: center;
+}
+
+.dgrid-cell {
+	/* 	width: 80px; make all the columns 80px wide */
+	vertical-align: middle;
+}
+
+.field-rownumber, .field-itemId, .field-itemDimension,
+	.field-expiredTime {
+	text-align: center;
+}
+
+.field-rownumber {
+	width: 40px;
+}
+
+.field-itemId {
+	width: 80px;
+}
+
+.field-itemName {
+	width: 150px;
+}
+
+.field-itemCategory {
+	width: 110px;
+}
+
+.field-itemDimension, .field-packagingFactor, .field-packagingUnit {
+	width: 60px;
+}
+
+.field-packagingDimension {
+	width: 60px;
+}
+
+.field-packagingVolume, .field-packagingCount, .field-volume {
+	width: 70px;
+}
+
+.grid-number {
+	text-align: right;
+}

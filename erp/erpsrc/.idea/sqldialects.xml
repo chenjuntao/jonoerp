@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="SqlDialectMappings">
+    <file url="file://$PROJECT_DIR$/../../design/views/d_v_mrp_a_lc.sql" dialect="Oracle" />
+    <file url="file://$PROJECT_DIR$/../../design/views/d_v_mrp_amount_cf.sql" dialect="Oracle" />
+    <file url="file://$PROJECT_DIR$/../../design/views/d_v_mrp_amount_lc.sql" dialect="Oracle" />
+    <file url="file://$PROJECT_DIR$/../../design/views/d_v_mrp_o_lc.sql" dialect="Oracle" />
+  </component>
+</project>

@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE struts PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN"
+    "http://struts.apache.org/dtds/struts-2.0.dtd">
+
+<struts>
+<!--     餐厅 -->
+	<package name="reportmanage_loss_restaurant_form" namespace="/reportmanage/loss/restaurant/form" extends="trust-default">
+		<action name="mainView" class="action.reportmanage.ReportManageAction">
+			<result name="success">/jsp/restaurant/reportmanage/loss/form/main.jsp</result>
+			<result name="mobile">/mobile/module/request/loss/form/main.jsp</result>
+		</action>
+	</package>
+	
+	<package name="reportmanage_loss_restaurant_collect" namespace="/reportmanage/loss/restaurant/collect" extends="trust-default">
+		<action name="mainView" class="action.reportmanage.ReportManageAction">
+			<result name="success">/jsp/restaurant/reportmanage/loss/collect/main.jsp</result>
+			<result name="mobile">/mobile/module/request/lossCollect/main.jsp</result>
+		</action>
+	</package>
+	
+	<package name="reportmanage_loss_restaurant_detail" namespace="/reportmanage/loss/restaurant/detail" extends="trust-default">
+		<action name="mainView" class="action.reportmanage.ReportManageAction">
+			<result name="success">/jsp/restaurant/reportmanage/loss/detail/main.jsp</result>
+			<result name="mobile">/mobile/module/request/loss/main.jsp</result>
+		</action>
+	</package>
+	
+<!-- 	出品报损 -->
+<!-- 	<package name="reportmanage_loss_dish_restaurant_collect" namespace="/reportmanage/loss/restaurant/collect" extends="trust-default"> -->
+<!-- 		<action name="mainView" class="action.reportmanage.ReportManageAction"> -->
+<!-- 			<result name="success">/jsp/restaurant/reportmanage/loss/dish/collect/main.jsp</result> -->
+<!-- 		</action> -->
+<!-- 	</package> -->
+	
+	<package name="reportmanage_loss_dish_restaurant_detail" namespace="/reportmanage/loss/dish/restaurant/detail" extends="trust-default">
+		<action name="mainView" class="action.reportmanage.ReportManageAction">
+			<result name="success">/jsp/restaurant/reportmanage/loss/dish/detail/main.jsp</result>
+		</action>
+	</package>
+	
+<!-- 	物流中心 -->
+	<package name="reportmanage_loss_lc_form" namespace="/reportmanage/loss/lc/form" extends="trust-default">
+		<action name="mainView" class="action.reportmanage.ReportManageAction">
+			<result name="success">/jsp/lc/reportmanage/loss/form/main.jsp</result>
+			<result name="mobile">/mobile/module/lc/loss/main.jsp</result>
+		</action>
+	</package>
+	
+	<package name="reportmanage_loss_lc_collect" namespace="/reportmanage/loss/lc/collect" extends="trust-default">
+		<action name="mainView" class="action.reportmanage.ReportManageAction">
+			<result name="success">/jsp/lc/reportmanage/loss/collect/main.jsp</result>
+				<result name="mobile">/mobile/module/lc/loss/collect/main.jsp</result>
+		</action>
+	</package>
+	
+	<package name="reportmanage_loss_lc_detail" namespace="/reportmanage/loss/lc/detail" extends="trust-default">
+		<action name="mainView" class="action.reportmanage.ReportManageAction">
+			<result name="success">/jsp/lc/reportmanage/loss/detail/main.jsp</result>
+			<result name="mobile">/mobile/module/lc/loss/detail/main.jsp</result>
+		</action>
+	</package>
+	
+	<package name="reportmanage_loss_dish_lc_detail" namespace="/reportmanage/loss/dish/lc/detail" extends="trust-default">
+		<action name="mainView" class="action.reportmanage.ReportManageAction">
+			<result name="success">/jsp/lc/reportmanage/loss/dish/detail/main.jsp</result>
+		</action>
+	</package>
+	
+<!-- 	中央工厂 -->
+
+	<package name="reportmanage_loss_cf_form" namespace="/reportmanage/loss/cf/form" extends="trust-default">
+		<action name="mainView" class="action.reportmanage.ReportManageAction">
+			<result name="success">/jsp/centralfactory/reportmanage/loss/form/main.jsp</result>
+			<result name="mobile">/mobile/module/cf/loss/form/main.jsp</result>
+		</action>
+	</package>
+	
+	<package name="reportmanage_loss_cf_collect" namespace="/reportmanage/loss/cf/collect" extends="trust-default">
+		<action name="mainView" class="action.reportmanage.ReportManageAction">
+			<result name="success">/jsp/centralfactory/reportmanage/loss/collect/main.jsp</result>
+			<result name="mobile">/mobile/module/cf/loss/collect/main.jsp</result>
+		</action>
+	</package>
+	
+	<package name="reportmanage_loss_cf_detail" namespace="/reportmanage/loss/cf/detail" extends="trust-default">
+		<action name="mainView" class="action.reportmanage.ReportManageAction">
+			<result name="success">/jsp/centralfactory/reportmanage/loss/detail/main.jsp</result>
+			<result name="mobile">/mobile/module/cf/loss/detail/main.jsp</result>
+		</action>
+	</package>
+	
+	<package name="reportmanage_loss_dish_cf_detail" namespace="/reportmanage/loss/dish/cf/detail" extends="trust-default">
+		<action name="mainView" class="action.reportmanage.ReportManageAction">
+			<result name="success">/jsp/centralfactory/reportmanage/loss/dish/detail/main.jsp</result>
+		</action>
+	</package>
+</struts>
+

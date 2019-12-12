@@ -1,0 +1,198 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"   
+"http#{//mybatis.org/dtd/mybatis-3-mapper.dtd">  
+
+<mapper namespace="mapper.store.BranchMapper">  
+
+<insert id="saveEntityImp">
+INSERT INTO ${com}.D_T2_BRANCH (BRANCH_ID, BRANCH_NAME, QUERY_CODE, BRANCH_ADDRESS,
+CONTACT_MAN, EMAIL, TELEPHONE, FAX, BRANCH_TYPE, PRICE_TYPE, REMARK, PARK, TAG, LON, LAT)
+VALUES (#{branchId}, #{branchName}, #{queryCode}, #{branchAddress}, #{contactMan}, #{email},
+#{telephone}, #{fax}, #{branchType}, #{priceType}, #{remark}, #{park}, #{tag}, #{lon}, #{lat})
+
+</insert>
+
+<insert id="createBusinessDate">
+INSERT INTO ${com}.D_T0_BUSINESS_DATE (RESTAURANT_ID, BUSINESS_DATE)
+VALUES #{branchId}, #{businessDate})
+
+</insert>
+
+<update id="updateEntityImp">
+UPDATE
+${com}.D_T2_BRANCH
+SET
+BRANCH_ID = #{branchId},
+BRANCH_NAME = #{branchName},
+QUERY_CODE = #{queryCode},
+PRICE_TYPE = #{priceType},
+BRANCH_ADDRESS = #{branchAddress},
+CONTACT_MAN = #{contactMan},
+EMAIL = #{email},
+TELEPHONE = #{telephone},
+FAX = #{fax},
+REMARK = #{remark},
+PARK = #{park},
+TAG = #{tag},
+LON = #{lon},
+LAT = #{lat}
+WHERE
+BRANCH_ID = #{oldBranchId}
+
+</update>
+
+<select id="containsEntity">
+select count(*)
+from ${com}.D_T2_BRANCH
+where BRANCH_ID = #{branchId}
+and BRANCH_TYPE = #{branchType}
+
+</select>
+
+<delete id="deleteEntity">
+DELETE
+FROM
+${com}.D_T2_BRANCH
+WHERE
+BRANCH_ID = #{branchId}
+
+</delete>
+
+<delete id="deleteRegionBranch">
+DELETE
+FROM
+${com}.D_T2_DELIVERY_REGION_BRANCH rb
+WHERE
+rb.BRANCH_ID = #{branchId}
+
+</delete>
+
+<update id="enableBranch">
+UPDATE
+${com}.D_T2_BRANCH
+SET
+ENABLED = #{enabled}
+WHERE
+BRANCH_ID = #{branchId}
+
+</update>
+
+<select id="GetBranchById">
+SELECT
+b.*,
+d.BUSINESS_DATE,
+'' region_id,
+'' region_name
+FROM
+${com}.d_t2_branch b
+LEFT JOIN
+${com}.D_T0_BUSINESS_DATE d
+ON
+b.BRANCH_ID = d.RESTAURANT_ID
+WHERE
+branch_id = #{id}
+
+</select>
+
+<select id="query">
+SELECT
+b.*,
+d.BUSINESS_DATE,
+'' region_id,
+'' region_name
+FROM
+${com}.D_T2_BRANCH b
+LEFT JOIN
+${com}.D_T0_BUSINESS_DATE d
+ON
+b.BRANCH_ID = d.RESTAURANT_ID
+WHERE
+#{{query #{#{ 1=1}
+AND (
+b.BRANCH_ID LIKE #{branchName
+OR  b.BRANCH_NAME LIKE #{branchName)
+ORDER BY
+b.BRANCH_ID
+</select>
+
+<select id="queryRestaurant">
+SELECT
+b.*,
+d.BUSINESS_DATE,
+rb.REGION_ID,
+r.REGION_NAME
+FROM
+${com}.D_T2_BRANCH b
+LEFT JOIN
+${com}.D_T0_BUSINESS_DATE d
+ON
+b.BRANCH_ID = d.RESTAURANT_ID
+LEFT JOIN
+${com}.D_T2_DELIVERY_REGION_BRANCH rb
+ON
+rb.BRANCH_ID = b.BRANCH_ID
+LEFT JOIN
+${com}.D_T2_DELIVERY_REGION r
+ON
+r.REGION_ID = rb.REGION_ID
+WHERE
+b.BRANCH_TYPE = #{branchType}
+ORDER BY
+r.REGION_ID,
+b.BRANCH_ID
+
+</select>
+
+<select id="listShop">
+SELECT
+BRANCH_ID,
+BRANCH_NAME,
+QUERY_CODE,
+BRANCH_TYPE
+FROM
+${com}.D_T2_BRANCH
+WHERE
+#{{query #{#{ 1=1}
+ORDER BY
+BRANCH_ID
+
+</select>
+
+<select id="queryById">
+SELECT
+BRANCH_ID,
+BRANCH_NAME,
+QUERY_CODE,
+BRANCH_TYPE
+FROM
+${com}.D_T2_BRANCH
+WHERE
+BRANCH_ID = #{branchId}
+
+</select>
+
+<select id="queryDeliveryCycle">
+SELECT
+r.DELIVERY_CYCLE into #{dCycle
+FROM
+${com}.D_T2_DELIVERY_REGION r
+WHERE
+r.REGION_ID = #{regionId}
+
+</select>
+
+<select id="getRegionByBranch">
+SELECT
+r.*
+FROM
+${com}.D_T2_DELIVERY_REGION_BRANCH rb
+INNER JOIN
+${com}.D_T2_DELIVERY_REGION r
+ON
+r.REGION_ID = rb.REGION_ID
+WHERE
+rb.BRANCH_ID = #{branchId}
+
+</select>
+
+</mapper>

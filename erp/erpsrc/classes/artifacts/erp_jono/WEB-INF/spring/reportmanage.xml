@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:aop = "http://www.springframework.org/schema/aop"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+	http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+	http://www.springframework.org/schema/aop 
+	http://www.springframework.org/schema/aop/spring-aop-2.5.xsd"
+	default-autowire="byName">
+
+	<bean id="reportManageService" class="service.reportmanage.ReportManageService" autowire="byType"/>
+	<bean id="specialReportManageService" class="service.reportmanage.SpecialReportManageService"/>
+	
+	<bean id="rRequestHeaderBean" class="logic.reportmanage.RequestHeaderBean" />
+	<bean id="rRequestDetailBean" class="logic.reportmanage.RequestDetailBean" />
+	<bean id="rPurchasingHeaderBean" class="logic.reportmanage.PurchasingHeaderBean" />
+	<bean id="rPurchasingDetailBean" class="logic.reportmanage.PurchasingDetailBean" />
+	
+	<bean id="rInputHeaderBean" class="logic.reportmanage.InputHeaderBean" />
+	<bean id="rInputDetailBean" class="logic.reportmanage.InputDetailBean" />
+	
+	<bean id="rLossHeaderBean" class="logic.reportmanage.LossHeaderBean" />
+	<bean id="rLossDetailBean" class="logic.reportmanage.LossDetailBean" />
+	<bean id="rLossDishDetailBean" class="logic.reportmanage.LossDishDetailBean" />
+	
+	<bean id="rTransferHeaderBean" class="logic.reportmanage.TransferHeaderBean" />
+	<bean id="rTransferDetailBean" class="logic.reportmanage.TransferDetailBean" />
+	
+	<bean id="rArrangmentHeaderBean" class="logic.reportmanage.ArrangmentHeaderBean" />
+	<bean id="rArrangmentDetailBean" class="logic.reportmanage.ArrangmentDetailBean" />
+	
+	<bean id="rWorkOrderHeaderBean" class="logic.reportmanage.WorkOrderHeaderBean" />
+	<bean id="rWorkOrderDetailBean" class="logic.reportmanage.WorkOrderDetailBean" />
+	<bean id="rWorkOrderFormBean" class="logic.reportmanage.WorkOrderFormBean" />
+	
+	<bean id="rStorageBean" class="logic.reportmanage.StorageBean" />
+	
+	<bean id="rRestaurantCostBean" class="logic.reportmanage.RestaurantCostBean" />
+	<bean id="rRestaurantCostDetailBean" class="logic.reportmanage.RestaurantCostDetailBean" />
+	
+	<bean id="rPriceChangeBean" class="logic.reportmanage.PriceChangeBean" />
+	<bean id="rTenThousandAmountBean" class="logic.reportmanage.TenThousandAmountBean" />
+	
+	<bean id="rShippingDetailBean" class="logic.reportmanage.ShippingDetailBean" />
+	<bean id="rShippingHeaderBean" class="logic.reportmanage.ShippingHeaderBean" />
+	
+	<bean id="rRequestFormBean" class="logic.reportmanage.RequestFormBean" />
+	<bean id="rInputFormBean" class="logic.reportmanage.InputFormBean" />
+	<bean id="rLossFormBean" class="logic.reportmanage.LossFormBean" />
+	
+	<bean id="rRequisitionDetailBean" class="logic.reportmanage.RequisitionDetailBean" />
+	<bean id="rRequisitionHeaderBean" class="logic.reportmanage.RequisitionHeaderBean" />
+	
+	<bean id="rReturnGoodsFormBean" class="logic.reportmanage.ReturnGoodsFormBean" />
+	<bean id="rReturnGoodsDetailBean" class="logic.reportmanage.ReturnGoodsDetailBean" />
+	<bean id="rReturnGoodsHeaderBean" class="logic.reportmanage.ReturnGoodsHeaderBean" />
+	
+	<bean id="rReturnGoodsDeliveryFormBean" class="logic.reportmanage.ReturnGoodsDeliveryFormBean" />
+	<bean id="rReturnGoodsDeliveryDetailBean" class="logic.reportmanage.ReturnGoodsDeliveryDetailBean" />
+	<bean id="rReturnGoodsDeliveryHeaderBean" class="logic.reportmanage.ReturnGoodsDeliveryHeaderBean" />
+	
+	<bean id="rShippingAntiauditFormBean" class="logic.reportmanage.ShippingAntiauditFormBean" />
+	<bean id="rShippingAntiauditDetailBean" class="logic.reportmanage.ShippingAntiauditDetailBean" />
+	<bean id="rShippingAntiauditHeaderBean" class="logic.reportmanage.ShippingAntiauditHeaderBean" />
+	
+	<bean id="rCfCostBean" class="logic.reportmanage.CfCostBean" />
+	
+	<bean id="rArrangmentFormBean" class="logic.reportmanage.ArrangmentFormBean" />
+	<bean id="rTransferFormBean" class="logic.reportmanage.TransferFormBean" />
+	
+	<bean id="rLcCostBean" class="logic.reportmanage.LcCostBean" />
+	<bean id="rCfProduceBean" class="logic.reportmanage.CfProduceBean" />
+	<bean id="rPscanBean" class="logic.reportmanage.PscanBean" />
+	
+	<bean id="rShippingFormBean" class="logic.reportmanage.ShippingFormBean" />
+	<bean id="rUserBean" class="logic.reportmanage.UserBean" />
+	<bean id="rOperateLogQueryBean" class="logic.reportmanage.OperateLogQueryBean" />
+	
+	<bean id="rStorageInOutDetailBean" class="logic.reportmanage.StorageInOutDetailBean" />
+	<bean id="rStorageInOutSummaryBean" class="logic.reportmanage.StorageInOutSummaryBean" />
+	
+	<bean id="rCheckDetailBean" class="logic.reportmanage.CheckDetailBean" />
+	<bean id="productAnalysisBean" class="logic.reportmanage.ProductAnalysisBean" />
+	
+	<bean id="rRequestBranchBean" class="logic.special.RequestBranchBean" />
+	<bean id="rBranchIncomeBean" class="logic.special.BranchIncomeBean" />
+	<bean id="rDepartmentIncomeBean" class="logic.special.DepartmentIncomeBean" />
+	<bean id="rTimeIncomeBean" class="logic.special.TimeIncomeBean" />
+	
+	<bean id="foodCTRBean" class="logic.special.FoodCTRBean" />
+	
+	<bean id="lossCheckBean" class="logic.special.LossCheckBean" />
+	
+</beans>
+

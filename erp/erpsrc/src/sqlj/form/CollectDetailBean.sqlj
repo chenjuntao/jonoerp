@@ -1,0 +1,213 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on Mon Nov 03 09:48:12 CST 2014 by pw
+ * Last edited on Mon Nov 03 09:48:12 CST 2014 by pw
+ * 
+ * comment: 物流中心、中央工厂要货汇总单表明细
+ */
+package logic.form;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import pojo.form.CollectDetail;
+import sqlj.runtime.ref.DefaultContext;
+
+import com.tanry.business.form.FormConstant;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.TextUtil;
+import com.tanry.framework.acl.NoPrivilegeException;
+
+public class CollectDetailBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(CollectDetailBean.class);
+	
+	#sql private iterator DetailIter(String form_id, String item_id, String item_name, String item_dimension, String item_specification, String item_category, Double item_count, Double item_unit_price, Double pay_amt, String form_ref_id, String requester, String provider_id, String provider);
+	#sql private iterator ProviderIter(String provider_id, String provider);
+	
+	public int saveEntity(CollectDetail detail)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		String formId = detail.getFormId();
+		String itemId = detail.getItemId();
+		String itemName = detail.getItemName();
+		String itemDimension = detail.getItemDimension();
+		String itemSpecification = detail.getItemSpecification();
+		String itemCategory = detail.getItemCategory();
+		Double itemCount = detail.getItemCount();
+		Double itemUnitPrice = detail.getItemUnitPrice();
+		Double payAmt = detail.getPayAmt();
+		String formRefId = detail.getFormRefId();
+		String requester = detail.getRequester();
+		String providerId = detail.getProviderId();
+		String provider = detail.getProvider();
+
+		#sql [myCtx] {
+			INSERT INTO :{Com_("D_T1_COLLECT_DETAIL")} 
+				(FORM_ID, ITEM_ID, ITEM_NAME, ITEM_DIMENSION, ITEM_SPECIFICATION, ITEM_CATEGORY, ITEM_COUNT, ITEM_UNIT_PRICE, PAY_AMT, FORM_REF_ID, REQUESTER, PROVIDER_ID, PROVIDER) 
+			VALUES (:formId, :itemId, :itemName, :itemDimension, :itemSpecification, :itemCategory, :itemCount, :itemUnitPrice, :payAmt, :formRefId, :requester, :providerId, :provider)
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public int updateEntity(CollectDetail detail)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		String formId = detail.getFormId();
+		String itemId = detail.getItemId();
+//		String itemName = detail.getItemName();
+//		String itemDimension = detail.getItemDimension();
+//		String itemSpecification = detail.getItemSpecification();
+//		String itemCategory = detail.getItemCategory();
+//		Double itemCount = detail.getItemCount();
+//		Double itemUnitPrice = detail.getItemUnitPrice();
+//		Double payAmt = detail.getPayAmt();
+//		String formRefId = detail.getFormRefId();
+		String requester = detail.getRequester();
+		String providerId = detail.getProviderId();
+		String provider = detail.getProvider();
+
+		#sql [myCtx] {
+			UPDATE
+			:{Com_("D_T1_COLLECT_DETAIL")}
+			SET
+				REQUESTER = :requester,
+				PROVIDER_ID = :providerId,
+				PROVIDER = :provider
+			WHERE 
+				FORM_ID = :formId
+			AND ITEM_ID = :itemId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+
+	public int deleteByForm(String formId)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		#sql [myCtx] {
+			DELETE
+			FROM
+			:{Com_("D_T1_COLLECT_DETAIL")}
+			WHERE
+				FORM_ID = :formId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public List<Map> queryProvider(String formId)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		ProviderIter providerIter = null;
+		#sql [myCtx] providerIter = {
+			SELECT
+				d.PROVIDER_ID,
+				d.PROVIDER
+			FROM
+			:{Com_("D_T1_COLLECT_DETAIL")} d
+			WHERE
+			    d.FORM_ID = :formId
+			GROUP BY
+				d.PROVIDER_ID,
+				d.PROVIDER
+			ORDER BY
+				d.PROVIDER_ID
+		};
+		List<Map> providerLst = new ArrayList<Map>();
+		while(providerIter.next()) {
+			Map<String, String> provider = new HashMap<String, String>();
+			provider.put("providerId", providerIter.provider_id());
+			provider.put("provider", providerIter.provider());
+			providerLst.add(provider);
+		}
+		providerIter.close();
+		closeDefaultContext(myCtx);
+		return providerLst;
+	}
+
+	public List<CollectDetail> query(String formId, String providerId)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		DetailIter detailIter = null;
+		#sql [myCtx] detailIter = {
+			SELECT
+			    *
+			FROM
+			:{Com_("D_T1_COLLECT_DETAIL")} d
+			WHERE
+			    d.FORM_ID = :formId
+			AND d.PROVIDER_ID = :providerId
+			ORDER BY
+				d.ITEM_ID
+		};
+		List<CollectDetail> detailLst = processIter(detailIter);
+		detailIter.close();
+		closeDefaultContext(myCtx);
+		return detailLst;
+	}
+	
+	public List<CollectDetail> query(String formId)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		DetailIter detailIter = null;
+		#sql [myCtx] detailIter = {
+			SELECT
+			    *
+			FROM
+			:{Com_("D_T1_COLLECT_DETAIL")} d
+			WHERE
+			    d.FORM_ID = :formId
+			ORDER BY
+				d.PROVIDER_ID, d.ITEM_ID
+		};
+		List<CollectDetail> detailLst = processIter(detailIter);
+		detailIter.close();
+		closeDefaultContext(myCtx);
+		return detailLst;
+	}
+
+	private List<CollectDetail> processIter(DetailIter detailIter) 
+			throws SQLException {
+		List<CollectDetail> detailLst = new ArrayList<CollectDetail>();
+		while(detailIter.next()) {
+			CollectDetail detail = new CollectDetail();
+			detail.setFormId(detailIter.form_id());
+			detail.setItemId(detailIter.item_id());
+			detail.setItemName(detailIter.item_name());
+			detail.setItemDimension(detailIter.item_dimension());
+			detail.setItemSpecification(detailIter.item_specification());
+			detail.setItemCategory(detailIter.item_category());
+			detail.setItemCount(detailIter.item_count());
+			detail.setItemUnitPrice(detailIter.item_unit_price());
+			detail.setPayAmt(detailIter.pay_amt());
+			detail.setFormRefId(detailIter.form_ref_id());
+			detail.setRequester(detailIter.requester());
+			detail.setProviderId(detailIter.provider_id());
+			detail.setProvider(detailIter.provider());
+			detailLst.add(detail);
+		}
+		return detailLst;
+	}
+}

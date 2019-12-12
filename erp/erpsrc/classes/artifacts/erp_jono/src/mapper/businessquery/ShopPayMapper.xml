@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"   
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">  
+
+<mapper namespace="mapper.businessquery.ShopPayMapper">  
+
+<resultMap id="ShopPayResultMap" type="pojo.businessquery.ShopPay">
+		<id property="shopC" column="shopC" />
+		<result property="shopName" column="shopName" />
+		<result property="payAmt" column="payAmt" />
+		<result property="dbusinessDate" column="dbusinessDate" />
+		<result property="payCode" column="payCode" />
+		<result property="payName" column="payName" />
+	</resultMap>
+
+<select id="getBillPay" resultType="map">
+	SELECT
+		pay.CPAY_C CPAY_C,
+		pay.CPAY_N CPAY_N,
+		pay.CBILL_C CBILL_C,
+		ROUND(SUM(pay.nPayAmt) ,2) payTypeAmt
+	FROM
+		${com}.d_t_bill_pay pay
+	WHERE
+		pay.CBILL_C = #{CBILL_C}
+	GROUP BY
+		pay.CPAY_C,
+		pay.CPAY_N,
+		pay.CBILL_C
+</select>
+
+<select id="byDay" resultMap="ShopPayResultMap">
+	SELECT
+		date_format(DBUSINESS, '%Y-%m-%d') businessDate,
+		a.cBranch_C                        shopC,
+		a.CBRANCH_N                        shopName,
+		b.cPay_C                           payCode,
+		b.cPay_N                           payName,
+		SUM(b.nPayAmt)                     payAmt
+	FROM
+		${com}.d_t_food_bill a,
+		${com}.d_t_bill_pay b
+	WHERE
+		a.cBill_C = b.cBill_C
+	AND date_format(DBUSINESS, '%Y-%m-%d') IN
+	(
+		SELECT
+			date_format(DBUSINESS, '%Y-%m-%d')
+		FROM
+			${com}.d_t_food_bill d
+		WHERE
+			DBUSINESS &gt;= #{startTime}
+		AND DBUSINESS &lt;= #{endTime}
+		GROUP BY
+			date_format(DBUSINESS, '%Y-%m-%d')
+	)
+	GROUP BY
+		date_format(DBUSINESS, '%Y-%m-%d'),
+		a.cBranch_C,
+		a.CBRANCH_N,
+		b.cPay_C,
+		b.cPay_N
+	ORDER BY
+		date_format(DBUSINESS, '%Y-%m-%d'),
+		a.cBranch_C
+</select>
+
+<select id="listOneShopPay" resultType="int">
+	select 
+		count(cBill_C) 
+	from 
+		${com}.d_t_food_bill
+	where DBUSINESS &gt;= #{startTime}
+	AND DBUSINESS &lt;= #{endTime}
+</select>
+
+<select id="listOneShopPay1" resultMap="ShopPayResultMap">
+	select 
+		cBranch_C shopC, cBranch_N shopName, sum(nPayAmt) payAmt
+	from ${com}.d_t_food_bill
+	where 
+		DBUSINESS &gt;= #{startTime}
+	AND DBUSINESS &lt;= #{endTime}
+	and cBranch_C = #{shopC}
+	group by 
+		cBranch_C, cBranch_N
+	order by 
+		cBranch_C
+</select>
+
+<select id="listOneShopPay2" resultMap="ShopPayResultMap">
+	select 
+		a.cBranch_C shopC, b.cPay_C payCode,b.cPay_N payName, sum(b.nPayAmt) payAmt
+	from 
+		${com}.d_t_food_bill a, 
+		${com}.d_t_bill_pay b
+	where 
+		a.cBill_C = b.cBill_C
+	and a.DBUSINESS &gt;= #{startTime}
+	AND a.DBUSINESS &lt;= #{endTime}
+	group by 
+		a.cBranch_C,b.cPay_C, b.cPay_N
+</select>
+
+<select id="listShopPay" resultType="int">
+	select 
+		count(cBill_C)
+	from ${com}.d_t_food_bill a
+	where a.DBUSINESS &gt;= #{startTime}
+	AND a.DBUSINESS &lt;= #{endTime}
+</select>
+
+<select id="listShopPay1" resultMap="ShopPayResultMap">
+	select 
+		cBranch_C shopC, cBranch_N shopName, sum(nPayAmt) payAmt
+	from 
+		${com}.d_t_food_bill a
+	where a.DBUSINESS &gt;= #{startTime}
+	AND a.DBUSINESS &lt;= #{endTime}
+	group by 
+		cBranch_C, cBranch_N
+	order by 
+		cBranch_C
+</select>
+
+<select id="listShopPay2" resultMap="ShopPayResultMap">
+	select 
+		a.cBranch_C, b.cPay_C,b.cPay_N, sum(b.nPayAmt) payAmt
+	from 
+		${com}.d_t_food_bill a, 
+		${com}.d_t_bill_pay b
+	where 
+		a.cBill_C = b.cBill_C
+	and a.DBUSINESS &gt;= #{startTime}
+	AND a.DBUSINESS &lt;= #{endTime}
+	group by 
+		a.cBranch_C,b.cPay_C, b.cPay_N
+</select>
+
+<select id="countByDay" resultType="int">
+	SELECT count(DISTINCT
+		date_format(DBUSINESS, 'yyyy-MM-dd') ) 
+	FROM
+		${com}.d_t_food_bill b
+	WHERE
+		DBUSINESS &gt;= #{startTime}
+	AND DBUSINESS &lt;= #{endTime}
+	ORDER BY
+		date_format(DBUSINESS, '%Y-%m-%d')
+</select>
+
+<select id="getPayName" resultType="String">
+select
+	tt.cpay_n
+from
+(
+select
+	@rownum:=@rownum+1 x,
+	t.CPAY_N
+from(
+	SELECT
+		p.CPAY_N,
+		@rownum:=0
+	from 
+		${com}.d_t_bill_pay p
+	WHERE 
+		p.CPAY_C = #{payC}
+) t
+)tt
+where
+tt.x = 1
+</select>
+
+<select id="listShopPayByDay" resultType="String">
+	SELECT
+		DISTINCT date_format(DBUSINESS, '%Y-%m-%d') settletime
+	FROM
+		${com}.d_t_food_bill b
+	WHERE
+		DBUSINESS &gt;= #{startTime}
+	AND DBUSINESS &lt;= #{endTime}
+	ORDER BY
+		date_format(DBUSINESS, '%Y-%m-%d')
+	limit #{startRow},#{endRow}
+</select>
+</mapper>

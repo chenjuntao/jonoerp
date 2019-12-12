@@ -1,0 +1,251 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"   
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">  
+
+<mapper namespace="mapper.businessquery.ReturnMapper">  
+
+<resultMap id="ReturnResultMap" type="pojo.businessquery.ReturnBill">
+		<id property="billC" column="billC" />
+		<result property="businessDate" column="businessDate" />
+		<result property="table" column="tableN" />
+		<result property="period" column="period" />
+		<result property="shift" column="shift" />
+		<result property="foodBill" column="foodBill" />
+		<result property="foodN" column="foodN" />
+		<result property="foodC" column="foodC" />
+		<result property="unit" column="unit" />
+		<result property="returnAmount" column="returnAmount" />
+		<result property="price" column="price" />
+		<result property="returnAmt" column="returnAmt" />
+		<result property="returnWhy" column="returnWhy" />
+		<result property="returnTime" column="returnTime" />
+		<result property="backMan" column="backMan" />
+		<result property="shopC" column="shopC" />
+		<result property="shopN" column="shopN" />
+		<result property="suitFlag" column="suitFlag" />
+		<result property="smallC" column="smallC" />
+		<result property="smallN" column="smallN" />
+</resultMap>
+
+
+<select id="getReturnSum" resultMap="ReturnResultMap">
+	SELECT
+		CASE WHEN SUM(price) IS NULL
+			THEN 0
+			ELSE SUM(price)
+		END price,
+		CASE WHEN SUM(returnAmount) IS NULL
+			THEN 0
+			ELSE SUM(returnAmount)
+		END returnAmount,
+		CASE WHEN SUM(returnAmt) IS NULL
+			THEN 0
+			ELSE SUM(returnAmt)
+		END returnAmt
+	FROM
+	(
+		SELECT
+			date_format(DBUSINESS, '%Y-%m-%d') businessDate,
+			b.cBill_C                        billC,
+			b.cTable_N                       tableN,
+			b.cPeriod_N                      period,
+			b.cShift_N                       shift,
+			bs.cFood_C                       foodC,
+			bs.sUnit                         unit,
+			bs.nPrc                          price,
+			bs.nQty                          returnAmount,
+			bs.nAmt                          returnAmt,
+			bs.sRetSendRemark                returnWhy,
+			bs.cPresentBackMan               backMan,
+			bs.eSuitFlag                     suitFlag,
+			b.cBranch_C                      shopC
+		FROM
+			${com}.d_t_food_bill b
+		LEFT JOIN
+			${com}.d_t_food_Bills bs
+		ON
+			b.cBill_C = bs.cBill_C
+		WHERE
+			b.CBRANCH_C like #{shopC}
+	<if test="period != null">
+		and b.CPERIOD_N like #{period}
+	</if>
+	<if test="shift != null">
+		and b.CSHIFT_N like #{shift}
+	</if>
+		AND bs.eRetSendFlag = '退品'
+		AND bs.eSuitFlag &lt;&gt; '套餐子项'
+		AND date_format(DBUSINESS, '%Y-%m-%d') IN
+		(
+			SELECT
+				date_format(DBUSINESS, '%Y-%m-%d')
+			FROM
+				${com}.d_t_food_bill d
+			WHERE
+				DBUSINESS &gt;= #{startDate}
+			AND DBUSINESS &lt;= #{endDate}
+			GROUP BY
+				date_format(DBUSINESS, '%Y-%m-%d')
+		)
+	GROUP BY
+		date_format(DBUSINESS, '%Y-%m-%d'),
+		b.cTable_N ,
+		b.cBill_C ,
+		b.cPeriod_N ,
+		b.cShift_N ,
+		bs.cFood_C ,
+		bs.sUnit ,
+		bs.nPrc ,
+		bs.nQty ,
+		bs.nAmt ,
+		bs.sRetSendRemark ,
+		bs.cPresentBackMan ,
+		bs.eSuitFlag ,
+		b.cBranch_C
+	)t
+</select>
+
+<select id="getHeadCount" resultType="int">
+	SELECT
+		COUNT(*)
+	FROM
+	(
+		SELECT
+			date_format(DBUSINESS, '%Y-%m-%d') businessDate,
+			b.cBill_C                        billC,
+			b.cTable_N                       tableN,
+			b.cPeriod_N                      period,
+			b.cShift_N                       shift,
+			bs.cFood_C                       foodC,
+			bs.sUnit                         unit,
+			bs.nPrc                          price,
+			bs.nQty                          returnAmount,
+			bs.nAmt                          returnAmt,
+			bs.sRetSendRemark                returnWhy,
+			bs.cPresentBackMan               backMan,
+			bs.eSuitFlag                     suitFlag,
+			b.cBranch_C                      shopC
+		FROM
+			${com}.d_t_food_bill b
+		LEFT JOIN
+			${com}.d_t_food_Bills bs
+		ON
+			b.cBill_C = bs.cBill_C
+		WHERE
+			b.CBRANCH_C like #{shopC}
+	<if test="period != null">
+		and b.CPERIOD_N like #{period}
+	</if>
+	<if test="shift != null">
+		and b.CSHIFT_N like #{shift}
+	</if>
+		AND bs.eRetSendFlag = '退品'
+		AND bs.eSuitFlag &lt;&gt; '套餐子项'
+		AND date_format(DBUSINESS, '%Y-%m-%d') IN
+		(
+			SELECT
+				date_format(DBUSINESS, '%Y-%m-%d')
+			FROM
+				${com}.d_t_food_bill d
+			WHERE
+				DBUSINESS &gt;= #{startDate}
+			AND DBUSINESS &lt;= #{endDate}
+			GROUP BY
+				date_format(DBUSINESS, '%Y-%m-%d')
+		)
+		GROUP BY
+			date_format(DBUSINESS, '%Y-%m-%d'),
+			b.cTable_N ,
+			b.cBill_C ,
+			b.cPeriod_N ,
+			b.cShift_N ,
+			bs.cFood_C ,
+			bs.sUnit ,
+			bs.nPrc ,
+			bs.nQty ,
+			bs.nAmt ,
+			bs.sRetSendRemark ,
+			bs.cPresentBackMan ,
+			bs.eSuitFlag ,
+			b.cBranch_C
+	)t
+</select>
+
+<select id="getReturn" resultMap="ReturnResultMap">
+	SELECT
+		date_format(DBUSINESS, '%Y-%m-%d') businessDate,
+		b.cBill_C                        billC,
+		b.cTable_N                       tableN,
+		b.cPeriod_N                      period,
+		b.cShift_N                       shift,
+		bs.cFood_C                       foodC,
+		bs.cFood_N                       foodN,
+		bs.sUnit                         unit,
+		bs.nPrc                          price,
+		bs.nQty                          returnAmount,
+		bs.nAmt                          returnAmt,
+		bs.sRetSendRemark                returnWhy,
+		bs.cPresentBackMan	             backMan,
+		bs.eSuitFlag                     suitFlag,
+		b.cBranch_C                      shopC,
+		b.cBranch_N                      shopN,
+		cLitCls_C                        smallC,
+		cLitCls_N                        smallN
+	FROM
+		${com}.d_t_food_bill b
+	LEFT JOIN
+		${com}.d_t_food_Bills bs
+	ON
+		b.cBill_C = bs.cBill_C
+	WHERE
+		b.CBRANCH_C LIKE #{shopC}
+<if test="period != null">
+	and b.CPERIOD_N like #{period}
+</if>
+<if test="shift != null">
+	and b.CSHIFT_N like #{shift}
+</if>
+	AND bs.eRetSendFlag = '退品'
+	AND bs.eSuitFlag &lt;&gt; '套餐子项'
+	AND date_format(DBUSINESS, '%Y-%m-%d') IN
+	(
+		SELECT
+			date_format(DBUSINESS, '%Y-%m-%d')
+		FROM
+			${com}.d_t_food_bill d
+		WHERE
+			DBUSINESS &gt;= #{startDate}
+		AND DBUSINESS &lt;= #{endDate}
+		GROUP BY
+			date_format(DBUSINESS, '%Y-%m-%d')
+	)
+	GROUP BY
+		date_format(DBUSINESS, '%Y-%m-%d'),
+		b.cTable_N ,
+		b.cBill_C ,
+		b.cPeriod_N ,
+		b.cShift_N ,
+		bs.cFood_C ,
+		bs.cFood_N ,
+		bs.sUnit ,
+		bs.nPrc ,
+		bs.nQty ,
+		bs.nAmt ,
+		bs.sRetSendRemark ,
+		bs.cPresentBackMan ,
+		bs.eSuitFlag ,
+		b.cBranch_C ,
+		b.cBranch_N ,
+		cLitCls_C,
+		cLitCls_N
+	ORDER BY
+		date_format(DBUSINESS, '%Y-%m-%d'),
+		b.cBranch_C,
+		b.cBill_C,
+		b.cTable_N,
+		b.cPeriod_N,
+		b.cShift_N,
+		bs.cFood_C
+	limit #{startRow},#{endRow}
+</select>
+</mapper>

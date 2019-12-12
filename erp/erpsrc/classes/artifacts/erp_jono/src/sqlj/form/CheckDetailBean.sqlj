@@ -1,0 +1,597 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on Sun Sep 28 10:22:31 CST 2014 by lyz
+ * Last edited on Sun Sep 28 10:22:31 CST 2014 by lyz
+ * 
+ * comment: 盘点单/清单明细
+ */
+package logic.form;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import pojo.form.CheckDetail;
+import sqlj.runtime.ref.DefaultContext;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.TextUtil;
+import com.tanry.framework.acl.NoPrivilegeException;
+
+public class CheckDetailBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(CheckDetailBean.class);
+	
+	#sql private iterator DetailIter(
+			String rownumber,
+			String form_id,
+			String item_id, 
+			String item_name, 
+			String item_dimension,
+			String item_specification,
+			String item_category,
+			Double check_count,
+			Double theory_count,
+			Date expired_time,
+			Integer item_order,
+			String item_status,
+			Double itemPrice,
+			Double itemAmt,
+			Double diffAmt,
+			Double diffCount);
+	
+	public int saveEntity(CheckDetail detail)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		String formId = detail.getFormId();
+		String itemId = detail.getItemId();
+		String itemName = detail.getItemName();
+		String itemDimension = detail.getItemDimension();
+		String itemSpecification = detail.getItemSpecification();
+		String itemCategory = detail.getItemCategory();
+		Double checkCount = detail.getCheckCount();
+		Double theoryCount = detail.getTheoryCount();
+		Date expiredTime = SqlDateUtil.getSqlDate(detail.getExpiredTime());
+		Integer itemOrder = detail.getItemOrder();
+		String itemStatus = detail.getItemStatus();
+
+		#sql [myCtx] {
+			INSERT INTO :{Com_("D_T1_CHECK_DETAIL")}
+				(FORM_ID, ITEM_ID, ITEM_NAME, ITEM_DIMENSION, ITEM_SPECIFICATION, ITEM_CATEGORY,
+						CHECK_COUNT, THEORY_COUNT, EXPIRED_TIME, ITEM_ORDER, ITEM_STATUS) 
+			VALUES (:formId, :itemId, :itemName, :itemDimension, :itemSpecification, :itemCategory,
+					:checkCount, :theoryCount, :expiredTime, :itemOrder, :itemStatus)
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public int updateEntity(CheckDetail detail)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		String formId = detail.getFormId();
+		String itemId = detail.getItemId();
+		String itemName = detail.getItemName();
+		String itemDimension = detail.getItemDimension();
+		String itemSpecification = detail.getItemSpecification();
+		String itemCategory = detail.getItemCategory();
+		Double checkCount = detail.getCheckCount();
+		Date expiredTime = SqlDateUtil.getSqlDate(detail.getExpiredTime());
+		Integer itemOrder = detail.getItemOrder();
+
+		#sql [myCtx] {
+			UPDATE
+				:{Com_("D_T1_CHECK_DETAIL")}
+			SET
+				CHECK_COUNT = :checkCount,
+				EXPIRED_TIME = :expiredTime
+			WHERE 
+				FORM_ID = :formId
+			AND ITEM_ID = :itemId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public int updateSupplement(CheckDetail detail)
+			throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		String formId = detail.getFormId();
+		String itemId = detail.getItemId();
+		Double theoryCount = detail.getTheoryCount();
+		
+		#sql [myCtx] {
+			UPDATE
+				:{Com_("D_T1_CHECK_DETAIL")}
+			SET
+				THEORY_COUNT = :theoryCount
+			WHERE 
+				FORM_ID = :formId
+			AND ITEM_ID = :itemId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+
+	public int deleteByForm(String formId)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		#sql [myCtx] {
+			DELETE
+			FROM
+				:{Com_("D_T1_CHECK_DETAIL")}
+			WHERE
+				FORM_ID = :formId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	/**
+	 * 根据批次删除相应的盘点清单和盘点汇总单明细数据
+	 */
+	public int deleteByBatch(String batchId)
+			throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		#sql [myCtx] {
+			DELETE
+			FROM
+				:{Com_("D_T1_CHECK_DETAIL")} d
+			WHERE
+			    d.FORM_ID IN
+			    (
+			        SELECT
+			            h.FORM_ID
+			        FROM
+			        	:{Com_("D_T1_CHECK_HEADER")} h
+			        WHERE
+			            h.CHECK_BATCH_ID = :batchId)
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public List<CheckDetail> query(String formId)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		return query(formId,null);
+	}
+	
+	public List<CheckDetail> query(String formId,String hasSum)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		DetailIter detailIter = null;
+		#sql [myCtx] detailIter = {
+			WITH
+			    items AS
+			    (
+			        SELECT
+			            d.FORM_ID,
+			            d.ITEM_ID,
+			            d.ITEM_NAME,
+			            d.ITEM_DIMENSION,
+			            d.ITEM_SPECIFICATION,
+			            d.ITEM_CATEGORY,
+			            d.SHELF_ID,
+			            SUM(NVL(d.CHECK_COUNT,0)) CHECK_COUNT,
+			            SUM(d.THEORY_COUNT)THEORY_COUNT,
+			            d.EXPIRED_TIME,
+			            d.ITEM_ORDER,
+			            d.ITEM_STATUS,
+			            SUM(NVL(d.CHECK_COUNT,0) - NVL(d.THEORY_COUNT,0))                 diffCount,
+			            SUM((NVL(d.CHECK_COUNT,0) - NVL (d.THEORY_COUNT,0))*p.ITEM_PRICE) diffAmt,
+			            p.ITEM_PRICE                                                      itemPrice,
+			            SUM(d.CHECK_COUNT * p.ITEM_PRICE)                                 itemAmt
+			        FROM
+			            :{Com_("D_T1_CHECK_DETAIL")} d
+			        LEFT JOIN
+			            :{Com_("D_T2_ITEM_PRICE")} p
+			        ON
+			            d.ITEM_ID = p.ITEM_ID
+			        AND p.PRICE_TYPE = 'BENCHMARK'
+			        AND p.IS_CURRENT = 1
+			        WHERE
+			            d.FORM_ID = :formId
+			        GROUP BY
+			            GROUPING SETS( (d.FORM_ID, d.ITEM_ID, d.ITEM_NAME, d.ITEM_DIMENSION,
+			            d.ITEM_SPECIFICATION, d.ITEM_CATEGORY, d.SHELF_ID, d.CHECK_COUNT, d.THEORY_COUNT,
+			            d.EXPIRED_TIME, d.ITEM_ORDER, d.ITEM_STATUS,p.ITEM_PRICE),NULL)
+			        ORDER BY
+			        	d.FORM_ID,d.ITEM_ORDER
+			    )
+			SELECT
+			    DECODE (i.form_id,NULL,'合计',rownum)rownumber,
+			    i.*
+			FROM
+			    items i};
+		List<CheckDetail> detailLst = processIter(detailIter,hasSum);
+		detailIter.close();
+		closeDefaultContext(myCtx);
+		return detailLst;
+	}
+	
+	public boolean exist(String batchId, String itemId)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		int count = 0;
+		#sql [myCtx] {
+			SELECT
+			    COUNT(*) into :count
+			FROM
+				:{Com_("D_T1_CHECK_DETAIL")} d,
+				:{Com_("D_T1_CHECK_HEADER")} h
+			WHERE
+			    h.FORM_ID = d.FORM_ID
+			AND d.ITEM_ID = :itemId
+			AND h.CHECK_BATCH_ID = :batchId
+		};
+		closeDefaultContext(myCtx);
+		if(count == 0){
+			return false;
+		}
+		return true;
+	}
+	
+	/**
+	 * 餐厅盘点
+	 * 1、根据批次查询盘点清单明细，分组求和，同时关联查询相应的理论库存，用于计算生成盘点单
+	 * 2、根据批次限定的原料类别，检查漏盘原料，标志状态
+	 */
+	public List<CheckDetail> queryByBatch(String batchId,String storageId)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		String checkCategory = null;
+		String branchId = null; // 用作关联理论库存
+		#sql [myCtx] {
+			SELECT
+			    c.ITEM_CATEGORY, c.LOCK_BRANCH_ID into :checkCategory, :branchId
+			FROM
+				:{Com_("D_T1_CHECK_LOCK")} c
+			WHERE
+			    c.CHECK_BATCH_ID = :batchId
+		};
+		
+		if (checkCategory == null) {
+			checkCategory = "";
+		}
+		
+		String query = " c.CATEGORY_ID IN ('" + checkCategory.replaceAll(",", "','") + "') ";
+		
+		DetailIter detailIter = null;
+		#sql [myCtx] detailIter = {
+			WITH
+			    normal_item AS --正常盘点
+			    (
+			        SELECT
+			            d.ITEM_ID,
+			            SUM(d.CHECK_COUNT) AS check_count,
+			            'NORMAL'           AS item_status
+			        FROM
+			        	:{Com_("D_T1_CHECK_DETAIL")} d
+			        INNER JOIN
+			        	:{Com_("D_T1_CHECK_HEADER")} h
+			        ON
+			            d.FORM_ID = h.FORM_ID
+			        AND h.FORM_TYPE = 'list'
+			        LEFT JOIN
+			        	:{Com_("D_T0_FORM_STATUS")} s
+			        ON
+			            s.FORM_ID = h.FORM_ID
+			        AND s.IS_CURRENT = 1
+			        WHERE
+			            h.CHECK_BATCH_ID = :batchId
+			        AND NVL( s.STATUS, 'null') != '已作废'
+			        GROUP BY
+			            d.ITEM_ID
+			        ORDER BY
+			            d.ITEM_ID
+			    )
+			    ,
+			    leak AS --漏盘原料
+			    (
+			        SELECT
+			            m.item_id
+			        FROM
+			        	:{Com_("D_T2_ITEM_CATEGORY")} c,
+			            :{Com_("D_T2_ITEM_META")} m
+			        WHERE
+			            m.CATEGORY_ID = c.CATEGORY_ID
+			        AND :{query :: 1=1}
+			        MINUS --差集运算
+			        SELECT
+			            ITEM_ID
+			        FROM
+			            normal_item
+			    )
+			    ,
+			    scheck AS --取并集
+			    (
+			    	SELECT
+					    l.*,
+					    0      AS check_count,
+					    'LEAK' AS item_status
+					FROM
+					    leak l
+					UNION ALL
+					SELECT
+					    *
+					FROM
+					    normal_item
+			    )
+			    ,
+			    theory_storage AS --查询理论库存
+			    (
+			        SELECT
+			            s.item_id,
+			            s.item_count
+			        FROM
+			        	:{Com_("D_T2_STORAGE")} s
+			        INNER JOIN
+			            scheck c
+			        ON
+			            c.item_id = s.item_id
+			        AND s.storage_id = :storageId
+			        ORDER BY
+			            s.item_id
+			    )
+			SELECT
+			    s.*,
+			    '' AS FORM_ID,
+			    m.ITEM_DIMENSION,
+			    m.ITEM_NAME,
+			    m.ITEM_SPECIFICATION,
+			    m.CATEGORY_ID AS ITEM_CATEGORY,
+			    ''            AS EXPIRED_TIME,
+			    0             AS ITEM_ORDER,
+			    ts.item_count theory_count,
+			    p.ITEM_PRICE                          itemPrice,
+			    ROUND(s.check_count * p.ITEM_PRICE,2) itemAmt,
+			    ROWNUM rownumber,
+			    '' diffAmt,
+			    '' diffCount
+			FROM
+			    scheck s
+			INNER JOIN
+				:{Com_("D_T2_ITEM_META")} m
+			ON
+			    m.item_id = s.item_id
+			LEFT JOIN
+			    theory_storage ts
+			ON
+			    ts.item_id = s.item_id
+    		LEFT JOIN
+    			:{Com_("D_T2_ITEM_PRICE")} p
+			ON
+			    s.ITEM_ID = p.ITEM_ID
+			AND p.PRICE_TYPE = 'BENCHMARK'
+			AND p.IS_CURRENT = 1
+			ORDER BY
+		    	s.item_id
+		};
+		List<CheckDetail> detailLst = processIter(detailIter);
+		detailIter.close();
+		closeDefaultContext(myCtx);
+		return detailLst;
+	}
+
+	/**
+	 * 物流中心，中央工厂盘点
+	 * 1、根据批次查询盘点清单明细，分组求和，同时关联查询相应的理论库存，用于计算生成盘点单
+	 * 2、根据批次限定的原料类别，检查漏盘原料，标志状态
+	 */
+	public List<CheckDetail> queryLc(String batchId,String storageId)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		String checkCategory = null;
+		String branchId = null; // 用作关联理论库存
+		#sql [myCtx] {
+			SELECT
+			    c.ITEM_CATEGORY, c.LOCK_BRANCH_ID into :checkCategory, :branchId
+			FROM
+				:{Com_("D_T1_CHECK_LOCK")} c
+			WHERE
+			    c.CHECK_BATCH_ID = :batchId
+		};
+		if (checkCategory == null) {
+			checkCategory = "";
+		}
+		String query = " c.CATEGORY_ID IN ('" + checkCategory.replaceAll(",", "','") + "') ";
+		
+		DetailIter detailIter = null;
+		#sql [myCtx] detailIter = {
+			WITH
+			    normal_item AS --正常盘点
+			    (
+			        SELECT
+			            d.ITEM_ID,
+			            SUM(d.CHECK_COUNT) AS check_count,
+			            'NORMAL'           AS item_status
+			        FROM
+			        	:{Com_("D_T1_CHECK_DETAIL")} d
+			        INNER JOIN
+			        	:{Com_("D_T1_CHECK_HEADER")} h
+			        ON
+			            d.FORM_ID = h.FORM_ID
+			        AND h.FORM_TYPE = 'list'
+			        LEFT JOIN
+			        	:{Com_("D_T0_FORM_STATUS")} s
+			        ON
+			            s.FORM_ID = h.FORM_ID
+			        AND s.IS_CURRENT = 1
+			        WHERE
+			            h.CHECK_BATCH_ID = :batchId
+			        AND NVL( s.STATUS, 'null') != '已作废'
+			        GROUP BY
+			            d.ITEM_ID
+			        ORDER BY
+			            d.ITEM_ID
+			    )
+			    ,
+			    leak AS --漏盘原料
+			    (
+			        SELECT
+			            m.item_id
+			        FROM
+			        	:{Com_("D_T2_ITEM_CATEGORY")} c,
+			        	:{Com_("D_T2_ITEM_META")} m
+			        WHERE
+			            m.CATEGORY_ID = c.CATEGORY_ID
+			        AND :{query :: 1=1}
+			        MINUS --差集运算
+			        SELECT
+			            ITEM_ID
+			        FROM
+			            normal_item
+			    )
+			    ,
+			    scheck AS --取并集
+			    (
+			    	SELECT
+					    l.*,
+					    0      AS check_count,
+					    'LEAK' AS item_status
+					FROM
+					    leak l
+					UNION ALL
+					SELECT
+					    *
+					FROM
+					    normal_item
+			    )
+			    ,
+			    theory_storage AS --查询理论库存
+			    (
+			        SELECT
+			            s.item_id,
+			            s.item_count,
+			            ROUND(s.item_count , 2) AS theory_count
+			        FROM
+			        	:{Com_("D_T2_STORAGE")} s
+			        INNER JOIN
+			            scheck c
+			        ON
+			            c.item_id = s.item_id
+			        AND s.storage_id = :storageId
+			        ORDER BY
+			            s.item_id
+			    )
+			SELECT
+			    s.*,
+			    '' AS FORM_ID,
+			    m.item_name,
+			    m.ITEM_DIMENSION,
+			    m.ITEM_SPECIFICATION,
+			    m.CATEGORY_ID AS ITEM_CATEGORY,
+			    ''            AS EXPIRED_TIME,
+			    0             AS ITEM_ORDER,
+			    p.ITEM_PRICE                          itemPrice,
+			    ROUND(s.check_count * p.ITEM_PRICE,2) itemAmt,
+			    ts.item_count theory_count,
+			    ROWNUM rownumber,
+			    '' diffAmt,
+			    '' diffCount
+			FROM
+			    scheck s
+			INNER JOIN
+				:{Com_("D_T2_ITEM_META")} m
+			ON
+			    m.item_id = s.item_id
+			LEFT JOIN
+			    theory_storage ts
+			ON
+			    ts.item_id = s.item_id
+    		LEFT JOIN
+    			:{Com_("D_T2_ITEM_PRICE")} p
+			ON
+			    s.ITEM_ID = p.ITEM_ID
+			AND p.PRICE_TYPE = 'BENCHMARK'
+			AND p.IS_CURRENT = 1
+			ORDER BY
+		    	s.item_id
+		};
+		List<CheckDetail> detailLst = processIter(detailIter);
+		detailIter.close();
+		closeDefaultContext(myCtx);
+		return detailLst;
+	}
+	
+	private List<CheckDetail> processIter(DetailIter detailIter,String hasSum) 
+			throws SQLException {
+		List<CheckDetail> detailLst = new ArrayList<CheckDetail>();
+		while(detailIter.next()) {
+			CheckDetail detail = new CheckDetail();
+			detail.setRownumber(detailIter.rownumber());
+			detail.setFormId(detailIter.form_id());
+			detail.setItemId(detailIter.item_id());
+			detail.setItemName(detailIter.item_name());
+			detail.setItemDimension(detailIter.item_dimension());
+			detail.setItemSpecification(detailIter.item_specification());
+			detail.setItemCategory(detailIter.item_category());
+			detail.setCheckCount(detailIter.check_count());
+			detail.setTheoryCount(detailIter.theory_count());
+			detail.setExpiredTime(SqlDateUtil.getUtilDate(detailIter.expired_time()));
+			detail.setItemOrder(detailIter.item_order());
+			detail.setItemStatus(detailIter.item_status());
+			detail.setItemPrice(detailIter.itemPrice());
+			detail.setItemAmt(detailIter.itemAmt());
+			detail.setDiffAmt(detailIter.diffAmt());
+			detail.setDiffCount(detailIter.diffCount());
+			detailLst.add(detail);
+		}
+		
+		if(hasSum == null){
+			if(detailLst.size()>0){
+				detailLst.remove(detailLst.size()-1);
+			}
+		}
+		return detailLst;
+	}
+	
+	private List<CheckDetail> processIter(DetailIter detailIter) 
+			throws SQLException {
+		List<CheckDetail> detailLst = new ArrayList<CheckDetail>();
+		while(detailIter.next()) {
+			CheckDetail detail = new CheckDetail();
+			detail.setRownumber(detailIter.rownumber());
+			detail.setFormId(detailIter.form_id());
+			detail.setItemId(detailIter.item_id());
+			detail.setItemName(detailIter.item_name());
+			detail.setItemDimension(detailIter.item_dimension());
+			detail.setItemSpecification(detailIter.item_specification());
+			detail.setItemCategory(detailIter.item_category());
+			detail.setCheckCount(detailIter.check_count());
+			detail.setTheoryCount(detailIter.theory_count());
+			detail.setExpiredTime(SqlDateUtil.getUtilDate(detailIter.expired_time()));
+			detail.setItemOrder(detailIter.item_order());
+			detail.setItemStatus(detailIter.item_status());
+			detail.setItemPrice(detailIter.itemPrice());
+			detail.setItemAmt(detailIter.itemAmt());
+			detail.setDiffAmt(detailIter.diffAmt());
+			detail.setDiffCount(detailIter.diffCount());
+			detailLst.add(detail);
+		}
+		
+		return detailLst;
+	}
+}

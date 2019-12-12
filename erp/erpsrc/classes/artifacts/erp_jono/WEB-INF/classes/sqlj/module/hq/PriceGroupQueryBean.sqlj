@@ -1,0 +1,103 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on Jul 20, 2015 by liyzh
+ * Last edited on Jul 20, 2015 by liyzh
+ * 
+ * 说明： 多品牌多价格组查询价格
+ */
+package logic.module.hq;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import sqlj.runtime.ref.DefaultContext;
+
+import com.tanry.business.module.hq.config.item.vo.ItemVO;
+import com.tanry.framework.acl.NoPrivilegeException;
+import com.tanry.framework.util.SqlDateUtil;
+
+public class PriceGroupQueryBean extends ConnectionPool {
+	
+	public static Logger log = Logger.getLogger(PriceGroupQueryBean.class);
+	
+	#sql private static iterator ProductIter(String item_id, String item_name,
+		String item_type, String category_id, String item_dimension, 
+		String query_code, String item_specification, Double sale_price,
+		Double group_price);
+	
+	/**
+	 * 根据价格组编号查询相应的出品信息及分组价格
+	 */
+	public List<ItemVO> queryProduct(String pgroupId) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		ProductIter productIter = null;
+		#sql [myCtx] productIter = {
+			SELECT
+			    m.*,
+			    ps.ITEM_PRICE AS sale_price,
+			    p2.ITEM_PRICE AS group_price
+			FROM
+			:{Com_("D_T2_PRICE_GROUP")} pg
+			INNER JOIN
+			:{Com_("D_T2_BRAND_PRODUCT")} bp
+			ON
+			    pg.OWNER = bp.BRAND_ID
+			INNER JOIN
+			:{Com_("D_T2_ITEM_META")} m
+			ON
+			    m.ITEM_ID = bp.ITEM_ID
+			LEFT JOIN
+			:{Com_("D_T2_ITEM_PRICE")} ps
+			ON
+			    ps.ITEM_ID = m.ITEM_ID
+			AND ps.PRICE_TYPE = 'SALE'
+			LEFT JOIN
+			:{Com_("D_T2_ITEM_PRICE")} p2
+			ON
+			    p2.ITEM_ID = m.ITEM_ID
+			AND p2.PRICE_TYPE = pg.PRICE_GROUP_ID
+			WHERE
+			    pg.PRICE_GROUP_ID = :pgroupId
+			ORDER BY
+				m.ITEM_ID
+		};
+
+		List<ItemVO> itemLst = new ArrayList<ItemVO>();
+		while (productIter.next()) {
+			itemLst.add(iterateProduct(productIter));
+		}
+		productIter.close();
+		closeDefaultContext(myCtx);
+		return itemLst;
+	}
+
+	
+	private ItemVO iterateProduct(ProductIter productIter) throws SQLException {
+		ItemVO item = new ItemVO();
+		item.setItemId(productIter.item_id());
+		item.setItemName(productIter.item_name());
+		item.setItemType(productIter.item_type());
+		item.setCategoryId(productIter.category_id());
+		item.setItemDimension(productIter.item_dimension());
+		item.setQueryCode(productIter.query_code());
+		String itemSpecification = productIter.item_specification();
+		item.setItemSpecification(itemSpecification);
+		
+		item.setSalePrice(productIter.sale_price());
+		item.setGroupPrice(productIter.group_price());
+		return item;
+	}
+}

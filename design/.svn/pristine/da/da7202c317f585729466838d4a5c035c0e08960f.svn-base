@@ -1,0 +1,68 @@
+﻿1. 菜单编码：setting05
+   菜单名称：权限查询 
+   排序：1
+2. 菜单编码：setting0501 
+   菜单名称：用户-角色查询 
+   菜单地址：/setting/rolesearch/mainView.action
+   排序：1
+3. 菜单编码：setting0502 
+   菜单名称：角色权限查询 
+   菜单地址：/setting/power/mainView.action
+   排序：1
+4.菜单编码：outer04
+   菜单名称： 外部入库管理
+   菜单地址：
+   排序：1
+5.将外部订货--外部订货对账的出货单查看菜单改名为出货单入库管理，并将菜单移动到外部入库管理
+
+6.菜单编码：outer0208
+   菜单名称： 已入库出货单查询
+   菜单地址：/restaurant/putinstorage/distribution/outsideMainView.action?branchType=OUTER
+   排序：1
+   
+ 7.菜单编码：outer05
+   菜单名称： 外部日结管理
+   菜单地址：
+   排序：1
+   
+ 8.菜单编码：outer0401
+   菜单名称：外部日结管理
+   菜单地址：/restaurant/dailysettlement/mainView.action?branchType=OUTERORDER
+   排序：1
+   
+ 9.菜单编码：outer0402
+   菜单名称：外部逆日结管理
+   菜单地址：/restaurant/dailyManage/settleView.action
+   排序：1
+   
+ 10.菜单编码：hq0110
+   菜单名称：部门基本信息查询
+   菜单地址：/hq/branch/a/mainView.action
+   排序：1  
+ 
+11.菜单编码：hq0413
+   菜单名称：供应商与商品对应关系查看
+   菜单地址：/hq/supplier/item/deleteView.action
+   排序：1
+
+12.菜单编码：hq0414
+   菜单名称：商品与供应商对应关系查看
+   菜单地址：/hq/item/supplier/deleteView.action
+   排序：1
+   
+ 13.将物流中心餐厅配送退货确认名字改成部门退货确认
+ 
+ 14.将外部退货，生成审核管理菜单移至外部菜单下
+ 
+ 15.总部--餐厅报表查询下添加啦三个菜单
+ 15.1   编码：hq0819
+         名称：餐厅营业时段数据
+         地址：/reportmanage/special/tincome/mainView.action?branchType=RESTAURANT
+         
+15.2    编码：hq0820
+        名称：餐厅营业收入数据
+        地址：/reportmanage/special/branchincome/mainView.action?branchType=RESTAURANT
+        
+ 15.3   编码：hq0821
+      名称：餐厅部门营业收入运营数据
+      地址：/reportmanage/special/departmentincome/mainView.action?branchType=RESTAURANT

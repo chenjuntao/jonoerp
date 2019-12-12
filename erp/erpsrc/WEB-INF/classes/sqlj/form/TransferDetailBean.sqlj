@@ -1,0 +1,171 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on Wed Sep 17 17:22:11 CST 2014 by pw
+ * Last edited on Wed Sep 17 17:22:11 CST 2014 by pw
+ * 
+ * comment: 餐厅调拨单明细
+ */
+package logic.form;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import pojo.form.TransferDetail;
+import sqlj.runtime.ref.DefaultContext;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.TextUtil;
+import com.tanry.framework.acl.NoPrivilegeException;
+
+public class TransferDetailBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(TransferDetailBean.class);
+	
+	#sql private iterator DetailIter(String form_id, String item_id, String item_name, String item_dimension, String item_specification, String item_category, Double apply_count, Double actual_count, Double different_count, Double unit_price, Double pay_amt, Date expired_time);
+	
+	public int saveEntity(TransferDetail detail)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		String formId = detail.getFormId();
+		String itemId = detail.getItemId();
+		String itemName = detail.getItemName();
+		String itemDimension = detail.getItemDimension();
+		String itemSpecification = detail.getItemSpecification();
+		String itemCategory = detail.getItemCategory();
+		Double applyCount = detail.getApplyCount();
+		Double actualCount = detail.getActualCount();
+		Double differentCount = detail.getDifferentCount();
+		Double unitPrice = detail.getUnitPrice();
+		Double payAmt = detail.getPayAmt();
+		Date expiredTime = SqlDateUtil.getSqlDate(detail.getExpiredTime());
+
+		#sql [myCtx] {
+			INSERT INTO :{Com_("D_T1_TRANSFER_DETAIL")} 
+				(FORM_ID, ITEM_ID, ITEM_NAME, ITEM_DIMENSION, ITEM_SPECIFICATION, ITEM_CATEGORY, APPLY_COUNT, ACTUAL_COUNT, DIFFERENT_COUNT, UNIT_PRICE, PAY_AMT, EXPIRED_TIME) 
+			VALUES (:formId, :itemId, :itemName, :itemDimension, :itemSpecification, :itemCategory, :applyCount, :actualCount, :differentCount, :unitPrice, :payAmt, :expiredTime)
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public int auditUpdateEntity(TransferDetail detail)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		String formId = detail.getFormId();
+		String itemId = detail.getItemId();
+		
+		Double applyCount = detail.getApplyCount();
+		Double payAmt = detail.getPayAmt();
+
+		#sql [myCtx] {
+			UPDATE
+			:{Com_("D_T1_TRANSFER_DETAIL")}
+			SET
+				APPLY_COUNT = :applyCount,
+				PAY_AMT = :payAmt
+			WHERE 
+				FORM_ID = :formId
+			AND ITEM_ID = :itemId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public int outUpdateEntity(TransferDetail detail)
+			throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		String formId = detail.getFormId();
+		String itemId = detail.getItemId();
+		
+		Double actualCount = detail.getActualCount();
+		Double differentCount = detail.getDifferentCount();
+		
+		#sql [myCtx] {
+			UPDATE
+			:{Com_("D_T1_TRANSFER_DETAIL")}
+			SET
+			ACTUAL_COUNT = :actualCount,
+			DIFFERENT_COUNT = :differentCount
+			WHERE 
+			FORM_ID = :formId
+			AND ITEM_ID = :itemId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+
+	public int deleteByForm(String formId)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		#sql [myCtx] {
+			DELETE
+			FROM
+			:{Com_("D_T1_TRANSFER_DETAIL")}
+			WHERE
+				FORM_ID = :formId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public List<TransferDetail> query(String formId)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		DetailIter detailIter = null;
+		#sql [myCtx] detailIter = {
+			SELECT
+			    *
+			FROM
+			:{Com_("D_T1_TRANSFER_DETAIL")} d
+			WHERE
+			    d.FORM_ID = :formId
+			ORDER BY
+				d.ITEM_ID
+		};
+		List<TransferDetail> detailLst = processIter(detailIter);
+		detailIter.close();
+		closeDefaultContext(myCtx);
+		return detailLst;
+	}
+
+	private List<TransferDetail> processIter(DetailIter detailIter) 
+			throws SQLException {
+		List<TransferDetail> detailLst = new ArrayList<TransferDetail>();
+		while(detailIter.next()) {
+			TransferDetail detail = new TransferDetail();
+			detail.setFormId(detailIter.form_id());
+			detail.setItemId(detailIter.item_id());
+			detail.setItemName(detailIter.item_name());
+			detail.setItemDimension(detailIter.item_dimension());
+			detail.setItemSpecification(detailIter.item_specification());
+			detail.setItemCategory(detailIter.item_category());
+			detail.setApplyCount(detailIter.apply_count());
+			detail.setActualCount(detailIter.actual_count());
+			detail.setDifferentCount(detailIter.different_count());
+			detail.setUnitPrice(detailIter.unit_price());
+			detail.setPayAmt(detailIter.pay_amt());
+			detail.setExpiredTime(SqlDateUtil.getUtilDate(detailIter.expired_time()));
+			detailLst.add(detail);
+		}
+		return detailLst;
+	}
+}

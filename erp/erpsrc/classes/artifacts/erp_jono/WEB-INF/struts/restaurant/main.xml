@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE struts PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN"
+    "http://struts.apache.org/dtds/struts-2.0.dtd">
+
+<struts>
+	<include file="../struts/restaurant/shopInfoQuery.xml"/>
+	<include file="../struts/restaurant/shopSourceQuery.xml"/>
+	<include file="../struts/restaurant/shopdish.xml"/>
+	<include file="../struts/restaurant/goodsbill.xml"/>
+	<include file="../struts/restaurant/putinstorage.xml"/>
+	<include file="../struts/restaurant/reportdamage.xml"/>
+	<include file="../struts/restaurant/selfSemis.xml"/>
+	<include file="../struts/restaurant/antiaudit.xml"/>
+	<include file="../struts/restaurant/dreject.xml"/>
+	<include file="../struts/restaurant/preject.xml"/>
+	<include file="../struts/restaurant/checkstorage.xml"/>
+	
+	<include file="../struts/restaurant/shopSemisQuery.xml"/>
+	<include file="../struts/restaurant/periodbusiness.xml"/>
+	<include file="../struts/restaurant/billConditions.xml"/>
+	<include file="../struts/restaurant/billConditionsCount.xml"/>
+	
+	<include file="../struts/restaurant/allocateitem.xml"/>
+	<include file="../struts/restaurant/inoutquery.xml"/>
+
+	<include file="../struts/restaurant/dailysettlement.xml"/>
+	
+	<include file="../struts/restaurant/common.xml"/>
+	<include file="../struts/restaurant/option.xml"/>
+</struts>
+

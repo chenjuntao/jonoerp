@@ -1,0 +1,80 @@
+#dataGrid {
+	position: absolute;
+	right: 0;
+	top: 120px;
+	bottom: 0;
+	width: 100%;
+	height: auto; /* override default height: 30em; in dgrid.css */
+}
+
+#confirmGrid {
+	position: absolute;
+	right: 0;
+	top: 120px;
+	bottom: 25px;
+	width: 100%;
+	height: auto; /* override default height: 30em; in dgrid.css */
+}
+
+#commandTable {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+}
+
+th[role="columnheader"] {
+	text-align: center;
+}
+
+.dgrid-cell {
+	/* 	width: 80px; make all the columns 80px wide */
+	vertical-align: middle;
+	width: 90px;
+}
+
+.field-maxPayItem {
+	width: 150px;
+}
+
+.dgrid-column-set-0 {
+	width: 250px;
+}
+
+.field-formId,.field-formNote {
+	width: 180px;
+}
+
+.field-rownumber, .field-formId, .field-formTime, .field-formMaker,
+	.field-receiveTime, .field-formStatus, .field-operate {
+	text-align: center;
+}
+
+.field-rownumber {
+	width: 40px;
+}
+
+.field-formId {
+	width: 140px;
+}
+
+.field-inBranch,.field-inStorage,.field-outBranch,.field-outStorage {
+	width: 160px;
+}
+
+.field-formStatus {
+	width: 80px;
+}
+
+.field-operate {
+	width: 60px;
+}
+
+
+.field-allPayAmt {
+	width: 80px;
+	text-align: right;
+}
+
+.field-none {
+	/* 	width: 60px; */
+}

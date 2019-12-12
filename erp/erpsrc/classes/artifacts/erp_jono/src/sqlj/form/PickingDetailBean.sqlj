@@ -1,0 +1,216 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on Thu Dec 11 15:05:12 CST 2014 by lyz
+ * Last edited on Thu Dec 11 15:05:12 CST 2014 by lyz
+ * 
+ * comment: 捡货单表明细
+ */
+package logic.form;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import pojo.form.PickingDetail;
+import sqlj.runtime.ref.DefaultContext;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.TextUtil;
+import com.tanry.framework.acl.NoPrivilegeException;
+
+public class PickingDetailBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(PickingDetailBean.class);
+	
+	public int saveEntity(PickingDetail detail)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		String formId = detail.getFormId();
+		String itemId = detail.getItemId();
+		String itemName = detail.getItemName();
+		String itemDimension = detail.getItemDimension();
+		String itemCategory = detail.getItemCategory();
+		Double itemCount = detail.getItemCount();
+		String branchId = detail.getBranchId();
+
+		#sql [myCtx] {
+			INSERT INTO :{Com_("D_T1_PICKING_DETAIL")} 
+				(FORM_ID, ITEM_ID, ITEM_NAME, ITEM_DIMENSION, ITEM_CATEGORY, ITEM_COUNT, BRANCH_ID) 
+			VALUES (:formId, :itemId, :itemName, :itemDimension, :itemCategory, :itemCount, :branchId)
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public int updateEntity(PickingDetail detail)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		String formId = detail.getFormId();
+		String itemId = detail.getItemId();
+		String itemName = detail.getItemName();
+		String itemDimension = detail.getItemDimension();
+		String itemCategory = detail.getItemCategory();
+		Double itemCount = detail.getItemCount();
+		String branchId = detail.getBranchId();
+
+		#sql [myCtx] {
+			UPDATE
+			:{Com_("D_T1_PICKING_DETAIL")}
+			SET
+				ITEM_COUNT = :itemCount
+			WHERE 
+				FORM_ID = :formId
+			AND ITEM_ID = :itemId
+			AND BRANCH_ID = :branchId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+
+	public int deleteByForm(String formId)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		#sql [myCtx] {
+			DELETE
+			FROM
+			:{Com_("D_T1_PICKING_DETAIL")}
+			WHERE
+				FORM_ID = :formId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	#sql private iterator DetailIter(
+			String form_id, 
+			String shelf_id, 
+			String shelf_name, 
+			String item_id, 
+			String item_name,
+			String item_dimension, 
+			String item_specification,
+			String item_category, 
+			Double item_count, 
+			String branch_id, 
+			String branch_name,
+			Double sumCount,
+			Double storage_count
+		);
+	
+	public List<PickingDetail> query(String formId)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		DetailIter detailIter = null;
+		#sql [myCtx] detailIter = {
+		with a as(
+				select     
+			       d.ITEM_NAME,
+			       d.ITEM_ID,
+			        SUM(d.ITEM_COUNT) sumCount
+			        FROM
+			        :{Com_("D_T1_PICKING_DETAIL")} d
+			        WHERE
+					d.FORM_ID=:formId
+				  GROUP BY d.ITEM_NAME,d.ITEM_ID
+				),
+	               bs as(
+	               	 select
+	               	    bs.STORAGE_ID,
+	               	    bs.STORAGE_NAME,
+	               	    t.ITEM_ID,
+	               	    t.ITEM_COUNT
+	               	    from 
+	               	 :{Com_("D_T2_BRANCH_STORAGE")} bs
+				   LEFT JOIN 
+				   :{Com_("D_T2_STORAGE")} t
+				   on 
+				   bs.STORAGE_ID=t.STORAGE_ID
+				   where  
+				   bs.BRANCH_ID='L00' AND bs.PRIORITY='0'
+				   
+	               )
+			SELECT
+			    s.SHELF_ID,
+			    s.SHELF_NAME,
+			    d.*,
+			    m.item_specification,
+			    b.BRANCH_NAME,
+			    a.sumCount,
+			    bs.ITEM_COUNT STORAGE_COUNT
+			FROM
+				:{Com_("D_T1_PICKING_DETAIL")} d
+			LEFT JOIN
+				:{Com_("D_T2_ITEM_META")} m 
+		    ON
+		    	d.ITEM_ID = m.ITEM_ID
+			INNER JOIN
+			:{Com_("D_T2_SHELF_ITEM")} i
+			ON
+			    i.ITEM_ID = d.ITEM_ID AND i.PRIORITY = 0
+			INNER JOIN
+				:{Com_("D_T2_SHELF")} s
+			ON
+			    s.SHELF_ID = i.SHELF_ID
+			LEFT JOIN
+				:{Com_("D_T2_BRANCH")} b
+			ON
+			    b.BRANCH_ID = d.BRANCH_ID
+    	    LEFT JOIN 
+    	    	a 
+		    ON 
+		    	a.ITEM_ID = d.ITEM_ID
+		    LEFT JOIN 
+			   bs 
+		   ON 
+			   bs.ITEM_ID=d.ITEM_ID
+			WHERE
+			    d.FORM_ID = :formId
+			ORDER BY
+				s.SHELF_ID,
+				d.ITEM_ID
+		};
+		List<PickingDetail> detailLst = processIter(detailIter);
+		detailIter.close();
+		closeDefaultContext(myCtx);
+		return detailLst;
+	}
+
+	private List<PickingDetail> processIter(DetailIter detailIter) 
+			throws SQLException {
+		List<PickingDetail> detailLst = new ArrayList<PickingDetail>();
+		while(detailIter.next()) {
+			PickingDetail detail = new PickingDetail();
+			detail.setFormId(detailIter.form_id());
+			detail.setShelfId(detailIter.shelf_id());
+			detail.setShelfName(detailIter.shelf_name());
+			detail.setItemId(detailIter.item_id());
+			detail.setItemName(detailIter.item_name());
+			detail.setItemDimension(detailIter.item_dimension());
+			detail.setItemSpecification(detailIter.item_specification());
+			detail.setItemCategory(detailIter.item_category());
+			detail.setItemCount(detailIter.item_count());
+			detail.setBranchId(detailIter.branch_id());
+			detail.setBranchName(detailIter.branch_name());
+			detail.setSumCount(detailIter.sumCount());
+			detail.setStorageCount(detailIter.storage_count());
+			detailLst.add(detail);
+		}
+		return detailLst;
+	}
+}

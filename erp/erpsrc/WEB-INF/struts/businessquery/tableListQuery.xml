@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE struts PUBLIC
+    "-//Apache Software Foundation//DTD Struts Configuration 2.0//EN"
+    "http://struts.apache.org/dtds/struts-2.0.dtd">
+
+<struts>
+	<package name="businessquery_tableListQuery" namespace="/businessquery/tableListQuery" extends="trust-default">
+		<action name="listTable" method="listTable" class="action.businessquery.TableAction">
+			<result name="success">/jsp/businessquery/tableListQuery/main.jsp</result>
+		</action>
+	</package>
+	
+	
+	<package name="bq_table_export" namespace="/bq/table/export" extends="trust-default">
+		<action name="doQuery" method="doQuery" class="action.businessquery.export.TableExportAction">
+			<result type="json" />
+		</action>
+	</package>
+</struts>
+

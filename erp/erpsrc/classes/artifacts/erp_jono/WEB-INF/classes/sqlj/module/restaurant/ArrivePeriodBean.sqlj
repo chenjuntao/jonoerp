@@ -1,0 +1,213 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on Oct 28, 2014 by liyzh
+ * Last edited on Oct 28, 2014 by liyzh
+ * 
+ * 说明： 到货周期查询
+ */
+package logic.module.restaurant;
+
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import pojo.store.ItemMeta;
+import sqlj.runtime.ref.DefaultContext;
+
+import com.tanry.framework.acl.NoPrivilegeException;
+import com.tanry.framework.util.constant.BranchCode;
+
+public class ArrivePeriodBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(ArrivePeriodBean.class);
+
+	#sql private iterator PeriodIter(Integer period);
+	#sql public static iterator ItemIter(String item_id, 
+			String item_name, 
+			String item_name_eng, 
+			String item_type, 
+			String category_id, 
+			String item_dimension, 
+			String query_code,
+			String item_specification,
+			String item_pic);
+	
+	/**
+	 * 统配方式时查询相应的可能的到货周期
+	 * 中央工厂生产周期或者供应商供货周期+物流中心配送周期
+	 */
+	public List<Integer> queryUnified() 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		PeriodIter periodIter = null;
+		#sql [myCtx] periodIter = {
+			WITH
+			    pc AS
+			    (
+			    	SELECT DISTINCT
+			    	    period
+			    	FROM
+			    	    (-- 统配既可能是向中央工厂采购，也可能是向供应商
+			    	        SELECT DISTINCT
+			    	            PRODUCTION_CYCLE period
+			    	        FROM
+			    	        :{Com_("D_T2_PRODUCTION_CYCLE")}
+			    	        UNION ALL
+			    	        SELECT DISTINCT
+			    	        	s.SUPPLY_CYCLE period
+			    	        FROM
+			    	        :{Com_("D_T2_SUPPLY_CYCLE")} s)
+			    	ORDER BY
+			    	    period
+			    )
+			    ,
+			    dc AS
+			    (
+			        SELECT DISTINCT
+			            DELIVERY_CYCLE
+			        FROM
+			        :{Com_("D_T2_DELIVERY_REGION")}
+			        ORDER BY
+			            DELIVERY_CYCLE
+			    )
+			SELECT DISTINCT
+			    dc.DELIVERY_CYCLE + pc.period AS period
+			FROM
+			    dc,
+			    pc
+			ORDER BY
+			    1
+		};
+		List<Integer> periodLst = new ArrayList<Integer>();
+		while(periodIter.next()) {
+			periodLst.add(periodIter.period());
+		}
+		periodIter.close();
+		closeDefaultContext(myCtx);
+		return periodLst;
+	}
+	
+	/**
+	 * 直配方式时查询相应的可能的到货周期
+	 * 供应商供货周期
+	 */
+	public List<Integer> queryDirect() 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		PeriodIter periodIter = null;
+		#sql [myCtx] periodIter = {
+			SELECT DISTINCT
+		    	s.SUPPLY_CYCLE period
+		    FROM
+		    :{Com_("D_T2_SUPPLY_CYCLE")} s
+	    	ORDER BY
+	    	    1
+		};
+		List<Integer> periodLst = new ArrayList<Integer>();
+		while(periodIter.next()) {
+			periodLst.add(periodIter.period());
+		}
+		periodIter.close();
+		closeDefaultContext(myCtx);
+		return periodLst;
+	}
+	
+	/**
+	 * 越库方式时查询相应的可能的到货周期
+	 * 供应商供货周期+物流中心配送周期
+	 */
+	public List<Integer> queryCross() 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		PeriodIter periodIter = null;
+		#sql [myCtx] periodIter = {
+			WITH
+			    sc AS
+			    (
+			    	SELECT DISTINCT
+			        	s.SUPPLY_CYCLE period
+			        FROM
+			        :{Com_("D_T2_SUPPLY_CYCLE")} s
+			    )
+			    ,
+			    dc AS
+			    (
+			        SELECT DISTINCT
+			            DELIVERY_CYCLE
+			        FROM
+			        :{Com_("D_T2_DELIVERY_REGION")}
+			        ORDER BY
+			            DELIVERY_CYCLE
+			    )
+			SELECT DISTINCT
+			    dc.DELIVERY_CYCLE+ sc.period AS period
+			FROM
+			    dc,
+			    sc
+			ORDER BY
+			    1
+		};
+		List<Integer> periodLst = new ArrayList<Integer>();
+		while(periodIter.next()) {
+			periodLst.add(periodIter.period());
+		}
+		periodIter.close();
+		closeDefaultContext(myCtx);
+		return periodLst;
+	}
+	
+	/**
+	 * 根据区域和配送方式查询匹配的原材料
+	 */
+	public List<ItemMeta> queryItem(String regionId, String deliveryType) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		ItemIter itemIter = null;
+		#sql [myCtx] itemIter = {
+			SELECT
+			    i.*
+			FROM
+			:{Com_("D_T2_DELIVERY_TYPE")} t,
+			:{Com_("D_T2_ITEM_META")} i
+			WHERE
+			    i.ITEM_ID = t.ITEM_ID
+			AND t.DELIVERY_TYPE = :deliveryType
+			AND t.REGION_ID = :regionId
+		};
+		List<ItemMeta> itemLst = new ArrayList<ItemMeta>();
+		while(itemIter.next()) {
+			ItemMeta item = new ItemMeta();
+			item.setItemId(itemIter.item_id());
+			item.setItemName(itemIter.item_name());
+			item.setItemNameEng(itemIter.item_name_eng());
+			item.setItemType(itemIter.item_type());
+			item.setCategoryId(itemIter.category_id());
+			item.setItemDimension(itemIter.item_dimension());
+			item.setQueryCode(itemIter.query_code());
+			String itemSpecification = itemIter.item_specification();
+			if (itemSpecification != null) {
+				itemSpecification = itemSpecification.trim();
+			}else{
+				itemSpecification = "";
+			}
+			item.setItemSpecification(itemSpecification);
+			item.setItemPic(itemIter.item_pic());
+			itemLst.add(item);
+		}
+		itemIter.close();
+		closeDefaultContext(myCtx);
+		return itemLst;
+	}
+}

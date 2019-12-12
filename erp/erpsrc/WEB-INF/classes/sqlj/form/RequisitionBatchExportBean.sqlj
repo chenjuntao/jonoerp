@@ -1,0 +1,172 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on Tue Nov 11 10:31:07 CST 2014 by pw
+ * Last edited on Tue Nov 11 10:31:07 CST 2014 by pw
+ * 
+ * comment: 中央工厂生产领料单表头
+ */
+package logic.form;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import pojo.form.RequisitionHeader;
+import sqlj.runtime.ref.DefaultContext;
+import com.tanry.business.form.FormConstant;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.TextUtil;
+import com.tanry.framework.acl.NoPrivilegeException;
+
+public class RequisitionBatchExportBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(RequisitionBatchExportBean.class);
+	
+	#sql private iterator HeaderIter(
+			String workshop, 
+			String item_id, 
+			String item_name,
+			String item_dimension,
+			Double item_count
+		);
+	
+	
+	public Integer count(java.util.Date startDate, java.util.Date endDate, String workshop) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		Date sDate = SqlDateUtil.getSqlDate(startDate);
+		Date eDate = SqlDateUtil.getSqlDate(endDate);
+		
+		DefaultContext myCtx = getDefaultContext();
+		Integer total = null;
+		#sql [myCtx] {
+		SELECT
+		    COUNT(*)
+		INTO
+		    :total
+		FROM
+		    (SELECT
+		    	    h.WORKSHOP,
+		    	    d.ITEM_ID,
+		    	    m.ITEM_NAME,
+		    	    m.ITEM_DIMENSION
+		    	FROM
+		    	:{Com_("D_T1_REQUISITION_HEADER")} h
+		    	INNER JOIN
+		    	:{Com_("D_T0_FORM_STATUS")} s
+		    	ON
+		    	    h.FORM_ID = s.FORM_ID
+		    	AND s.IS_CURRENT = 1
+		    	AND s.STATUS = '未审核'
+		    	INNER JOIN
+		    	:{Com_("D_T1_REQUISITION_DETAIL")} d
+		    	ON
+		    	    h.FORM_ID = d.FORM_ID
+		    	INNER JOIN
+		    	:{Com_("D_T2_ITEM_META")} m
+		    	ON
+		    	    d.ITEM_ID = m.ITEM_ID
+		    	WHERE
+		    	    h.FORM_type = 'produce'
+		    	AND h.WORKSHOP = :workshop
+		    	AND (
+		    	        h.FORM_TIME >= :sDate
+		    	    OR  :sDate IS NULL)
+		    	AND (
+		    	        h.FORM_TIME <= :eDate
+		    	    OR  :eDate IS NULL)
+		    	GROUP BY
+		    	    h.WORKSHOP,
+		    	    d.ITEM_ID,
+		    	    m.ITEM_NAME,
+		    	    m.ITEM_DIMENSION) a};
+		closeDefaultContext(myCtx);
+		
+		total = total==null?0:total;
+		return total;
+	}
+	
+	
+	public List<Map> query(java.util.Date startDate, java.util.Date endDate, String workshop)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		Date sDate = SqlDateUtil.getSqlDate(startDate);
+		Date eDate = SqlDateUtil.getSqlDate(endDate);
+		
+		DefaultContext myCtx = getDefaultContext();
+		HeaderIter headerIter = null;
+		#sql [myCtx] headerIter = {
+			SELECT
+			    h.WORKSHOP,
+			    d.ITEM_ID,
+			    m.ITEM_NAME,
+			    m.ITEM_DIMENSION,
+			    ROUND(SUM(d.ITEM_COUNT),2)item_count
+			FROM
+			:{Com_("D_T1_REQUISITION_HEADER")} h
+			INNER JOIN
+			:{Com_("D_T0_FORM_STATUS")} s
+			ON
+			    h.FORM_ID = s.FORM_ID
+			AND s.IS_CURRENT = 1
+			AND s.STATUS = '未审核'
+			INNER JOIN
+			:{Com_("D_T1_REQUISITION_DETAIL")} d
+			ON
+			    h.FORM_ID = d.FORM_ID
+			INNER JOIN
+			:{Com_("D_T2_ITEM_META")} m
+			ON
+			    d.ITEM_ID = m.ITEM_ID
+			WHERE
+			    h.FORM_type = 'produce'
+			AND h.WORKSHOP = :workshop
+			AND (
+			        h.FORM_TIME >= :sDate
+			    OR  :sDate IS NULL)
+			AND (
+			        h.FORM_TIME <= :eDate
+			    OR  :eDate IS NULL)
+			GROUP BY
+			    h.WORKSHOP,
+			    d.ITEM_ID,
+			    m.ITEM_NAME,
+			    m.ITEM_DIMENSION
+			ORDER BY
+			    ROUND(SUM(d.ITEM_COUNT),2)DESC,
+			    ITEM_ID};
+		
+		List<Map> headerLst = processIter(headerIter);
+		headerIter.close();
+		closeDefaultContext(myCtx);
+		return headerLst;
+	}
+
+	private List<Map> processIter(HeaderIter headerIter) 
+			throws SQLException {
+		List<Map> headerLst = new ArrayList<Map>();
+		while(headerIter.next()) {
+			Map headerMap = new HashMap();
+			headerMap.put("workshop",headerIter.workshop());
+			headerMap.put("item_id",headerIter.item_id());
+			headerMap.put("item_name",headerIter.item_name());
+			headerMap.put("item_dimension",headerIter.item_dimension());
+			headerMap.put("item_count",headerIter.item_count());
+			headerLst.add(headerMap);
+		}
+		return headerLst;
+	}
+}

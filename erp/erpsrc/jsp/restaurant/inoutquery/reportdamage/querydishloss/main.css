@@ -1,0 +1,79 @@
+
+#listLossGrid {
+	position: absolute;
+	right: 0;
+	top: 62px;
+	bottom: 0;
+	width: 100%;
+	height: auto;
+}
+
+#showLossGrid {
+	position: absolute;
+	right: 0;
+	top: 118px;
+	bottom: 25px;
+	width: 100%;
+	height: auto;
+}
+
+.dgrid-column-set-0 {
+	width: 200px;
+}
+
+#commandTable{
+	position: absolute;
+	right: 0;
+	bottom: 0;
+	width: 100%;
+	text-align: center;
+}
+
+.dgrid-cell {
+/* 	width: 80px; make all the columns 80px wide */
+	vertical-align: middle;
+	width: 90px;
+}
+
+
+.field-maxPayItem {
+	width: 160px;
+}
+
+.field-lossBranch {
+	width: 120px;
+}
+
+th[role="columnheader"] {
+	text-align: center;
+}
+
+.field-formId {
+	width: 140px;
+}
+
+.field-maxpayitem,.field-storage {
+	width: 150px;
+}
+
+
+.field-rownumber, .field-formStatus,.field-itemId, .field-itemDimension, .field-therapy {
+	text-align: center;
+	vertical-align: middle;
+}
+
+.field-rownumber ,.field-show{
+	width: 40px;
+}
+
+.field-itemId {
+	width: 80px;
+}
+
+.field-itemDimension,.field-formStatus {
+	width: 60px;
+}
+
+.field-therapy {
+	width: 80px;
+}

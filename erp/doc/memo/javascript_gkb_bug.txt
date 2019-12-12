@@ -1,0 +1,4 @@
+在firefox中，如果脚本中有中文下述代码不执行
+<a href=" javascript: alert('中文')"> aa </a>
+需要修正为以下形式
+<a href="javascript: alert('中文')"> aa </a>

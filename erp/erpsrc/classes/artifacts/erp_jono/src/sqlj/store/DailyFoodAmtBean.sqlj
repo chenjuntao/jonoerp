@@ -1,0 +1,143 @@
+/**
+*
+* Copyright (c) 2014
+* Tanry Electronic Technology Co., Ltd.
+* ChangSha, China
+*
+* All Rights Reserved.
+*
+* First created on Sep 28, 2014 by cjt
+* Last edited on Sep 28, 2014 by cjt
+*
+* 说明： 访问餐厅每日万元出品量表
+*
+*/
+
+package logic.store;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+import sqlj.runtime.ref.DefaultContext;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.TextUtil;
+import com.tanry.framework.acl.NoPrivilegeException;
+
+public class DailyFoodAmtBean extends ConnectionPool {
+	
+//    #sql private iterator FoodIterator(String cFood_C, Integer nQty); 
+
+    //计算餐厅营业额
+    public int calcBusinessAmt(String branchId, java.util.Date settleDate) throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		Date sDate = SqlDateUtil.getSqlDate(settleDate);
+		if (myCtx != null) {
+//			Double amt = 0.0;
+//			#sql [myCtx] {
+//				SELECT sum(npayamt) INTO :amt
+//				FROM :{Com_("D_T_FOOD_BILL")}
+//				WHERE cbranch_c = :branchId
+//  				AND dbusiness = :sDate
+//			};
+
+			#sql [myCtx] {
+				INSERT INTO :{Com_("D_T3_DAILY_BUSINESS_AMT")}
+					(BRANCH_ID, BUSINESS_DATE, BUSINESS_AMT) 
+				(
+					SELECT :branchId, :sDate, sum(npayamt)
+					FROM :{Com_("D_T_FOOD_BILL")}
+					WHERE cbranch_c = :branchId
+	  				AND dbusiness = :sDate
+		  		)
+			};
+		} else {
+            throw new NoConnection();
+        }
+		closeDefaultContext(myCtx);
+		return 1;
+    }
+    
+    //计算当天的出品量
+    public int calcFoodAmt(String branchId, java.util.Date settleDate) 
+    		throws NoPrivilegeException, SQLException, NoConnection {
+  		DefaultContext myCtx = getDefaultContext();
+  		Date sDate = SqlDateUtil.getSqlDate(settleDate);
+  		if (myCtx != null) {
+  			#sql [myCtx] {
+  				INSERT INTO :{Com_("D_T3_DAILY_FOOD_AMT")}
+					(BRANCH_ID, BUSINESS_DATE, ITEM_ID, FOOD_AMT)
+				(
+					SELECT
+						:branchId,
+						:sDate,
+					   c.cFood_C cFood_C,
+					   sum(c.nQty) AS nQty
+					FROM
+						:{Com_("d_t_food_bills")} c,
+						:{Com_("d_t_food_bill")} a
+					WHERE
+						a.cBill_C = c.cBill_C
+					AND	a.cbranch_c = :branchId
+					AND a.DBUSINESS = :sDate
+					GROUP BY
+					    c.cFood_C
+				)
+  			};
+//  			while(foodIterator.next()) {
+//  				String itemId = foodIterator.cFood_C();
+//  				Integer nqty = foodIterator.nQty();
+//  				#sql [myCtx] {
+//  					INSERT INTO :{Com_("D_T3_DAILY_FOOD_AMT")}
+//  						(BRANCH_ID, BUSINESS_DATE, ITEM_ID, FOOD_AMT) 
+//  					VALUES (:branchId, 
+//  							:sDate, 
+//  							:itemId,
+//  							:nqty)
+//  				};
+//  			}
+//  			foodIterator.close();
+  		} else {
+              throw new NoConnection();
+        }
+  		closeDefaultContext(myCtx);
+  		return 1;
+    }
+
+	//查询万元出品量
+	public Double queryFoodAmtTTCNY(java.util.Date startDate, java.util.Date endDate, String branchId, String itemId) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		Date sDate = SqlDateUtil.getSqlDate(startDate);
+		Date eDate = SqlDateUtil.getSqlDate(endDate);
+		DefaultContext myCtx = getDefaultContext();
+		//查询出品总量
+		Double foodAmt = 0.0;
+		#sql [myCtx] {
+			SELECT SUM(FOOD_AMT) into :foodAmt
+			FROM :{Com_("D_T3_DAILY_FOOD_AMT")}
+			WHERE BRANCH_ID = : branchId
+		    AND (BUSINESS_DATE >= :sDate or :sDate is null)
+			AND (BUSINESS_DATE <= :eDate or :eDate is null)
+			AND ITEM_ID = :itemId
+		};
+		//查询总营业额
+		Double businessAmt = 0.0;
+		#sql [myCtx] {
+			SELECT SUM(BUSINESS_AMT) into :businessAmt
+			FROM :{Com_("D_T3_DAILY_BUSINESS_AMT")} 
+			WHERE BRANCH_ID = : branchId
+		    AND (BUSINESS_DATE >= :sDate or :sDate is null)
+			AND (BUSINESS_DATE <= :eDate or :eDate is null)
+		};
+		closeDefaultContext(myCtx);
+		if(businessAmt == 0.0)
+		{
+			return 0.0;
+		}else{
+		    return foodAmt/businessAmt;
+		}
+	}
+}

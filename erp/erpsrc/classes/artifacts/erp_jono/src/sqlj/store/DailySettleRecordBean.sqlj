@@ -1,0 +1,301 @@
+/**
+*
+* Copyright (c) 2014
+* Tanry Electronic Technology Co., Ltd.
+* ChangSha, China
+*
+* All Rights Reserved.
+*
+* First created on Sep 29, 2014 by cjt
+* Last edited on Sep 29, 2014 by cjt
+*
+* 说明： 访问餐厅每日记录表
+*
+*/
+
+package logic.store;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+import sqlj.runtime.ref.DefaultContext;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.TextUtil;
+import com.tanry.framework.acl.NoPrivilegeException;
+import pojo.store.DailySettleRecord;
+
+public class DailySettleRecordBean extends ConnectionPool {
+	
+    #sql private iterator DBIter(
+		String branch_id, 
+		String branch_name, 
+		Date business_date, 
+		String operator_id, 
+		String operator_name,
+		Date operating_time,
+		String settle_status,
+		String settle_note,
+		Integer is_current
+	);
+    
+    #sql private iterator OptionIter(
+		String id,
+		String name,
+		String parent, 
+		String isCheck, 
+		String isLeaf
+	);
+
+	public int saveEntity(DailySettleRecord item)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+	
+		String branchId = item.getBranchId();
+		String branchName = item.getBranchName();
+		Date businessDate = SqlDateUtil.getSqlDate(item.getBusinessDate());
+		String operatorId = item.getOperatorId();
+		String operatorName = item.getOperatorName();
+		Date operatingTime = SqlDateUtil.getSqlDate(item.getOperatingTime());
+		String settleStatus = item.getSettleStatus();
+		String settleNote = item.getSettleNote();
+		Integer isCurrent = item.getIsCurrent();
+
+		#sql [myCtx] {
+			INSERT INTO :{Com_("D_T3_DAILY_SETTLE_RECORD")}
+				(BRANCH_ID, BRANCH_NAME, BUSINESS_DATE, OPERATOR_ID, 
+					OPERATOR_NAME, OPERATING_TIME, SETTLE_STATUS, SETTLE_NOTE,IS_CURRENT) 
+			VALUES (:branchId, 
+					:branchName,
+					:businessDate, 
+					:operatorId,
+					:operatorName,  
+					:operatingTime,
+					:settleStatus, 
+					:settleNote,
+					:isCurrent)
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public int deleteEntity(String branchId)
+			throws NoPrivilegeException, SQLException, NoConnection {
+			DefaultContext myCtx = getDefaultContext();
+
+			#sql [myCtx] {
+			DELETE
+				FROM
+			    :{Com_("D_T3_DAILY_SETTLE_RECORD")} r
+			WHERE
+			    r.BRANCH_ID = :branchId};
+			closeDefaultContext(myCtx);
+			
+			return 1;
+		}
+	
+
+	public List<DailySettleRecord> query(String branchId,java.util.Date startDate) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		Date sDate = SqlDateUtil.getSqlDate(startDate);
+		
+		DefaultContext myCtx = getDefaultContext();
+		DBIter dbIter = null;
+		#sql [myCtx] dbIter = {
+			SELECT
+			    *
+			    FROM
+			        :{Com_("D_T3_DAILY_SETTLE_RECORD")} r
+			    WHERE
+			        r.BUSINESS_DATE >= :sDate
+			    AND r.BRANCH_ID = :branchId
+			    AND r.IS_CURRENT = 1};
+		List<DailySettleRecord> result = processIter(dbIter);
+		dbIter.close();
+		closeDefaultContext(myCtx);
+		return result;
+	}
+	
+	#sql private iterator ShopIterator(String BRANCH_TYPE);
+	public int queryCount(String branchId,java.util.Date startDate) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		Date sDate = SqlDateUtil.getSqlDate(startDate);
+		
+		DefaultContext myCtx = getDefaultContext();
+		DBIter dbIter = null;
+		ShopIterator shopItr = null;
+		String type = null;
+		
+		#sql [myCtx] shopItr = {
+				SELECT
+				    BRANCH_TYPE
+				FROM
+				:{Com_("D_T2_BRANCH")}
+				WHERE
+					BRANCH_ID = :branchId
+			};
+			
+			while(shopItr.next()) {
+				type = shopItr.BRANCH_TYPE();
+			}
+		shopItr.close();
+		if (type.equals("FRANCHISEE")||type.equals("OUTERORDER")) 
+			return 1; 
+		int count=0;
+		#sql [myCtx] {
+			SELECT
+			    count(*) INTO :count
+			    FROM
+			        :{Com_("D_T3_DAILY_SETTLE_RECORD")} r
+			    WHERE
+			        r.BUSINESS_DATE = :sDate
+			    AND r.BRANCH_ID = :branchId
+			    AND r.IS_CURRENT = 1
+			    };
+//		List<DailySettleRecord> result = processIter(dbIter);
+//		dbIter.close();
+		closeDefaultContext(myCtx);
+		return count;
+	}
+	
+	public List<Map> queryBranchTree() 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		OptionIter optionIter = null;
+		#sql [myCtx] optionIter = {WITH
+			    a AS
+			    (
+			        SELECT
+			            b.BRANCH_ID                             id ,
+			            '['||b.BRANCH_ID||']'||b.BRANCH_NAME AS name,
+			            b.BRANCH_TYPE                           parent,
+			            'N'                                     isCheck,
+			            'Y'                                     isLeaf
+			        FROM
+			        	:{Com_("D_T2_BRANCH")} b 
+			        WHERE
+			            b.BRANCH_TYPE = 'RESTAURANT'
+			        UNION ALL
+			        SELECT
+			            'RESTAURANT',
+			            '餐厅',
+			            'root',
+			            'N',
+			            'N'
+			        FROM
+			            dual
+			    )
+			    SELECT * FROM a order by 1};
+		List<Map> nodeLst = optionIter(optionIter);
+		optionIter.close();
+		closeDefaultContext(myCtx);
+		return nodeLst;
+	}
+	
+	public List<Map> queryTree(String branchId,String startDate,String endDate) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		
+		DefaultContext myCtx = getDefaultContext();
+		OptionIter optionIter = null;
+		
+		#sql [myCtx] optionIter = {
+			WITH
+			    a AS
+			    (
+			        SELECT
+			            TO_CHAR(to_date(:startDate,'YYYY-MM-DD')+Rownum-1,'yyyy-mm-dd') ymd,
+			            TO_CHAR(to_date(:startDate,'YYYY-MM-DD')+Rownum-1,'yyyy-mm')    parent
+			        FROM
+			            dual CONNECT BY rownum< to_date(:endDate,'YYYY-MM-DD')-to_date(:startDate,
+			            'YYYY-MM-DD') +2
+			    )
+			    ,
+			    b AS
+			    (
+			        SELECT
+			            TO_CHAR(to_date(:startDate,'YYYY-MM-DD')+Rownum-1,'yyyy-mm') ym,
+			            'root'    parent
+			        FROM
+			            dual CONNECT BY rownum< to_date(:endDate,'YYYY-MM-DD')-to_date(:startDate,
+			            'YYYY-MM-DD') +2
+			    )
+			    ,
+			    c AS
+			    (
+			        SELECT DISTINCT
+			            b.*
+			        FROM
+			            b
+			    ), 
+			    d as(
+			SELECT
+			    a.ymd id,
+			    a.ymd name,
+			    a.parent,
+			    DECODE(r.IS_CURRENT,1,'Y','N') isCheck,
+			    'Y'                            isLeaf
+			FROM
+			    a
+			LEFT JOIN
+				:{Com_("D_T3_DAILY_SETTLE_RECORD")} r
+			ON
+			    to_date(a.ymd,'YYYY-MM-DD') = r.BUSINESS_DATE
+			AND r.BRANCH_ID = :branchId
+			UNION ALL
+			SELECT
+			    c.ym id,
+			    c.ym name,
+			    c.parent,
+			    'N' isCheck,
+			    'N' isLeaf
+			FROM
+			    c) 
+		    SELECT * from  d order by d.id
+		};
+		List<Map> result = optionIter(optionIter);
+		optionIter.close();
+		closeDefaultContext(myCtx);
+		return result;
+	}
+	private List<Map> optionIter(OptionIter optionIter) 
+			throws SQLException {
+		List<Map> result = new ArrayList<Map>();
+		while(optionIter.next()) {
+			Map tempMap = new HashMap<String, String>();
+			tempMap.put("id",optionIter.id());
+			tempMap.put("name",optionIter.name());
+			tempMap.put("parent",optionIter.parent());
+			tempMap.put("isCheck",optionIter.isCheck());
+			tempMap.put("isLeaf",optionIter.isLeaf());
+			result.add(tempMap);
+		}
+		return result;
+	}
+	
+
+	private List<DailySettleRecord> processIter(DBIter dbIter) 
+			throws SQLException {
+		List<DailySettleRecord> result = new ArrayList<DailySettleRecord>();
+		while(dbIter.next()) {
+			DailySettleRecord item = new DailySettleRecord();
+			item.setBranchId(dbIter.branch_id());
+			item.setBranchName(dbIter.branch_name());
+			item.setBusinessDate(SqlDateUtil.getUtilDate(dbIter.business_date()));
+			item.setOperatorId(dbIter.operator_id());
+			item.setOperatorName(dbIter.operator_name());
+			item.setOperatingTime(SqlDateUtil.getUtilDate(dbIter.operating_time()));
+			item.setSettleStatus(dbIter.settle_status());
+			item.setSettleNote(dbIter.settle_note());
+			item.setIsCurrent(dbIter.is_current());
+			result.add(item);
+		}
+		return result;
+	}
+}

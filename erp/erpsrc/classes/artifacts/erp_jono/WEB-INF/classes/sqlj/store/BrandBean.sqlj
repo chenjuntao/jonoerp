@@ -1,0 +1,143 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on Tue Mar 03 17:06:46 CST 2015 by lyz
+ * Last edited on Tue Mar 03 17:06:46 CST 2015 by lyz
+ * 
+ * comment: 门店多品牌
+ */
+package logic.store;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import pojo.store.Brand;
+import sqlj.runtime.ref.DefaultContext;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.TextUtil;
+import com.tanry.framework.acl.NoPrivilegeException;
+
+public class BrandBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(BrandBean.class);
+	
+	#sql private iterator BrandIter(String brand_id, String brand_name, String brand_note);
+	
+	public int saveEntity(Brand brand)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		String brandId = brand.getBrandId();
+		String brandName = brand.getBrandName();
+		String brandNote = brand.getBrandNote();
+
+		#sql [myCtx] {
+			INSERT INTO :{Com_("D_T2_BRAND_GROUP")} 
+				(BRAND_ID, BRAND_NAME, BRAND_NOTE) 
+			VALUES (:brandId, :brandName, :brandNote)
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public int updateEntity(String oldBrandId, Brand brand)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		String brandId = brand.getBrandId();
+		String brandName = brand.getBrandName();
+		String brandNote = brand.getBrandNote();
+
+		#sql [myCtx] {
+			UPDATE
+			:{Com_("D_T2_BRAND_GROUP")}
+			SET
+				BRAND_ID = :brandId,
+				BRAND_NAME = :brandName,
+				BRAND_NOTE = :brandNote
+			WHERE 
+				BRAND_ID = :oldBrandId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+
+	public int deleteEntity(String brandId)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		#sql [myCtx] {
+			DELETE
+			FROM
+			:{Com_("D_T2_BRAND_GROUP")}
+			WHERE
+				BRAND_ID = :brandId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+
+	public List<Brand> query() 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		BrandIter brandIter = null;
+		#sql [myCtx] brandIter = {
+			SELECT
+			    *
+			FROM
+			:{Com_("D_T2_BRAND_GROUP")} b
+		};
+		List<Brand> brandLst = processIter(brandIter);
+		brandIter.close();
+		closeDefaultContext(myCtx);
+		return brandLst;
+	}
+	
+	public Brand queryById(String brandId) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		BrandIter brandIter = null;
+		#sql [myCtx] brandIter = {
+			SELECT
+			    *
+			FROM
+			:{Com_("D_T2_BRAND_GROUP")} b
+			WHERE
+				b.BRAND_ID = :brandId
+		};
+		List<Brand> brandLst = processIter(brandIter);
+		brandIter.close();
+		closeDefaultContext(myCtx);
+		if (brandLst !=null && !brandLst.isEmpty()) {
+			return brandLst.get(0);
+		}
+		return null;
+	}
+	
+	private List<Brand> processIter(BrandIter brandIter) 
+			throws SQLException {
+		List<Brand> brandLst = new ArrayList<Brand>();
+		while(brandIter.next()) {
+			Brand brand = new Brand();
+			brand.setBrandId(brandIter.brand_id());
+			brand.setBrandName(brandIter.brand_name());
+			brand.setBrandNote(brandIter.brand_note());
+			brandLst.add(brand);
+		}
+		return brandLst;
+	}
+}

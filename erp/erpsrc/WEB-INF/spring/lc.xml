@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:aop = "http://www.springframework.org/schema/aop"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+	http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+	http://www.springframework.org/schema/aop 
+	http://www.springframework.org/schema/aop/spring-aop-2.5.xsd"
+	default-autowire="byName" >
+
+	<bean id="lcDistributionService" class="com.tanry.business.module.lc.request.service.DistributionService" />
+	<bean id="diffHandleService" class="com.tanry.business.module.lc.distribution.service.DiffHandleService" />
+	<bean id="manualDistributionService" class="com.tanry.business.module.lc.request.service.ManualDistributionService" />
+	
+	<bean id="orderSummaryService" class="com.tanry.business.module.lc.request.service.OrderSummaryService" />
+	<bean id="manualPurchaseService" class="com.tanry.business.module.lc.request.service.ManualPurchaseService" />
+	<bean id="purchaseService" class="com.tanry.business.module.lc.request.service.PurchaseService" />
+	
+	<bean id="additionService" class="com.tanry.business.module.lc.request.service.AdditionService" />
+	<bean id="externalOutService" class="com.tanry.business.module.lc.stock.service.ExternalOutService" />
+	<bean id="pickingService" class="com.tanry.business.module.lc.stock.service.PickingService" />
+	
+	<bean id="packingService" class="com.tanry.business.module.lc.stock.service.PackingService" />
+	<bean id="lcRequestSummaryBean" class="logic.module.lc.RequestSummaryBean" />
+	
+	<bean id="requestPurchaseBean" class="logic.module.lc.RequestPurchaseBean" />
+	<bean id="demandTTCNYBean" class="logic.module.lc.DemandTTCNYBean" />
+	<bean id="materialListBean" class="logic.module.lc.MaterialListBean" />
+	
+	<bean id="createDistributionBean" class="logic.module.lc.CreateDistributionBean" />
+	<bean id="crossDistributionBean" class="logic.module.lc.CrossDistributionBean" />
+	<bean id="putinstorageBean" class="logic.module.lc.PutinstorageBean" />
+	<bean id="createPickingBean" class="logic.module.lc.CreatePickingBean" />
+	
+	<bean id="createPackingBean" class="logic.module.lc.CreatePackingBean" />
+	<bean id="purchaseManageBean" class="logic.module.lc.PurchaseManageBean" />
+	<bean id="manualPurchaseBean" class="logic.module.lc.ManualPurchaseBean" />
+	<bean id="manualDistributionBean" class="logic.module.lc.ManualDistributionBean" />
+	<bean id="disDiffHandleBean" class="logic.module.lc.DisDiffHandleBean" />
+	
+</beans>
+

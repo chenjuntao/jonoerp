@@ -1,0 +1,298 @@
+/**
+ * Copyright (c) 2014
+ * Tanry Electronic Technology Co., Ltd.
+ * ChangSha, China
+ * 
+ * All Rights Reserved.
+ * 
+ * First created on Mon Sep 21 10:20:44 CST 2015 by pw
+ * Last edited on Mon Sep 21 10:20:44 CST 2015 by pw
+ * 
+ * comment: 央厂与车间对应关系表
+ */
+package logic.store;
+
+import java.sql.Date;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
+
+import logic.NoConnection;
+import logic.pool.ConnectionPool;
+
+import org.apache.log4j.Logger;
+
+import pojo.store.FactoryWorkShop;
+import sqlj.runtime.ref.DefaultContext;
+import com.tanry.framework.util.SqlDateUtil;
+import com.tanry.framework.util.TextUtil;
+import com.tanry.framework.acl.NoPrivilegeException;
+
+public class FactoryWorkShopBean extends ConnectionPool {
+
+	public static Logger log = Logger.getLogger(FactoryWorkShopBean.class);
+	
+	#sql private iterator HeaderIter(String factory_id, String work_order_id, String workshop, Integer priority);
+	
+	public int saveEntity(FactoryWorkShop header)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		String factoryId = header.getFactoryId();
+		String workOrderId = header.getWorkOrderId();
+		String workshop = header.getWorkshop();
+		Integer priority = header.getPriority();
+
+		#sql [myCtx] {
+			INSERT INTO :{Com_("D_T2_FACTORY_WORKSHOP")} 
+				(FACTORY_ID, WORK_ORDER_ID, WORKSHOP, PRIORITY) 
+			VALUES (:factoryId, :workOrderId, :workshop, :priority)
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	public int updateEntity(FactoryWorkShop header)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		String factoryId = header.getFactoryId();
+		String workOrderId = header.getWorkOrderId();
+		String workshop = header.getWorkshop();
+		Integer priority = header.getPriority();
+
+		#sql [myCtx] {
+			UPDATE
+			:{Com_("D_T2_FACTORY_WORKSHOP")}
+			SET
+				WORKSHOP = :workshop
+			WHERE 
+				WORK_ORDER_ID = :workOrderId and FACTORY_ID = :factoryId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+
+	public int deleteEntity(String formId)
+		throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		#sql [myCtx] {
+			DELETE
+			FROM
+			:{Com_("D_T2_FACTORY_WORKSHOP")}
+			WHERE
+			WORK_ORDER_ID = :formId
+		};
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	
+	#sql private iterator HeadIter(
+			String id, 
+			String name, 
+			String parent, 
+			String isLeaf, 
+			String workOrderId,
+	 	 	String workshop,
+	 	 	Integer priority);
+	
+	public List<Map> query()  
+			throws NoPrivilegeException,SQLException,NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		HeadIter headerIter = null;
+		#sql [myCtx] headerIter = {
+				WITH
+			    a AS
+			    (
+			        SELECT
+			            b.BRANCH_ID id,
+			            b.BRANCH_NAME name,
+			            'root' parent,
+			            'N'    isLeaf,
+			            ''     WORK_ORDER_ID,
+			            ''     WORKSHOP,
+			            -1     PRIORITY
+			        FROM
+			        :{Com_("D_T2_BRANCH")} b
+			        WHERE
+			            b.BRANCH_TYPE IN ( 'CENTRALFACTORY')
+			        ORDER BY
+			            b.BRANCH_TYPE,
+			            b.BRANCH_ID
+			    )
+			    ,
+			    b AS
+			    (
+			        SELECT
+			            w.FACTORY_ID id,
+			            w.WORK_ORDER_ID,
+			            w.WORKSHOP,
+			            w.PRIORITY
+			        FROM
+			        :{Com_("D_T2_FACTORY_WORKSHOP")} w
+			    )
+			SELECT
+			    b.id ||b.WORK_ORDER_ID id,
+			    b.WORKSHOP             name,
+			    b.id                   parent,
+			    'Y'                    isLeaf ,
+			    b.WORK_ORDER_ID workOrderId,
+			    b.WORKSHOP workshop,
+			    b.PRIORITY
+			FROM
+			    a
+			LEFT JOIN
+			    b
+			ON
+			    a.id = b.id
+			UNION ALL
+			SELECT
+			    *
+			FROM
+			    a
+		};
+		List<Map> headerLst = proIter(headerIter);
+		headerIter.close();
+		closeDefaultContext(myCtx);
+		return headerLst;
+	}
+	
+	public FactoryWorkShop queryByOrder(String factoryId,Integer priority) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+			DefaultContext myCtx = getDefaultContext();
+			HeaderIter headerIter = null;
+			#sql [myCtx] headerIter = {
+			SELECT
+			    *
+			FROM
+			:{Com_("D_T2_FACTORY_WORKSHOP")} fw
+			WHERE
+				fw.FACTORY_ID =:factoryId 
+				AND
+	            fw.PRIORITY =:priority
+			};
+			List<FactoryWorkShop> headerLst = processIter(headerIter);
+			headerIter.close();
+			closeDefaultContext(myCtx);
+			if (headerLst !=null && !headerLst.isEmpty()) {
+			return headerLst.get(0);
+			}
+			return null;
+			}
+	
+	public FactoryWorkShop queryById(String factoryId,String workOrderId) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+			DefaultContext myCtx = getDefaultContext();
+			HeaderIter headerIter = null;
+			#sql [myCtx] headerIter = {
+			SELECT
+			    *
+			FROM
+			:{Com_("D_T2_FACTORY_WORKSHOP")} fw
+			WHERE
+				fw.FACTORY_ID =:factoryId 
+				AND
+	            fw.WORK_ORDER_ID =:workOrderId
+			};
+			List<FactoryWorkShop> headerLst = processIter(headerIter);
+			headerIter.close();
+			closeDefaultContext(myCtx);
+			if (headerLst !=null && !headerLst.isEmpty()) {
+			return headerLst.get(0);
+			}
+			return null;
+			}
+	
+	public List <FactoryWorkShop> queryById(String factoryId) 
+			throws NoPrivilegeException,SQLException,NoConnection {
+			DefaultContext myCtx = getDefaultContext();
+			HeaderIter headerIter = null;
+			#sql [myCtx] headerIter = {
+			SELECT
+			    *
+			FROM
+			:{Com_("D_T2_FACTORY_WORKSHOP")} fw
+			WHERE
+				fw.FACTORY_ID =:factoryId 
+			};
+			List<FactoryWorkShop> headerLst = processIter(headerIter);
+			headerIter.close();
+			closeDefaultContext(myCtx);
+			if (headerLst !=null && !headerLst.isEmpty()) {
+			return headerLst;
+			}
+			return null;
+			}
+	private List<Map> proIter(HeadIter headerIter) 
+			throws SQLException {
+		List<Map> headerLst = new ArrayList<Map>();
+		
+		while(headerIter.next()) {
+			Map header = new HashMap();
+			header.put("id", headerIter.id());
+			header.put("name", headerIter.name());
+			header.put("parent", headerIter.parent());
+			header.put("isLeaf", headerIter.isLeaf());
+			header.put("workOrderId", headerIter.workOrderId());
+			header.put("workshop", headerIter.workshop());
+			header.put("priority", headerIter.priority());
+			
+			headerLst.add(header);
+		}
+		return headerLst;
+	}
+	
+	public int setMain(FactoryWorkShop factoryWorkShop)
+			throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+		
+		String workOrderId = factoryWorkShop.getWorkOrderId();
+		String factoryId = factoryWorkShop.getFactoryId();
+		Integer priority = factoryWorkShop.getPriority();
+		
+		//更新主车间
+		#sql [myCtx] {
+			UPDATE
+			:{Com_("D_T2_FACTORY_WORKSHOP")} fws
+			SET
+				priority = :priority
+			WHERE 
+			fws.PRIORITY = 0
+		    AND fws.FACTORY_ID = :factoryId
+		};
+		
+		//设置主车间
+		#sql [myCtx] {
+			UPDATE
+			:{Com_("D_T2_FACTORY_WORKSHOP")} fws
+			SET
+				priority = 0
+			WHERE 
+			fws.WORK_ORDER_ID = :workOrderId
+		};
+		
+		closeDefaultContext(myCtx);
+		
+		return 1;
+	}
+	private List<FactoryWorkShop> processIter(HeaderIter headerIter) 
+			throws SQLException {
+		List<FactoryWorkShop> headerLst = new ArrayList<FactoryWorkShop>();
+		while(headerIter.next()) {
+			FactoryWorkShop header = new FactoryWorkShop();
+			header.setFactoryId(headerIter.factory_id());
+			header.setWorkOrderId(headerIter.work_order_id());
+			header.setWorkshop(headerIter.workshop());
+			header.setPriority(headerIter.priority());
+			headerLst.add(header);
+		}
+		return headerLst;
+	}
+}
+

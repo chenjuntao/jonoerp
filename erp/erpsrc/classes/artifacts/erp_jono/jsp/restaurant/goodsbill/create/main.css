@@ -1,0 +1,31 @@
+/* considering for the loading overlay while calculating the suggesting value */
+html,body,#billForm {
+	height: 100%;
+}
+
+
+th.edit-note {
+	color: red;
+}
+
+.dgrid-column-set-0 {
+	width: 300px;
+}
+
+.dgrid-cell {
+	width: 75px;
+}
+
+.field-itemName {
+	width: 110px;
+}
+
+.field-itemDimension ,.field-itemId{
+	width: 60px;
+}
+
+.field-provider {
+	width: 220px;
+}
+
+
