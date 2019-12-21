@@ -47,6 +47,24 @@ public class InputDetail {
 	private String receive;
 	private Double supplyCycle;
 	private String workOrderId;
+    private String pic;
+    private String num;
+
+	public void setNum(String num) {
+		this.num = num;
+	}
+
+	public String getNum() {
+		return num;
+	}
+
+	public void setPic(String pic) {
+		this.pic = pic;
+	}
+
+	public String getPic() {
+		return pic;
+	}
 
 	public String getFormId() {
 		return formId;

@@ -8,6 +8,7 @@
 
 package logic.restapi;
 
+import pojo.form.Weight;
 import sqlj.runtime.ref.*;
 import java.sql.*;
 import java.util.*;
@@ -16,6 +17,7 @@ import logic.pool.ConnectionPool;
 import logic.*;
 import com.tanry.framework.acl.*;
 import java.sql.Date;
+import pojo.form.Store;
 
 public class WeightBean extends ConnectionPool{
 	private String comId = "jono";
@@ -24,6 +26,10 @@ public class WeightBean extends ConnectionPool{
 			String num, 
 			String pic
 		);
+	#sql public static iterator StoreIter(
+    			String storeid,
+    			String status
+    	);
 	
 	public int saveEntity(String myid,String num,String pic) throws NoPrivilegeException, SQLException, NoConnection {
 		DefaultContext myCtx = getComContext(comId);
@@ -42,5 +48,94 @@ public class WeightBean extends ConnectionPool{
 		
 		return 1;
 	}
-	
+
+
+	public int saveStore(String id,String num,String pic) throws NoPrivilegeException, SQLException, NoConnection {
+    		DefaultContext myCtx = getComContext(comId);
+
+    		//String id = map.get("id").toString();
+    		//String num = map.get("num").toString();
+    		//String pic = map.get("pic").toString();
+    		#sql [myCtx] {
+    			INSERT INTO jono.d_store
+    				(id, weight, pic)
+    			VALUES
+    				(:id, :num, :pic)
+    			};
+    		closeDefaultContext(myCtx);
+    		return 1;
+    	}
+
+	       public List<Weight> selectTest()
+    			throws NoPrivilegeException,SQLException,NoConnection {
+    		DefaultContext myCtx = getDefaultContext();
+    		WeightIter weightIter = null;
+    		#sql [myCtx] weightIter = {
+
+    			        SELECT
+    			           h.myid,
+    			           h.num,
+    			           h.pic
+    			        FROM
+    			       jono.weight h
+    		};
+    		List<Weight> weightList = processIter(weightIter);
+    		weightIter.close();
+    		closeDefaultContext(myCtx);
+    		return weightList;
+    	}
+
+    	private List<Weight> processIter(WeightIter weightIter)
+        			throws SQLException {
+        		List<Weight> weightList = new ArrayList<Weight>();
+        		while(weightIter.next()) {
+        			Weight weight = new Weight();
+        			weight.setMyid(weightIter.myid());
+        	        weight.setNum(weightIter.num());
+        	        weight.setPic(weightIter.pic());
+        		    weightList.add(weight);
+        		}
+        		return weightList;
+        	}
+
+
+        	public List<Store> selectStore()
+                			throws NoPrivilegeException,SQLException,NoConnection {
+                		DefaultContext myCtx = getDefaultContext();
+                		StoreIter storeIter = null;
+                		#sql [myCtx] storeIter = {
+                			        SELECT
+                			           h.storeid,
+                			           h.status
+                			        FROM
+                			       jono.stores h
+                		};
+                		List<Store> storeList = processIters(storeIter);
+                		//storeList.close();
+                		closeDefaultContext(myCtx);
+                		return storeList;
+                	}
+
+
+            private List<Store> processIters(StoreIter storeIter)
+        			throws SQLException {
+        		List<Store> storeList = new ArrayList<Store>();
+        		while(storeIter.next()) {
+        			 Store store = new Store();
+                     store.setStoreid(storeIter.storeid());
+                     store.setStatus(storeIter.status());
+        		    storeList.add(store);
+        		}
+        		return storeList;
+        	}
+
+
+
+
+
+
+
+
+
+
 }

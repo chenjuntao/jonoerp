@@ -25,6 +25,10 @@
 		<action name="queryUnifiedDetail" method="queryUnifiedDetail" class="com.tanry.business.module.lc.stock.action.StockInAction">
 			<result type="json" />
 		</action>
+
+		<action name="queryUnifiedDetails" method="queryUnifiedDetails" class="com.tanry.business.module.lc.stock.action.StockInAction">
+			<result type="json" />
+		</action>
 		
 		<action name="queryUnOrder" method="queryUnOrder" class="com.tanry.business.module.lc.stock.action.StockInAction">
 			<result type="json" />

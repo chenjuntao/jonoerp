@@ -190,6 +190,13 @@ function fillBill(row) {
 
 function doMyScan(row) {
 	doDetailScan(row.formId)
+
+
+
+
+	
+
+
 }
 
 function validateGrid() {

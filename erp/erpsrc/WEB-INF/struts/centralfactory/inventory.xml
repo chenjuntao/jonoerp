@@ -15,8 +15,7 @@
 		<action name="createView" method="createView"
 			class="com.tanry.business.module.lc.stock.action.StockInAction">
 			<!-- <result name="success">/jsp/centralfactory/inventory/in/create/create.jsp</result> -->
-			<result name="success">/jsp/centralfactory/inventory/in/create/handsontable/create.jsp
-			</result>
+			<result name="success">/jsp/centralfactory/inventory/in/create/handsontable/create.jsp</result>
 		</action>
 
 		<action name="loadTreeCF" method="loadTreeCF"

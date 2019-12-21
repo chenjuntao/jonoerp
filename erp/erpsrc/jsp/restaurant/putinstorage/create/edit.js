@@ -163,7 +163,7 @@ function getColumn(editor, NumberTextBox) {
 		field : "payAmt",
 		className : 'grid-number',
 		sortable : false
-	}, {
+	},{
 		label : "",
 		field : "none",
 		sortable : false

@@ -5,7 +5,7 @@
 <head>
 	<title>Logistics Center estimate</title>
 	<%@ include file="/jsp/common/jsp/path.jsp"%>
-	
+
 	<script type="text/javascript" src="<%=dojoBase %>/My97DatePicker/WdatePicker.js"></script>
 	<script type="text/javascript" src="<%=dojoBase %>/handsontable/jquery.min.js"></script>
 	<script type="text/javascript" src="<%=dojoBase %>/jquery/isloading/jquery.isloading.min.js"></script>
@@ -34,16 +34,14 @@
 		<input type='hidden' id="branchId" name="branchId" value='${logCode }' />
 		<input type='hidden' id="supplierId" name="supplierId" value='${supplierId }' />
 		<input type="hidden" id="jsonData" name="jsonData" value='${jsonData }' />
-		
-		<table class="hovertable" width="100%" border="1">
-			<tr>
+			<table class="hovertable" width="100%" border="1">
+				<tr>
 				<td class="label_right" style="width: 90px;">入库仓库：</td>
 				<td class="text_left">
 					<s:select list="storeLst" listKey="storageId" listValue="storageName" theme="simple" style="width: 180px;" id="storageId" name="inputHeader.storageId"></s:select>
 					<input type="hidden" id="storage" name="inputHeader.storage" />
 				</td>
 			</tr>
-			
 			<tr>
 				<td class="label_right">备注：</td>
 				<td class="text_left" colspan="5">
@@ -52,7 +50,7 @@
 				</td>
 			</tr>
 		</table>
-		
+
 		<div id="dataGrid" class="handsontable htColumnHeaders"></div>
 	</form>
 </body>

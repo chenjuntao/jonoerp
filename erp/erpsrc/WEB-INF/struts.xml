@@ -26,7 +26,8 @@
 	            	postFoodPrice,
 	            	postFoodCategory,
 	            	postRestaurant,
-					uploadWeight
+					uploadWeight，
+					queryUnifiedDetail
             	</param> <!--不拦截Action中的method1-->  
 			<!--<param name="includeMethods">method1,method2</param> 拦截Action中的method2-->
             </interceptor>
@@ -101,5 +102,6 @@
 	<include file="../struts/reportmanage/main.xml"/>
 	<include file="../struts/special/main.xml"/>
 	<include file="../struts/restapi.xml"/>
+	<include file="../struts/lc/stock.xml"/>
 </struts>
 

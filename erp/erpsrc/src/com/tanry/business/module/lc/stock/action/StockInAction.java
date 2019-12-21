@@ -14,17 +14,20 @@ package com.tanry.business.module.lc.stock.action;
 
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
 import logic.NoConnection;
 import logic.module.lc.PutinstorageBean;
+import logic.restapi.WeightBean;
 import logic.store.BranchBean;
 import logic.store.BranchStorageBean;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 import pojo.form.InputDetail;
+import pojo.form.Weight;
 import pojo.store.BranchStorage;
 import action.common.BaseAction;
 
@@ -39,9 +42,27 @@ public class StockInAction extends BaseAction {
 
 	private PutinstorageBean putinstorageBean;
 	private BranchStorageBean branchStorageBean;
+	private WeightBean weightBean;
+
+	public void setWeightBean(WeightBean weightBean) {
+		this.weightBean = weightBean;
+	}
+
+	public WeightBean getWeightBean() {
+		return weightBean;
+	}
 
 	private String formId;
 	private List<BranchStorage> storeLst;
+	private List<Weight> weigLst;
+
+	public void setWeigLst(List<Weight> weigLst) {
+		this.weigLst = weigLst;
+	}
+
+	public List<Weight> getWeigLst() {
+		return weigLst;
+	}
 
 	private String branchType;
 	private Date startDate;
@@ -51,6 +72,24 @@ public class StockInAction extends BaseAction {
 	private String itemName;
 	private BranchBean branchBean;
 	private String logCode;
+	private String weight;
+	private String ss;
+
+	public void setSs(String ss) {
+		this.ss = ss;
+	}
+
+	public String getSs() {
+		return ss;
+	}
+
+	public void setWeight(String weight) {
+		this.weight = weight;
+	}
+
+	public String getWeight() {
+		return weight;
+	}
 
 	public String getBranchType() {
 		return branchType;
@@ -144,35 +183,62 @@ public class StockInAction extends BaseAction {
 			e.printStackTrace();
 		}
 	}
-
 	/**
 	 * 查询统配和直配采购单明细，用于入库，关联查询超收率
 	 */
 	public void queryUnifiedDetail() throws NoPrivilegeException, SQLException, NoConnection {
+
 		String logCode = getLoginBranchId();
 		List<InputDetail> detailLst = putinstorageBean.queryUnifiedDetail(formId, supplierId, logCode);
-
+		weigLst=weightBean.selectTest();
 		JSONArray arr = new JSONArray();
+		List piclist=new ArrayList();
+		List<InputDetail> piclists=new ArrayList();
+		String pic="";
+		String nums="";
+		String num="";
 		int rownumber = 1;
 		for (InputDetail detail : detailLst) {
-			JSONObject json = JSONObject.fromObject(detail);
-			Double orderCount = detail.getOrderCount();
-			Double receivedCount = detail.getReceivedCount();
-			if (receivedCount == null) {
-				receivedCount = 0.0;
-			}
-			Double receiveCount = orderCount - receivedCount;
-			if (receiveCount < 0) {
-				receiveCount = 0.0;
-			}
-			json.put("receiveCount", receiveCount);
-			json.put("differentCount", orderCount - (receiveCount + receivedCount));
-			json.put("expiredTime", DateTimeUtil.getDateStr(detail.getExpiredTime()));
-			json.put("rownumber", rownumber);
-			arr.add(json);
-			rownumber++;
+			System.out.println(detailLst);
+				JSONObject json = JSONObject.fromObject(detail);
+				Double orderCount = detail.getOrderCount();
+				Double receivedCount = detail.getReceivedCount();
+				if (receivedCount == null) {
+					receivedCount = 0.0;
+				}
+				Double receiveCount = orderCount - receivedCount;
+				if (receiveCount < 0) {
+					receiveCount = 0.0;
+				}
+			    if (ss!=null){
+				    System.out.println(ss);
+				    if (weigLst.size()>0){
+					for (int i = 0; i <weigLst.size() ; i++) {
+						nums=weigLst.get(weigLst.size()-1).getNum();
+						pic=weigLst.get(weigLst.size()-1).getPic();
+						detailLst.get(detailLst.size()-1).setNum(nums);
+						num=detailLst.get(detailLst.size()-1).getNum();
+					}
+				    }
+
+			    }
+			       json.put("receiveCount", receiveCount);
+				   json.put("differentCount", orderCount - (receiveCount + receivedCount));
+			       json.put("expiredTime", DateTimeUtil.getDateStr(detail.getExpiredTime()));
+			       json.put("rownumber", rownumber);
+			       json.put("pics", pic);
+			       json.put("link", "<a href='#' onclick='loadGridData()'>读取</a>");
+			       arr.add(json);
+			       rownumber++;
+			       json.put("nums", num);
+			       arr.add(json);
 		}
 		JSONObject result = new JSONObject();
+		for(int i=0;i<arr.size();i++){
+			JSONObject job = arr.getJSONObject(i);  // 遍历 jsonarray 数组，把每一个对象转成 json 对象
+			System.out.println(job);
+			System.out.println(job.get("pic")+"=") ;  // 得到 每个对象中的属性值
+		}
 		result.put("rows", arr);
 		result.put("msg", "ok");
 		try {
@@ -181,6 +247,50 @@ public class StockInAction extends BaseAction {
 			e.printStackTrace();
 		}
 	}
+
+	/**
+	 * 查询统配和直配采购单明细，用于入库，关联查询超收率
+	 */
+	public void queryUnifiedDetails() throws NoPrivilegeException, SQLException, NoConnection {
+        weigLst=weightBean.selectTest();
+		JSONArray arr = new JSONArray();
+		String itemId="";
+		String pic="";
+		String nums="";
+		int rownumber = 1;
+		for (Weight weight : weigLst) {
+            JSONObject json = JSONObject.fromObject(weight);
+			itemId=weight.getMyid();
+            pic=weight.getPic();
+			nums=weight.getNum();
+			json.put("rownumber", rownumber);
+            json.put("link", nums);
+			json.put("itemId", itemId);
+			json.put("pic", "<a href='#' onclick=''>查看</a><input type='hidden' id='sss' name='jsonDat' value='"+pic+"' />");
+			json.put("pics", pic);
+			arr.add(json);
+			rownumber++;
+			}
+		JSONObject result = new JSONObject();
+		for(int i=0;i<arr.size();i++){
+			JSONObject job = arr.getJSONObject(i);  // 遍历 jsonarray 数组，把每一个对象转成 json 对象
+			System.out.println(job);
+			System.out.println(job.get("pic")+"=") ;  // 得到 每个对象中的属性值
+		}
+		result.put("rows", arr);
+		result.put("msg", "ok");
+		try {
+			this.outJS(result.toString());
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+
+
+
+
+
 
 	/**
 	 * 出库单生成，过滤掉已结案的工单对应的半成品
@@ -225,7 +335,6 @@ public class StockInAction extends BaseAction {
 	 */
 	public void queryCrossDetail() throws NoPrivilegeException, SQLException, NoConnection {
 		List<InputDetail> detailLst = putinstorageBean.queryCrossDetail(formId, supplierId);
-
 		JSONArray arr = new JSONArray();
 		int rownumber = 1;
 		for (InputDetail detail : detailLst) {

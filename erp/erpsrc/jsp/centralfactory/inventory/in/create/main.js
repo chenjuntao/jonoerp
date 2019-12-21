@@ -271,6 +271,11 @@ function putinStorage() {
 	addTab(_title, _url);
 }
 
+
+
+
+
+
 function doFinish() {
 	var formId = dojo.byId('formId').value;
 	if (formId == '') {

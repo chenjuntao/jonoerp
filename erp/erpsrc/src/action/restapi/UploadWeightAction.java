@@ -18,6 +18,7 @@ import logic.NoConnection;
 import net.sf.json.JSONObject;
 import org.apache.log4j.Logger;
 import org.apache.struts2.ServletActionContext;
+import pojo.form.Store;
 import service.restapi.UploadWeightService;
 import sun.misc.BASE64Decoder;
 import sun.misc.BASE64Encoder;
@@ -27,6 +28,7 @@ import java.io.*;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
 import java.util.Random;
 
 /**
@@ -38,14 +40,11 @@ public class UploadWeightAction extends BaseAction
 
 	public static Logger log = Logger.getLogger("UpLoadWeightAction");
 
-  private UploadWeightService uploadWeightService;
+	private UploadWeightService uploadWeightService;
 
 	public void setUploadWeightService(UploadWeightService uploadWeightService) {
 		this.uploadWeightService = uploadWeightService;
-
-
 	}
-
 	private String myid;
 	public void setMyid(String myid) {
 		this.myid = myid;
@@ -61,11 +60,22 @@ public class UploadWeightAction extends BaseAction
 		this.pic = pic;
 	}
 
-	public void uploadWeight() throws NoPrivilegeException, NoConnection, SQLException, IOException {
+	public String uploadWeight() throws NoPrivilegeException, NoConnection, SQLException, IOException {
+//		String status="";
+//		String storeid="";
+//		System.out.println(num);
+//		List<Store> storeList=uploadWeightService.selectStore();
+//		for (int i = 0; i <storeList.size() ; i++) {
+//			status=storeList.get(i).getStatus();
+//			storeid=storeList.get(i).getStoreid();
+//			if (status.equals("open")&&storeid.equals("1")){
+//				return SUCCESS;
+//			}
+//			System.out.println(status);
+//		}
 //		String strImg = getImageStr(pic);
-
-		// 获取Body中的json字符串进行解析--------------------------------------------------------------
-		// 获取Request对象
+//		 获取Body中的json字符串进行解析--------------------------------------------------------------
+//		 获取Request对象
 		HttpServletRequest request = ServletActionContext.getRequest();
 		StringBuffer sb = new StringBuffer();
 		try {
@@ -82,15 +92,12 @@ public class UploadWeightAction extends BaseAction
 		}
 		// 将json字符串（jsonStr）-->json对象（JSONObject）
 		JSONObject jo = JSONObject.fromObject(sb.toString()).getJSONObject("data");
+		System.out.println(jo);
 		String logis_no = jo.getString("logis_no"); //单号
 		String weight = jo.getString("weight");   //重量
 		String file = jo.getString("file");         //图片base64
-
-
 		log.debug("---------------------get new weight:" + logis_no + "," + weight);
 		//----------------------------------------------------------------------------
-
-
 		String realPath= ServletActionContext.getServletContext().getRealPath("/upload");
 		System.out.println(realPath);
 		File filepath = new File(realPath);
@@ -130,9 +137,8 @@ public class UploadWeightAction extends BaseAction
 //		String pics = new SimpleDateFormat("yyyyMMddHHmmss").format(new Date()) + buf.toString() + pic.substring(pic.lastIndexOf("."));
 //		System.out.println(pics);
 //		copyFile(pic,realPath+"/"+pics);
-
 		int n = uploadWeightService.saveWeight(logis_no, weight, s);
-
+        int store=uploadWeightService.saveStore(logis_no,weight,s);
 		JSONObject meta = new JSONObject();
 		if(n>0) {
 			meta.put("code", "0");
@@ -147,10 +153,13 @@ public class UploadWeightAction extends BaseAction
 		meta.put("request_url", actionName);
 		JSONObject response = new JSONObject();
 		response.put("logistic_no", logis_no);
+		response.put("weight", weight);
 		JSONObject result = new JSONObject();
 		result.put("meta", meta);
 		result.put("response", response);
 		this.outJS(result.toString());
+		return SUCCESS;
+
 	}
 
 	public static void copyFile(String pic,String path) {

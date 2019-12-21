@@ -38,9 +38,11 @@ public class UploadWeightService {
 		return weightBean.saveEntity(myid, num, pic);
 	}
 
+	public int saveStore(@Param("id")String id,@Param("num")String num,@Param("pic")String pic) throws NoPrivilegeException, SQLException, NoConnection {
+		return weightBean.saveStore(id, num, pic);
+	}
 
-	public List selectTest() throws NoPrivilegeException, SQLException, NoConnection {
-
-		return null;
+	public List selectStore() throws NoPrivilegeException, SQLException, NoConnection {
+		return weightBean.selectStore();
 	}
 }

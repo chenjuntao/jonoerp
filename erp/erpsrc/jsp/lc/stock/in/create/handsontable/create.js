@@ -104,7 +104,6 @@ function doSubmit() {
 
 var grid = null;
 var dataStore = null;
-
 function initGrid() {
 	$('#dataGrid').handsontable({
 		data : [],
@@ -241,9 +240,9 @@ var columns = [ {
 }, {
 	data : 'expiredTime',
 	readOnly : true
-} ];
+}];
 var colHeaders = [ '原料编码', '原料名称', '类别', '单位', '规格', '收货部门', '供货周期', '订货数量', '已入库数量', '实收数量', '超收率', '标准单价', '标准金额',
-		'进货单价', '进货金额', '有效期' ];
+		'进货单价', '进货金额'];
 function doClose() {
 	closeTab(tabId);
 }

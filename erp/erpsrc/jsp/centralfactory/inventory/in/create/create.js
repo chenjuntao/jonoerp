@@ -25,9 +25,7 @@ function initGrid() {
 			cellNavigation : false,
 			loadingMessage : '加载中...'
 		}, "dataGrid");
-
 		grid.on("dgrid-datachange", dataChangeHandler);
-
 		// TODO
 		on(grid, 'keydown', function(e) {
 			if (e.keyCode === keys.UP_ARROW) {
@@ -46,7 +44,6 @@ function initGrid() {
 		on(grid, 'dgrid-cellfocusin', function(e) {
 			if (e.parentType != undefined) { // 鼠标事件不予处理
 				var $input = query('.dijitInputField input[type=text]', e.target);
-
 				if (!isEmpty($input[0])) {
 					$input[0].select();
 				}
@@ -69,7 +66,6 @@ function queryData() {
 				+ "&supplierId=" + supplierId;
 	}
 	_url = getUrl(_url);
-	
 	require([ "dojo/request/xhr", "dojo/store/Observable", "dojo/store/Memory" ], function(xhr, Observable, Memory) {
 		xhr.get(_url, {
 			handleAs : "json"
@@ -84,6 +80,7 @@ function queryData() {
 		});
 	});
 }
+
 
 function dataChangeHandler(event) {
 	var field = event.cell.column.field;
@@ -234,7 +231,7 @@ function doSubmit() {
 	dojo.byId('jsonData').value = JSON.stringify(rows);
 	var _url = appRoot + '/lc/stock/in/create/checkView.action?parentTabId=' + tabId;
 	_url = getUrl(_url);
-	
+
 	addPostTab('billForm', '入库单生成确认', _url);
 }
 

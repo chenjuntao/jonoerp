@@ -26,7 +26,6 @@ function imageFmt(_text, _objId) {
 	var aEle = document.createElement("a");
 	var _url = appRoot + "/common/loadImage.action?objectId=" + _objId;
 	_url += "&timestamp=" + new Date().getTime(); // 防止缓存
-
 	aEle.href = _url;
 	aEle.target = "_blank";
 	aEle.innerHTML = _text;
