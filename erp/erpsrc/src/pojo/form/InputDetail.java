@@ -49,7 +49,7 @@ public class InputDetail {
 	private String workOrderId;
     private String pic;
     private String num;
-
+    private int isok;
 	public void setNum(String num) {
 		this.num = num;
 	}

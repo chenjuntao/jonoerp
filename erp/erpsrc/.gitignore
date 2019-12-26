@@ -95,3 +95,6 @@ fabric.properties
 .idea/caches/build_file_checksums.ser
 
 /src/pojo/form/Weight.java
+
+# sqlj generated files
+*_SJProfile0.ser

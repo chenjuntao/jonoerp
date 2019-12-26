@@ -63,7 +63,6 @@ public class BillManageService {
 		BranchStorage branchStorage = branchStorageBean.queryMainStore(inputHeader.getInputDepartmentId());
 		inputHeader.setStorage(branchStorage.getStorageName());
 		inputHeader.setStorageId(branchStorage.getStorageId());
-
 		JSONArray arr = JSONArray.fromObject(jsonData);
 		Double allPayAmt = 0.0, maxPayAmt = -1.0;
 		String maxPayItem = "";

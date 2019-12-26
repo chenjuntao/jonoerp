@@ -38,6 +38,7 @@ implements sqlj.runtime.NamedIterator
     myidNdx = findColumn("myid");
     numNdx = findColumn("num");
     picNdx = findColumn("pic");
+    isokNdx = findColumn("isok");
   }
   public String myid() 
     throws java.sql.SQLException 
@@ -57,13 +58,19 @@ implements sqlj.runtime.NamedIterator
     return resultSet.getString(picNdx);
   }
   private int picNdx;
+  public Integer isok() 
+    throws java.sql.SQLException 
+  {
+    return resultSet.getIntWrapper(isokNdx);
+  }
+  private int isokNdx;
 }
 
 
 //  ************************************************************
 
-/*@lineinfo:user-code*//*@lineinfo:28^3*/
-	/*@lineinfo:generated-code*//*@lineinfo:29^2*/
+/*@lineinfo:user-code*//*@lineinfo:29^3*/
+	/*@lineinfo:generated-code*//*@lineinfo:30^2*/
 
 //  ************************************************************
 //  SQLJ iterator declaration:
@@ -97,7 +104,7 @@ implements sqlj.runtime.NamedIterator
 
 //  ************************************************************
 
-/*@lineinfo:user-code*//*@lineinfo:32^6*/
+/*@lineinfo:user-code*//*@lineinfo:33^6*/
 	
 	public int saveEntity(String myid,String num,String pic) throws NoPrivilegeException, SQLException, NoConnection {
 		DefaultContext myCtx = getComContext(comId);
@@ -106,7 +113,7 @@ implements sqlj.runtime.NamedIterator
 		//String num = map.get("num").toString();
 		//String pic = map.get("pic").toString();
 
-		/*@lineinfo:generated-code*//*@lineinfo:41^3*/
+		/*@lineinfo:generated-code*//*@lineinfo:42^3*/
 
 //  ************************************************************
 //  #sql [myCtx] { INSERT INTO jono.weight
@@ -143,7 +150,7 @@ implements sqlj.runtime.NamedIterator
 
 //  ************************************************************
 
-/*@lineinfo:user-code*//*@lineinfo:46^4*/
+/*@lineinfo:user-code*//*@lineinfo:47^4*/
 		closeDefaultContext(myCtx);
 		
 		return 1;
@@ -156,7 +163,7 @@ implements sqlj.runtime.NamedIterator
     		//String id = map.get("id").toString();
     		//String num = map.get("num").toString();
     		//String pic = map.get("pic").toString();
-    		/*@lineinfo:generated-code*//*@lineinfo:59^7*/
+    		/*@lineinfo:generated-code*//*@lineinfo:60^7*/
 
 //  ************************************************************
 //  #sql [myCtx] { INSERT INTO jono.d_store
@@ -193,7 +200,7 @@ implements sqlj.runtime.NamedIterator
 
 //  ************************************************************
 
-/*@lineinfo:user-code*//*@lineinfo:64^8*/
+/*@lineinfo:user-code*//*@lineinfo:65^8*/
     		closeDefaultContext(myCtx);
     		return 1;
     	}
@@ -202,12 +209,14 @@ implements sqlj.runtime.NamedIterator
     			throws NoPrivilegeException,SQLException,NoConnection {
     		DefaultContext myCtx = getDefaultContext();
     		WeightIter weightIter = null;
-    		/*@lineinfo:generated-code*//*@lineinfo:73^7*/
+    		/*@lineinfo:generated-code*//*@lineinfo:74^7*/
+
 //  ************************************************************
 //  #sql [myCtx] weightIter = { SELECT
 //      			           h.myid,
 //      			           h.num,
-//      			           h.pic
+//      			           h.pic,
+//      			           h.isok
 //      			        FROM
 //      			       jono.weight h
 //      		 };
@@ -235,7 +244,7 @@ implements sqlj.runtime.NamedIterator
 
 //  ************************************************************
 
-/*@lineinfo:user-code*//*@lineinfo:81^7*/
+/*@lineinfo:user-code*//*@lineinfo:83^7*/
     		List<Weight> weightList = processIter(weightIter);
     		weightIter.close();
     		closeDefaultContext(myCtx);
@@ -250,17 +259,83 @@ implements sqlj.runtime.NamedIterator
         			weight.setMyid(weightIter.myid());
         	        weight.setNum(weightIter.num());
         	        weight.setPic(weightIter.pic());
+        	        weight.setIsok(weightIter.isok());
         		    weightList.add(weight);
         		}
         		return weightList;
         	}
 
 
+        	 public List<Weight> selectTests()
+                			throws NoPrivilegeException,SQLException,NoConnection {
+                		DefaultContext myCtx = getDefaultContext();
+                		WeightIter weightIter = null;
+                		/*@lineinfo:generated-code*//*@lineinfo:109^19*/
+
+//  ************************************************************
+//  #sql [myCtx] weightIter = { SELECT
+//                  			           h.myid,
+//                  			           h.num,
+//                  			           h.pic,
+//                  			           h.isok
+//                  			        FROM
+//                  			       jono.weight h
+//                  			       where h.isok=0
+//                  		 };
+//  ************************************************************
+
+{
+  sqlj.runtime.ConnectionContext __sJT_connCtx = myCtx;
+  if (__sJT_connCtx == null) sqlj.runtime.error.RuntimeRefErrors.raise_NULL_CONN_CTX();
+  sqlj.runtime.ExecutionContext __sJT_execCtx = __sJT_connCtx.getExecutionContext();
+  if (__sJT_execCtx == null) sqlj.runtime.error.RuntimeRefErrors.raise_NULL_EXEC_CTX();
+  synchronized (__sJT_execCtx) {
+    sqlj.runtime.profile.RTStatement __sJT_stmt = __sJT_execCtx.registerStatement(__sJT_connCtx, WeightBean_SJProfileKeys.getKey(0), 3);
+    try 
+    {
+      sqlj.runtime.profile.RTResultSet __sJT_result = __sJT_execCtx.executeQuery();
+      weightIter = new WeightIter(__sJT_result);
+    }
+    finally 
+    {
+      __sJT_execCtx.releaseStatement();
+    }
+  }
+}
+
+
+//  ************************************************************
+
+/*@lineinfo:user-code*//*@lineinfo:118^19*/
+                		List<Weight> weightList = processItert(weightIter);
+                		weightIter.close();
+                		closeDefaultContext(myCtx);
+                		return weightList;
+                	}
+
+                	private List<Weight> processItert(WeightIter weightIter)
+                    			throws SQLException {
+                    		List<Weight> weightList = new ArrayList<Weight>();
+                    		while(weightIter.next()) {
+                    			Weight weight = new Weight();
+                    			weight.setMyid(weightIter.myid());
+                    	        weight.setNum(weightIter.num());
+                    	        weight.setPic(weightIter.pic());
+                    	        weight.setIsok(weightIter.isok());
+                    		    weightList.add(weight);
+                    		}
+                    		return weightList;
+                    	}
+
+
+
+
+
         	public List<Store> selectStore()
                 			throws NoPrivilegeException,SQLException,NoConnection {
                 		DefaultContext myCtx = getDefaultContext();
                 		StoreIter storeIter = null;
-                		/*@lineinfo:generated-code*//*@lineinfo:106^19*/
+                		/*@lineinfo:generated-code*//*@lineinfo:147^19*/
 
 //  ************************************************************
 //  #sql [myCtx] storeIter = { SELECT
@@ -277,7 +352,7 @@ implements sqlj.runtime.NamedIterator
   sqlj.runtime.ExecutionContext __sJT_execCtx = __sJT_connCtx.getExecutionContext();
   if (__sJT_execCtx == null) sqlj.runtime.error.RuntimeRefErrors.raise_NULL_EXEC_CTX();
   synchronized (__sJT_execCtx) {
-    sqlj.runtime.profile.RTStatement __sJT_stmt = __sJT_execCtx.registerStatement(__sJT_connCtx, WeightBean_SJProfileKeys.getKey(0), 3);
+    sqlj.runtime.profile.RTStatement __sJT_stmt = __sJT_execCtx.registerStatement(__sJT_connCtx, WeightBean_SJProfileKeys.getKey(0), 4);
     try 
     {
       sqlj.runtime.profile.RTResultSet __sJT_result = __sJT_execCtx.executeQuery();
@@ -293,7 +368,7 @@ implements sqlj.runtime.NamedIterator
 
 //  ************************************************************
 
-/*@lineinfo:user-code*//*@lineinfo:112^19*/
+/*@lineinfo:user-code*//*@lineinfo:153^19*/
                 		List<Store> storeList = processIters(storeIter);
                 		//storeList.close();
                 		closeDefaultContext(myCtx);
@@ -313,7 +388,58 @@ implements sqlj.runtime.NamedIterator
         		return storeList;
         	}
 
+             public int updateEntity(Weight weight)
+                        throws NoPrivilegeException, SQLException, NoConnection {
+                    return updateEntityImp(weight);
+                }
 
+            private int updateEntityImp(Weight weight)
+                        throws NoPrivilegeException, SQLException, NoConnection {
+                        DefaultContext myCtx = getDefaultContext();
+                   String myid=weight.getMyid();
+                   String num=weight.getNum();
+                   String pic= weight.getPic();
+                   Integer isok=weight.getIsok();
+
+                    /*@lineinfo:generated-code*//*@lineinfo:186^21*/
+
+//  ************************************************************
+//  #sql [myCtx] { UPDATE
+//                          jono.weight
+//                          SET
+//                              isok =1
+//                          WHERE
+//                              myid = :myid
+//                       };
+//  ************************************************************
+
+{
+  sqlj.runtime.ConnectionContext __sJT_connCtx = myCtx;
+  if (__sJT_connCtx == null) sqlj.runtime.error.RuntimeRefErrors.raise_NULL_CONN_CTX();
+  sqlj.runtime.ExecutionContext __sJT_execCtx = __sJT_connCtx.getExecutionContext();
+  if (__sJT_execCtx == null) sqlj.runtime.error.RuntimeRefErrors.raise_NULL_EXEC_CTX();
+  String __sJT_1 = myid;
+  synchronized (__sJT_execCtx) {
+    sqlj.runtime.profile.RTStatement __sJT_stmt = __sJT_execCtx.registerStatement(__sJT_connCtx, WeightBean_SJProfileKeys.getKey(0), 5);
+    try 
+    {
+      __sJT_stmt.setString(1, __sJT_1);
+      __sJT_execCtx.executeUpdate();
+    }
+    finally 
+    {
+      __sJT_execCtx.releaseStatement();
+    }
+  }
+}
+
+
+//  ************************************************************
+
+/*@lineinfo:user-code*//*@lineinfo:193^21*/
+                    closeDefaultContext(myCtx);
+                    return 1;
+                }
 
 
 

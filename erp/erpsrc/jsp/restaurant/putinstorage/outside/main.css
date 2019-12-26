@@ -3,7 +3,7 @@
 	right: 0;
 	top: 60px;
 	bottom: 0;
-	width: 100%;
+	width: 80%;
 	height: auto; /* override default height: 30em; in dgrid.css */
 }
 

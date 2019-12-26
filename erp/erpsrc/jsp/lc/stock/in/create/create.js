@@ -80,7 +80,6 @@ function queryData() {
 				item.payAmt = parseFloat((item.receiveCount * item.itemUnitPrice).toFixed(2)); // 计算金额
 				item.receiveAmt = parseFloat((item.receiveCount * item.receivePrice).toFixed(2)); // 计算金额
 			});
-
 			dataStore = new Observable(new Memory({
 				idProperty : "rownumber",
 				data : rows
@@ -161,7 +160,7 @@ function getColumn(editor, NumberTextBox) {
 		field : "receiveCount",
 		className : 'grid-number',
 		editorArgs : {
-			style : 'width: 5em;text-align: right;',
+			style : 'width: 5em;text-align: right;color:red	',
 			constraints : {
 				min : 0,
 				max : 99550,

@@ -1,9 +1,132 @@
 $(function() {
 	addEvent();
 	initGrid();
+	loadGridDatas();
 });
 
+function loadGridDatas() {
+	var _url = appRoot + "/lc/stock/in/create/queryUnifiedDetails.action";
+	_url = getUrl(_url);
+	$.ajax({
+		type: "POST",
+		url: _url,
+		error: function () {
+			console.error("query failed");
+		},
+		success: function (data) {
+			var arr = data.weigLst;
+			$("#weight").val(arr.num);
+			$("#picsd").val(arr.pic);
 
+			// if (arr != null) {
+			// 	for (var i = 0; i < arr.length; i++) {
+			// 		if (ids == i) {
+			// 			mydata.rows[i].nums = arr[i].num;
+			// 			mydata.rows[i].pic = arr[i].pic;
+			// 		}
+			// 	}
+			// }
+		}
+	});}
+
+function loadGridData(ids) {
+	var _url = appRoot + "/lc/stock/in/create/queryUnifiedDetails.action?ids="+ids;
+	_url = getUrl(_url);
+	$.ajax({
+		type : "POST",
+		url : _url,
+		error : function() {
+			console.error("query failed");
+		},
+		success : function(data) {
+			var arr=data.nums;
+			var arrss=data.weights;
+			// var as=data.weigLst;
+			var arrs=data.nums;
+			console.info(data.weights);
+			for(var i=0;i<arrs.length;i++){
+				if (ids==i){
+					var weight=$("#weight").val();
+					var picsd=$("#picsd").val();
+					// for (var j = 0; j <arrs.length ; j++) {
+					if (arrs[i].isok!=1) {
+						$("#weight").val("");
+						$("#picsd").val("");
+						var myids=arrs[i].myid;
+						var w=$("#weight").val(arrs[i].num);
+						var p=$("#picsd").val(arrs[i].pic);
+						var weig=$("#weight").val();
+						var pi=$("#picsd").val();
+						mydata.rows[i].nums=weig;
+						mydata.rows[i].pic=pi;
+						// var ws=$("#weight").val(arrs[i].num);
+						// var ps=$("#picsd").val(arrs[i].pic);
+						// var ww=$("#weight").val();
+						// var pp=$("#picsd").val();
+						// mydata.rows[i].nums=ww;
+						// mydata.rows[i].pic=pp;
+						if (arrss.length==0) {
+							$("#weight").val("");
+							$("#picsd").val("");
+						}
+						loadGridDatas();
+						if (arrss.length==0) {
+							$("#weight").val("");
+							$("#picsd").val("");
+						}
+					}
+					// }
+				}
+				var _url = appRoot + "/lc/stock/in/create/updateEntity.action?myids="+myids;
+				_url = getUrl(_url);
+				$.ajax({
+					type: "POST",
+					url: _url,
+					error: function () {
+						console.error("query failed");
+					},
+					success: function (data) {
+						if (data>0){
+							if (arrss.length==0) {
+								$("#weight").val("");
+								$("#picsd").val("");
+							}
+							// if (
+						}
+					}
+				});
+			}
+			if (arrss.length==0) {
+				$("#weight").val("");
+				$("#picsd").val("");
+			}
+			// $("#weight").val("");
+			// $("#picsd").val("");
+			// }
+			// for(var i in arr){
+			// 	console.info(i);
+			// 	if (ids==i){
+			// 		console.info(mydata.rows[i].num);
+			// 		console.info(arr[i].num);
+			// 		mydata.rows[i].num=arr[i].num;
+			// 	}
+			// }
+			// for (var i = 0; i <data.length; i++) {
+			// 	console.info(i);
+			// 	if (ids==i){
+			// 		console.info(mydata.rows[i].num);
+			// 		console.info(data.nums[i].num);
+			// 		mydata.rows[i].num=data.nums[i].num;
+			// 	}
+			// }
+			// console.info(mydata.rows[0].nums);
+			// mydata.rows[0].nums=data.nums;
+			// mydata.rows[1].nums=data.nums;
+			$('#dataGrid').handsontable('loadData', mydata.rows);
+			$.isLoading("hide");
+		}
+	});
+}
 function addEvent() {
 	$(".Wdate").focus(function(e) {
 		WdatePicker();
@@ -78,7 +201,6 @@ function doSubmit() {
 		return;
 	}
 	var temp = "";
-
 	var i = 1;
 	for (var j = 0, length = rows.length - 1; j < length; j++) {
 		if (rows[j].itemId == temp) {
@@ -93,24 +215,34 @@ function doSubmit() {
 	}
 	var $storageId = $('storageId').val();
 	$('#storage').val($("#storageId").find("option:selected").text());
-
 	$('#jsonData').val(JSON.stringify(rows));
 	var _url = appRoot + '/lc/stock/in/create/checkView.action?parentTabId=' + tabId;
 	_url = getUrl(_url);
-	
 	addPostTab('billForm', '入库单生成确认', _url);
 }
-
+//add by wuqing,20191222
 function negativeValueRenderer(instance, td, row, col, prop, value, cellProperties) {
     Handsontable.renderers.TextRenderer.apply(this, arguments);
+    if (prop=='nums') {
+		if(value!=null && value!='' && value!=undefined){
+			// value='<input TYPE="text" id="sss" value='+value+' style="color:red； width:30%;"/>';
+			// td.innerHTML = value;
+		}
+	}
     if (prop == 'link') {
+    	value="<a href='#' onclick='loadGridData("+value+")' >读取</a>";
         td.innerHTML = value;//字符串转化成HTML的写法
     }
     if (prop == 'pic') {
         //添加自定义的图片，并给图片的chick添加事件
+		    if(value!=null && value!='' && value!=undefined){
+	        value="<a href='#' onclick='loadPic("+value+")'>查看</a>";
             td.innerHTML = value;
-            td.onmouseover = function () {
-            this.innerHTML = "<div style='pointer-events: none;'><img src='/home/cjt/tomcat-7.0.54/webapps/erp/upload/1575625550152.jpg' style='width: 100px;' class='mouse-img' target='_blank' /></div>";
+			}else{
+		    	value="";
+			}
+             // td.onmouseover = function () {
+             // this.innerHTML = "<div style='pointer-events: none;'><img src='/home/cjt/tomcat-7.0.54/webapps/erp/upload/1575625550152.jpg' style='width: 100px;' class='mouse-img' target='_blank' /></div>";
             // var _url = appRoot + "/lc/stock/in/create/queryUnifiedDetails.action";
             // $.ajax({
             //     type: "POST",
@@ -125,10 +257,10 @@ function negativeValueRenderer(instance, td, row, col, prop, value, cellProperti
             //         // $.isLoading("hide");
             //     }
             // });
-        },
-        td.onmouseout = function(){
-            this.innerHTML = value;
-        }
+        // },
+        // td.onmouseout = function(){
+        //     this.innerHTML = value;
+        // }
         // td.onmouseover = function(){
         //     this.style.backgroundColor = "#337ab7";
         //     var aEle = document.createElement("a");
@@ -182,26 +314,11 @@ function negativeValueRenderer(instance, td, row, col, prop, value, cellProperti
 Handsontable.renderers.registerRenderer('negativeValueRenderer', negativeValueRenderer);
 var grid = null;
 var dataStore = null;
-
-function loadGridData() {
-    var supplierId = $('#supplierId').val();
-    var formId = $('#formId').val();
-    var df=1;
-    var _url = appRoot + "/lc/stock/in/create/queryUnifiedDetail.action?formId=" + formId + "&supplierId=" + supplierId+ "&ss=" + df;
-    _url = getUrl(_url);
-    $.ajax({
-        type : "POST",
-        url : _url,
-        error : function() {
-            console.error("query failed");
-        },
-        success : function(data) {
-            console.info(data);
-            $('#dataGrid').handsontable('loadData', data.rows);
-            $.isLoading("hide");
-        }
-    });
- }
+//add by wuqing,20191222
+var mydata = null;
+function loadPic(pic) {
+    alert(pic);
+}
    function initGrid() {
        $('#dataGrid').handsontable({
         data : [],
@@ -210,10 +327,12 @@ function loadGridData() {
         rowHeaders : true,
         fixedColumnsLeft : 7,
         manualColumnFreeze : true,
+		dropdownMenu: true,
         allowInvalid : false,
-        height : 450,
-        contextMenu: ['row_above', 'row_below', '---------', 'remove_row', '---------', 'undo', 'redo', '---------', 'make_read_only', '---------', 'alignment'],
-        dropdownMenu: ['filter_by_condition', 'filter_by_value', 'filter_action_bar'],
+		// colWidths: 70,  //colWidths: [100, 200, 300, 200, 100]
+        height : 200,
+		   //add by wuqing,20191222
+		contextMenu: ['row_above', 'row_below', '---------', 'remove_row', '---------', 'undo', 'redo', '---------', 'make_read_only', '---------', 'alignment'],
         cells: function (row, col, prop) {
            var cellProperties = {};
            cellProperties.renderer = "negativeValueRenderer";
@@ -221,7 +340,6 @@ function loadGridData() {
            },
 
        })
-
     $.isLoading({
 		text : "加载中"
 	});
@@ -238,18 +356,19 @@ function loadGridData() {
 			console.error("query failed");
 		},
 		success : function(data) {
-            console.info(data);
+			mydata = data;
+            console.info(mydata);
 			// 如果没有统配相关的数据，则提供进入下一步的选择
-			if (data.length == 0) {
+			if (mydata.length == 0) {
 				alert('无统配，直接进入下一步！');
 				doSubmit();
 				return;
 			}
-			$(data.rows).each(function(i, row) {
+			$(mydata.rows).each(function(i, row) {
 				row.payAmt = parseFloat((row.receiveCount * row.itemUnitPrice).toFixed(4)); // 计算金额
 				row.receiveAmt = parseFloat((row.receiveCount * row.receivePrice).toFixed(4)); // 计算金额
 			});
-			$('#dataGrid').handsontable('loadData', data.rows);
+			$('#dataGrid').handsontable('loadData', mydata.rows);
 			$.isLoading("hide");
 		}
 	});
@@ -288,19 +407,32 @@ var columns = [ {
 	type : 'numeric',
 	format : '0.00'
 }, {
-	data : 'link',
+	data : 'receiveCount',
 	type : 'numeric',
 	format : '0.00',
-},  {
+}, {
+    data : 'link',
+    type : 'numeric',
+    format : '0.00',
+}, {
     data : 'nums',
     type : 'numeric',
     format : '0.00',
+	editorArgs : {
+		style : 'width: 5em;text-align: right;color:red	',
+		constraints : {
+			min : 0,
+			max : 99550,
+			places : '0,3'
+		},
+		required : true,
+		invalidMessage : '请输入不多于三位小数的数字。'
+	}
 }, {
 	data : 'outReceiveRate',
 	readOnly : true,
 	type : 'numeric',
-	format : '0.00',
-
+	format : '0.00'
 }, {
 	data : 'itemUnitPrice',
 	readOnly : true,
@@ -326,6 +458,7 @@ var columns = [ {
 	readOnly : true
 },{
 	data : 'pic',
+	width:'70',
 	readOnly : true,
 	renderCell : function(object, data) {
 		return imageFmt(data, object.itemId);
@@ -333,72 +466,9 @@ var columns = [ {
 	sortable : false
 }];
 
-var colHeaders = [ '原料编码', '原料名称', '类别', '单位', '规格', '收货部门', '供货周期', '订货数量', '已入库数量', '实收数量', '数量','超收率', '标准单价', '标准金额',
+var colHeaders = [ '原料编码', '原料名称', '类别', '单位', '规格', '收货部门', '供货周期', '订货数量', '已入库数量','数量', '操作', '实收数量','超收率', '标准单价', '标准金额',
 		'进货单价', '进货金额', '有效期' ,'图片名称'];
 
 function doClose() {
 	closeTab(tabId);
-}
-
-function imageFmt(_text, _objId) {
-    alert("45");
-    var aEle = document.createElement("a");
-    // var _url = appRoot + "/common/loadImage.action?objectId=" + _objId;
-    // _url += "&timestamp=" + new Date().getTime(); // 防止缓存
-    // aEle.href = _url;
-    // aEle.target = "_blank";
-    // aEle.innerHTML = _text;
-    // require(["dojo/mouse", "dojo/on", "dojo/query", "dojo/dom", "dojo/dom-construct", "dojo/_base/window",
-    //     "dojo/dom-attr", "dojo/dom-style"], function (mouse, on, query, dom, domc, win, domAttr, domStyle) {
-    //     on(aEle, mouse.enter, function (evt) {
-    //         var $liveTip = dom.byId('livetip');
-    //         if ($liveTip == null) {
-    //             $liveTip = domc.create("div", {
-    //                 id: 'livetip'
-    //             });
-    //             domc.place($liveTip, win.body());
-    //         }
-    //         var html = "<img src='" + _url + "' style='width: 200px;' class='mouse-img' target='_blank' />";
-    //         domAttr.set($liveTip, 'innerHTML', html);
-    //         domStyle.set($liveTip, {
-    //             'display': 'block',
-    //             'top': evt.pageY + 'px',
-    //             'left': evt.pageX + 'px'
-    //         });
-    //     });
-    //     on(aEle, mouse.leave, function (evt) {
-    //         var $liveTip = dom.byId('livetip');
-    //         domStyle.set($liveTip, 'display', 'none');
-    //     });
-    // });
-    return aEle;
-// }
-// var _url = appRoot + "/lc/stock/in/create/queryUnifiedDetail.action?formId=" + formId + "&supplierId=" + supplierId;
-// _url = getUrl(_url);
-// $.ajax({
-//     type : "POST",
-//     url : _url,
-//     data : {
-//         deliveryType : deliveryType
-//     },
-//     error : function() {
-//         console.error("query failed");
-//     },
-//     success : function(data) {
-//         console.info(data);
-//         // 如果没有统配相关的数据，则提供进入下一步的选择
-//         if (data.length == 0) {
-//             alert('无统配，直接进入下一步！');
-//             doSubmit();
-//             return;
-//         }
-//         $(data.rows).each(function(i, row) {
-//             row.payAmt = parseFloat((row.receiveCount * row.itemUnitPrice).toFixed(4)); // 计算金额
-//             row.receiveAmt = parseFloat((row.receiveCount * row.receivePrice).toFixed(4)); // 计算金额
-//         });
-//         $('#dataGrid').handsontable('loadData', data.rows);
-//         $.isLoading("hide");
-//     }
-// });
-
 }

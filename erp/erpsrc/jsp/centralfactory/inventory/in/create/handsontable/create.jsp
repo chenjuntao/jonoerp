@@ -16,6 +16,24 @@
     <style type="text/css">
       @import "<%=dojoBase %>/dojo/resources/dojo.css";
     </style>
+    <style>
+        #dataGrid {
+            width: 80%;
+
+        }
+        .tableDiv {
+            width: 100%;
+            display: flex;
+            justify-content: flex-start;
+            align-items: flex-start;
+        }
+        .rightDiv {
+            width: 20%;
+        }
+        .rightDiv div {
+            width: 100%;
+        }
+    </style>
     
 	<link rel="stylesheet" href="<%=dojoBase %>/handsontable/handsontable.full.min.css">
 	<link rel="stylesheet" href="<%=dojoBase %>/jquery/isloading/isloading.css">
@@ -29,29 +47,37 @@
 </head>
 
 <body class="claro" style="overflow-y: auto;overflow-x: hidden;">
-		<form id="billForm" method="post">
+    <form id="billForm" method="post">
 		<input type='hidden' id="formId" name="formId" value='${formId }' />
 		<input type='hidden' id="branchId" name="branchId" value='${logCode }' />
 		<input type='hidden' id="supplierId" name="supplierId" value='${supplierId }' />
 		<input type="hidden" id="jsonData" name="jsonData" value='${jsonData }' />
-			<table class="hovertable" width="100%" border="1">
-				<tr>
-				<td class="label_right" style="width: 90px;">入库仓库：</td>
-				<td class="text_left">
-					<s:select list="storeLst" listKey="storageId" listValue="storageName" theme="simple" style="width: 180px;" id="storageId" name="inputHeader.storageId"></s:select>
-					<input type="hidden" id="storage" name="inputHeader.storage" />
-				</td>
-			</tr>
-			<tr>
-				<td class="label_right">备注：</td>
-				<td class="text_left" colspan="5">
-	  				<input type="text" name="inputHeader.formNote" 	value="${purchasingHeader.formNote}" style="width: 380px;" />
-			    	<input type="button" value="确认生成入库单" onclick="doSubmit();" style="margin-left: 58px;"/>
-				</td>
-			</tr>
-		</table>
+        <table class="hovertable" width="100%" border="1">
+            <tr>
+                <td class="label_right" style="width: 90px;">入库仓库：</td>
+                <td class="text_left">
+                    <s:select list="storeLst" listKey="storageId" listValue="storageName" theme="simple" style="width: 180px;" id="storageId" name="inputHeader.storageId"></s:select>
+                    <input type="hidden" id="storage" name="inputHeader.storage" />
+                </td>
+            </tr>
+            <tr>
+                <td class="label_right">备注：</td>
+                <td class="text_left" colspan="5">
+                    <input type="text" name="inputHeader.formNote" 	value="${purchasingHeader.formNote}" style="width: 380px;" />
+                    <input type="button" value="确认生成入库单" onclick="doSubmit();" style="margin-left: 58px;"/>
+                </td>
+            </tr>
+        </table>
+        <div class="tableDiv">
+            <div id="dataGrid" class="handsontable htColumnHeaders">
 
-		<div id="dataGrid" class="handsontable htColumnHeaders"></div>
+            </div>
+            <div class="rightDiv">
+                <div>数量：<input type="text" value="" disabled="disabled" id="weight"/></div>
+                <div>图片：<input type="text" value="" disabled="disabled" id="picsd"/></div>
+            </div>
+
+        </div>
 	</form>
 </body>
 

@@ -45,4 +45,12 @@ public class UploadWeightService {
 	public List selectStore() throws NoPrivilegeException, SQLException, NoConnection {
 		return weightBean.selectStore();
 	}
+
+	public List selectTest() throws NoPrivilegeException, SQLException, NoConnection {
+		return weightBean.selectTest();
+	}
+
+//	public List selectTests() throws NoPrivilegeException, SQLException, NoConnection {
+//		return weightBean.selectTests();
+//	}
 }

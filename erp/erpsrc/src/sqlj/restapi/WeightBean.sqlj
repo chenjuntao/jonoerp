@@ -1,9 +1,9 @@
 /**
- *by cjt
+ *by wuqing
  *first created on 2014.6.12
  *last edited on 2014.7.7
  *
- *edited by pw on 2014.7.28
+ *edited by cjt on 2014.7.28
  */
 
 package logic.restapi;
@@ -24,7 +24,8 @@ public class WeightBean extends ConnectionPool{
 	#sql public static iterator WeightIter(
 			String myid,
 			String num, 
-			String pic
+			String pic,
+			Integer isok
 		);
 	#sql public static iterator StoreIter(
     			String storeid,
@@ -75,7 +76,8 @@ public class WeightBean extends ConnectionPool{
     			        SELECT
     			           h.myid,
     			           h.num,
-    			           h.pic
+    			           h.pic,
+    			           h.isok
     			        FROM
     			       jono.weight h
     		};
@@ -93,10 +95,49 @@ public class WeightBean extends ConnectionPool{
         			weight.setMyid(weightIter.myid());
         	        weight.setNum(weightIter.num());
         	        weight.setPic(weightIter.pic());
+        	        weight.setIsok(weightIter.isok());
         		    weightList.add(weight);
         		}
         		return weightList;
         	}
+
+
+        	 public List<Weight> selectTests()
+                			throws NoPrivilegeException,SQLException,NoConnection {
+                		DefaultContext myCtx = getDefaultContext();
+                		WeightIter weightIter = null;
+                		#sql [myCtx] weightIter = {
+                			        SELECT
+                			           h.myid,
+                			           h.num,
+                			           h.pic,
+                			           h.isok
+                			        FROM
+                			       jono.weight h
+                			       where h.isok=0
+                		};
+                		List<Weight> weightList = processItert(weightIter);
+                		weightIter.close();
+                		closeDefaultContext(myCtx);
+                		return weightList;
+                	}
+
+                	private List<Weight> processItert(WeightIter weightIter)
+                    			throws SQLException {
+                    		List<Weight> weightList = new ArrayList<Weight>();
+                    		while(weightIter.next()) {
+                    			Weight weight = new Weight();
+                    			weight.setMyid(weightIter.myid());
+                    	        weight.setNum(weightIter.num());
+                    	        weight.setPic(weightIter.pic());
+                    	        weight.setIsok(weightIter.isok());
+                    		    weightList.add(weight);
+                    		}
+                    		return weightList;
+                    	}
+
+
+
 
 
         	public List<Store> selectStore()
@@ -129,7 +170,30 @@ public class WeightBean extends ConnectionPool{
         		return storeList;
         	}
 
+             public int updateEntity(Weight weight)
+                        throws NoPrivilegeException, SQLException, NoConnection {
+                    return updateEntityImp(weight);
+                }
 
+            private int updateEntityImp(Weight weight)
+                        throws NoPrivilegeException, SQLException, NoConnection {
+                        DefaultContext myCtx = getDefaultContext();
+                   String myid=weight.getMyid();
+                   String num=weight.getNum();
+                   String pic= weight.getPic();
+                   Integer isok=weight.getIsok();
+
+                    #sql [myCtx] {
+                        UPDATE
+                        jono.weight
+                        SET
+                            isok =1
+                        WHERE
+                            myid = :myid
+                    };
+                    closeDefaultContext(myCtx);
+                    return 1;
+                }
 
 
 
