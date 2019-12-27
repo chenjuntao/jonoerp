@@ -49,6 +49,15 @@ public class InputHeader {
 	private String status;
 	private Integer times;
 	private Date auditTimeActual;
+	private String s;
+
+	public void setS(String s) {
+		this.s = s;
+	}
+
+	public String getS() {
+		return s;
+	}
 
 	public String getStatus() {
 		return status;

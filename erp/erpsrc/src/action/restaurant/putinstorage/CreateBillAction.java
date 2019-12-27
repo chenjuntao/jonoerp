@@ -94,8 +94,18 @@ public class CreateBillAction extends BaseAction {
 
 		return SUCCESS;
 	}
+    private String s;
+
+	public void setShopLst(List<Map> shopLst) {
+		this.shopLst = shopLst;
+	}
+
+	public String getS() {
+		return s;
+	}
 
 	public String commitView() throws NoPrivilegeException, SQLException, NoConnection {
+		System.out.println(s+"12222222222222222222222");
 		PurchasingHeader header = purchasingHeaderBean.queryById(formId);
 		if (inputHeader == null) {
 			inputHeader = new InputHeader();
@@ -104,7 +114,7 @@ public class CreateBillAction extends BaseAction {
 		Date businessDate = branchBean.GetBranchById(branchId).getBusinessDate();
 		String formId = FormUtil.generateFormId("LK", branchId, businessDate);
 		inputHeader.setFormId(formId);
-
+        inputHeader.setS(s);
 		inputHeader.setInputDepartmentId(branchId);
 		Branch branch = branchBean.GetBranchById(branchId);
 		inputHeader.setInputDepartment(branch.getBranchName());
@@ -113,7 +123,6 @@ public class CreateBillAction extends BaseAction {
 		inputTime = businessDate;
 		inputHeader.setProviderId(header.getProviderId());
 		inputHeader.setProvider(header.getProvider());
-
 		BranchStorage branchStorage = branchStorageBean.queryMainStore(getLoginBranchId());
 		inputHeader.setStorageId(branchStorage.getStorageId());// 设置仓库
 		inputHeader.setStorage(branchStorage.getStorageName());
@@ -224,11 +233,12 @@ public class CreateBillAction extends BaseAction {
 	}
 
 	public void doSave() throws NoPrivilegeException, SQLException, NoConnection {
+		System.out.println(inputHeader);
 		String formId = billManageService.saveBill(getLoginUserId(), inputHeader, jsonData);
-
 		JSONObject result = new JSONObject();
 		result.put("msg", "ok");
 		result.put("formId", formId);
+//		result.put();
 		try {
 			this.outJS(result.toString());
 		} catch (IOException e) {
@@ -297,10 +307,11 @@ public class CreateBillAction extends BaseAction {
 		}
 	}
 
+
+
 	public String getFormId() {
 		return formId;
 	}
-
 	public void setFormId(String formId) {
 		this.formId = formId;
 	}

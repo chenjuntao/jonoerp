@@ -3,7 +3,7 @@ $(function() {
 	initGrid();
 	loadGridDatas();
 });
-
+var arrs="";
 function loadGridDatas() {
 	var _url = appRoot + "/lc/stock/in/create/queryUnifiedDetails.action";
 	_url = getUrl(_url);
@@ -17,7 +17,6 @@ function loadGridDatas() {
 			var arr = data.weigLst;
 			$("#weight").val(arr.num);
 			$("#picsd").val(arr.pic);
-
 			// if (arr != null) {
 			// 	for (var i = 0; i < arr.length; i++) {
 			// 		if (ids == i) {
@@ -42,7 +41,7 @@ function loadGridData(ids) {
 			var arr=data.nums;
 			var arrss=data.weights;
 			// var as=data.weigLst;
-			var arrs=data.nums;
+			arrs=data.nums;
 			console.info(data.weights);
 			for(var i=0;i<arrs.length;i++){
 				if (ids==i){
@@ -100,6 +99,26 @@ function loadGridData(ids) {
 				$("#weight").val("");
 				$("#picsd").val("");
 			}
+			// var weight=$("#weight").val();
+			// console.info(arrs);
+			// var n=[];
+			// for (var i = 0; i <arrs.length; i++) {
+			// 	console.info(arrs[i].num);
+			// 	 n=arrs[i].num;
+			// }
+			// alert(n+"---------------");
+			// var _url = appRoot + "/lc/stock/in/create/queryUnifiedDetail.action?weight="+n;
+			// _url = getUrl(_url);
+			// $.ajax({
+			// 	type: "POST",
+			// 	url: _url,
+			// 	error: function () {
+			// 		console.error("query failed");
+			// 	},
+			// 	success: function (data) {
+			//
+			// 	}
+			// });
 			// $("#weight").val("");
 			// $("#picsd").val("");
 			// }
@@ -148,6 +167,7 @@ function getGridData() {
 }
 
 function doSubmit() {
+	var s=$("#weight").val();
 	var oldrows = getGridData();
 	var oldItemId = "";
 	var rows = [];
@@ -156,8 +176,9 @@ function doSubmit() {
 		var receivedCount = 0.0;
 		var receiveCount = 0.0;
 		for (var i = 0; i < oldrows.length; i++) {
+			console.info(oldrows);
 			var item = oldrows[i];
-			if ((item.receiveCount + item.receivedCount) > item.orderCount * item.outReceiveRate) {
+			if ((s + item.receivedCount) > item.orderCount * item.outReceiveRate) {
 				alert(item.itemName + "入库数不能超过限制比例！");
 				return;
 			}
@@ -165,11 +186,12 @@ function doSubmit() {
 			if (itemId == oldItemId) {
 				orderCount = item.orderCount += orderCount;
 				receivedCount = item.receivedCount += receivedCount;
-				receiveCount = item.receiveCount += receiveCount;
-				item.differentCount = item.orderCount - item.receivedCount - item.receiveCount;
-				item.sumItemCount = item.receiveCount + item.receivedCount;
-				item.payAmt = parseFloat((item.receiveCount * item.itemUnitPrice).toFixed(4));
-				item.receiveAmt = parseFloat((item.receiveCount * item.receivePrice).toFixed(4));
+				receiveCount = item.nums += receiveCount;
+				item.differentCount = item.orderCount - item.receivedCount - item.nums ;
+				item.sumItemCount = item.nums + item.receivedCount;
+				alert(parseFloat((item.nums  * item.itemUnitPrice).toFixed(4)));
+				item.payAmt = parseFloat((item.nums  * item.itemUnitPrice).toFixed(4));
+				item.receiveAmt = parseFloat((item.nums * item.receivePrice).toFixed(4));
 				rows.push(item);
 				oldItemId = itemId;
 				for (var j = 0; j < rows.length; j++) {
@@ -177,7 +199,7 @@ function doSubmit() {
 					if (itemId == item2.itemId) {
 						item2.differentCount = item.differentCount;
 						item2.sumItemCount = item.sumItemCount;
-						item2.receiveCount = item.receiveCount;
+						item2.nums  = item.nums ;
 						item2.payAmt = item.payAmt;
 						item2.receiveAmt = item.receiveAmt;
 						item2.orderCount = item.orderCount;
@@ -187,11 +209,11 @@ function doSubmit() {
 			} else {
 				orderCount = item.orderCount;
 				receivedCount = item.receivedCount;
-				receiveCount = item.receiveCount;
-				item.sumItemCount = item.receiveCount + item.receivedCount;
-				item.differentCount = item.orderCount - item.receivedCount - item.receiveCount;
-				item.payAmt = parseFloat((item.receiveCount * item.itemUnitPrice).toFixed(4));
-				item.receiveAmt = parseFloat((item.receiveCount * item.receivePrice).toFixed(4));
+				receiveCount = item.nums ;
+				item.sumItemCount = item.nums  + item.receivedCount;
+				item.differentCount = item.orderCount - item.receivedCount - item.nums ;
+				item.payAmt = parseFloat((item.nums  * item.itemUnitPrice).toFixed(4));
+				item.receiveAmt = parseFloat((item.nums  * item.receivePrice).toFixed(4));
 				rows.push(item);
 				oldItemId = itemId;
 			}
@@ -236,78 +258,48 @@ function negativeValueRenderer(instance, td, row, col, prop, value, cellProperti
     if (prop == 'pic') {
         //添加自定义的图片，并给图片的chick添加事件
 		    if(value!=null && value!='' && value!=undefined){
-	        value="<a href='#' onclick='loadPic("+value+")'>查看</a>";
-            td.innerHTML = value;
+		    	var values="<a href='#' onclick='loadPic("+value+")'>查看</a>";
+				td.innerHTML = values;
+				td.onmouseover = function () {
+					console.info(value);
+					var urls = appRoot+"/upload/"+value;
+					this.innerHTML = "<div style='pointer-events: none;'><img src='"+urls+"' style='width: 20px;' class='mouse-img' target='_blank'/></div>";
+				},
+				// td.onmouseover = function(){
+				// 	this.style.backgroundColor = "#337ab7";
+				// 	var aEle = document.createElement("a");
+				// 	var _url = appRoot + "/common/loadImage.action";
+				// 	_url += "&timestamp=" + new Date().getTime(); // 防止缓存
+				// 	aEle.href = _url;
+				// 	aEle.target = "_blank";
+				// 	aEle.innerHTML = _text;
+				// 	var $liveTip = dom.byId('livetip');
+				// 	if ($liveTip == null) {
+				// 		$liveTip = domc.create("div", {
+				// 			id: 'livetip'
+				// 		});
+				// 		domc.place($liveTip, win.body());
+				// 	}
+				// 	var html = "<img src='" + _url + "' style='width: 200px;' class='mouse-img' target='_blank' />";
+				// 	domAttr.set($liveTip, 'innerHTML', html);
+				// 	domStyle.set($liveTip, {
+				// 		'display': 'block',
+				// 		'top': evt.pageY + 'px',
+				// 		'left': evt.pageX + 'px'
+				// 	});
+				// 	on(aEle, mouse.leave, function (evt) {
+				// 		var $liveTip = dom.byId('livetip');
+				// 		domStyle.set($liveTip, 'display', 'none');
+				// 	});
+				// 	return aEle;
+				// },
+				td.onmouseout = function(){
+					this.innerHTML=values;
+				}
+				return td;
 			}else{
 		    	value="";
 			}
-             // td.onmouseover = function () {
-             // this.innerHTML = "<div style='pointer-events: none;'><img src='/home/cjt/tomcat-7.0.54/webapps/erp/upload/1575625550152.jpg' style='width: 100px;' class='mouse-img' target='_blank' /></div>";
-            // var _url = appRoot + "/lc/stock/in/create/queryUnifiedDetails.action";
-            // $.ajax({
-            //     type: "POST",
-            //     url: _url,
-            //     error: function () {
-            //         console.error("query failed");
-            //     },
-            //     success: function (data) {
-            //         console.info(data);
-            //         this.innerHTML = "<img src='" + data.rows[0].pics + "' style='width: 200px;' class='mouse-img' target='_blank' />";
-            //         // $('#dataGrid').handsontable('loadData', data.rows);
-            //         // $.isLoading("hide");
-            //     }
-            // });
-        // },
-        // td.onmouseout = function(){
-        //     this.innerHTML = value;
-        // }
-        // td.onmouseover = function(){
-        //     this.style.backgroundColor = "#337ab7";
-        //     var aEle = document.createElement("a");
-        //     var _url = appRoot + "/common/loadImage.action";
-        //     _url += "&timestamp=" + new Date().getTime(); // 防止缓存
-        //     aEle.href = _url;
-        //     aEle.target = "_blank";
-        //     aEle.innerHTML = _text;
-        //             var $liveTip = dom.byId('livetip');
-        //             if ($liveTip == null) {
-        //                 $liveTip = domc.create("div", {
-        //                     id: 'livetip'
-        //                 });
-        //                 domc.place($liveTip, win.body());
-        //             }
-        //             var html = "<img src='" + _url + "' style='width: 200px;' class='mouse-img' target='_blank' />";
-        //             domAttr.set($liveTip, 'innerHTML', html);
-        //             domStyle.set($liveTip, {
-        //                 'display': 'block',
-        //                 'top': evt.pageY + 'px',
-        //                 'left': evt.pageX + 'px'
-        //             });
-        //         on(aEle, mouse.leave, function (evt) {
-        //             var $liveTip = dom.byId('livetip');
-        //             domStyle.set($liveTip, 'display', 'none');
-        //     });
-        //     return aEle;
-        // }
-        // td.onmouseout = function(){
-        //     this.style.backgroundColor = "#5bc0de";
-        //     this.innerHTML = "鼠标移入移出事件监测";
-        // }
-        // //添加自定义的图片，并给图片的chick添加事件
-        // var escaped = Handsontable.helper.stringify(value),
-        //     imgdel;
-        // imgdel = document.createElement('IMG');
-        // imgdel.src = value;
-        // imgdel.width = 20;
-        // imgdel.name = escaped;
-        // imgdel.style = 'cursor:pointer;';//鼠标移上去变手型
-        // // Handsontable.dom.addEvent(imgdel, 'click', function (event) {
-        // //     hot.alter("remove_row", row);//删除当前行
-        // // });
-        // Handsontable.dom.empty(td);
-        // td.appendChild(imgdel);
-        // td.style.textAlign = 'center';//图片居中对齐
-        // return td;
 
     }
 }
@@ -317,7 +309,8 @@ var dataStore = null;
 //add by wuqing,20191222
 var mydata = null;
 function loadPic(pic) {
-    alert(pic);
+	alert(pic);
+
 }
    function initGrid() {
        $('#dataGrid').handsontable({
@@ -330,7 +323,7 @@ function loadPic(pic) {
 		dropdownMenu: true,
         allowInvalid : false,
 		// colWidths: 70,  //colWidths: [100, 200, 300, 200, 100]
-        height : 200,
+        height : 800,
 		   //add by wuqing,20191222
 		contextMenu: ['row_above', 'row_below', '---------', 'remove_row', '---------', 'undo', 'redo', '---------', 'make_read_only', '---------', 'alignment'],
         cells: function (row, col, prop) {
@@ -356,6 +349,7 @@ function loadPic(pic) {
 			console.error("query failed");
 		},
 		success : function(data) {
+			var f=$("#weight").val();
 			mydata = data;
             console.info(mydata);
 			// 如果没有统配相关的数据，则提供进入下一步的选择
@@ -365,8 +359,8 @@ function loadPic(pic) {
 				return;
 			}
 			$(mydata.rows).each(function(i, row) {
-				row.payAmt = parseFloat((row.receiveCount * row.itemUnitPrice).toFixed(4)); // 计算金额
-				row.receiveAmt = parseFloat((row.receiveCount * row.receivePrice).toFixed(4)); // 计算金额
+				row.payAmt = parseFloat((f * row.itemUnitPrice).toFixed(4)); // 计算金额
+				row.receiveAmt = parseFloat((f * row.receivePrice).toFixed(4)); // 计算金额
 			});
 			$('#dataGrid').handsontable('loadData', mydata.rows);
 			$.isLoading("hide");
@@ -416,8 +410,9 @@ var columns = [ {
     format : '0.00',
 }, {
     data : 'nums',
-    type : 'numeric',
+    type : 'text',
     format : '0.00',
+	style:'width: 5em;text-align: right;color:red',
 	editorArgs : {
 		style : 'width: 5em;text-align: right;color:red	',
 		constraints : {

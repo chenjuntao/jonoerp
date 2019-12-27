@@ -93,7 +93,7 @@ public class BillManageService {
 			}
 			detail.setItemUnitPrice(json.getDouble("itemUnitPrice"));
 
-			if (json.get("receiveCount") != null) {
+			if (json.get("nums") != null) {
 				detail.setReceiveCount(json.getDouble("receiveCount"));
 			}
 			if (json.get("differentCount") != null) {// 手动入库单不使用这个字段

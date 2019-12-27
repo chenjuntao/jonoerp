@@ -6,6 +6,7 @@ require([ "dojo/domReady!" ], function() {
 function addEvent() {
 }
 
+
 var grid = null;
 var dataStore = null;
 

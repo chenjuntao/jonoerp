@@ -208,6 +208,7 @@ public class StockInAction extends BaseAction {
      * 查询统配和直配采购单明细，用于入库，关联查询超收率
      */
     public void queryUnifiedDetail() throws NoPrivilegeException, SQLException, NoConnection {
+        System.out.println(weight);
         String logCode = getLoginBranchId();
         List<InputDetail> detailLst = putinstorageBean.queryUnifiedDetail(formId, supplierId, logCode);
         JSONArray arr = new JSONArray();
@@ -225,7 +226,6 @@ public class StockInAction extends BaseAction {
             if (receiveCount < 0) {
                 receiveCount = 0.0;
             }
-            System.out.println(detail.getItemId());
             json.put("receiveCount", receiveCount);
             json.put("differentCount", orderCount - (receiveCount + receivedCount));
             json.put("expiredTime", DateTimeUtil.getDateStr(detail.getExpiredTime()));

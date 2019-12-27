@@ -4,11 +4,13 @@
 
 <%
 	String appRoot = request.getContextPath();
+	String appRoots = request.getContextPath()+"/upload/";
 	String dojoBase = appRoot + "/jsp/common/lib";
 	long  currenttime = (new Date()).getTime(); 
 %>
 <script type="text/javascript">
     var appRoot = "<%=appRoot%>";
+	var appRoots = "<%=appRoot%>";
     var tabId = "${tabId}";
     var currenttime = "<%=currenttime%>";
     var parentTabId = "${parentTabId}";

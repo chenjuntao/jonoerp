@@ -58,7 +58,6 @@ function initGrid() {
 					idProperty : "rownumber",
 					data : gridData
 				}));
-
 				var CustomGrid = declare([ OnDemandGrid, Keyboard, ColumnResizer ]);
 				grid = new CustomGrid({
 					store : dataStore,
@@ -115,7 +114,7 @@ function getColumn() {
 		sortable : false
 	}, {
 		label : "实收数量",
-		field : "receiveCount",
+		field : "nums",
 		className : 'grid-number',
 		sortable : false
 	}, {

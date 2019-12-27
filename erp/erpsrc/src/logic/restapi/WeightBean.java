@@ -1,9 +1,9 @@
 /*@lineinfo:filename=WeightBean*//*@lineinfo:user-code*//*@lineinfo:1^1*//**
- *by cjt
+ *by wuqing
  *first created on 2014.6.12
  *last edited on 2014.7.7
  *
- *edited by pw on 2014.7.28
+ *edited by cjt on 2014.7.28
  */
 
 package logic.restapi;

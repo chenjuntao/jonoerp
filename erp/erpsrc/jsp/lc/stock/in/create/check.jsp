@@ -5,7 +5,6 @@
 <head>
 	<title>review before submit</title>
 	<%@ include file="/jsp/common/jsp/path.jsp"%>
-	
 	<script type="text/javascript" src='<%=dojoBase %>/dojo/dojo.js'></script>
 	<script type="text/javascript" src="<%=appRoot %>/jsp/common/js/dgrid-util.js?Version=<%=currenttime %>"></script>
 	<script type="text/javascript" src="<%=appRoot %>/jsp/restaurant/putinstorage/create/commit.js?Version=<%=currenttime %>"></script>
