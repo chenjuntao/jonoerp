@@ -73,10 +73,11 @@
 
             </div>
             <div class="rightDiv">
+                <div>总数：<input type="text" value="" disabled="disabled" id="weightcount"/></div>
                 <div>数量：<input type="text" value="" disabled="disabled" id="weight"/></div>
-                <div>图片：<input type="text" value="" disabled="disabled" id="picsd"/></div>
+                <div>图片：<div style='pointer-events: none;'><img src='' style='width: 100px;' class='mouse-img' id="picsd" target='_blank'/></div></div>
+                <%--<input type="text" value="" disabled="disabled" id="picsd"/>--%>
             </div>
-
         </div>
 	</form>
 </body>

@@ -276,6 +276,7 @@ public class StockInAction extends BaseAction {
         }else{
             result.put("weigLst", "0");
         }
+        result.put("weightcount",weigLsts.size());
         result.put("nums", weigLst);
         result.put("weights", weigLsts);
         result.put("msg", "ok");

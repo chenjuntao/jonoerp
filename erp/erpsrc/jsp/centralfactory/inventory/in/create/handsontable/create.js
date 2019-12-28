@@ -15,8 +15,15 @@ function loadGridDatas() {
 		},
 		success: function (data) {
 			var arr = data.weigLst;
+			var arrs=data.weights;
 			$("#weight").val(arr.num);
-			$("#picsd").val(arr.pic);
+			// $("#picsd").val(arr.pic);
+            if (arr.pic==null) {
+                $("#picsd").attr("src","");
+            }
+            var p=appRoot+"/upload/"+arr.pic;
+            $("#picsd").attr("src",p);
+			$("#weightcount").val(data.weightcount);
 			// if (arr != null) {
 			// 	for (var i = 0; i < arr.length; i++) {
 			// 		if (ids == i) {
@@ -258,49 +265,21 @@ function negativeValueRenderer(instance, td, row, col, prop, value, cellProperti
     if (prop == 'pic') {
         //添加自定义的图片，并给图片的chick添加事件
 		    if(value!=null && value!='' && value!=undefined){
-		    	var values="<a href='#' onclick='loadPic("+value+")'>查看</a>";
+                var urls = appRoot+"/upload/"+value;
+		    	var values="<div style='pointer-events: none;'><img src='"+urls+"' style='width: 60px;' class='mouse-img' target='_blank'/></div>";
 				td.innerHTML = values;
-				td.onmouseover = function () {
-					console.info(value);
-					var urls = appRoot+"/upload/"+value;
-					this.innerHTML = "<div style='pointer-events: none;'><img src='"+urls+"' style='width: 20px;' class='mouse-img' target='_blank'/></div>";
-				},
-				// td.onmouseover = function(){
-				// 	this.style.backgroundColor = "#337ab7";
-				// 	var aEle = document.createElement("a");
-				// 	var _url = appRoot + "/common/loadImage.action";
-				// 	_url += "&timestamp=" + new Date().getTime(); // 防止缓存
-				// 	aEle.href = _url;
-				// 	aEle.target = "_blank";
-				// 	aEle.innerHTML = _text;
-				// 	var $liveTip = dom.byId('livetip');
-				// 	if ($liveTip == null) {
-				// 		$liveTip = domc.create("div", {
-				// 			id: 'livetip'
-				// 		});
-				// 		domc.place($liveTip, win.body());
-				// 	}
-				// 	var html = "<img src='" + _url + "' style='width: 200px;' class='mouse-img' target='_blank' />";
-				// 	domAttr.set($liveTip, 'innerHTML', html);
-				// 	domStyle.set($liveTip, {
-				// 		'display': 'block',
-				// 		'top': evt.pageY + 'px',
-				// 		'left': evt.pageX + 'px'
-				// 	});
-				// 	on(aEle, mouse.leave, function (evt) {
-				// 		var $liveTip = dom.byId('livetip');
-				// 		domStyle.set($liveTip, 'display', 'none');
-				// 	});
-				// 	return aEle;
+				// td.onmouseover = function () {
+				// 	console.info(value);
+				// 	var urls = appRoot+"/upload/"+value;
+				// 	this.innerHTML = "<div style='pointer-events: none;'><img src='"+urls+"' style='width: 20px;' class='mouse-img' target='_blank'/></div>";
 				// },
-				td.onmouseout = function(){
-					this.innerHTML=values;
-				}
-				return td;
+				// td.onmouseout = function(){
+				// 	this.innerHTML=values;
+				// }
+				// return td;
 			}else{
 		    	value="";
 			}
-
     }
 }
 Handsontable.renderers.registerRenderer('negativeValueRenderer', negativeValueRenderer);
