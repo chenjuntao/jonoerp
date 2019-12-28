@@ -101,4 +101,4 @@ fabric.properties
 
 # do not ignore files
 !/ant_build/lib/ant-tanry.jar
-/WEB-INF/lib/*
+!/WEB-INF/lib/*
