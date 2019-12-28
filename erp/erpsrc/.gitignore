@@ -100,5 +100,5 @@ fabric.properties
 *_SJProfile0.ser
 
 # do not ignore files
-/ant_build/lib/ant-tanry.jar
+!/ant_build/lib/ant-tanry.jar
 /WEB-INF/lib/*
