@@ -19,7 +19,8 @@ function loadGridDatas() {
 			$("#weight").val(arr.num);
 			// $("#picsd").val(arr.pic);
             if (arr.pic==null) {
-                $("#picsd").attr("src","");
+                // $("#picsd").attr("src","display:none;");
+                $("#sss").hide();
             }
             var p=appRoot+"/upload/"+arr.pic;
             $("#picsd").attr("src",p);
@@ -65,23 +66,17 @@ function loadGridData(ids) {
 						var pi=$("#picsd").val();
 						mydata.rows[i].nums=weig;
 						mydata.rows[i].pic=pi;
-						// var ws=$("#weight").val(arrs[i].num);
-						// var ps=$("#picsd").val(arrs[i].pic);
-						// var ww=$("#weight").val();
-						// var pp=$("#picsd").val();
-						// mydata.rows[i].nums=ww;
-						// mydata.rows[i].pic=pp;
 						if (arrss.length==0) {
 							$("#weight").val("");
 							$("#picsd").val("");
 						}
 						loadGridDatas();
+
 						if (arrss.length==0) {
 							$("#weight").val("");
 							$("#picsd").val("");
 						}
 					}
-					// }
 				}
 				var _url = appRoot + "/lc/stock/in/create/updateEntity.action?myids="+myids;
 				_url = getUrl(_url);
@@ -97,7 +92,6 @@ function loadGridData(ids) {
 								$("#weight").val("");
 								$("#picsd").val("");
 							}
-							// if (
 						}
 					}
 				});
@@ -106,48 +100,7 @@ function loadGridData(ids) {
 				$("#weight").val("");
 				$("#picsd").val("");
 			}
-			// var weight=$("#weight").val();
-			// console.info(arrs);
-			// var n=[];
-			// for (var i = 0; i <arrs.length; i++) {
-			// 	console.info(arrs[i].num);
-			// 	 n=arrs[i].num;
-			// }
-			// alert(n+"---------------");
-			// var _url = appRoot + "/lc/stock/in/create/queryUnifiedDetail.action?weight="+n;
-			// _url = getUrl(_url);
-			// $.ajax({
-			// 	type: "POST",
-			// 	url: _url,
-			// 	error: function () {
-			// 		console.error("query failed");
-			// 	},
-			// 	success: function (data) {
-			//
-			// 	}
-			// });
-			// $("#weight").val("");
-			// $("#picsd").val("");
-			// }
-			// for(var i in arr){
-			// 	console.info(i);
-			// 	if (ids==i){
-			// 		console.info(mydata.rows[i].num);
-			// 		console.info(arr[i].num);
-			// 		mydata.rows[i].num=arr[i].num;
-			// 	}
-			// }
-			// for (var i = 0; i <data.length; i++) {
-			// 	console.info(i);
-			// 	if (ids==i){
-			// 		console.info(mydata.rows[i].num);
-			// 		console.info(data.nums[i].num);
-			// 		mydata.rows[i].num=data.nums[i].num;
-			// 	}
-			// }
-			// console.info(mydata.rows[0].nums);
-			// mydata.rows[0].nums=data.nums;
-			// mydata.rows[1].nums=data.nums;
+
 			$('#dataGrid').handsontable('loadData', mydata.rows);
 			$.isLoading("hide");
 		}
@@ -185,7 +138,7 @@ function doSubmit() {
 		for (var i = 0; i < oldrows.length; i++) {
 			console.info(oldrows);
 			var item = oldrows[i];
-			if ((s + item.receivedCount) > item.orderCount * item.outReceiveRate) {
+			if ((item.receiveCount + item.receivedCount) > item.orderCount * item.outReceiveRate) {
 				alert(item.itemName + "入库数不能超过限制比例！");
 				return;
 			}
@@ -193,12 +146,12 @@ function doSubmit() {
 			if (itemId == oldItemId) {
 				orderCount = item.orderCount += orderCount;
 				receivedCount = item.receivedCount += receivedCount;
-				receiveCount = item.nums += receiveCount;
-				item.differentCount = item.orderCount - item.receivedCount - item.nums ;
-				item.sumItemCount = item.nums + item.receivedCount;
-				alert(parseFloat((item.nums  * item.itemUnitPrice).toFixed(4)));
-				item.payAmt = parseFloat((item.nums  * item.itemUnitPrice).toFixed(4));
-				item.receiveAmt = parseFloat((item.nums * item.receivePrice).toFixed(4));
+				receiveCount = item.receiveCount += receiveCount;
+				item.differentCount = item.orderCount - item.receivedCount - item.receiveCount;
+				item.sumItemCount = item.receiveCount + item.receivedCount;
+				alert(parseFloat((item.receiveCount * item.itemUnitPrice).toFixed(4)));
+				item.payAmt = parseFloat((item.receiveCount  * item.itemUnitPrice).toFixed(4));
+				item.receiveAmt = parseFloat((item.receiveCount * item.receivePrice).toFixed(4));
 				rows.push(item);
 				oldItemId = itemId;
 				for (var j = 0; j < rows.length; j++) {
@@ -206,7 +159,7 @@ function doSubmit() {
 					if (itemId == item2.itemId) {
 						item2.differentCount = item.differentCount;
 						item2.sumItemCount = item.sumItemCount;
-						item2.nums  = item.nums ;
+						item2.receiveCount  = item.receiveCount ;
 						item2.payAmt = item.payAmt;
 						item2.receiveAmt = item.receiveAmt;
 						item2.orderCount = item.orderCount;
@@ -216,11 +169,11 @@ function doSubmit() {
 			} else {
 				orderCount = item.orderCount;
 				receivedCount = item.receivedCount;
-				receiveCount = item.nums ;
-				item.sumItemCount = item.nums  + item.receivedCount;
-				item.differentCount = item.orderCount - item.receivedCount - item.nums ;
-				item.payAmt = parseFloat((item.nums  * item.itemUnitPrice).toFixed(4));
-				item.receiveAmt = parseFloat((item.nums  * item.receivePrice).toFixed(4));
+				receiveCount = item.receiveCount ;
+				item.sumItemCount = item.receiveCount  + item.receivedCount;
+				item.differentCount = item.orderCount - item.receivedCount - item.receiveCount ;
+				item.payAmt = parseFloat((item.receiveCount * item.itemUnitPrice).toFixed(4));
+				item.receiveAmt = parseFloat((item.receiveCount * item.receivePrice).toFixed(4));
 				rows.push(item);
 				oldItemId = itemId;
 			}
@@ -338,8 +291,8 @@ function loadPic(pic) {
 				return;
 			}
 			$(mydata.rows).each(function(i, row) {
-				row.payAmt = parseFloat((f * row.itemUnitPrice).toFixed(4)); // 计算金额
-				row.receiveAmt = parseFloat((f * row.receivePrice).toFixed(4)); // 计算金额
+				row.payAmt = parseFloat((row.receiveCount * row.itemUnitPrice).toFixed(4)); // 计算金额
+				row.receiveAmt = parseFloat((row.receiveCount * row.receivePrice).toFixed(4)); // 计算金额
 			});
 			$('#dataGrid').handsontable('loadData', mydata.rows);
 			$.isLoading("hide");
@@ -434,9 +387,6 @@ var columns = [ {
 	data : 'pic',
 	width:'70',
 	readOnly : true,
-	renderCell : function(object, data) {
-		return imageFmt(data, object.itemId);
-	},
 	sortable : false
 }];
 

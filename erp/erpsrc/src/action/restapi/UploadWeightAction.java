@@ -137,8 +137,8 @@ public class UploadWeightAction extends BaseAction
 //		String pics = new SimpleDateFormat("yyyyMMddHHmmss").format(new Date()) + buf.toString() + pic.substring(pic.lastIndexOf("."));
 //		System.out.println(pics);
 //		copyFile(pic,realPath+"/"+pics);
-		int n = uploadWeightService.saveWeight(logis_no, weight, s);
-        int store=uploadWeightService.saveStore(logis_no,weight,s);
+		int n = uploadWeightService.saveWeight(logis_no, weight, upName);
+        int store=uploadWeightService.saveStore(logis_no,weight,upName);
 		JSONObject meta = new JSONObject();
 		if(n>0) {
 			meta.put("code", "0");
