@@ -1,38 +1,36 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/fmt" prefix="fmt"%>
-<%@ page language="java" import="java.util.*,java.lang.*"%>
+<%@ page language="java" %>
 <%@ page language="java" contentType="text/html; charset=UTF-8"
 	pageEncoding="UTF-8" isELIgnored="false"%>
-<%@ page import="logic.businessquery.*"%>
-<%@ page import="java.util.*"%>
 
 
 <div style="width: 100%; overflow: auto;">
-	<table width="1200" class="hovertable" border="1" align="left"
-		cellpadding="5" cellspacing="1" bordercolor="#BBEAC2">
-		<tr onmouseover="this.style.backgroundColor='#ffff66';"
-			onmouseout="this.style.backgroundColor='#d4e3e5';" align="center"
-			bgcolor="#006600">
-			<th style="text-align: center;">单据编号</th>
-			<th style="text-align: center;">付款方式</th>
-			<th style="text-align: center;">市别</th>
-			<th style="text-align: center;">班次</th>
-			<th style="text-align: center;">人数</th>
-			<th style="text-align: center;">开台时间</th>
-			<th style="text-align: center;">结账时间</th>
-			<th style="text-align: center;">开台人</th>
-			<th style="text-align: center;">结账人</th>
-			
-			<th style="text-align: center;">消费金额</th>
-			<th style="text-align: center;">总折扣额</th>
-			<th style="text-align: center;">赠送金额</th>
-			<th style="text-align: center;">应付金额</th>
-			<th style="text-align: center;">舍尾金额</th>
-			<th style="text-align: center;">付款金额</th>
-			
-		</tr>
+    <table width="1200" class="hovertable" border="1" align="left"
+           cellpadding="5" cellspacing="1" bordercolor="#BBEAC2">
+        <tr onmouseover="this.style.backgroundColor='#ffff66';"
+            onmouseout="this.style.backgroundColor='#d4e3e5';" align="center"
+            bgcolor="#006600">
+            <th style="text-align: center;">单据编号</th>
+            <th style="text-align: center;">付款方式</th>
+            <th style="text-align: center;">市别</th>
+            <th style="text-align: center;">班次</th>
+            <th style="text-align: center;">人数</th>
+            <th style="text-align: center;">开台时间</th>
+            <th style="text-align: center;">结账时间</th>
+            <th style="text-align: center;">开台人</th>
+            <th style="text-align: center;">结账人</th>
 
-		<c:set var="foodAmtTal" value="${0}" />
+            <th style="text-align: center;">消费金额</th>
+            <th style="text-align: center;">总折扣额</th>
+            <th style="text-align: center;">赠送金额</th>
+            <th style="text-align: center;">应付金额</th>
+            <th style="text-align: center;">舍尾金额</th>
+            <th style="text-align: center;">付款金额</th>
+
+        </tr>
+
+        <c:set var="foodAmtTal" value="${0}" />
 		<c:set var="guestNumTal" value="${0}" />
 
 		<c:forEach var="bill" items="${bills}">
