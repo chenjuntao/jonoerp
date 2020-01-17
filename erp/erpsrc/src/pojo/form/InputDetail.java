@@ -49,7 +49,26 @@ public class InputDetail {
 	private String workOrderId;
     private String pic;
     private String num;
-    private int isok;
+    private String myid;
+
+	public void setMyid(String myid) {
+		this.myid = myid;
+	}
+
+	public String getMyid() {
+		return myid;
+	}
+
+	private int isok;
+
+	public void setIsok(int isok) {
+		this.isok = isok;
+	}
+
+	public int getIsok() {
+		return isok;
+	}
+
 	public void setNum(String num) {
 		this.num = num;
 	}

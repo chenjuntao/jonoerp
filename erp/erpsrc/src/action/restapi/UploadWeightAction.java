@@ -61,20 +61,7 @@ public class UploadWeightAction extends BaseAction
 	}
 
 	public String uploadWeight() throws NoPrivilegeException, NoConnection, SQLException, IOException {
-//		String status="";
-//		String storeid="";
-//		System.out.println(num);
-//		List<Store> storeList=uploadWeightService.selectStore();
-//		for (int i = 0; i <storeList.size() ; i++) {
-//			status=storeList.get(i).getStatus();
-//			storeid=storeList.get(i).getStoreid();
-//			if (status.equals("open")&&storeid.equals("1")){
-//				return SUCCESS;
-//			}
-//			System.out.println(status);
-//		}
-//		String strImg = getImageStr(pic);
-//		 获取Body中的json字符串进行解析--------------------------------------------------------------
+
 //		 获取Request对象
 		HttpServletRequest request = ServletActionContext.getRequest();
 		StringBuffer sb = new StringBuffer();
@@ -92,14 +79,12 @@ public class UploadWeightAction extends BaseAction
 		}
 		// 将json字符串（jsonStr）-->json对象（JSONObject）
 		JSONObject jo = JSONObject.fromObject(sb.toString()).getJSONObject("data");
-		System.out.println(jo);
 		String logis_no = jo.getString("logis_no"); //单号
 		String weight = jo.getString("weight");   //重量
 		String file = jo.getString("file");         //图片base64
 		log.debug("---------------------get new weight:" + logis_no + "," + weight);
 		//----------------------------------------------------------------------------
 		String realPath= ServletActionContext.getServletContext().getRealPath("/upload");
-		System.out.println(realPath);
 		File filepath = new File(realPath);
 		if (!filepath.exists())
 			filepath.mkdirs();
@@ -138,7 +123,7 @@ public class UploadWeightAction extends BaseAction
 //		System.out.println(pics);
 //		copyFile(pic,realPath+"/"+pics);
 		int n = uploadWeightService.saveWeight(logis_no, weight, upName);
-        int store=uploadWeightService.saveStore(logis_no,weight,upName);
+//        int store=uploadWeightService.saveStore(logis_no,weight,upName);
 		JSONObject meta = new JSONObject();
 		if(n>0) {
 			meta.put("code", "0");

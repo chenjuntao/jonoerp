@@ -6,13 +6,13 @@ public class Weight {
     private String myid;
     private String num;
     private String pic;
-    private int isok;
+    private Integer isok;
 
-    public void setIsok(int isok) {
+    public void setIsok(Integer isok) {
         this.isok = isok;
     }
 
-    public int getIsok() {
+    public Integer getIsok() {
         return isok;
     }
 

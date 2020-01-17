@@ -85,7 +85,15 @@ public class StockInAction extends BaseAction {
     private String ids;
     private InputDetail detail;
     private String myids;
+    private Integer isok;
 
+    public void setIsok(Integer isok) {
+        this.isok = isok;
+    }
+
+    public Integer getIsok() {
+        return isok;
+    }
 
     public void setMyids(String myids) {
         this.myids = myids;
@@ -290,7 +298,39 @@ public class StockInAction extends BaseAction {
     public void updateEntity() throws NoPrivilegeException, SQLException, NoConnection {
         Weight weight=new Weight();
         weight.setMyid(myids);
-        int n=weightBean.updateEntity(weight);
+        System.out.println(isok);
+        if (isok==0){
+            int n=weightBean.updateEntity(weight);
+            System.out.println(n);
+        }else{
+            int s=weightBean.updateStatus(weight);
+            System.out.println(s);
+        }
+//        JSONArray arr = new JSONArray();
+//        List piclist = new ArrayList();
+//        String pic = "";
+//        String nums = "";
+//        JSONObject result = new JSONObject();
+//        result.put("n", n);
+//        result.put("msg", "ok");
+//            try {
+////            this.outJS(result.toString());
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
+    }
+    public void updateStatus() throws NoPrivilegeException, SQLException, NoConnection {
+        Weight weight=new Weight();
+        weight.setMyid(myids);
+        int n=0;
+        System.out.println(isok);
+        System.out.println(myids);
+        n=weightBean.updateEntity(weight);
+//        if(isok==0){
+//            n=weightBean.updateStatus(weight);
+//        }if (isok==1){
+//            n=weightBean.updateEntity(weight);
+//        }
         JSONArray arr = new JSONArray();
         List piclist = new ArrayList();
         String pic = "";
@@ -309,7 +349,6 @@ public class StockInAction extends BaseAction {
             e.printStackTrace();
         }
     }
-
     /**
      * 出库单生成，过滤掉已结案的工单对应的半成品
      */

@@ -73,7 +73,10 @@
 
             </div>
             <div class="rightDiv">
+                <%--<input type="button" value="刷新" onclick="doRefreshPic();" />--%>
                 <div>总数：<input type="text" value="" disabled="disabled" id="weightcount"/></div>
+                <input type="hidden" value="" id="myid"/>
+                <input type="hidden" value="" id="isok"/>
                 <div>数量：<input type="text" value="" disabled="disabled" id="weight"/></div>
                 <div>图片：<div style='pointer-events: none;' id="sss"><img src='' style='width: 360px;' class='mouse-img' id="picsd" target='_blank'/></div></div>
                 <%--<input type="text" value="" disabled="disabled" id="picsd"/>--%>

@@ -170,36 +170,62 @@ public class WeightBean extends ConnectionPool{
         		return storeList;
         	}
 
-             public int updateEntity(Weight weight)
-                        throws NoPrivilegeException, SQLException, NoConnection {
-                    return updateEntityImp(weight);
-                }
 
-            private int updateEntityImp(Weight weight)
-                        throws NoPrivilegeException, SQLException, NoConnection {
-                        DefaultContext myCtx = getDefaultContext();
-                   String myid=weight.getMyid();
-                   String num=weight.getNum();
-                   String pic= weight.getPic();
-                   Integer isok=weight.getIsok();
 
-                    #sql [myCtx] {
-                        UPDATE
-                        jono.weight
-                        SET
-                            isok =1
-                        WHERE
-                            myid = :myid
+
+	public int updateByWorkId(String myid,Integer isok)
+			throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		#sql [myCtx] {
+			UPDATE
+				jono.weight
+		    SET
+		         isok =:isok
+		    WHERE
+		        myid =:myid
+		};
+		closeDefaultContext(myCtx);
+
+		return 1;
+	}
+
+
+	public int updateEntity(Weight weight)
+    			throws NoPrivilegeException, SQLException, NoConnection {
+    		DefaultContext myCtx = getDefaultContext();
+    		String myid=weight.getMyid();
+    		#sql [myCtx] {
+                       UPDATE
+                       jono.weight
+                       SET
+                          isok= 0
+                       WHERE
+                           myid= :myid
+                        };
+    		closeDefaultContext(myCtx);
+
+    		return 1;
+    }
+
+	public int updateStatus(Weight weight)
+			throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		String myid=weight.getMyid();
+
+		#sql [myCtx] {
+                   UPDATE
+                   jono.weight
+                   SET
+                      isok= 1
+                   WHERE
+                       myid= :myid
                     };
-                    closeDefaultContext(myCtx);
-                    return 1;
-                }
+		closeDefaultContext(myCtx);
 
-
-
-
-
-
+		return 1;
+	}
 
 
 }

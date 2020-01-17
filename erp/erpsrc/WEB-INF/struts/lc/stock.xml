@@ -33,6 +33,10 @@
 		<action name="updateEntity" method="updateEntity" class="com.tanry.business.module.lc.stock.action.StockInAction">
 			<result type="json" />
 		</action>
+
+		<action name="updateStatus" method="updateStatus" class="com.tanry.business.module.lc.stock.action.StockInAction">
+			<result type="json" />
+		</action>
 		
 		<action name="queryUnOrder" method="queryUnOrder" class="com.tanry.business.module.lc.stock.action.StockInAction">
 			<result type="json" />

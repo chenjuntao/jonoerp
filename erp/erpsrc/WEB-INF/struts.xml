@@ -26,7 +26,7 @@
 	            	postFoodPrice,
 	            	postFoodCategory,
 	            	postRestaurant,
-					uploadWeight，
+					uploadWeight,
 					queryUnifiedDetail
             	</param> <!--不拦截Action中的method1-->  
 			<!--<param name="includeMethods">method1,method2</param> 拦截Action中的method2-->

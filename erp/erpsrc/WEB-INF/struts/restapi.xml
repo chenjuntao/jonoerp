@@ -40,7 +40,6 @@
 
 		<action name="upload_weight" method="uploadWeight" class="action.restapi.UploadWeightAction">
 			<result type="json" />
-			<!--<result name="success">/jsp/lc/stock/in/create/check.jsp</result>-->
 		</action>
 	</package>
 	

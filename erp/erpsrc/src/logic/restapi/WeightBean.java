@@ -388,29 +388,71 @@ implements sqlj.runtime.NamedIterator
         		return storeList;
         	}
 
-             public int updateEntity(Weight weight)
-                        throws NoPrivilegeException, SQLException, NoConnection {
-                    return updateEntityImp(weight);
-                }
 
-            private int updateEntityImp(Weight weight)
-                        throws NoPrivilegeException, SQLException, NoConnection {
-                        DefaultContext myCtx = getDefaultContext();
-                   String myid=weight.getMyid();
-                   String num=weight.getNum();
-                   String pic= weight.getPic();
-                   Integer isok=weight.getIsok();
 
-                    /*@lineinfo:generated-code*//*@lineinfo:186^21*/
+
+	public int updateByWorkId(String myid,Integer isok)
+			throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		/*@lineinfo:generated-code*//*@lineinfo:180^3*/
 
 //  ************************************************************
 //  #sql [myCtx] { UPDATE
-//                          jono.weight
-//                          SET
-//                              isok =1
-//                          WHERE
-//                              myid = :myid
-//                       };
+//  				jono.weight
+//  		    SET
+//  		         isok =:isok
+//  		    WHERE
+//  		        myid =:myid
+//  		 };
+//  ************************************************************
+
+{
+  sqlj.runtime.ConnectionContext __sJT_connCtx = myCtx;
+  if (__sJT_connCtx == null) sqlj.runtime.error.RuntimeRefErrors.raise_NULL_CONN_CTX();
+  sqlj.runtime.ExecutionContext __sJT_execCtx = __sJT_connCtx.getExecutionContext();
+  if (__sJT_execCtx == null) sqlj.runtime.error.RuntimeRefErrors.raise_NULL_EXEC_CTX();
+  Integer __sJT_1 = isok;
+  String __sJT_2 = myid;
+  synchronized (__sJT_execCtx) {
+    sqlj.runtime.profile.RTStatement __sJT_stmt = __sJT_execCtx.registerStatement(__sJT_connCtx, WeightBean_SJProfileKeys.getKey(0), 5);
+    try 
+    {
+      __sJT_stmt.setIntWrapper(1, __sJT_1);
+      __sJT_stmt.setString(2, __sJT_2);
+      __sJT_execCtx.executeUpdate();
+    }
+    finally 
+    {
+      __sJT_execCtx.releaseStatement();
+    }
+  }
+}
+
+
+//  ************************************************************
+
+/*@lineinfo:user-code*//*@lineinfo:187^3*/
+		closeDefaultContext(myCtx);
+
+		return 1;
+	}
+
+
+	public int updateEntity(Weight weight)
+    			throws NoPrivilegeException, SQLException, NoConnection {
+    		DefaultContext myCtx = getDefaultContext();
+    		String myid=weight.getMyid();
+    		/*@lineinfo:generated-code*//*@lineinfo:198^7*/
+
+//  ************************************************************
+//  #sql [myCtx] { UPDATE
+//                         jono.weight
+//                         SET
+//                            isok= 0
+//                         WHERE
+//                             myid= :myid
+//                           };
 //  ************************************************************
 
 {
@@ -420,7 +462,7 @@ implements sqlj.runtime.NamedIterator
   if (__sJT_execCtx == null) sqlj.runtime.error.RuntimeRefErrors.raise_NULL_EXEC_CTX();
   String __sJT_1 = myid;
   synchronized (__sJT_execCtx) {
-    sqlj.runtime.profile.RTStatement __sJT_stmt = __sJT_execCtx.registerStatement(__sJT_connCtx, WeightBean_SJProfileKeys.getKey(0), 5);
+    sqlj.runtime.profile.RTStatement __sJT_stmt = __sJT_execCtx.registerStatement(__sJT_connCtx, WeightBean_SJProfileKeys.getKey(0), 6);
     try 
     {
       __sJT_stmt.setString(1, __sJT_1);
@@ -436,16 +478,58 @@ implements sqlj.runtime.NamedIterator
 
 //  ************************************************************
 
-/*@lineinfo:user-code*//*@lineinfo:193^21*/
-                    closeDefaultContext(myCtx);
-                    return 1;
-                }
+/*@lineinfo:user-code*//*@lineinfo:205^25*/
+    		closeDefaultContext(myCtx);
+
+    		return 1;
+    }
+
+	public int updateStatus(Weight weight)
+			throws NoPrivilegeException, SQLException, NoConnection {
+		DefaultContext myCtx = getDefaultContext();
+
+		String myid=weight.getMyid();
+
+		/*@lineinfo:generated-code*//*@lineinfo:217^3*/
+
+//  ************************************************************
+//  #sql [myCtx] { UPDATE
+//                     jono.weight
+//                     SET
+//                        isok= 1
+//                     WHERE
+//                         myid= :myid
+//                       };
+//  ************************************************************
+
+{
+  sqlj.runtime.ConnectionContext __sJT_connCtx = myCtx;
+  if (__sJT_connCtx == null) sqlj.runtime.error.RuntimeRefErrors.raise_NULL_CONN_CTX();
+  sqlj.runtime.ExecutionContext __sJT_execCtx = __sJT_connCtx.getExecutionContext();
+  if (__sJT_execCtx == null) sqlj.runtime.error.RuntimeRefErrors.raise_NULL_EXEC_CTX();
+  String __sJT_1 = myid;
+  synchronized (__sJT_execCtx) {
+    sqlj.runtime.profile.RTStatement __sJT_stmt = __sJT_execCtx.registerStatement(__sJT_connCtx, WeightBean_SJProfileKeys.getKey(0), 7);
+    try 
+    {
+      __sJT_stmt.setString(1, __sJT_1);
+      __sJT_execCtx.executeUpdate();
+    }
+    finally 
+    {
+      __sJT_execCtx.releaseStatement();
+    }
+  }
+}
 
 
+//  ************************************************************
 
+/*@lineinfo:user-code*//*@lineinfo:224^21*/
+		closeDefaultContext(myCtx);
 
-
-
+		return 1;
+	}
 
 
 }/*@lineinfo:generated-code*/class WeightBean_SJProfileKeys 

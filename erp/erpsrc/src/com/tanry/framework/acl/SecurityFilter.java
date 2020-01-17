@@ -47,7 +47,7 @@ public class SecurityFilter implements Filter
 				roles[0] = "normal";
 			}
 			*/
-			
+
 			SecurityContext.setRoles(roles);
 			chain.doFilter(request, response);
 			SecurityContext.setRoles(null);

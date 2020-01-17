@@ -4,6 +4,13 @@ $(function() {
 	loadGridDatas();
 });
 var arrs="";
+
+function doRefreshPic(we,pi) {
+    console.info(we);
+	// $("#weight").val("");
+    // $("#picsd").val("");
+	loadGridDatas();
+}
 function loadGridDatas() {
 	var _url = appRoot + "/lc/stock/in/create/queryUnifiedDetails.action";
 	_url = getUrl(_url);
@@ -17,95 +24,109 @@ function loadGridDatas() {
 			var arr = data.weigLst;
 			var arrs=data.weights;
 			$("#weight").val(arr.num);
-			// $("#picsd").val(arr.pic);
+			$("#picsd").val(arr.pic);
+			$("#myid").val(arr.myid);
+			$("#isok").val(arr.isok);
             if (arr.pic==null) {
                 // $("#picsd").attr("src","display:none;");
                 $("#sss").hide();
             }
-            var p=appRoot+"/upload/"+arr.pic;
+            var p = appRoot + "/upload/" + arr.pic;
             $("#picsd").attr("src",p);
 			$("#weightcount").val(data.weightcount);
-			// if (arr != null) {
-			// 	for (var i = 0; i < arr.length; i++) {
-			// 		if (ids == i) {
-			// 			mydata.rows[i].nums = arr[i].num;
-			// 			mydata.rows[i].pic = arr[i].pic;
-			// 		}
-			// 	}
-			// }
 		}
 	});}
 
-function loadGridData(ids) {
-	var _url = appRoot + "/lc/stock/in/create/queryUnifiedDetails.action?ids="+ids;
-	_url = getUrl(_url);
-	$.ajax({
-		type : "POST",
-		url : _url,
-		error : function() {
-			console.error("query failed");
-		},
-		success : function(data) {
-			var arr=data.nums;
-			var arrss=data.weights;
-			// var as=data.weigLst;
-			arrs=data.nums;
-			console.info(data.weights);
-			for(var i=0;i<arrs.length;i++){
-				if (ids==i){
-					var weight=$("#weight").val();
-					var picsd=$("#picsd").val();
-					// for (var j = 0; j <arrs.length ; j++) {
-					if (arrs[i].isok!=1) {
-						$("#weight").val("");
-						$("#picsd").val("");
-						var myids=arrs[i].myid;
-						var w=$("#weight").val(arrs[i].num);
-						var p=$("#picsd").val(arrs[i].pic);
-						var weig=$("#weight").val();
-						var pi=$("#picsd").val();
-						mydata.rows[i].nums=weig;
-						mydata.rows[i].pic=pi;
-						if (arrss.length==0) {
-							$("#weight").val("");
-							$("#picsd").val("");
-						}
-						loadGridDatas();
+	function loadGridData(ids) {
+	    var isok=0;
+		var weight=$("#weight").val();
+		var picsd=$("#picsd").val();
+		var isok=$("#isok").val();
+		ids=JSON.stringify(ids);
+		var myids="";
 
-						if (arrss.length==0) {
-							$("#weight").val("");
-							$("#picsd").val("");
-						}
-					}
-				}
-				var _url = appRoot + "/lc/stock/in/create/updateEntity.action?myids="+myids;
-				_url = getUrl(_url);
-				$.ajax({
-					type: "POST",
-					url: _url,
-					error: function () {
-						console.error("query failed");
-					},
-					success: function (data) {
-						if (data>0){
-							if (arrss.length==0) {
-								$("#weight").val("");
-								$("#picsd").val("");
-							}
-						}
-					}
-				});
-			}
-			if (arrss.length==0) {
-				$("#weight").val("");
-				$("#picsd").val("");
-			}
-
-			$('#dataGrid').handsontable('loadData', mydata.rows);
-			$.isLoading("hide");
+		if (ids.indexOf('哈') != -1) {
+			// ids = ids.replace('哈', '');
+			ids= ids.replace(/[^0-9]/ig,"");
+			isok=0;
+            var we=mydata.rows[ids].nums;
+            var pi=mydata.rows[ids].pic;
+			myids=mydata.rows[ids].myid;
+			mydata.rows[ids].nums=0;
+			mydata.rows[ids].pic='';
+			mydata.rows[ids].link=ids;
+		}else{
+			ids= ids.replace(/[^0-9]/ig,"");
+			isok=1;
+			myids=$("#myid").val();
+			mydata.rows[ids].nums=weight;
+			mydata.rows[ids].pic=picsd;
+			mydata.rows[ids].myid=myids;
+			mydata.rows[ids].isok=isok;
+			mydata.rows[ids].link=ids+"哈";
 		}
-	});
-}
+		var _url = appRoot + "/lc/stock/in/create/updateEntity.action?isok="+isok+"&myids="+myids;
+		_url = getUrl(_url);
+		$.ajax({
+			type: "POST",
+			url: _url,
+			error: function () {
+				console.error("query failed");
+			},
+			success: function (data) {
+				// if (data>0){
+				// 	if (arrss.length==0) {
+				// 	   $("#weight").val("");
+				// 	   $("#picsd").val("");
+				// 		}
+				// 	}
+			}
+			});
+		// if(isok==0){
+		//     alert(we);
+        //     $("#weight").val(we);
+        //     $("#picsd").val(pi);
+        // }
+		console.info(mydata);
+		$('#dataGrid').handsontable('loadData', mydata.rows);
+		$.isLoading("hide");
+		// doRefreshPic();
+		var interval3=setInterval(function(){
+			doRefreshPic(we,pi);
+		},2000);
+		interval1=setInterval(doRefreshPic(we,pi),2000);
+		clearInterval(interval1);
+    }
+// // //
+// function load(ids){
+// 	var weight=$("#weight").val();
+// 	var picsd=$("#picsd").val();
+// 	// var myids=$("#myid").val();
+// 	var myids=mydata.rows[ids].myid;
+// 	var we=mydata.rows[ids].nums;
+// 	var pi=mydata.rows[ids].pic;
+// 	// var isok=mydata.rows[ids].isok;
+// 	// alert(isok);
+// 	var isok=0;
+// 	var _url = appRoot + "/lc/stock/in/create/updateEntity.action?isok="+isok+"&myids="+myids;
+// 	_url = getUrl(_url);
+// 	$.ajax({
+// 		type: "POST",
+// 		url: _url,
+// 		error: function () {
+// 			console.error("query failed");
+// 		},
+// 		success: function (data) {
+// 			mydata.rows[ids].nums=0;
+// 			mydata.rows[ids].pic='';
+// 			mydata.rows[ids].link=ids;
+// 			$('#dataGrid').handsontable('loadData', mydata.rows);
+// 			$.isLoading("hide");
+// 			$("#weight").val(we);
+// 			$("#picsd").val(pi);
+// 		}
+// 	});
+// }
 function addEvent() {
 	$(".Wdate").focus(function(e) {
 		WdatePicker();
@@ -212,9 +233,19 @@ function negativeValueRenderer(instance, td, row, col, prop, value, cellProperti
 		}
 	}
     if (prop == 'link') {
-    	value="<a href='#' onclick='loadGridData("+value+")' >读取</a>";
-        td.innerHTML = value;//字符串转化成HTML的写法
+    	value=JSON.stringify(value);
+		if (value.indexOf('哈') != -1){
+			debugger;
+			// value = value.replace('哈', '');
+			value = "<a href='#' onclick='loadGridData(" + value + ")'>撤回</a>";
+			td.innerHTML = value;
+		}else{
+			    value = value.replace('哈', '');
+				value = "<a href='#' onclick='loadGridData(" + value + ")'>读取</a>";
+				td.innerHTML = value;//字符串转化成HTML的写法
+		}
     }
+
     if (prop == 'pic') {
         //添加自定义的图片，并给图片的chick添加事件
 		    if(value!=null && value!='' && value!=undefined){
