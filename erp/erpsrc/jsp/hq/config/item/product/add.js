@@ -6,7 +6,7 @@ require([ "dojo", "dojo/ready" ], function(dojo, ready) {
 function doValidate() {
 	var itemId = dojo.byId('itemId').value.trim();
 	if (itemId == '') {
-		alert('编号不能为空！');
+		alert('原材料不能为空！');
 		dojo.byId('itemId').focus();
 		return false;
 	}
@@ -15,10 +15,10 @@ function doValidate() {
 		dojo.byId('itemId').focus();
 		return false;
 	}
-	var itemName = dojo.byId('itemName').value.trim();
-	if (itemName == '') {
-		alert('名称不能为空！');
-		dojo.byId('itemName').focus();
+	var itemDimension = dojo.byId('itemDimension').value.trim();
+	if (itemDimension == '') {
+		alert('新材料不能为空！');
+		dojo.byId('itemDimension').focus();
 		return false;
 	}
 //	var queryCode = dojo.byId('queryCode').value.trim();
@@ -33,16 +33,16 @@ function doValidate() {
 //		dojo.byId('itemSpecification').focus();
 //		return false;
 //	}
-	var itemDimension = dojo.byId('itemDimension').value.trim();
-	if (itemDimension == '') {
-		alert('库存单位不能为空！');
-		dojo.byId('itemDimension').focus();
-		return false;
-	}
-	if (!validateNum('salePrice', '售卖价', true)) {
-		dojo.byId('salePrice').focus();
-		return false;
-	}
+// 	var itemDimension = dojo.byId('itemDimension').value.trim();
+// 	if (itemDimension == '') {
+// 		alert('库存单位不能为空！');
+// 		dojo.byId('itemDimension').focus();
+// 		return false;
+// 	}
+// 	if (!validateNum('salePrice', '售卖价', true)) {
+// 		dojo.byId('salePrice').focus();
+// 		return false;
+// 	}
 	return true;
 }
 
@@ -90,7 +90,58 @@ function doSave() {
 		});
 	});
 }
+function doReplace() {
+	if (!doValidate()) {
+		return;
+	}
+	var itemId = dojo.byId('itemId').value.trim();
+	var itemIds = dojo.byId('itemId').value.trim();
+	itemId = encodeURI(encodeURI(itemId));
+	var itemDimension = dojo.byId('itemDimension').value.trim();
+	var itemDimensions = dojo.byId('itemDimension').value.trim();
+	itemDimension = encodeURI(encodeURI(itemDimension));
+	var _url = appRoot + "/hq/item/product/doReplace.action?itemId="+itemId+"&itemDimension="+itemDimension+"";
 
-function doClose() {
-	parent.closeEditDlg();
+	require([ "dojo/request/xhr", "dojo/dom-form" ], function(xhr, domForm) {
+		var dataObj = domForm.toObject("dataForm");
+		dataObj.itemId = oldItemId;
+		xhr.post(_url, {
+			handleAs : "json",
+			data : dataObj
+		}).then(function(data) {
+			console.info(data);
+			if (data.therapy==null) {
+				alert("没有找到该原材料");
+				return false;
+			}
+			if (data.msg == 'ok') {
+				alert("替换成功！");
+				var tabContainer = dojo.byId('sss');
+				tabContainer.style.display ='none';
+				var tabContainers = dojo.byId('ddd');
+				tabContainers.style.display ='none';
+                var strs="";
+				strs+='<tr><td style="text-align: center;">原出品</td><td style="text-align: center;">原材料</td><td style="text-align: center;">新材料</td></tr>';
+		        strs+='<tr><td style="text-align: center;">'+data.therapyName+'</td><td style="text-align: center;">'+itemIds+'</td><td style="text-align: center;">'+itemDimensions+'</td></tr>';
+		        dojo.byId('tab').innerHTML=strs;
+		        var sdf="";
+                sdf+='<tr><td style="text-align: center;"><input type="button" onclick="doClose();" value="关闭" /></td></tr>';
+                dojo.byId('www').innerHTML=sdf;
+            } else {
+				alert("替换失败！");
+			}
+		}, function(err) {
+		});
+	});
 }
+		// function doReplaces(scheduleName) {
+	    //         alert(scheduleName);
+		// 		var strs="";
+		// 		strs+='<tr><td style="text-align: center;">原出品</td><td style="text-align: center;">原材料</td><td style="text-align: center;">新材料</td></tr>';
+		// 		strs+='<tr><td style="text-align: center;">ss</td><td style="text-align: center;">itemId</td><td style="text-align: center;">itemDimension</td></tr>';
+		// 		// strs+='<tr><td style="text-align: center;"><input type="button" onclick="doClose();" value="关闭" /></td></tr>';
+		// 		dojo.byId('tabs').innerHTML=strs;
+		// }
+		function doClose() {
+			parent.closeEditDlg();
+		}

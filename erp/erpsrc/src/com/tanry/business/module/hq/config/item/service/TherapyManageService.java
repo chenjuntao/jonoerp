@@ -103,6 +103,10 @@ public class TherapyManageService {
 		// itemPriceBean.saveEntity(price);
 	}
 
+	public void saveReplace(Therapy therapy) throws NoPrivilegeException, SQLException, NoConnection {
+		therapyBean.selectTherapy(therapy);
+	}
+
 	public void saveOperation(String formId, String logType, String msg) throws NoPrivilegeException, SQLException,
 			NoConnection {
 		OperateLogUtil.record(formId, logType, msg);

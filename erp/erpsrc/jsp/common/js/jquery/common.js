@@ -22,7 +22,6 @@ function addPostTab(formId, _title, _url) {
 function getUrl(_url){
 	var url;
 	var loginUserId = top.frames[0].document.getElementById('loginUserId').value;
-	
 	if(_url.indexOf('?')!= -1){
 		url = _url+"&myLoginUserId="+loginUserId
 	}else{

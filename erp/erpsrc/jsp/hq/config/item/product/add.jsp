@@ -73,7 +73,8 @@
 	</form>
 		
 	<p class="area_blank">&nbsp;</p>
-	
+	<p class="area_blank">&nbsp;</p>
+
 	<table class="hovertable" width="100%" border="1">
 		<tr>
 			<td style="text-align: center;">

@@ -197,7 +197,6 @@ var hasData = true;
 var myStore = null;
 function initGrid(_id) {
 	var _url = appRoot + "/hq/item/product/queryProduct.action";
-
 	require([ "dgrid/Grid", "custom/store/Server", "dojo/store/Observable", "dojo/store/Cache", "dojo/store/Memory",
 			"dojo/_base/declare", "dgrid/selector", "dgrid/Selection", "dgrid/Keyboard",
 			"dgrid/extensions/ColumnResizer", "dgrid/extensions/Pagination", "dgrid/ColumnSet", "dojo/_base/array",
@@ -222,7 +221,7 @@ function initGrid(_id) {
 			allowSelectAll : true,
 			cellNavigation : false,
 			pageSizeOptions : [ 10, 30, 100 ],
-			loadingMessage : '加载中...'
+			loadingMessage : '加载中...	'
 		}, "dataGrid");
 
 		grid.on('dgrid-error', function(event) {
@@ -456,6 +455,39 @@ function doAdd(_id) {
 		editDlg.show();
 	}
 }
+var editDlgs = null;
+function doReplace() {
+	var _title = "替换";
+
+	if (!g_categoryId) {
+		alert("请先选择一个出品类别！");
+		return;
+	}
+	var _url = appRoot + "/hq/item/product/addViews.action?categoryId=" + g_categoryId;
+	var frameId = 'ifr_edit';
+	if (editDlg == null) {
+		var option = {
+			title : _title,
+			url : _url,
+			frameId : frameId,
+			width : "400px",
+			height : "130px"
+		}
+		createDialog(option, function(iDlg) {
+			editDlg = iDlg;
+		});
+	} else {
+		editDlg.set('title', _title);
+		var ifrWindow = dojo.byId(frameId).contentWindow;
+		ifrWindow.location = _url;
+		editDlg.show();
+	}
+}
+
+
+
+
+
 
 function closeEditDlg(data) {
 	queryDetail();

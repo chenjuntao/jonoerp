@@ -13,12 +13,14 @@
 package com.tanry.business.module.hq.config.item;
 
 import java.io.IOException;
+import java.net.URLDecoder;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+import com.tanry.business.module.hq.config.item.service.TherapyManageService;
 import logic.NoConnection;
 import logic.module.hq.ItemMetaQueryBean;
 import logic.store.ItemCategoryBean;
@@ -47,6 +49,7 @@ public class ProductManageAction extends BaseAction {
 	private ItemCategoryBean itemCategoryBean;
 	private ItemPriceBean itemPriceBean;
 	private ProductManageService productManageService;
+	private TherapyManageService therapyManageService;
 
 	private String itemId;
 	private String itemType;
@@ -64,6 +67,18 @@ public class ProductManageAction extends BaseAction {
 	private String condition;
 	private int newEnd;
 	private String displayAllFlag;
+	private String itemDimension;
+
+	public void setItemDimension(String itemDimension) {
+		this.itemDimension = itemDimension;
+	}
+
+	public ItemMetaBean getItemMetaBean() {
+		return itemMetaBean;
+	}
+
+
+
 
 	public String editView() throws NoPrivilegeException, SQLException, NoConnection {
 		if (!TextUtil.isEmpty(itemId)) {
@@ -76,6 +91,17 @@ public class ProductManageAction extends BaseAction {
 			ItemCategory category = itemCategoryBean.queryById(categoryId);
 			itemMeta.setItemType(category.getItemType());
 			itemMeta.setCategoryName(category.getCategoryName());
+		}
+		return SUCCESS;
+	}
+
+
+	public String editViews() throws NoPrivilegeException, SQLException, NoConnection {
+		if (!TextUtil.isEmpty(itemId)) {
+			itemMeta = itemMetaBean.GetItemById(itemId);
+			ItemCategory category = itemCategoryBean.queryById(itemMeta.getCategoryId());
+			itemMeta.setCategoryName(category.getCategoryName());
+			salePrice = itemPriceBean.getItemPrice(itemId, PriceType.SALE);
 		}
 		return SUCCESS;
 	}
@@ -138,7 +164,6 @@ public class ProductManageAction extends BaseAction {
 		String queryCode = Cn2Spell.converterToFirstSpell(itemMeta.getItemName());
 		queryCode = (queryCode.replace("'", ""));
 		itemMeta.setQueryCode(Cn2Spell.StringFilter(queryCode));
-
 		int inhandpro = TextUtil.isEmpty(binhandpro) ? 0 : 1;
 		int disfood = TextUtil.isEmpty(bdisfood) ? 0 : 1;
 		int discount = TextUtil.isEmpty(bdiscount) ? 0 : 1;
@@ -148,7 +173,6 @@ public class ProductManageAction extends BaseAction {
 		itemMeta.setbDisCount(discount);
 		itemMeta.setBwaimai(waimai);
 		productManageService.saveProduct(itemId, itemMeta, salePrice);
-
 		JSONObject result = new JSONObject();
 		result.put("msg", "ok");
 		try {
@@ -156,6 +180,37 @@ public class ProductManageAction extends BaseAction {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+	}
+
+
+	public void doReplace() throws NoPrivilegeException, SQLException, NoConnection ,IOException{
+		itemId = URLDecoder.decode(itemId,"UTF-8");
+		itemDimension = URLDecoder.decode(itemDimension,"UTF-8");
+		itemId.replace(",","");
+		System.out.println(itemId);
+		System.out.println(itemDimension);
+//		therapyManageService.saveReplace(itemId);
+//		String itemName = itemMeta.getItemName();
+//		itemMeta.setItemName(itemName.replace("'", "‘"));
+//		String queryCode = Cn2Spell.converterToFirstSpell(itemMeta.getItemName());
+//		queryCode = (queryCode.replace("'", ""));
+//		itemMeta.setQueryCode(Cn2Spell.StringFilter(queryCode));
+//		int inhandpro = TextUtil.isEmpty(binhandpro) ? 0 : 1;
+//		int disfood = TextUtil.isEmpty(bdisfood) ? 0 : 1;
+//		int discount = TextUtil.isEmpty(bdiscount) ? 0 : 1;
+//		int waimai = TextUtil.isEmpty(bwaimai) ? 0 : 1;
+//		itemMeta.setbInHandPro(inhandpro);
+//		itemMeta.setbDisFood(disfood);
+//		itemMeta.setbDisCount(discount);
+//		itemMeta.setBwaimai(waimai);
+//		productManageService.saveProduct(itemId, itemMeta, salePrice);
+//		JSONObject result = new JSONObject();
+//		result.put("msg", "ok");
+//		try {
+//			this.outJS(result.toString());
+//		} catch (IOException e) {
+//			e.printStackTrace();
+//		}
 	}
 
 	/**

@@ -637,7 +637,8 @@ implements sqlj.runtime.NamedIterator
 		return therapy;
 	}
 
-	/*@lineinfo:generated-code*//*@lineinfo:274^2*/
+
+	/*@lineinfo:generated-code*//*@lineinfo:275^2*/
 
 //  ************************************************************
 //  SQLJ iterator declaration:
@@ -783,8 +784,8 @@ implements sqlj.runtime.NamedIterator
 
 //  ************************************************************
 
-/*@lineinfo:user-code*//*@lineinfo:293^3*/
-	
+/*@lineinfo:user-code*//*@lineinfo:294^3*/
+
 	//根据配方编码获取属于该配方的明细信息项集合
 	public List<Therapy> GetTherapysById(String therapyId,String hasSum) 
 			throws NoPrivilegeException,SQLException,NoConnection
@@ -794,7 +795,7 @@ implements sqlj.runtime.NamedIterator
 		TherapyItem therapyIter = null;
 		if (myCtx != null)
 		{
-			/*@lineinfo:generated-code*//*@lineinfo:304^4*/
+			/*@lineinfo:generated-code*//*@lineinfo:305^4*/
 
 //  ************************************************************
 //  #sql [myCtx] therapyIter = { SELECT
@@ -881,7 +882,7 @@ implements sqlj.runtime.NamedIterator
 
 //  ************************************************************
 
-/*@lineinfo:user-code*//*@lineinfo:354^4*/
+/*@lineinfo:user-code*//*@lineinfo:355^4*/
 			while(therapyIter.next())
 			{
 				Therapy therapy = new Therapy();
@@ -931,7 +932,7 @@ implements sqlj.runtime.NamedIterator
 		TherapyItem therapyIter = null;
 		if (myCtx != null)
 		{
-			/*@lineinfo:generated-code*//*@lineinfo:404^4*/
+			/*@lineinfo:generated-code*//*@lineinfo:405^4*/
 
 //  ************************************************************
 //  #sql [myCtx] therapyIter = { SELECT
@@ -1012,7 +1013,7 @@ implements sqlj.runtime.NamedIterator
 
 //  ************************************************************
 
-/*@lineinfo:user-code*//*@lineinfo:448^4*/
+/*@lineinfo:user-code*//*@lineinfo:449^4*/
 			while(therapyIter.next())
 			{
 				Therapy therapy = new Therapy();
@@ -1047,7 +1048,7 @@ implements sqlj.runtime.NamedIterator
 	}
 	
 	
-	/*@lineinfo:generated-code*//*@lineinfo:483^2*/
+	/*@lineinfo:generated-code*//*@lineinfo:484^2*/
 
 //  ************************************************************
 //  SQLJ iterator declaration:
@@ -1144,7 +1145,7 @@ implements sqlj.runtime.NamedIterator
 
 //  ************************************************************
 
-/*@lineinfo:user-code*//*@lineinfo:484^164*/
+/*@lineinfo:user-code*//*@lineinfo:485^164*/
 	//根据配方编码获取属于该配方的明细信息项集合
 	public List<Therapy> GetTherapyItems(String therapyIds) 
 			throws NoPrivilegeException,SQLException,NoConnection
@@ -1155,7 +1156,7 @@ implements sqlj.runtime.NamedIterator
 		TherapyItems therapyIter = null;
 		if (myCtx != null)
 		{
-			/*@lineinfo:generated-code*//*@lineinfo:495^4*/
+			/*@lineinfo:generated-code*//*@lineinfo:496^4*/
 
 //  ************************************************************
 //  #sql [myCtx] therapyIter = { SELECT
@@ -1225,7 +1226,7 @@ implements sqlj.runtime.NamedIterator
 
 //  ************************************************************
 
-/*@lineinfo:user-code*//*@lineinfo:528^4*/
+/*@lineinfo:user-code*//*@lineinfo:529^4*/
 			while(therapyIter.next())
 			{
 				Therapy therapy = new Therapy();
@@ -1252,7 +1253,7 @@ implements sqlj.runtime.NamedIterator
 		return result;
 	}
 	
-	/*@lineinfo:generated-code*//*@lineinfo:555^2*/
+	/*@lineinfo:generated-code*//*@lineinfo:556^2*/
 
 //  ************************************************************
 //  SQLJ iterator declaration:
@@ -1335,7 +1336,7 @@ implements sqlj.runtime.NamedIterator
 
 //  ************************************************************
 
-/*@lineinfo:user-code*//*@lineinfo:556^97*/
+/*@lineinfo:user-code*//*@lineinfo:557^97*/
 	
 	//根据原料编码获取包含此原料的半成品项集合
 		public List<Therapy> GetTherapys(String itemIds) 
@@ -1347,7 +1348,7 @@ implements sqlj.runtime.NamedIterator
 			Therapys therapyIter = null;
 			if (myCtx != null)
 			{
-				/*@lineinfo:generated-code*//*@lineinfo:568^5*/
+				/*@lineinfo:generated-code*//*@lineinfo:569^5*/
 
 //  ************************************************************
 //  #sql [myCtx] therapyIter = { SELECT
@@ -1417,7 +1418,7 @@ implements sqlj.runtime.NamedIterator
 
 //  ************************************************************
 
-/*@lineinfo:user-code*//*@lineinfo:601^5*/
+/*@lineinfo:user-code*//*@lineinfo:602^5*/
 				while(therapyIter.next())
 				{
 					Therapy therapy = new Therapy();
@@ -1443,7 +1444,7 @@ implements sqlj.runtime.NamedIterator
 		}
 
 		
-		/*@lineinfo:generated-code*//*@lineinfo:627^3*/
+		/*@lineinfo:generated-code*//*@lineinfo:628^3*/
 
 //  ************************************************************
 //  SQLJ iterator declaration:
@@ -1477,7 +1478,7 @@ implements sqlj.runtime.NamedIterator
 
 //  ************************************************************
 
-/*@lineinfo:user-code*//*@lineinfo:630^4*/
+/*@lineinfo:user-code*//*@lineinfo:631^4*/
 		//根据配方编码获取该配方的成本价集合
 		public List<Therapy> GetTherapysAmt(String therapyIds,String itemType) 
 				throws NoPrivilegeException,SQLException,NoConnection
@@ -1491,7 +1492,7 @@ implements sqlj.runtime.NamedIterator
 			TherapyAmtItem therapyIter = null;
 			if (myCtx != null)
 			{
-				/*@lineinfo:generated-code*//*@lineinfo:644^5*/
+				/*@lineinfo:generated-code*//*@lineinfo:645^5*/
 
 //  ************************************************************
 //  #sql [myCtx] therapyIter = { WITH
@@ -1563,7 +1564,7 @@ implements sqlj.runtime.NamedIterator
 
 //  ************************************************************
 
-/*@lineinfo:user-code*//*@lineinfo:679^22*/
+/*@lineinfo:user-code*//*@lineinfo:680^22*/
 				while(therapyIter.next())
 				{
 					Therapy therapy = new Therapy();
@@ -1594,7 +1595,7 @@ implements sqlj.runtime.NamedIterator
 			TherapyAmtItem therapyIter = null;
 			if (myCtx != null)
 			{
-				/*@lineinfo:generated-code*//*@lineinfo:710^5*/
+				/*@lineinfo:generated-code*//*@lineinfo:711^5*/
 
 //  ************************************************************
 //  #sql [myCtx] therapyIter = { WITH
@@ -1686,7 +1687,7 @@ implements sqlj.runtime.NamedIterator
 
 //  ************************************************************
 
-/*@lineinfo:user-code*//*@lineinfo:761^22*/
+/*@lineinfo:user-code*//*@lineinfo:762^22*/
 				while(therapyIter.next())
 				{
 					Therapy therapy = new Therapy();
@@ -1713,7 +1714,7 @@ implements sqlj.runtime.NamedIterator
 		DefaultContext myCtx = getDefaultContext();
 		if (myCtx != null)
 		{
-			/*@lineinfo:generated-code*//*@lineinfo:788^4*/
+			/*@lineinfo:generated-code*//*@lineinfo:789^4*/
 
 //  ************************************************************
 //  #sql [myCtx] { select sum(item_amt)  
@@ -1765,7 +1766,7 @@ implements sqlj.runtime.NamedIterator
 
 //  ************************************************************
 
-/*@lineinfo:user-code*//*@lineinfo:790^33*/
+/*@lineinfo:user-code*//*@lineinfo:791^33*/
 		}
 		else
 		{
@@ -1776,7 +1777,7 @@ implements sqlj.runtime.NamedIterator
 	}
 	
 	
-	/*@lineinfo:generated-code*//*@lineinfo:801^2*/
+	/*@lineinfo:generated-code*//*@lineinfo:802^2*/
 
 //  ************************************************************
 //  SQLJ iterator declaration:
@@ -1824,7 +1825,7 @@ implements sqlj.runtime.NamedIterator
 
 //  ************************************************************
 
-/*@lineinfo:user-code*//*@lineinfo:801^91*/
+/*@lineinfo:user-code*//*@lineinfo:802^91*/
 	
 	public void queryTree(String therapyId,JSONArray arr) 
 			throws NoPrivilegeException,SQLException,NoConnection {
@@ -1833,7 +1834,7 @@ implements sqlj.runtime.NamedIterator
 		List<String> idLists = new ArrayList<String>();
 		
 		NodeIter nodeIter = null;
-		/*@lineinfo:generated-code*//*@lineinfo:810^3*/
+		/*@lineinfo:generated-code*//*@lineinfo:811^3*/
 
 //  ************************************************************
 //  #sql [myCtx] nodeIter = { WITH
@@ -1893,7 +1894,7 @@ implements sqlj.runtime.NamedIterator
 
 //  ************************************************************
 
-/*@lineinfo:user-code*//*@lineinfo:837^17*/
+/*@lineinfo:user-code*//*@lineinfo:838^17*/
 		
 		List<Map> nodeLst = new ArrayList<Map>();
 		while(nodeIter.next()) {
@@ -1910,7 +1911,7 @@ implements sqlj.runtime.NamedIterator
 	}
 	
 
-	/*@lineinfo:generated-code*//*@lineinfo:854^2*/
+	/*@lineinfo:generated-code*//*@lineinfo:855^2*/
 
 //  ************************************************************
 //  SQLJ iterator declaration:
@@ -2028,14 +2029,14 @@ implements sqlj.runtime.NamedIterator
 
 //  ************************************************************
 
-/*@lineinfo:user-code*//*@lineinfo:858^55*/
+/*@lineinfo:user-code*//*@lineinfo:859^55*/
 	
 	public int countItemByCate(String categoryId) 
 			throws NoPrivilegeException,SQLException,NoConnection {
 		int counts = 0;
 		
 		DefaultContext myCtx = getDefaultContext();
-		/*@lineinfo:generated-code*//*@lineinfo:865^3*/
+		/*@lineinfo:generated-code*//*@lineinfo:866^3*/
 
 //  ************************************************************
 //  #sql [myCtx] { SELECT
@@ -2092,7 +2093,7 @@ implements sqlj.runtime.NamedIterator
 
 //  ************************************************************
 
-/*@lineinfo:user-code*//*@lineinfo:874^3*/
+/*@lineinfo:user-code*//*@lineinfo:875^3*/
 		closeDefaultContext(myCtx);
 		return counts;
 	}
@@ -2104,7 +2105,7 @@ implements sqlj.runtime.NamedIterator
 			throws NoPrivilegeException,SQLException,NoConnection {
 		DefaultContext myCtx = getDefaultContext();
 		ItemIter itemIter = null;
-		/*@lineinfo:generated-code*//*@lineinfo:886^3*/
+		/*@lineinfo:generated-code*//*@lineinfo:887^3*/
 
 //  ************************************************************
 //  #sql [myCtx] itemIter = { SELECT
@@ -2266,7 +2267,7 @@ implements sqlj.runtime.NamedIterator
 
 //  ************************************************************
 
-/*@lineinfo:user-code*//*@lineinfo:993^40*/
+/*@lineinfo:user-code*//*@lineinfo:994^40*/
 		
 		List<Map> itemLst =processIter(itemIter);
 		itemIter.close();
@@ -2279,7 +2280,7 @@ implements sqlj.runtime.NamedIterator
 		int counts = 0;
 		itemName = "%" + itemName + "%";
 		DefaultContext myCtx = getDefaultContext();
-		/*@lineinfo:generated-code*//*@lineinfo:1006^3*/
+		/*@lineinfo:generated-code*//*@lineinfo:1007^3*/
 
 //  ************************************************************
 //  #sql [myCtx] { SELECT
@@ -2343,7 +2344,7 @@ implements sqlj.runtime.NamedIterator
 
 //  ************************************************************
 
-/*@lineinfo:user-code*//*@lineinfo:1020^3*/
+/*@lineinfo:user-code*//*@lineinfo:1021^3*/
 		closeDefaultContext(myCtx);
 		return counts;
 	}
@@ -2354,7 +2355,7 @@ implements sqlj.runtime.NamedIterator
 		
 		DefaultContext myCtx = getDefaultContext();
 		ItemIter itemIter = null;
-		/*@lineinfo:generated-code*//*@lineinfo:1031^3*/
+		/*@lineinfo:generated-code*//*@lineinfo:1032^3*/
 
 //  ************************************************************
 //  #sql [myCtx] itemIter = { SELECT
@@ -2521,7 +2522,7 @@ implements sqlj.runtime.NamedIterator
 
 //  ************************************************************
 
-/*@lineinfo:user-code*//*@lineinfo:1141^31*/
+/*@lineinfo:user-code*//*@lineinfo:1142^31*/
 		
 		List<Map> itemLst =processIter(itemIter);
 		itemIter.close();
@@ -2529,7 +2530,7 @@ implements sqlj.runtime.NamedIterator
 		return itemLst;
 	}
 	
-	/*@lineinfo:generated-code*//*@lineinfo:1149^2*/
+	/*@lineinfo:generated-code*//*@lineinfo:1150^2*/
 
 //  ************************************************************
 //  SQLJ iterator declaration:
@@ -2556,13 +2557,13 @@ implements sqlj.runtime.NamedIterator
 
 //  ************************************************************
 
-/*@lineinfo:user-code*//*@lineinfo:1150^13*/
+/*@lineinfo:user-code*//*@lineinfo:1151^13*/
 	
 	public int countByRaw(String itemName) 
 			throws NoPrivilegeException,SQLException,NoConnection {
 		CountIter countIter =null;
 		DefaultContext myCtx = getDefaultContext();
-		/*@lineinfo:generated-code*//*@lineinfo:1156^3*/
+		/*@lineinfo:generated-code*//*@lineinfo:1157^3*/
 
 //  ************************************************************
 //  #sql [myCtx] countIter = { WITH
@@ -2623,7 +2624,7 @@ implements sqlj.runtime.NamedIterator
 
 //  ************************************************************
 
-/*@lineinfo:user-code*//*@lineinfo:1182^3*/
+/*@lineinfo:user-code*//*@lineinfo:1183^3*/
 		int total = 0;
 		while(countIter.next()) {
 			total= countIter.total();
@@ -2636,7 +2637,7 @@ implements sqlj.runtime.NamedIterator
 			throws NoPrivilegeException,SQLException,NoConnection {
 		DefaultContext myCtx = getDefaultContext();
 		ItemIter itemIter = null;
-		/*@lineinfo:generated-code*//*@lineinfo:1195^3*/
+		/*@lineinfo:generated-code*//*@lineinfo:1196^3*/
 
 //  ************************************************************
 //  #sql [myCtx] itemIter = { SELECT
@@ -2805,7 +2806,7 @@ implements sqlj.runtime.NamedIterator
 
 //  ************************************************************
 
-/*@lineinfo:user-code*//*@lineinfo:1307^31*/
+/*@lineinfo:user-code*//*@lineinfo:1308^31*/
 		
 		List<Map> itemLst =processIter(itemIter);
 		itemIter.close();
@@ -2816,7 +2817,6 @@ implements sqlj.runtime.NamedIterator
 	private List<Map> processIter(ItemIter itemIter) 
 			throws SQLException {
 		List<Map> headerLst = new ArrayList<Map>();
-		
 		while(itemIter.next()) {
 			Map header = new HashMap();
 			header.put("itemId", itemIter.item_id());
@@ -2850,6 +2850,291 @@ implements sqlj.runtime.NamedIterator
 		}
 		return headerLst;
 	}
+/**
+	 * 根据ID获取配方明细信息项
+	 *
+	 * @param therapyId
+	 * @param itemId
+	 */
+	public Therapy queryDetailsd(String itemName)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		Therapy therapy = null;
+		DefaultContext myCtx = getDefaultContext();
+		TherapyItemd therapyIter = null;
+		if (myCtx != null)
+		{
+			/*@lineinfo:generated-code*//*@lineinfo:1365^4*/
+
+//  ************************************************************
+//  #sql [myCtx] therapyIter = { SELECT
+//                  				   h.item_id,
+//                                     h.therapy_name
+//                                  FROM
+//                                     JONO.D_T2_THERAPY h
+//                  				WHERE
+//                  					h.item_name = :itemName
+//  			 };
+//  ************************************************************
+
+{
+  sqlj.runtime.ConnectionContext __sJT_connCtx = myCtx;
+  if (__sJT_connCtx == null) sqlj.runtime.error.RuntimeRefErrors.raise_NULL_CONN_CTX();
+  sqlj.runtime.ExecutionContext __sJT_execCtx = __sJT_connCtx.getExecutionContext();
+  if (__sJT_execCtx == null) sqlj.runtime.error.RuntimeRefErrors.raise_NULL_EXEC_CTX();
+  String __sJT_1 = itemName;
+  synchronized (__sJT_execCtx) {
+    sqlj.runtime.profile.RTStatement __sJT_stmt = __sJT_execCtx.registerStatement(__sJT_connCtx, TherapyBean_SJProfileKeys.getKey(0), 21);
+    try 
+    {
+      __sJT_stmt.setString(1, __sJT_1);
+      sqlj.runtime.profile.RTResultSet __sJT_result = __sJT_execCtx.executeQuery();
+      therapyIter = new TherapyItemd(__sJT_result);
+    }
+    finally 
+    {
+      __sJT_execCtx.releaseStatement();
+    }
+  }
+}
+
+
+//  ************************************************************
+
+/*@lineinfo:user-code*//*@lineinfo:1373^4*/
+			if(therapyIter.next()) {
+				therapy = new Therapy();
+				therapy.setItemId(therapyIter.item_id());
+                therapy.setTherapyName(therapyIter.therapy_name());
+			}
+			therapyIter.close();
+		}
+		else
+		{
+			throw new NoConnection();
+		}
+		closeDefaultContext(myCtx);
+		return therapy;
+	}
+
+		/*@lineinfo:generated-code*//*@lineinfo:1389^3*/
+
+//  ************************************************************
+//  SQLJ iterator declaration:
+//  ************************************************************
+
+public static class TherapyItemd 
+extends sqlj.runtime.ref.ResultSetIterImpl
+implements sqlj.runtime.NamedIterator
+{
+  public TherapyItemd(sqlj.runtime.profile.RTResultSet resultSet) 
+    throws java.sql.SQLException 
+  {
+    super(resultSet);
+    item_idNdx = findColumn("item_id");
+    therapy_nameNdx = findColumn("therapy_name");
+  }
+  public String item_id() 
+    throws java.sql.SQLException 
+  {
+    return resultSet.getString(item_idNdx);
+  }
+  private int item_idNdx;
+  public String therapy_name() 
+    throws java.sql.SQLException 
+  {
+    return resultSet.getString(therapy_nameNdx);
+  }
+  private int therapy_nameNdx;
+}
+
+
+//  ************************************************************
+
+/*@lineinfo:user-code*//*@lineinfo:1392^11*/
+
+	//根据配方编码获取属于该配方的明细信息项集合
+	public List<Therapy> GetTherapysByIds(String itemName)
+			throws NoPrivilegeException,SQLException,NoConnection
+	{
+		List<Therapy> result = new ArrayList<Therapy>();
+		DefaultContext myCtx = getDefaultContext();
+		TherapyItemd therapyIter = null;
+		if (myCtx != null)
+		{
+			/*@lineinfo:generated-code*//*@lineinfo:1403^4*/
+
+//  ************************************************************
+//  #sql [myCtx] therapyIter = { SELECT
+//  				   h.item_id,
+//                     h.therapy_name
+//                  FROM
+//                     JONO.D_T2_THERAPY h
+//  				WHERE
+//  					h.item_name = :itemName
+//  			 };
+//  ************************************************************
+
+{
+  sqlj.runtime.ConnectionContext __sJT_connCtx = myCtx;
+  if (__sJT_connCtx == null) sqlj.runtime.error.RuntimeRefErrors.raise_NULL_CONN_CTX();
+  sqlj.runtime.ExecutionContext __sJT_execCtx = __sJT_connCtx.getExecutionContext();
+  if (__sJT_execCtx == null) sqlj.runtime.error.RuntimeRefErrors.raise_NULL_EXEC_CTX();
+  String __sJT_1 = itemName;
+  synchronized (__sJT_execCtx) {
+    sqlj.runtime.profile.RTStatement __sJT_stmt = __sJT_execCtx.registerStatement(__sJT_connCtx, TherapyBean_SJProfileKeys.getKey(0), 22);
+    try 
+    {
+      __sJT_stmt.setString(1, __sJT_1);
+      sqlj.runtime.profile.RTResultSet __sJT_result = __sJT_execCtx.executeQuery();
+      therapyIter = new TherapyItemd(__sJT_result);
+    }
+    finally 
+    {
+      __sJT_execCtx.releaseStatement();
+    }
+  }
+}
+
+
+//  ************************************************************
+
+/*@lineinfo:user-code*//*@lineinfo:1411^4*/
+			while(therapyIter.next())
+			{
+				Therapy therapy = new Therapy();
+				therapy.setItemId(therapyIter.item_id());
+				therapy.setTherapyName(therapyIter.therapy_name());
+				result.add(therapy);
+				System.out.println(result);
+			}
+			therapyIter.close();
+		}
+		else
+		{
+			throw new NoConnection();
+		}
+		closeDefaultContext(myCtx);
+		return result;
+	}
+
+	   	public List<Therapy> selectTherapy(Therapy therapy)
+                    			throws NoPrivilegeException,SQLException,NoConnection {
+                    		DefaultContext myCtx = getDefaultContext();
+                    		TherapyIter therapyIter=null;
+                    		String item_name=therapy.getItemName();
+                            System.out.println(therapy.getItemName());
+                    		/*@lineinfo:generated-code*//*@lineinfo:1436^23*/
+
+//  ************************************************************
+//  #sql [myCtx] therapyIter = { SELECT
+//                      			           h.item_id,
+//                      			           h.therapy_name
+//                      			        FROM
+//                      			         JONO.D_T2_THERAPY h
+//                      			       where h.item_name=:item_name
+//  
+//                      		 };
+//  ************************************************************
+
+{
+  sqlj.runtime.ConnectionContext __sJT_connCtx = myCtx;
+  if (__sJT_connCtx == null) sqlj.runtime.error.RuntimeRefErrors.raise_NULL_CONN_CTX();
+  sqlj.runtime.ExecutionContext __sJT_execCtx = __sJT_connCtx.getExecutionContext();
+  if (__sJT_execCtx == null) sqlj.runtime.error.RuntimeRefErrors.raise_NULL_EXEC_CTX();
+  String __sJT_1 = item_name;
+  synchronized (__sJT_execCtx) {
+    sqlj.runtime.profile.RTStatement __sJT_stmt = __sJT_execCtx.registerStatement(__sJT_connCtx, TherapyBean_SJProfileKeys.getKey(0), 23);
+    try 
+    {
+      __sJT_stmt.setString(1, __sJT_1);
+      sqlj.runtime.profile.RTResultSet __sJT_result = __sJT_execCtx.executeQuery();
+      therapyIter = new TherapyIter(__sJT_result);
+    }
+    finally 
+    {
+      __sJT_execCtx.releaseStatement();
+    }
+  }
+}
+
+
+//  ************************************************************
+
+/*@lineinfo:user-code*//*@lineinfo:1444^23*/
+                            List<Therapy> weightList = processIter(therapyIter);
+                            therapyIter.close();
+                            closeDefaultContext(myCtx);
+                            return weightList;
+                    	}
+
+
+                private List<Therapy> processIter(TherapyIter therapyIter)
+            			throws SQLException {
+            		    List<Therapy> weightList = new ArrayList<Therapy>();
+                            while(therapyIter.next()) {
+                            Therapy therapy=new Therapy();
+                            therapy.setItemId(therapyIter.item_id());
+                            therapy.setTherapyName(therapyIter.therapy_name());
+                            }
+                            return weightList;
+            	}
+
+            public int updateTherapy(Therapy therapy)
+                    throws NoPrivilegeException, SQLException, NoConnection {
+                DefaultContext myCtx = getDefaultContext();
+
+                String itemId = therapy.getItemId();
+                String therapyName=therapy.getItemName();
+
+
+                /*@lineinfo:generated-code*//*@lineinfo:1471^17*/
+
+//  ************************************************************
+//  #sql [myCtx] { UPDATE
+//                      JONO.D_T2_THERAPY
+//                      SET
+//                         item_name= :therapyName
+//                      WHERE
+//                          item_id = :itemId
+//                   };
+//  ************************************************************
+
+{
+  sqlj.runtime.ConnectionContext __sJT_connCtx = myCtx;
+  if (__sJT_connCtx == null) sqlj.runtime.error.RuntimeRefErrors.raise_NULL_CONN_CTX();
+  sqlj.runtime.ExecutionContext __sJT_execCtx = __sJT_connCtx.getExecutionContext();
+  if (__sJT_execCtx == null) sqlj.runtime.error.RuntimeRefErrors.raise_NULL_EXEC_CTX();
+  String __sJT_1 = therapyName;
+  String __sJT_2 = itemId;
+  synchronized (__sJT_execCtx) {
+    sqlj.runtime.profile.RTStatement __sJT_stmt = __sJT_execCtx.registerStatement(__sJT_connCtx, TherapyBean_SJProfileKeys.getKey(0), 24);
+    try 
+    {
+      __sJT_stmt.setString(1, __sJT_1);
+      __sJT_stmt.setString(2, __sJT_2);
+      __sJT_execCtx.executeUpdate();
+    }
+    finally 
+    {
+      __sJT_execCtx.releaseStatement();
+    }
+  }
+}
+
+
+//  ************************************************************
+
+/*@lineinfo:user-code*//*@lineinfo:1478^17*/
+                closeDefaultContext(myCtx);
+
+                return 1;
+            }
+
+
+
+
+
+
 }/*@lineinfo:generated-code*/class TherapyBean_SJProfileKeys 
 {
   private static TherapyBean_SJProfileKeys inst = null;

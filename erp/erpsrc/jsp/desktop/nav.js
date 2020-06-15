@@ -6,12 +6,14 @@ var t = null;
 var count=1;
 
 function timedCount() {
+	if (parent.frames['topFrame'].firstModuleId!=null&&parent.frames['topFrame'].firstModuleId!=""&&parent.frames['topFrame'].firstModuleId!=undefined){
 	var firstModuleId = parent.frames['topFrame'].firstModuleId;
 	if (firstModuleId) {
 		loadData(firstModuleId);
 		clearTimeout(t)
 	}else{
 		t = setTimeout("timedCount()", 1000)
+	}
 	}
 }
 

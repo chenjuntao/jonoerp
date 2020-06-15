@@ -55,6 +55,8 @@ public class ProductManageService {
 		}
 	}
 
+
+
 	public void setItemMetaBean(ItemMetaBean itemMetaBean) {
 		this.itemMetaBean = itemMetaBean;
 	}

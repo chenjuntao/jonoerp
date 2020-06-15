@@ -14,6 +14,7 @@
 package com.tanry.business.module.hq.config.item;
 
 import java.io.IOException;
+import java.net.URLDecoder;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
@@ -52,6 +53,15 @@ public class TherapyManageAction extends BaseAction {
 	private String condition;
 	private Double productPrice;
 	private String change;
+	private String itemDimension;
+
+	public void setItemDimension(String itemDimension) {
+		this.itemDimension = itemDimension;
+	}
+
+	public String getItemDimension() {
+		return itemDimension;
+	}
 
 	public String editView() throws NoPrivilegeException, SQLException, NoConnection {
 		if (!TextUtil.isEmpty(itemId)) {
@@ -115,6 +125,35 @@ public class TherapyManageAction extends BaseAction {
 
 		JSONObject result = new JSONObject();
 		result.put("msg", "ok");
+		try {
+			this.outJS(result.toString());
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+	public void doReplace() throws NoPrivilegeException, SQLException, NoConnection ,IOException{
+		itemId = URLDecoder.decode(itemId,"UTF-8");
+		itemDimension = URLDecoder.decode(itemDimension,"UTF-8");
+		String sd = itemId.replaceAll(",","");
+		String str = sd.replaceAll("\\s*", "");
+		String itemIds="";
+		String therapyName="";
+//		List<Therapy> therapyList=therapyBean.GetTherapysByIds(str);
+		Therapy therapy=therapyBean.queryDetailsd(str);
+		if (therapy!=null){
+			itemIds=therapy.getItemId();
+			therapyName=therapy.getTherapyName();
+		}
+		if (itemIds!=null&&itemIds!=""){
+			therapy.setItemId(itemIds);
+			therapy.setItemName(itemDimension);
+			therapyBean.updateTherapy(therapy);
+		}
+		JSONObject result = new JSONObject();
+		result.put("therapy", therapy);
+		result.put("msg", "ok");
+		result.put("therapyName", therapyName);
 		try {
 			this.outJS(result.toString());
 		} catch (IOException e) {

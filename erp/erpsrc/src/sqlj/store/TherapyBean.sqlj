@@ -271,6 +271,7 @@ public class TherapyBean extends ConnectionPool
 		return therapy;
 	}
 
+
 	#sql public static iterator TherapyItem(
 			String therapy_id, 
 			String therapy_name, 
@@ -291,7 +292,7 @@ public class TherapyBean extends ConnectionPool
 			String item_type, 
 			String existFlag
 		);
-	
+
 	//根据配方编码获取属于该配方的明细信息项集合
 	public List<Therapy> GetTherapysById(String therapyId,String hasSum) 
 			throws NoPrivilegeException,SQLException,NoConnection
@@ -1315,7 +1316,6 @@ public class TherapyBean extends ConnectionPool
 	private List<Map> processIter(ItemIter itemIter) 
 			throws SQLException {
 		List<Map> headerLst = new ArrayList<Map>();
-		
 		while(itemIter.next()) {
 			Map header = new HashMap();
 			header.put("itemId", itemIter.item_id());
@@ -1349,4 +1349,141 @@ public class TherapyBean extends ConnectionPool
 		}
 		return headerLst;
 	}
+/**
+	 * 根据ID获取配方明细信息项
+	 *
+	 * @param therapyId
+	 * @param itemId
+	 */
+	public Therapy queryDetailsd(String itemName)
+			throws NoPrivilegeException,SQLException,NoConnection {
+		Therapy therapy = null;
+		DefaultContext myCtx = getDefaultContext();
+		TherapyItemd therapyIter = null;
+		if (myCtx != null)
+		{
+			#sql [myCtx] therapyIter = {
+					           SELECT
+                				   h.item_id,
+                                   h.therapy_name
+                                FROM
+                                   JONO.D_T2_THERAPY h
+                				WHERE
+                					h.item_name = :itemName
+			};
+			if(therapyIter.next()) {
+				therapy = new Therapy();
+				therapy.setItemId(therapyIter.item_id());
+                therapy.setTherapyName(therapyIter.therapy_name());
+			}
+			therapyIter.close();
+		}
+		else
+		{
+			throw new NoConnection();
+		}
+		closeDefaultContext(myCtx);
+		return therapy;
+	}
+
+		#sql public static iterator TherapyItemd(
+		            String item_id,
+        			String therapy_name
+        		);
+
+	//根据配方编码获取属于该配方的明细信息项集合
+	public List<Therapy> GetTherapysByIds(String itemName)
+			throws NoPrivilegeException,SQLException,NoConnection
+	{
+		List<Therapy> result = new ArrayList<Therapy>();
+		DefaultContext myCtx = getDefaultContext();
+		TherapyItemd therapyIter = null;
+		if (myCtx != null)
+		{
+			#sql [myCtx] therapyIter = {
+				SELECT
+				   h.item_id,
+                   h.therapy_name
+                FROM
+                   JONO.D_T2_THERAPY h
+				WHERE
+					h.item_name = :itemName
+			};
+			while(therapyIter.next())
+			{
+				Therapy therapy = new Therapy();
+				therapy.setItemId(therapyIter.item_id());
+				therapy.setTherapyName(therapyIter.therapy_name());
+				result.add(therapy);
+				System.out.println(result);
+			}
+			therapyIter.close();
+		}
+		else
+		{
+			throw new NoConnection();
+		}
+		closeDefaultContext(myCtx);
+		return result;
+	}
+
+	   	public List<Therapy> selectTherapy(Therapy therapy)
+                    			throws NoPrivilegeException,SQLException,NoConnection {
+                    		DefaultContext myCtx = getDefaultContext();
+                    		TherapyIter therapyIter=null;
+                    		String item_name=therapy.getItemName();
+                            System.out.println(therapy.getItemName());
+                    		#sql [myCtx] therapyIter = {
+                    			        SELECT
+                    			           h.item_id,
+                    			           h.therapy_name
+                    			        FROM
+                    			         JONO.D_T2_THERAPY h
+                    			       where h.item_name=:item_name
+
+                    		};
+                            List<Therapy> weightList = processIter(therapyIter);
+                            therapyIter.close();
+                            closeDefaultContext(myCtx);
+                            return weightList;
+                    	}
+
+
+                private List<Therapy> processIter(TherapyIter therapyIter)
+            			throws SQLException {
+            		    List<Therapy> weightList = new ArrayList<Therapy>();
+                            while(therapyIter.next()) {
+                            Therapy therapy=new Therapy();
+                            therapy.setItemId(therapyIter.item_id());
+                            therapy.setTherapyName(therapyIter.therapy_name());
+                            }
+                            return weightList;
+            	}
+
+            public int updateTherapy(Therapy therapy)
+                    throws NoPrivilegeException, SQLException, NoConnection {
+                DefaultContext myCtx = getDefaultContext();
+
+                String itemId = therapy.getItemId();
+                String therapyName=therapy.getItemName();
+
+
+                #sql [myCtx] {
+                    UPDATE
+                    JONO.D_T2_THERAPY
+                    SET
+                       item_name= :therapyName
+                    WHERE
+                        item_id = :itemId
+                };
+                closeDefaultContext(myCtx);
+
+                return 1;
+            }
+
+
+
+
+
+
 }

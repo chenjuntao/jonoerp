@@ -5,13 +5,14 @@
 	<title>product config</title>
 	<%@ include file="/jsp/common/jsp/path.jsp"%>
 	
-    <script type="text/javascript" src="<%=dojoBase %>/dojo/dojo.js" ></script>
-   	<script type="text/javascript" src="<%=dojoBase %>/My97DatePicker/WdatePicker.js"></script>
+<%--    <script type="text/javascript" src="<%=dojoBase %>/dojo/dojo.js"></script>--%>
+	<script type="text/javascript" src='<%=dojoBase %>/dojo/dojo.js'></script>
+	<script type="text/javascript" src="<%=dojoBase %>/My97DatePicker/WdatePicker.js"></script>
 	<script type="text/javascript" src="<%=appRoot %>/jsp/common/js/dgrid-util.js?Version=<%=currenttime %>"></script>
     <script type="text/javascript" src="<%=appRoot %>/jsp/common/js/common.js?Version=<%=currenttime %>"></script>
 	<script type="text/javascript" src="<%=appRoot %>/jsp/hq/config/item/product/main.js?Version=<%=currenttime %>"></script>
 	<script type="text/javascript" src="<%=appRoot %>/jsp/hq/config/item/product/export.js?Version=<%=currenttime %>"></script>
-	
+
 	<style type="text/css">
       @import "<%=dojoBase %>/dojo/resources/dojo.css";
       @import "<%=dojoBase %>/dgrid/css/dgrid.css";
@@ -34,7 +35,7 @@
 		<table style="position:relative;">
 			<tr>
 				<td>
-					<label for="type">导出格式: </label>
+					<%--@declare id="type"--%><label for="type">导出格式: </label>
 				</td>
 				
 				<td>
@@ -117,7 +118,9 @@
 <!-- 					<button  data-dojo-type="dijit/form/Button" style="margin-left: 10px;" data-dojo-props='onClick: showDialog'>批量导出成本卡</button> -->
 					<button  data-dojo-type="dijit/form/Button" style="margin-left: 10px;" data-dojo-props='onClick: showDialog1'>批量导出成本卡</button>
 					<button  data-dojo-type="dijit/form/Button" style="margin-left: 10px;" data-dojo-props='onClick: showDialog2'>批量导出售卖价</button>
-					<button  data-dojo-type="dijit/form/Button" style="margin-left: 50px;" onclick="doAdd();">新  增</button>
+					<button  data-dojo-type="dijit/form/Button" style="margin-left: 10px;" data-dojo-props='onClick: doReplace'>成本卡替换</button>
+                    <%--<button  data-dojo-type="dijit/form/Button" style="margin-left: 10px;" data-dojo-props=''>成本卡复制</button>--%>
+                    <button  data-dojo-type="dijit/form/Button" style="margin-left: 50px;" onclick="doAdd();">新  增</button>
 			   	 	<button  data-dojo-type="dijit/form/Button" style="margin-left: 10px;" data-dojo-props='onClick: doDelete'>删  除</button>
 <!-- 			   	 	<button  data-dojo-type="dijit/form/Button" style="margin-left: 10px;" data-dojo-props='onClick: doPush'>出品信息即时推送</button> -->
 <!-- 			   	 	<button  data-dojo-type="dijit/form/Button" style="margin-left: 10px;" data-dojo-props='onClick: doCompute'>出品成本价即时计算</button> -->
@@ -132,7 +135,7 @@
 	<div id="categoryTree"></div>
 	
 	<div id="dataGrid">
-	 <input type="hidden" id="downloadTokenValue" name="downloadTokenValue"/>
+		 <input type="hidden" id="downloadTokenValue" name="downloadTokenValue"/>
 	</div>
 	
     <div id="dateDlg" style="display: none;">

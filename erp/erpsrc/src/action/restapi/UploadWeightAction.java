@@ -11,25 +11,21 @@
 package action.restapi;
 
 import action.common.BaseAction;
-import com.google.gson.JsonObject;
 import com.opensymphony.xwork2.ActionContext;
 import com.tanry.framework.acl.NoPrivilegeException;
 import logic.NoConnection;
 import net.sf.json.JSONObject;
 import org.apache.log4j.Logger;
 import org.apache.struts2.ServletActionContext;
-import pojo.form.Store;
 import service.restapi.UploadWeightService;
-import sun.misc.BASE64Decoder;
-import sun.misc.BASE64Encoder;
+//import sun.misc.BASE64Decoder;
+//import sun.misc.BASE64Encoder;
+import org.apache.commons.codec.binary.Base64;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.*;
 import java.sql.SQLException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.List;
-import java.util.Random;
+
 
 /**
  * 说明：上传重量以及图片
@@ -101,7 +97,8 @@ public class UploadWeightAction extends BaseAction
 		FileOutputStream out;
 		String s="";
 		try {
-			byte[] buffer = new BASE64Decoder().decodeBuffer(iconBase64);
+			byte[] buffer = Base64.decodeBase64(iconBase64);
+//			byte[] buffer = new BASE64Decoder().decodeBuffer(iconBase64);
 			s=realPath+"/"+upName;
 			System.out.println(s);
 			out = new FileOutputStream(realPath+"/"+upName);
@@ -196,9 +193,10 @@ public class UploadWeightAction extends BaseAction
 		if (imgStr == null) { // 图像数据为空
 			return false;
 		}
-		BASE64Decoder decoder = new BASE64Decoder();
+//		BASE64Decoder decoder = new BASE64Decoder();
 		try {
-			byte[] b = decoder.decodeBuffer(imgStr);
+			byte[] b = Base64.decodeBase64(imgStr);
+//			byte[] b = decoder.decodeBuffer(imgStr);
 			System.out.println(b);
 			for (int i = 0; i < b.length; ++i) {
 				if (b[i] < 0) {
@@ -234,7 +232,8 @@ public class UploadWeightAction extends BaseAction
 			e.printStackTrace();
 		}
 		// 加密
-		BASE64Encoder encoder = new BASE64Encoder();
-		return encoder.encode(data);
+//		BASE64Encoder encoder = new BASE64Encoder();
+//		return encoder.encode(data);
+		return Base64.encodeBase64String(data);
 	}
 }
