@@ -784,7 +784,6 @@ public class ItemMetaQueryBean extends ConnectionPool {
 		condition = "%" + condition + "%";
 		
 		String queryStr = "";
-		
 		if(TextUtil.isEmpty(displayAllFlag)){
 			queryStr = " AND m.ENABLED = 1 ";
 		}
@@ -886,10 +885,16 @@ public class ItemMetaQueryBean extends ConnectionPool {
 	#sql private iterator CountIter(
 			int total);
 	
-	public int countRaw(String condition) 
+	public int countRaw(String condition, String displayAllFlag)
 			throws NoPrivilegeException,SQLException,NoConnection {
 		CountIter countIter =null;
 		DefaultContext myCtx = getDefaultContext();
+
+        String queryStr = "";
+        if(TextUtil.isEmpty(displayAllFlag)){
+            queryStr = " AND m.ENABLED = 1 ";
+        }
+
 		#sql [myCtx] countIter = {
 			WITH
 			    filter AS
@@ -916,6 +921,8 @@ public class ItemMetaQueryBean extends ConnectionPool {
 			    filter.THERAPY_ID = m.ITEM_ID
         	    WHERE
 			    m.ITEM_TYPE = 'PRODUCT'
+			    :{queryStr ::}
+
 		};
 		
 		int total = 0;
@@ -927,11 +934,16 @@ public class ItemMetaQueryBean extends ConnectionPool {
 		return total;
 	}
 	
-	public List<Map> queryByRaw(String condition, int startRow,int endRow) 
+	public List<Map> queryByRaw(String condition, String displayAllFlag, int startRow,int endRow)
 			throws NoPrivilegeException,SQLException,NoConnection {
 		DefaultContext myCtx = getDefaultContext();
 		ProductIter productIter = null;
-		
+
+        String queryStr = "";
+        if(TextUtil.isEmpty(displayAllFlag)){
+            queryStr = " AND m.ENABLED = 1 ";
+        }
+
 		#sql [myCtx] productIter = {
 		SELECT
 	    *
@@ -1008,6 +1020,8 @@ public class ItemMetaQueryBean extends ConnectionPool {
 			    t.THERAPY_ID = m.ITEM_ID
 			WHERE
 			    m.ITEM_TYPE = 'PRODUCT'
+			    :{queryStr ::}
+
 			ORDER BY
 			    m.ITEM_ID) t
 	            WHERE

@@ -41,7 +41,7 @@ function customExport() {
 				condition : condition,
 				searchType : searchType,
 				newEnd : 1,
-				displayAllFlag : 'Y'
+				// displayAllFlag : 'Y'
 			}
 		}).then(function(data) {
 			fillData(data);
