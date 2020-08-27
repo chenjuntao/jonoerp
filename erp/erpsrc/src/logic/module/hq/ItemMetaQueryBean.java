@@ -1464,12 +1464,11 @@ implements sqlj.runtime.NamedIterator
 		condition = "%" + condition + "%";
 		
 		String queryStr = "";
-		
 		if(TextUtil.isEmpty(displayAllFlag)){
 			queryStr = " AND m.ENABLED = 1 ";
 		}
 		
-		/*@lineinfo:generated-code*//*@lineinfo:792^3*/
+		/*@lineinfo:generated-code*//*@lineinfo:791^3*/
 
 //  ************************************************************
 //  #sql [myCtx] productIter = { SELECT
@@ -1601,7 +1600,7 @@ implements sqlj.runtime.NamedIterator
 
 //  ************************************************************
 
-/*@lineinfo:user-code*//*@lineinfo:875^31*/
+/*@lineinfo:user-code*//*@lineinfo:874^31*/
 
 		List<Map> itemLst = new ArrayList<Map>();
 		while (productIter.next()) {
@@ -1612,7 +1611,7 @@ implements sqlj.runtime.NamedIterator
 		return itemLst;
 	}
 	
-	/*@lineinfo:generated-code*//*@lineinfo:886^2*/
+	/*@lineinfo:generated-code*//*@lineinfo:885^2*/
 
 //  ************************************************************
 //  SQLJ iterator declaration:
@@ -1639,13 +1638,19 @@ implements sqlj.runtime.NamedIterator
 
 //  ************************************************************
 
-/*@lineinfo:user-code*//*@lineinfo:887^13*/
+/*@lineinfo:user-code*//*@lineinfo:886^13*/
 	
-	public int countRaw(String condition) 
+	public int countRaw(String condition, String displayAllFlag)
 			throws NoPrivilegeException,SQLException,NoConnection {
 		CountIter countIter =null;
 		DefaultContext myCtx = getDefaultContext();
-		/*@lineinfo:generated-code*//*@lineinfo:893^3*/
+
+        String queryStr = "";
+        if(TextUtil.isEmpty(displayAllFlag)){
+            queryStr = " AND m.ENABLED = 1 ";
+        }
+
+		/*@lineinfo:generated-code*//*@lineinfo:898^3*/
 
 //  ************************************************************
 //  #sql [myCtx] countIter = { WITH
@@ -1673,6 +1678,8 @@ implements sqlj.runtime.NamedIterator
 //  			    filter.THERAPY_ID = m.ITEM_ID
 //          	    WHERE
 //  			    m.ITEM_TYPE = 'PRODUCT'
+//  			    :queryStr
+//  
 //  		 };
 //  ************************************************************
 
@@ -1685,6 +1692,7 @@ implements sqlj.runtime.NamedIterator
   String __sJT_2 = condition;
   String __sJT_3 = condition;
   String __sJT_4 = Com_("D_T2_ITEM_META");
+  String __sJT_5 = queryStr;
   synchronized (__sJT_execCtx) {
     sqlj.runtime.profile.RTStatement __sJT_stmt = __sJT_execCtx.registerStatement(__sJT_connCtx, ItemMetaQueryBean_SJProfileKeys.getKey(0), 10);
     try 
@@ -1693,6 +1701,7 @@ implements sqlj.runtime.NamedIterator
       __sJT_stmt.setString(2, __sJT_2);
       __sJT_stmt.setString(3, __sJT_3);
       __sJT_stmt.setString(4, __sJT_4);
+      __sJT_stmt.setString(5, __sJT_5);
       sqlj.runtime.profile.RTResultSet __sJT_result = __sJT_execCtx.executeQuery();
       countIter = new CountIter(__sJT_result);
     }
@@ -1706,7 +1715,7 @@ implements sqlj.runtime.NamedIterator
 
 //  ************************************************************
 
-/*@lineinfo:user-code*//*@lineinfo:919^3*/
+/*@lineinfo:user-code*//*@lineinfo:926^3*/
 		
 		int total = 0;
 		while(countIter.next()) {
@@ -1717,12 +1726,17 @@ implements sqlj.runtime.NamedIterator
 		return total;
 	}
 	
-	public List<Map> queryByRaw(String condition, int startRow,int endRow) 
+	public List<Map> queryByRaw(String condition, String displayAllFlag, int startRow,int endRow)
 			throws NoPrivilegeException,SQLException,NoConnection {
 		DefaultContext myCtx = getDefaultContext();
 		ProductIter productIter = null;
-		
-		/*@lineinfo:generated-code*//*@lineinfo:935^3*/
+
+        String queryStr = "";
+        if(TextUtil.isEmpty(displayAllFlag)){
+            queryStr = " AND m.ENABLED = 1 ";
+        }
+
+		/*@lineinfo:generated-code*//*@lineinfo:947^3*/
 
 //  ************************************************************
 //  #sql [myCtx] productIter = { SELECT
@@ -1800,6 +1814,8 @@ implements sqlj.runtime.NamedIterator
 //  			    t.THERAPY_ID = m.ITEM_ID
 //  			WHERE
 //  			    m.ITEM_TYPE = 'PRODUCT'
+//  			    :queryStr
+//  
 //  			ORDER BY
 //  			    m.ITEM_ID) t
 //  	            WHERE
@@ -1821,8 +1837,9 @@ implements sqlj.runtime.NamedIterator
   String __sJT_6 = Com_("D_T2_ITEM_CATEGORY");
   String __sJT_7 = Com_("D_T2_THERAPY");
   String __sJT_8 = Com_("D_T2_ITEM_PRICE");
-  int __sJT_9 = endRow;
-  int __sJT_10 = startRow;
+  String __sJT_9 = queryStr;
+  int __sJT_10 = endRow;
+  int __sJT_11 = startRow;
   synchronized (__sJT_execCtx) {
     sqlj.runtime.profile.RTStatement __sJT_stmt = __sJT_execCtx.registerStatement(__sJT_connCtx, ItemMetaQueryBean_SJProfileKeys.getKey(0), 11);
     try 
@@ -1835,8 +1852,9 @@ implements sqlj.runtime.NamedIterator
       __sJT_stmt.setString(6, __sJT_6);
       __sJT_stmt.setString(7, __sJT_7);
       __sJT_stmt.setString(8, __sJT_8);
-      __sJT_stmt.setInt(9, __sJT_9);
+      __sJT_stmt.setString(9, __sJT_9);
       __sJT_stmt.setInt(10, __sJT_10);
+      __sJT_stmt.setInt(11, __sJT_11);
       sqlj.runtime.profile.RTResultSet __sJT_result = __sJT_execCtx.executeQuery();
       productIter = new ProductIter(__sJT_result);
     }
@@ -1850,7 +1868,7 @@ implements sqlj.runtime.NamedIterator
 
 //  ************************************************************
 
-/*@lineinfo:user-code*//*@lineinfo:1016^31*/
+/*@lineinfo:user-code*//*@lineinfo:1030^31*/
 
 		List<Map> itemLst = new ArrayList<Map>();
 		while (productIter.next()) {

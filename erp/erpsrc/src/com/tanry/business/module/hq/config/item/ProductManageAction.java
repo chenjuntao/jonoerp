@@ -99,10 +99,10 @@ public class ProductManageAction extends BaseAction {
 					itemLst = itemMetaQueryBean.queryByProduct(condition, displayAllFlag, getStart(), newEnd);
 				}
 			} else if ("raw".equals(searchType)) {
-				total = itemMetaQueryBean.countRaw(condition);
+				total = itemMetaQueryBean.countRaw(condition, displayAllFlag);
 				setTotal(total);
 				if (total > 0) {
-					itemLst = itemMetaQueryBean.queryByRaw(condition, getStart(), newEnd);
+					itemLst = itemMetaQueryBean.queryByRaw(condition, displayAllFlag, getStart(), newEnd);
 				}
 			}
 
